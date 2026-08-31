@@ -1,5 +1,5 @@
 function InvoicePage() {
-  return <h1>Invoice</h1>
+    return <h1>Invoice</h1>
 }
 
 export default InvoicePage
