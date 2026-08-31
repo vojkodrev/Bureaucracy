@@ -44,7 +44,7 @@ function LayoutPage() {
                     </nav>
                 </aside>
 
-                <main className="flex-1 p-8">
+                <main className="flex-1 p-2 sm:p-3">
                     <Outlet />
                 </main>
             </div>

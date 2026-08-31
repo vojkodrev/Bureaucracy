@@ -58,7 +58,7 @@ function InvoiceSearchPage() {
             </div>
 
             <form
-                className="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+                className="mt-6 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
                 onSubmit={(event) => event.preventDefault()}
             >
                 <div className="grid gap-5 md:grid-cols-2">
@@ -111,7 +111,7 @@ function InvoiceSearchPage() {
 
             <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div className="min-w-225">
-                    <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                    <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-3 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
                         <span>Invoice number</span>
                         <span>Customer</span>
                         <span>Amount</span>
@@ -124,7 +124,7 @@ function InvoiceSearchPage() {
                         <Link
                             key={invoice.invoiceNumber}
                             to={`/invoice/${invoice.invoiceNumber}`}
-                            className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-100 px-5 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
+                            className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-100 px-3 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
                         >
                             <span className="font-semibold text-zinc-950">
                                 {invoice.invoiceNumber}
