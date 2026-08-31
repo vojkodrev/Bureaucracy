@@ -1,5 +1,41 @@
 import { Link } from 'react-router-dom'
 
+type Invoice = {
+    invoiceNumber: string
+    customer: string
+    amount: string
+    invoiceDate: string
+    dueDate: string
+    paymentDate: string
+}
+
+const invoices: Invoice[] = [
+    {
+        invoiceNumber: 'INV-2026-001',
+        customer: 'Northstar Studio',
+        amount: '€1,250.00',
+        invoiceDate: '12 Aug 2026',
+        dueDate: '11 Sep 2026',
+        paymentDate: '28 Aug 2026',
+    },
+    {
+        invoiceNumber: 'INV-2026-002',
+        customer: 'Alpine Goods',
+        amount: '€840.50',
+        invoiceDate: '18 Aug 2026',
+        dueDate: '17 Sep 2026',
+        paymentDate: '30 Aug 2026',
+    },
+    {
+        invoiceNumber: 'INV-2026-003',
+        customer: 'Juniper Labs',
+        amount: '€3,475.00',
+        invoiceDate: '25 Aug 2026',
+        dueDate: '24 Sep 2026',
+        paymentDate: '—',
+    },
+]
+
 function InvoiceSearchPage() {
     return (
         <section>
@@ -73,14 +109,40 @@ function InvoiceSearchPage() {
                 </div>
             </form>
 
-            <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-                <Link
-                    to="/invoice/123"
-                    className="flex items-center justify-between px-5 py-4 transition hover:bg-zinc-50"
-                >
-                    <span className="font-medium">Invoice 123</span>
-                    <span className="text-sm text-zinc-500">Open invoice →</span>
-                </Link>
+            <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <div className="min-w-225">
+                    <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                        <span>Invoice number</span>
+                        <span>Customer</span>
+                        <span>Amount</span>
+                        <span>Invoice date</span>
+                        <span>Due date</span>
+                        <span>Payment date</span>
+                    </div>
+
+                    {invoices.map((invoice) => (
+                        <Link
+                            key={invoice.invoiceNumber}
+                            to={`/invoice/${invoice.invoiceNumber}`}
+                            className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-100 px-5 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
+                        >
+                            <span className="font-semibold text-zinc-950">
+                                {invoice.invoiceNumber}
+                            </span>
+                            <span>{invoice.customer}</span>
+                            <span className="font-medium">{invoice.amount}</span>
+                            <span className="text-zinc-600">
+                                {invoice.invoiceDate}
+                            </span>
+                            <span className="text-zinc-600">
+                                {invoice.dueDate}
+                            </span>
+                            <span className="text-zinc-600">
+                                {invoice.paymentDate}
+                            </span>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </section>
     )
