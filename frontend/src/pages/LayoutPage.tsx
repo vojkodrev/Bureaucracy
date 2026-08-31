@@ -1,6 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
-const navigation = [
+type NavigationItem = {
+    label: string
+    to: string
+}
+
+const navigation: NavigationItem[] = [
     { label: 'Invoices', to: '/invoices/search' },
     { label: 'Products', to: '/products' },
 ]

@@ -1,9 +1,9 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import LayoutPage from './pages/LayoutPage.jsx'
-import InvoiceDetailsPage from './pages/InvoiceDetailsPage.jsx'
-import InvoicePage from './pages/InvoicePage.jsx'
-import InvoiceSearchPage from './pages/InvoiceSearchPage.jsx'
+import LayoutPage from './pages/LayoutPage.tsx'
+import InvoiceDetailsPage from './pages/InvoiceDetailsPage.tsx'
+import InvoicePage from './pages/InvoicePage.tsx'
+import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
