@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 function InvoiceDetailsPage() {
     const { id } = useParams()
@@ -6,12 +6,19 @@ function InvoiceDetailsPage() {
     return (
         <section>
             <div>
-                <p className="text-sm font-medium text-zinc-500">
-                    Invoice details
-                </p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-                    Invoice {id}
-                </h1>
+                <nav
+                    aria-label="Breadcrumb"
+                    className="flex items-center gap-2 text-sm font-medium text-zinc-500"
+                >
+                    <Link
+                        to="/invoices/search"
+                        className="transition hover:text-zinc-950"
+                    >
+                        Invoices
+                    </Link>
+                    <span aria-hidden="true">›</span>
+                    <span className="text-zinc-700">{id}</span>
+                </nav>
             </div>
 
             <form

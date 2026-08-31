@@ -73,22 +73,15 @@ const summary = [
 function InvoiceSearchPage() {
     return (
         <section>
-            <div className="flex items-center justify-between gap-4">
+            <div>
                 <div>
-                    <p className="text-sm font-medium text-zinc-500">
-                        Invoices
-                    </p>
-                    <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-                        Invoice search
-                    </h1>
+                    <nav
+                        aria-label="Breadcrumb"
+                        className="flex items-center gap-2 text-sm font-medium text-zinc-500"
+                    >
+                        <span className="text-zinc-700">Invoices</span>
+                    </nav>
                 </div>
-
-                <Link
-                    to="/invoice"
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                >
-                    New invoice
-                </Link>
             </div>
 
             <form
@@ -143,7 +136,16 @@ function InvoiceSearchPage() {
                 </div>
             </form>
 
-            <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+            <div className="mt-6 flex justify-end">
+                <Link
+                    to="/invoice"
+                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
+                >
+                    New invoice
+                </Link>
+            </div>
+
+            <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div className="min-w-225">
                     <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-3 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
                         <span>Invoice number</span>
@@ -196,6 +198,7 @@ function InvoiceSearchPage() {
                     </div>
                 ))}
             </div>
+
         </section>
     )
 }
