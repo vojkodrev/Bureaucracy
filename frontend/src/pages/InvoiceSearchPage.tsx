@@ -3,36 +3,70 @@ import { Link } from 'react-router-dom'
 type Invoice = {
     invoiceNumber: string
     customer: string
-    amount: string
+    amount: number
     invoiceDate: string
     dueDate: string
     paymentDate: string
+    status: 'paid' | 'past-due'
 }
 
 const invoices: Invoice[] = [
     {
         invoiceNumber: 'INV-2026-001',
         customer: 'Northstar Studio',
-        amount: '€1,250.00',
+        amount: 1250,
         invoiceDate: '12 Aug 2026',
         dueDate: '11 Sep 2026',
         paymentDate: '28 Aug 2026',
+        status: 'paid',
     },
     {
         invoiceNumber: 'INV-2026-002',
         customer: 'Alpine Goods',
-        amount: '€840.50',
+        amount: 840.5,
         invoiceDate: '18 Aug 2026',
         dueDate: '17 Sep 2026',
         paymentDate: '30 Aug 2026',
+        status: 'paid',
     },
     {
         invoiceNumber: 'INV-2026-003',
         customer: 'Juniper Labs',
-        amount: '€3,475.00',
-        invoiceDate: '25 Aug 2026',
-        dueDate: '24 Sep 2026',
+        amount: 3475,
+        invoiceDate: '25 Jul 2026',
+        dueDate: '24 Aug 2026',
         paymentDate: '—',
+        status: 'past-due',
+    },
+]
+
+const currencyFormatter = new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency: 'EUR',
+})
+
+const summary = [
+    {
+        label: 'Total amount',
+        amount: invoices.reduce((total, invoice) => total + invoice.amount, 0),
+    },
+    {
+        label: 'Unpaid',
+        amount: invoices
+            .filter((invoice) => invoice.status !== 'paid')
+            .reduce((total, invoice) => total + invoice.amount, 0),
+    },
+    {
+        label: 'Past due',
+        amount: invoices
+            .filter((invoice) => invoice.status === 'past-due')
+            .reduce((total, invoice) => total + invoice.amount, 0),
+    },
+    {
+        label: 'Paid',
+        amount: invoices
+            .filter((invoice) => invoice.status === 'paid')
+            .reduce((total, invoice) => total + invoice.amount, 0),
     },
 ]
 
@@ -62,7 +96,7 @@ function InvoiceSearchPage() {
                 onSubmit={(event) => event.preventDefault()}
             >
                 <div className="grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700 md:col-span-2">
+                    <label className="grid gap-2 text-sm font-medium text-zinc-700 md:col-span-2 md:w-[calc(50%-0.625rem)]">
                         Invoice number
                         <input
                             type="search"
@@ -130,7 +164,9 @@ function InvoiceSearchPage() {
                                 {invoice.invoiceNumber}
                             </span>
                             <span>{invoice.customer}</span>
-                            <span className="font-medium">{invoice.amount}</span>
+                            <span className="font-medium">
+                                {currencyFormatter.format(invoice.amount)}
+                            </span>
                             <span className="text-zinc-600">
                                 {invoice.invoiceDate}
                             </span>
@@ -143,6 +179,22 @@ function InvoiceSearchPage() {
                         </Link>
                     ))}
                 </div>
+            </div>
+
+            <div className="mt-6 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:w-[calc(50%-0.625rem)]">
+                {summary.map((item) => (
+                    <div
+                        key={item.label}
+                        className="flex items-center justify-between gap-4 border-b border-zinc-200 p-3 last:border-b-0"
+                    >
+                        <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                            {item.label}
+                        </p>
+                        <p className="text-base font-semibold text-zinc-950">
+                            {currencyFormatter.format(item.amount)}
+                        </p>
+                    </div>
+                ))}
             </div>
         </section>
     )
