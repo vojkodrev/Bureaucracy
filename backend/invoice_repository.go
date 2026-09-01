@@ -15,13 +15,14 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
-func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *string, customerID *string, limit int) ([]*Invoice, error) {
+func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, limit int) ([]*Invoice, error) {
 	if limit < 1 || limit > 100 {
 		return nil, fmt.Errorf("limit must be between 1 and 100")
 	}
 
 	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
 	customerIDPattern := optionalLikePattern(customerID)
+	customerNamePattern := optionalLikePattern(customerName)
 
 	rows, err := repository.database.QueryContext(ctx, `
 		SELECT TOP (@limit)
@@ -45,10 +46,12 @@ func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *
 		FROM [BIRO225].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
+		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		ORDER BY Stevilka`,
 		sql.Named("limit", limit),
 		sql.Named("invoiceNumber", invoiceNumberPattern),
 		sql.Named("customerID", customerIDPattern),
+		sql.Named("customerName", customerNamePattern),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("search invoices: %w", err)

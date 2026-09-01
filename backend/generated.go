@@ -57,7 +57,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, limit *int) int
+		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, customerName *string, limit *int) int
 	}
 }
 
@@ -66,7 +66,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type QueryResolver interface {
-	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, limit *int) ([]*Invoice, error)
+	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, limit *int) ([]*Invoice, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -200,7 +200,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["invoiceNumber"].(*string), args["customerId"].(*string), args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["limit"].(*int)), true
 
 	}
 	return 0, false
@@ -477,14 +477,22 @@ func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context,
 		return nil, err
 	}
 	args["customerId"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerName"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg2
+	args["limit"] = arg3
 	return args, nil
 }
 
@@ -949,7 +957,7 @@ func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["limit"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v []*Invoice) graphql.Marshaler {
