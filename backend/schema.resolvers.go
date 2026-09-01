@@ -7,15 +7,16 @@ package main
 
 import (
 	"context"
+	"time"
 )
 
 // SearchInvoices is the resolver for the searchInvoices field.
-func (r *queryResolver) SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, limit *int) ([]*Invoice, error) {
+func (r *queryResolver) SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, limit *int) ([]*Invoice, error) {
 	resultLimit := 20
 	if limit != nil {
 		resultLimit = *limit
 	}
-	return r.Invoices.Search(ctx, invoiceNumber, customerID, customerName, resultLimit)
+	return r.Invoices.Search(ctx, invoiceNumber, customerID, customerName, issuedFrom, issuedTo, resultLimit)
 }
 
 // Query returns QueryResolver implementation.

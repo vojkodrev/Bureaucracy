@@ -16,6 +16,8 @@ type SearchForm = {
     invoiceNumber: string
     customerId: string
     customerName: string
+    from: string
+    to: string
 }
 
 type SearchInvoicesResponse = {
@@ -30,11 +32,20 @@ type InvoiceSearchResult = {
 }
 
 const searchInvoicesQuery = `
-    query SearchInvoices($invoiceNumber: String, $customerId: String, $customerName: String, $limit: Int) {
+    query SearchInvoices(
+        $invoiceNumber: String
+        $customerId: String
+        $customerName: String
+        $issuedFrom: Time
+        $issuedTo: Time
+        $limit: Int
+    ) {
         searchInvoices(
             invoiceNumber: $invoiceNumber
             customerId: $customerId
             customerName: $customerName
+            issuedFrom: $issuedFrom
+            issuedTo: $issuedTo
             limit: $limit
         ) {
             invoiceNumber
@@ -68,12 +79,18 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         invoiceNumber: searchParams.get('invoiceNumber') ?? '',
         customerId: searchParams.get('customerId') ?? '',
         customerName: searchParams.get('customerName') ?? '',
+        from: searchParams.get('from') ?? '',
+        to: searchParams.get('to') ?? '',
     }
 }
 
 function optionalFilter(value: string): string | null {
     const trimmedValue = value.trim()
     return trimmedValue === '' ? null : trimmedValue
+}
+
+function optionalDate(value: string): string | null {
+    return value === '' ? null : `${value}T00:00:00.000Z`
 }
 
 function formatDate(value: string | null): string {
@@ -105,6 +122,8 @@ function InvoiceSearchPage() {
                     invoiceNumber: optionalFilter(activeSearch.invoiceNumber),
                     customerId: optionalFilter(activeSearch.customerId),
                     customerName: optionalFilter(activeSearch.customerName),
+                    issuedFrom: optionalDate(activeSearch.from),
+                    issuedTo: optionalDate(activeSearch.to),
                     limit: 100,
                 },
             }),
@@ -172,6 +191,8 @@ function InvoiceSearchPage() {
             invoiceNumber: String(formData.get('invoiceNumber') ?? '').trim(),
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
+            from: String(formData.get('from') ?? ''),
+            to: String(formData.get('to') ?? ''),
         })
     }
 
@@ -221,6 +242,28 @@ function InvoiceSearchPage() {
                             defaultValue={activeSearch.customerName}
                             placeholder="Customer name"
                             className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+                        />
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
+                        Invoice date from
+                        <input
+                            type="date"
+                            name="from"
+                            defaultValue={activeSearch.from}
+                            max={activeSearch.to || undefined}
+                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+                        />
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
+                        Invoice date to
+                        <input
+                            type="date"
+                            name="to"
+                            defaultValue={activeSearch.to}
+                            min={activeSearch.from || undefined}
+                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                         />
                     </label>
                 </div>
