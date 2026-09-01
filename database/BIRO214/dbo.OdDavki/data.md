@@ -1,0 +1,13 @@
+# Sample data for `dbo`.`OdDavki`
+
+- Total rows: 22
+- Rows shown: 5
+- Values are limited to 200 characters; binary values show their byte size.
+
+| DatumVnosa | Davek | DavekNaBruto | Deleted | Dohodnina | Ime | MesecObracuna | NamenNakazila1 | NamenNakazila1SP | NamenNakazila2 | NamenNakazila2SP | PavsalniZnesek | PokojninskoZavarovanje | PosebniObracunZaMinimalnoPlaco | RecNo | REK1 | Sifra | Sifra1 | Sifra2 | Sifra3 | SklicObremenitve1 | SklicObremenitve2 | SklicOdobritve1 | SklicOdobritve2 | SklicOdobritve3 | VBremeKoga | VDobroracuna | VdobroRacuna2 | VDobroRacunaSP1 | VDobroRacunaSP2 | VeljaZaObcino | Vnasalec | VrstaDavka | ZiroRacun | ZPIS | ZRVD | ZRVDSP |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| _NULL_ | 0.100000 | _NULL_ | _NULL_ | 0 | Starševski prispevek | Jan  1 1998 12:00AM | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 1 | 0 | 1 | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | Zaposlenega | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 0 | 50100-843-061-7017 | _NULL_ | _NULL_ | _NULL_ |
+| _NULL_ | 0.100000 | 0 | _NULL_ | 0 | Starševski prispevek | Jan  1 1998 12:00AM | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 2 | 0 | 2 | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | Delodajalca | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 1 | 50100-843-061-7017 | _NULL_ | _NULL_ | _NULL_ |
+| _NULL_ | 15.500000 | 0 | _NULL_ | 0 | ZPIZ | Jan  1 1998 12:00AM | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 3 | 0 | 3 | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | Zaposlenega | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 0 | 50100-843-061-149 | -1 | _NULL_ | _NULL_ |
+| _NULL_ | 8.850000 | 0 | _NULL_ | 0 | ZPIZ | Jan  1 1998 12:00AM | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 4 | 0 | 4 | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | Delodajalca | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 1 | 50100-843-061-128 | -1 | _NULL_ | _NULL_ |
+| _NULL_ | 0.530000 | 0 | _NULL_ | 0 | Poškodbe pri delu | Jan  1 1998 12:00AM | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 5 | 0 | 5 | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | Delodajalca | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | _NULL_ | 1 | 50100-843-061-1674 | _NULL_ | _NULL_ | _NULL_ |
