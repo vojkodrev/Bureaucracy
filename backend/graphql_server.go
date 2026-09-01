@@ -10,29 +10,48 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	ginCors "github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 )
 
 type GraphQLServer struct {
 	config *AppConfig
+	router *gin.Engine
 	server *http.Server
 }
 
 func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
-	graphqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
+	if config.Environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/graphql", cors(config.AllowedOrigin, graphqlHandler))
-	mux.Handle("/", playground.Handler("BIRO225 GraphQL", "/graphql"))
-	mux.HandleFunc("/health", func(response http.ResponseWriter, _ *http.Request) {
-		response.WriteHeader(http.StatusNoContent)
+	graphqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
+	playgroundHandler := playground.Handler("BIRO225 GraphQL", "/graphql")
+
+	router := gin.New()
+	router.Use(
+		gin.Logger(),
+		gin.Recovery(),
+		ginCors.New(ginCors.Config{
+			AllowOrigins: []string{config.AllowedOrigin},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+			AllowHeaders: []string{"Content-Type"},
+		}),
+	)
+	router.GET("/graphql", gin.WrapH(graphqlHandler))
+	router.POST("/graphql", gin.WrapH(graphqlHandler))
+	router.GET("/", gin.WrapH(playgroundHandler))
+	router.GET("/health", func(context *gin.Context) {
+		context.Status(http.StatusNoContent)
 	})
 
 	return &GraphQLServer{
 		config: config,
+		router: router,
 		server: &http.Server{
 			Addr:              ":" + config.Port,
-			Handler:           mux,
+			Handler:           router,
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
@@ -57,18 +76,5 @@ func RegisterGraphQLServerLifecycle(lifecycle fx.Lifecycle, server *GraphQLServe
 			return nil
 		},
 		OnStop: server.server.Shutdown,
-	})
-}
-
-func cors(allowedOrigin string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		response.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-		response.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		response.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		if request.Method == http.MethodOptions {
-			response.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(response, request)
 	})
 }
