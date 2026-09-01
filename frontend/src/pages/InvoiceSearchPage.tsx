@@ -135,6 +135,12 @@ function InvoiceSearchPage() {
     const invoicePage = isLoading ? null : searchResult.invoicePage
     const invoices = invoicePage?.invoices ?? emptyInvoices
     const error = isLoading ? null : searchResult.error
+    const firstInvoice = invoicePage && invoicePage.totalCount > 0
+        ? (invoicePage.page - 1) * invoicePage.pageSize + 1
+        : 0
+    const lastInvoice = invoicePage
+        ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
+        : 0
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -236,13 +242,6 @@ function InvoiceSearchPage() {
         setSearchParams(nextSearchParams)
     }
 
-    function changePageSize(pageSize: string) {
-        const nextSearchParams = new URLSearchParams(searchParams)
-        nextSearchParams.set('page', '1')
-        nextSearchParams.set('pageSize', pageSize)
-        setSearchParams(nextSearchParams)
-    }
-
     return (
         <section>
             <nav aria-label="Breadcrumb" className="text-sm font-medium text-zinc-500">
@@ -337,6 +336,34 @@ function InvoiceSearchPage() {
                 </Link>
             </div>
 
+            {invoicePage && (
+                <div className="mt-3 flex items-center justify-end gap-2 text-sm text-zinc-600">
+                    <span className="mr-2 tabular-nums">
+                        {firstInvoice}–{lastInvoice} of {invoicePage.totalCount}
+                    </span>
+                    <button
+                        type="button"
+                        disabled={invoicePage.page <= 1}
+                        onClick={() => changePage(invoicePage.page - 1)}
+                        aria-label="Previous page"
+                        title="Previous page"
+                        className="grid size-10 place-items-center rounded-full text-zinc-700 transition hover:bg-zinc-200/70 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-transparent"
+                    >
+                        <span aria-hidden="true">&lt;</span>
+                    </button>
+                    <button
+                        type="button"
+                        disabled={invoicePage.page >= invoicePage.totalPages}
+                        onClick={() => changePage(invoicePage.page + 1)}
+                        aria-label="Next page"
+                        title="Next page"
+                        className="grid size-10 place-items-center rounded-full text-zinc-700 transition hover:bg-zinc-200/70 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-transparent"
+                    >
+                        <span aria-hidden="true">&gt;</span>
+                    </button>
+                </div>
+            )}
+
             <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div className="min-w-225">
                     <div
@@ -384,48 +411,6 @@ function InvoiceSearchPage() {
                     ))}
                 </div>
             </div>
-
-            {invoicePage && (
-                <div className="mt-4 flex flex-col gap-3 text-sm text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
-                    <p>
-                        Page {invoicePage.page} of {Math.max(invoicePage.totalPages, 1)} ·{' '}
-                        {invoicePage.totalCount} invoices
-                    </p>
-
-                    <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2">
-                            Page size
-                            <select
-                                value={String(invoicePage.pageSize)}
-                                onChange={(event) => changePageSize(event.target.value)}
-                                className="h-9 rounded-lg border border-zinc-300 bg-white px-2 text-zinc-950 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                            >
-                                <option value="10">10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </label>
-
-                        <button
-                            type="button"
-                            disabled={invoicePage.page <= 1}
-                            onClick={() => changePage(invoicePage.page - 1)}
-                            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Previous
-                        </button>
-                        <button
-                            type="button"
-                            disabled={invoicePage.page >= invoicePage.totalPages}
-                            onClick={() => changePage(invoicePage.page + 1)}
-                            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <div className="mt-6 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:w-[calc(50%-0.625rem)]">
                 {summary.map((item) => (
