@@ -15,14 +15,13 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
-func (repository *InvoiceRepository) SearchByNumber(ctx context.Context, number string, limit int) ([]*Invoice, error) {
-	number = strings.TrimSpace(number)
-	if number == "" {
-		return nil, fmt.Errorf("invoice number must not be empty")
-	}
+func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *string, customerID *string, limit int) ([]*Invoice, error) {
 	if limit < 1 || limit > 100 {
 		return nil, fmt.Errorf("limit must be between 1 and 100")
 	}
+
+	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
+	customerIDPattern := optionalLikePattern(customerID)
 
 	rows, err := repository.database.QueryContext(ctx, `
 		SELECT TOP (@limit)
@@ -44,10 +43,12 @@ func (repository *InvoiceRepository) SearchByNumber(ctx context.Context, number 
 			Sklic,
 			Storno
 		FROM [BIRO225].[dbo].[Racuni]
-		WHERE Stevilka LIKE @number ESCAPE '\'
+		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
+		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		ORDER BY Stevilka`,
 		sql.Named("limit", limit),
-		sql.Named("number", "%"+escapeLike(number)+"%"),
+		sql.Named("invoiceNumber", invoiceNumberPattern),
+		sql.Named("customerID", customerIDPattern),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("search invoices: %w", err)
@@ -90,6 +91,14 @@ func (repository *InvoiceRepository) SearchByNumber(ctx context.Context, number 
 		return nil, fmt.Errorf("read invoices: %w", err)
 	}
 	return invoices, nil
+}
+
+func optionalLikePattern(value *string) string {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return ""
+	}
+
+	return "%" + escapeLike(strings.TrimSpace(*value)) + "%"
 }
 
 func escapeLike(value string) string {

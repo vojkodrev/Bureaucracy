@@ -11,8 +11,8 @@ Open the GraphQL playground at <http://localhost:8080/> or send requests to
 `http://localhost:8080/graphql`.
 
 ```graphql
-query SearchInvoices($invoiceNumber: String!) {
-  searchInvoices(invoiceNumber: $invoiceNumber, limit: 20) {
+query SearchInvoices($invoiceNumber: String, $customerId: String) {
+  searchInvoices(invoiceNumber: $invoiceNumber, customerId: $customerId, limit: 20) {
     id
     invoiceNumber
     issueDate
@@ -34,6 +34,8 @@ Variables:
 }
 ```
 
-`invoiceNumber` performs a partial, case-insensitive search against the
-`BIRO225.dbo.Racuni.Stevilka` column. SQL Server controls case sensitivity via
-the database collation. Results default to 20 rows and are limited to 100.
+`invoiceNumber` and `customerId` perform partial searches against the
+`BIRO225.dbo.Racuni.Stevilka` and `SifraPartnerja` columns. SQL Server controls
+case sensitivity via the database collation. Both filters are optional; when
+neither is supplied, the API returns invoices up to the requested limit.
+Results default to 20 rows and are limited to 100.
