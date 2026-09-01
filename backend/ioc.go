@@ -6,7 +6,11 @@ import "go.uber.org/fx"
 // services here as the backend grows.
 func CoreProviders() fx.Option {
 	return fx.Options(
-		fx.Provide(NewConfig),
+		fx.Provide(NewAppConfig),
+		fx.Provide(NewDatabase),
+		fx.Provide(NewInvoiceRepository),
+		fx.Provide(NewResolver),
+		fx.Provide(NewGraphQLServer),
 		fx.Provide(NewApplication),
 	)
 }
@@ -14,7 +18,9 @@ func CoreProviders() fx.Option {
 // CoreInvocations wires lifecycle hooks and other application entry points.
 func CoreInvocations() fx.Option {
 	return fx.Options(
+		fx.Invoke(RegisterDatabaseLifecycle),
 		fx.Invoke(RegisterApplicationLifecycle),
+		fx.Invoke(RegisterGraphQLServerLifecycle),
 	)
 }
 

@@ -8,10 +8,10 @@ import (
 )
 
 type Application struct {
-	config *Config
+	config *AppConfig
 }
 
-func NewApplication(config *Config) *Application {
+func NewApplication(config *AppConfig) *Application {
 	return &Application{config: config}
 }
 

@@ -1,0 +1,25 @@
+scalar Time
+
+type Invoice {
+  id: Int!
+  invoiceNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  dueDate: Time
+  paymentDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  customerContact: String
+  currency: String
+  amount: Float
+  goodsAmount: Float
+  paidAmount: Float
+  paymentReference: String
+  cancelled: Boolean
+}
+
+type Query {
+  searchInvoices(invoiceNumber: String!, limit: Int = 20): [Invoice!]!
+}
