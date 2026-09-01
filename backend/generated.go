@@ -56,8 +56,16 @@ type ComplexityRoot struct {
 		ServiceDate      func(childComplexity int) int
 	}
 
+	InvoicePage struct {
+		Invoices   func(childComplexity int) int
+		Page       func(childComplexity int) int
+		PageSize   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+		TotalPages func(childComplexity int) int
+	}
+
 	Query struct {
-		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, limit *int) int
+		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) int
 	}
 }
 
@@ -66,7 +74,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type QueryResolver interface {
-	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, limit *int) ([]*Invoice, error)
+	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -190,6 +198,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Invoice.ServiceDate(childComplexity), true
 
+	case "InvoicePage.invoices":
+		if e.ComplexityRoot.InvoicePage.Invoices == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoicePage.Invoices(childComplexity), true
+	case "InvoicePage.page":
+		if e.ComplexityRoot.InvoicePage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoicePage.Page(childComplexity), true
+	case "InvoicePage.pageSize":
+		if e.ComplexityRoot.InvoicePage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoicePage.PageSize(childComplexity), true
+	case "InvoicePage.totalCount":
+		if e.ComplexityRoot.InvoicePage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoicePage.TotalCount(childComplexity), true
+	case "InvoicePage.totalPages":
+		if e.ComplexityRoot.InvoicePage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoicePage.TotalPages(childComplexity), true
+
 	case "Query.searchInvoices":
 		if e.ComplexityRoot.Query.SearchInvoices == nil {
 			break
@@ -200,7 +239,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["limit"].(*int)), true
+		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["page"].(*int), args["pageSize"].(*int)), true
 
 	}
 	return 0, false
@@ -326,6 +365,22 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_cancelled(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Invoice", field.Name)
+}
+
+func (ec *executionContext) childFields_InvoicePage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "invoices":
+		return ec.fieldContext_InvoicePage_invoices(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_InvoicePage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_InvoicePage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_InvoicePage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_InvoicePage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type InvoicePage", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -501,14 +556,22 @@ func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context,
 		return nil, err
 	}
 	args["issuedTo"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg5
+	args["page"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg6
 	return args, nil
 }
 
@@ -963,6 +1026,130 @@ func (ec *executionContext) fieldContext_Invoice_cancelled(_ context.Context, fi
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
+func (ec *executionContext) _InvoicePage_invoices(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoicePage_invoices(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Invoices, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*Invoice) graphql.Marshaler {
+			return ec.marshalNInvoice2ᚕᚖbureaucracyᚋbackendᚐInvoiceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoicePage_invoices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InvoicePage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Invoice(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InvoicePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoicePage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoicePage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoicePage_page(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoicePage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoicePage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoicePage_pageSize(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoicePage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoicePage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoicePage_totalPages(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoicePage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoicePage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -973,11 +1160,11 @@ func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["limit"].(*int))
+			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*Invoice) graphql.Marshaler {
-			return ec.marshalNInvoice2ᚕᚖbureaucracyᚋbackendᚐInvoiceᚄ(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *InvoicePage) graphql.Marshaler {
+			return ec.marshalNInvoicePage2ᚖbureaucracyᚋbackendᚐInvoicePage(ctx, selections, v)
 		},
 		true,
 		true,
@@ -990,7 +1177,7 @@ func (ec *executionContext) fieldContext_Query_searchInvoices(ctx context.Contex
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_Invoice(ctx, field)
+			return ec.childFields_InvoicePage(ctx, field)
 		},
 	}
 	defer func() {
@@ -2268,6 +2455,64 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var invoicePageImplementors = []string{"InvoicePage"}
+
+func (ec *executionContext) _InvoicePage(ctx context.Context, sel ast.SelectionSet, obj *InvoicePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invoicePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvoicePage")
+		case "invoices":
+			out.Values[i] = ec._InvoicePage_invoices(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._InvoicePage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._InvoicePage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._InvoicePage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._InvoicePage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2793,6 +3038,20 @@ func (ec *executionContext) marshalNInvoice2ᚖbureaucracyᚋbackendᚐInvoice(c
 		return graphql.Null
 	}
 	return ec._Invoice(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInvoicePage2bureaucracyᚋbackendᚐInvoicePage(ctx context.Context, sel ast.SelectionSet, v InvoicePage) graphql.Marshaler {
+	return ec._InvoicePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInvoicePage2ᚖbureaucracyᚋbackendᚐInvoicePage(ctx context.Context, sel ast.SelectionSet, v *InvoicePage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InvoicePage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

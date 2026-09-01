@@ -18,16 +18,26 @@ type SearchForm = {
     customerName: string
     from: string
     to: string
+    page: string
+    pageSize: string
+}
+
+type InvoicePage = {
+    invoices: Invoice[]
+    totalCount: number
+    page: number
+    pageSize: number
+    totalPages: number
 }
 
 type SearchInvoicesResponse = {
-    data?: { searchInvoices: Invoice[] }
+    data?: { searchInvoices: InvoicePage }
     errors?: { message: string }[]
 }
 
 type InvoiceSearchResult = {
     searchKey: string
-    invoices: Invoice[]
+    invoicePage: InvoicePage | null
     error: string | null
 }
 
@@ -38,7 +48,8 @@ const searchInvoicesQuery = `
         $customerName: String
         $issuedFrom: Time
         $issuedTo: Time
-        $limit: Int
+        $page: Int
+        $pageSize: Int
     ) {
         searchInvoices(
             invoiceNumber: $invoiceNumber
@@ -46,15 +57,22 @@ const searchInvoicesQuery = `
             customerName: $customerName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
-            limit: $limit
+            page: $page
+            pageSize: $pageSize
         ) {
-            invoiceNumber
-            customerCode
-            customerName
-            amount
-            issueDate
-            dueDate
-            paymentDate
+            invoices {
+                invoiceNumber
+                customerCode
+                customerName
+                amount
+                issueDate
+                dueDate
+                paymentDate
+            }
+            totalCount
+            page
+            pageSize
+            totalPages
         }
     }
 `
@@ -81,6 +99,8 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         customerName: searchParams.get('customerName') ?? '',
         from: searchParams.get('from') ?? '',
         to: searchParams.get('to') ?? '',
+        page: searchParams.get('page') ?? '1',
+        pageSize: searchParams.get('pageSize') ?? '20',
     }
 }
 
@@ -93,6 +113,11 @@ function optionalDate(value: string): string | null {
     return value === '' ? null : `${value}T00:00:00.000Z`
 }
 
+function positiveInteger(value: string, fallback: number): number {
+    const parsedValue = Number.parseInt(value, 10)
+    return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
+}
+
 function formatDate(value: string | null): string {
     return value ? dateFormatter.format(new Date(value)) : '—'
 }
@@ -103,11 +128,12 @@ function InvoiceSearchPage() {
     const searchKey = searchParams.toString()
     const [searchResult, setSearchResult] = useState<InvoiceSearchResult>({
         searchKey: '__initial__',
-        invoices: [],
+        invoicePage: null,
         error: null,
     })
     const isLoading = searchResult.searchKey !== searchKey
-    const invoices = isLoading ? emptyInvoices : searchResult.invoices
+    const invoicePage = isLoading ? null : searchResult.invoicePage
+    const invoices = invoicePage?.invoices ?? emptyInvoices
     const error = isLoading ? null : searchResult.error
 
     useEffect(() => {
@@ -124,7 +150,8 @@ function InvoiceSearchPage() {
                     customerName: optionalFilter(activeSearch.customerName),
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
-                    limit: 100,
+                    page: positiveInteger(activeSearch.page, 1),
+                    pageSize: Math.min(positiveInteger(activeSearch.pageSize, 20), 100),
                 },
             }),
             signal: abortController.signal,
@@ -141,7 +168,7 @@ function InvoiceSearchPage() {
 
                 setSearchResult({
                     searchKey,
-                    invoices: result.data?.searchInvoices ?? [],
+                    invoicePage: result.data?.searchInvoices ?? null,
                     error: null,
                 })
             })
@@ -151,7 +178,7 @@ function InvoiceSearchPage() {
                 }
                 setSearchResult({
                     searchKey,
-                    invoices: [],
+                    invoicePage: null,
                     error: requestError instanceof Error ? requestError.message : 'Invoice search failed',
                 })
             })
@@ -193,11 +220,27 @@ function InvoiceSearchPage() {
             customerName: String(formData.get('customerName') ?? '').trim(),
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
+            page: '1',
+            pageSize: activeSearch.pageSize,
         })
     }
 
     function clearSearch() {
         setSearchParams({})
+    }
+
+    function changePage(page: number) {
+        const nextSearchParams = new URLSearchParams(searchParams)
+        nextSearchParams.set('page', String(page))
+        nextSearchParams.set('pageSize', String(invoicePage?.pageSize ?? 20))
+        setSearchParams(nextSearchParams)
+    }
+
+    function changePageSize(pageSize: string) {
+        const nextSearchParams = new URLSearchParams(searchParams)
+        nextSearchParams.set('page', '1')
+        nextSearchParams.set('pageSize', pageSize)
+        setSearchParams(nextSearchParams)
     }
 
     return (
@@ -341,6 +384,48 @@ function InvoiceSearchPage() {
                     ))}
                 </div>
             </div>
+
+            {invoicePage && (
+                <div className="mt-4 flex flex-col gap-3 text-sm text-zinc-600 sm:flex-row sm:items-center sm:justify-between">
+                    <p>
+                        Page {invoicePage.page} of {Math.max(invoicePage.totalPages, 1)} ·{' '}
+                        {invoicePage.totalCount} invoices
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2">
+                            Page size
+                            <select
+                                value={String(invoicePage.pageSize)}
+                                onChange={(event) => changePageSize(event.target.value)}
+                                className="h-9 rounded-lg border border-zinc-300 bg-white px-2 text-zinc-950 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
+                            >
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
+
+                        <button
+                            type="button"
+                            disabled={invoicePage.page <= 1}
+                            onClick={() => changePage(invoicePage.page - 1)}
+                            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            type="button"
+                            disabled={invoicePage.page >= invoicePage.totalPages}
+                            onClick={() => changePage(invoicePage.page + 1)}
+                            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="mt-6 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:w-[calc(50%-0.625rem)]">
                 {summary.map((item) => (

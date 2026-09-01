@@ -21,3 +21,11 @@ type Invoice struct {
 	PaymentReference *string    `json:"paymentReference"`
 	Cancelled        *bool      `json:"cancelled"`
 }
+
+type InvoicePage struct {
+	Invoices   []*Invoice `json:"invoices"`
+	TotalCount int        `json:"totalCount"`
+	Page       int        `json:"page"`
+	PageSize   int        `json:"pageSize"`
+	TotalPages int        `json:"totalPages"`
+}
