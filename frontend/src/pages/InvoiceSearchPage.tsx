@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 type Invoice = {
@@ -50,6 +50,7 @@ const searchInvoicesQuery = `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL ?? 'http://localhost:8080/graphql'
 const emptyInvoices: Invoice[] = []
+const invoiceGridColumns = '1fr minmax(0, 2.4fr) 0.8fr 1fr 1fr 1fr'
 
 const currencyFormatter = new Intl.NumberFormat('en-IE', {
     style: 'currency',
@@ -164,7 +165,7 @@ function InvoiceSearchPage() {
         ]
     }, [invoices])
 
-    function submitSearch(event: FormEvent<HTMLFormElement>) {
+    function submitSearch(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
         setSearchParams({
@@ -252,7 +253,10 @@ function InvoiceSearchPage() {
 
             <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div className="min-w-225">
-                    <div className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-3 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+                    <div
+                        className="grid gap-4 border-b border-zinc-200 bg-zinc-50 px-3 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase"
+                        style={{ gridTemplateColumns: invoiceGridColumns }}
+                    >
                         <span>Invoice number</span>
                         <span>Customer</span>
                         <span>Amount</span>
@@ -270,10 +274,22 @@ function InvoiceSearchPage() {
                         <Link
                             key={invoice.invoiceNumber}
                             to={`/invoice/${invoice.invoiceNumber}`}
-                            className="grid grid-cols-[1.2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 border-b border-zinc-100 px-3 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
+                            className="grid gap-4 border-b border-zinc-100 px-3 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
+                            style={{ gridTemplateColumns: invoiceGridColumns }}
                         >
                             <span className="font-semibold text-zinc-950">{invoice.invoiceNumber}</span>
-                            <span>{invoice.customerName ?? invoice.customerCode ?? '—'}</span>
+                            <span
+                                className="min-w-0"
+                                style={{
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                                title={invoice.customerName ?? invoice.customerCode ?? '—'}
+                            >
+                                {invoice.customerName ?? invoice.customerCode ?? '—'}
+                            </span>
                             <span className="font-medium">{currencyFormatter.format(invoice.amount ?? 0)}</span>
                             <span className="text-zinc-600">{formatDate(invoice.issueDate)}</span>
                             <span className="text-zinc-600">{formatDate(invoice.dueDate)}</span>
