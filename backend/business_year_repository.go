@@ -40,7 +40,7 @@ func (repository *BusinessYearRepository) List(
 			LetoPoslovanja,
 			IzhajaIz
 		FROM [Birokrat].[dbo].[PoslovnaLeta]
-		ORDER BY LetoPoslovanja DESC, Oznaka DESC
+		ORDER BY Oznaka
 		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
 		sql.Named("offset", (page-1)*pageSize),
 		sql.Named("pageSize", pageSize),

@@ -1,4 +1,4 @@
-import { FileSearch } from 'lucide-react'
+import { CalendarRange, FileSearch } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
     Breadcrumb,
@@ -22,10 +22,14 @@ import {
 } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
+const breadcrumbLabels: Record<string, string> = {
+    '/business-years': 'Business years',
+    '/invoices/search': 'Invoice search',
+}
+
 function LayoutPage() {
     const { pathname } = useLocation()
-    const breadcrumbLabel =
-        pathname === '/invoices/search' ? 'Invoice search' : ''
+    const breadcrumbLabel = breadcrumbLabels[pathname]
 
     return (
         <TooltipProvider>
@@ -69,6 +73,20 @@ function LayoutPage() {
                                         >
                                             <FileSearch />
                                             <span>Invoice search</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={
+                                                pathname === '/business-years'
+                                            }
+                                            tooltip="Business years"
+                                            render={
+                                                <NavLink to="/business-years" />
+                                            }
+                                        >
+                                            <CalendarRange />
+                                            <span>Business years</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </SidebarMenu>
