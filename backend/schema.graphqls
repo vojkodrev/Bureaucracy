@@ -50,6 +50,7 @@ type Query {
   ): BusinessYearPage!
 
   searchInvoices(
+    businessYear: String!
     invoiceNumber: String
     customerId: String
     customerName: String

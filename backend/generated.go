@@ -81,7 +81,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		BusinessYears  func(childComplexity int, page *int, pageSize *int) int
-		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) int
+		SearchInvoices func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) int
 	}
 }
 
@@ -91,7 +91,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
-	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error)
+	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -324,7 +324,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["page"].(*int), args["pageSize"].(*int)), true
 
 	}
 	return 0, false
@@ -653,62 +653,70 @@ func (ec *executionContext) field_Query_businessYears_args(ctx context.Context, 
 func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumber",
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumber",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["invoiceNumber"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+	args["invoiceNumber"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerId"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+	args["customerId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerName"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+	args["customerName"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedFrom"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+	args["issuedFrom"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedTo"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["issuedTo"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg5
-	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg6
+	args["pageSize"] = arg7
 	return args, nil
 }
 
@@ -1557,7 +1565,7 @@ func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *InvoicePage) graphql.Marshaler {

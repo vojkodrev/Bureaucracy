@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { getSelectedBusinessYear } from '@/lib/business-year'
 import {
     Table,
     TableBody,
@@ -57,6 +58,7 @@ type InvoiceSearchResult = {
 
 const searchInvoicesQuery = `
     query SearchInvoices(
+        $businessYear: String!
         $invoiceNumber: String
         $customerId: String
         $customerName: String
@@ -66,6 +68,7 @@ const searchInvoicesQuery = `
         $pageSize: Int
     ) {
         searchInvoices(
+            businessYear: $businessYear
             invoiceNumber: $invoiceNumber
             customerId: $customerId
             customerName: $customerName
@@ -190,6 +193,7 @@ function InvoiceSearchPage() {
             body: JSON.stringify({
                 query: searchInvoicesQuery,
                 variables: {
+                    businessYear: getSelectedBusinessYear(),
                     invoiceNumber: optionalFilter(activeSearch.invoiceNumber),
                     customerId: optionalFilter(activeSearch.customerId),
                     customerName: optionalFilter(activeSearch.customerName),
