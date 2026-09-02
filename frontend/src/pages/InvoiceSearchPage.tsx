@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 
 function InvoiceSearchPage() {
     const [invoiceDateFrom, setInvoiceDateFrom] = useState<Date>()
@@ -84,6 +92,71 @@ function InvoiceSearchPage() {
                     </CardFooter>
                 </Card>
             </form>
+
+            <div className="mt-8">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Invoice number</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Invoice date</TableHead>
+                            <TableHead>Due date</TableHead>
+                            <TableHead>Payment date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell className="font-medium">
+                                INV-2026-0012
+                            </TableCell>
+                            <TableCell>Acme d.o.o.</TableCell>
+                            <TableCell className="text-right">
+                                €1,240.00
+                            </TableCell>
+                            <TableCell>Aug 1, 2026</TableCell>
+                            <TableCell>Aug 31, 2026</TableCell>
+                            <TableCell>Aug 28, 2026</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="font-medium">
+                                INV-2026-0013
+                            </TableCell>
+                            <TableCell>Northstar Ltd.</TableCell>
+                            <TableCell className="text-right">
+                                €875.50
+                            </TableCell>
+                            <TableCell>Aug 5, 2026</TableCell>
+                            <TableCell>Sep 4, 2026</TableCell>
+                            <TableCell>—</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="font-medium">
+                                INV-2026-0014
+                            </TableCell>
+                            <TableCell>Studio Triglav</TableCell>
+                            <TableCell className="text-right">
+                                €2,310.75
+                            </TableCell>
+                            <TableCell>Aug 12, 2026</TableCell>
+                            <TableCell>Sep 11, 2026</TableCell>
+                            <TableCell>Sep 1, 2026</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="font-medium">
+                                INV-2026-0015
+                            </TableCell>
+                            <TableCell>Alpine Systems</TableCell>
+                            <TableCell className="text-right">
+                                €490.00
+                            </TableCell>
+                            <TableCell>Aug 18, 2026</TableCell>
+                            <TableCell>Sep 17, 2026</TableCell>
+                            <TableCell>—</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
 }
