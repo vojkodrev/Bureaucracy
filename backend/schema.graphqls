@@ -1,5 +1,20 @@
 scalar Time
 
+type BusinessYear {
+  code: String
+  description: String
+  year: Int
+  derivedFrom: String
+}
+
+type BusinessYearPage {
+  businessYears: [BusinessYear!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type Invoice {
   id: Int!
   invoiceNumber: String!
@@ -29,6 +44,11 @@ type InvoicePage {
 }
 
 type Query {
+  businessYears(
+    page: Int = 1
+    pageSize: Int = 20
+  ): BusinessYearPage!
+
   searchInvoices(
     invoiceNumber: String
     customerId: String

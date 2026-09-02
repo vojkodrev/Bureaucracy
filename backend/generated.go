@@ -36,6 +36,21 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	BusinessYear struct {
+		Code        func(childComplexity int) int
+		DerivedFrom func(childComplexity int) int
+		Description func(childComplexity int) int
+		Year        func(childComplexity int) int
+	}
+
+	BusinessYearPage struct {
+		BusinessYears func(childComplexity int) int
+		Page          func(childComplexity int) int
+		PageSize      func(childComplexity int) int
+		TotalCount    func(childComplexity int) int
+		TotalPages    func(childComplexity int) int
+	}
+
 	Invoice struct {
 		Amount           func(childComplexity int) int
 		Cancelled        func(childComplexity int) int
@@ -65,6 +80,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		BusinessYears  func(childComplexity int, page *int, pageSize *int) int
 		SearchInvoices func(childComplexity int, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) int
 	}
 }
@@ -74,6 +90,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type QueryResolver interface {
+	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
 	SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error)
 }
 
@@ -94,6 +111,62 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
+
+	case "BusinessYear.code":
+		if e.ComplexityRoot.BusinessYear.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYear.Code(childComplexity), true
+	case "BusinessYear.derivedFrom":
+		if e.ComplexityRoot.BusinessYear.DerivedFrom == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYear.DerivedFrom(childComplexity), true
+	case "BusinessYear.description":
+		if e.ComplexityRoot.BusinessYear.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYear.Description(childComplexity), true
+	case "BusinessYear.year":
+		if e.ComplexityRoot.BusinessYear.Year == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYear.Year(childComplexity), true
+
+	case "BusinessYearPage.businessYears":
+		if e.ComplexityRoot.BusinessYearPage.BusinessYears == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYearPage.BusinessYears(childComplexity), true
+	case "BusinessYearPage.page":
+		if e.ComplexityRoot.BusinessYearPage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYearPage.Page(childComplexity), true
+	case "BusinessYearPage.pageSize":
+		if e.ComplexityRoot.BusinessYearPage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYearPage.PageSize(childComplexity), true
+	case "BusinessYearPage.totalCount":
+		if e.ComplexityRoot.BusinessYearPage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYearPage.TotalCount(childComplexity), true
+	case "BusinessYearPage.totalPages":
+		if e.ComplexityRoot.BusinessYearPage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BusinessYearPage.TotalPages(childComplexity), true
 
 	case "Invoice.amount":
 		if e.ComplexityRoot.Invoice.Amount == nil {
@@ -229,6 +302,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.InvoicePage.TotalPages(childComplexity), true
 
+	case "Query.businessYears":
+		if e.ComplexityRoot.Query.BusinessYears == nil {
+			break
+		}
+
+		args, err := ec.field_Query_businessYears_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BusinessYears(childComplexity, args["page"].(*int), args["pageSize"].(*int)), true
+
 	case "Query.searchInvoices":
 		if e.ComplexityRoot.Query.SearchInvoices == nil {
 			break
@@ -326,6 +411,36 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+
+func (ec *executionContext) childFields_BusinessYear(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "code":
+		return ec.fieldContext_BusinessYear_code(ctx, field)
+	case "description":
+		return ec.fieldContext_BusinessYear_description(ctx, field)
+	case "year":
+		return ec.fieldContext_BusinessYear_year(ctx, field)
+	case "derivedFrom":
+		return ec.fieldContext_BusinessYear_derivedFrom(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BusinessYear", field.Name)
+}
+
+func (ec *executionContext) childFields_BusinessYearPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "businessYears":
+		return ec.fieldContext_BusinessYearPage_businessYears(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_BusinessYearPage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_BusinessYearPage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_BusinessYearPage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_BusinessYearPage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BusinessYearPage", field.Name)
+}
 
 func (ec *executionContext) childFields_Invoice(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
@@ -513,6 +628,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_businessYears_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -634,6 +771,222 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _BusinessYear_code(ctx context.Context, field graphql.CollectedField, obj *BusinessYear) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYear_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYear_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYear", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYear_description(ctx context.Context, field graphql.CollectedField, obj *BusinessYear) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYear_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYear_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYear", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYear_year(ctx context.Context, field graphql.CollectedField, obj *BusinessYear) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYear_year(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Year, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *int) graphql.Marshaler {
+			return ec.marshalOInt2ᚖint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYear_year(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYear", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYear_derivedFrom(ctx context.Context, field graphql.CollectedField, obj *BusinessYear) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYear_derivedFrom(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DerivedFrom, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYear_derivedFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYear", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYearPage_businessYears(ctx context.Context, field graphql.CollectedField, obj *BusinessYearPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYearPage_businessYears(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BusinessYears, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*BusinessYear) graphql.Marshaler {
+			return ec.marshalNBusinessYear2ᚕᚖbureaucracyᚋbackendᚐBusinessYearᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYearPage_businessYears(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BusinessYearPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessYear(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BusinessYearPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *BusinessYearPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYearPage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYearPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYearPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYearPage_page(ctx context.Context, field graphql.CollectedField, obj *BusinessYearPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYearPage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYearPage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYearPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYearPage_pageSize(ctx context.Context, field graphql.CollectedField, obj *BusinessYearPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYearPage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYearPage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYearPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BusinessYearPage_totalPages(ctx context.Context, field graphql.CollectedField, obj *BusinessYearPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BusinessYearPage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BusinessYearPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BusinessYearPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
 
 func (ec *executionContext) _Invoice_id(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -1148,6 +1501,50 @@ func (ec *executionContext) _InvoicePage_totalPages(ctx context.Context, field g
 }
 func (ec *executionContext) fieldContext_InvoicePage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Query_businessYears(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_businessYears(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BusinessYears(ctx, fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *BusinessYearPage) graphql.Marshaler {
+			return ec.marshalNBusinessYearPage2ᚖbureaucracyᚋbackendᚐBusinessYearPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_businessYears(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessYearPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_businessYears_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2337,6 +2734,117 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** object.gotpl ****************************
 
+var businessYearImplementors = []string{"BusinessYear"}
+
+func (ec *executionContext) _BusinessYear(ctx context.Context, sel ast.SelectionSet, obj *BusinessYear) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, businessYearImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BusinessYear")
+		case "code":
+			out.Values[i] = ec._BusinessYear_code(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._BusinessYear_description(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "year":
+			out.Values[i] = ec._BusinessYear_year(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "derivedFrom":
+			out.Values[i] = ec._BusinessYear_derivedFrom(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var businessYearPageImplementors = []string{"BusinessYearPage"}
+
+func (ec *executionContext) _BusinessYearPage(ctx context.Context, sel ast.SelectionSet, obj *BusinessYearPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, businessYearPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BusinessYearPage")
+		case "businessYears":
+			out.Values[i] = ec._BusinessYearPage_businessYears(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._BusinessYearPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._BusinessYearPage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._BusinessYearPage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._BusinessYearPage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var invoiceImplementors = []string{"Invoice"}
 
 func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, obj *Invoice) graphql.Marshaler {
@@ -2533,6 +3041,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "businessYears":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_businessYears(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "searchInvoices":
 			field := field
 
@@ -2996,6 +3526,46 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNBusinessYear2ᚕᚖbureaucracyᚋbackendᚐBusinessYearᚄ(ctx context.Context, sel ast.SelectionSet, v []*BusinessYear) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBusinessYear2ᚖbureaucracyᚋbackendᚐBusinessYear(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBusinessYear2ᚖbureaucracyᚋbackendᚐBusinessYear(ctx context.Context, sel ast.SelectionSet, v *BusinessYear) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BusinessYear(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBusinessYearPage2bureaucracyᚋbackendᚐBusinessYearPage(ctx context.Context, sel ast.SelectionSet, v BusinessYearPage) graphql.Marshaler {
+	return ec._BusinessYearPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBusinessYearPage2ᚖbureaucracyᚋbackendᚐBusinessYearPage(ctx context.Context, sel ast.SelectionSet, v *BusinessYearPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BusinessYearPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
