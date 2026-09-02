@@ -157,6 +157,44 @@ function InvoiceSearchPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            <div className="mt-8 max-w-sm">
+                <h2 className="mb-2 text-sm font-medium">Summary</h2>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead className="text-right">Value</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>Total amount</TableCell>
+                            <TableCell className="text-right font-medium">
+                                €4,916.25
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Unpaid</TableCell>
+                            <TableCell className="text-right font-medium">
+                                €1,365.50
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Past due</TableCell>
+                            <TableCell className="text-right font-medium">
+                                €0.00
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Paid</TableCell>
+                            <TableCell className="text-right font-medium">
+                                €3,550.75
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
         </div>
     )
 }
