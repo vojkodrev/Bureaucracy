@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import DatePickerField from '@/components/DatePickerField'
+import Pager from '@/components/Pager'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -365,31 +365,14 @@ function InvoiceSearchPage() {
 
             <div className="mt-8">
                 {invoicePage && (
-                    <div className="mb-2 flex items-center justify-end gap-2">
-                        <span className="text-sm text-muted-foreground tabular-nums">
-                            {firstInvoice}–{lastInvoice} of {invoicePage.totalCount}
-                        </span>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Previous page"
-                            disabled={invoicePage.page <= 1}
-                            onClick={() => changePage(invoicePage.page - 1)}
-                        >
-                            <ChevronLeft />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon-sm"
-                            aria-label="Next page"
-                            disabled={invoicePage.page >= invoicePage.totalPages}
-                            onClick={() => changePage(invoicePage.page + 1)}
-                        >
-                            <ChevronRight />
-                        </Button>
-                    </div>
+                    <Pager
+                        firstItem={firstInvoice}
+                        lastItem={lastInvoice}
+                        page={invoicePage.page}
+                        totalItems={invoicePage.totalCount}
+                        totalPages={invoicePage.totalPages}
+                        onPageChange={changePage}
+                    />
                 )}
                 <Table>
                     <TableHeader>
