@@ -57,6 +57,7 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const defaultPage = 1
 const defaultPageSize = 20
 const maximumPageSize = 100
+const businessYearStorageKey = 'businessYear'
 
 function positiveInteger(value: string | null, fallback: number): number {
     const parsedValue = Number.parseInt(value ?? '', 10)
@@ -81,6 +82,9 @@ function BusinessYearsPage() {
         businessYearPage: null,
         error: null,
     })
+    const [selectedBusinessYear, setSelectedBusinessYear] = useState<string | null>(
+        () => localStorage.getItem(businessYearStorageKey),
+    )
     const isLoading = result.requestKey !== requestKey
     const businessYearPage = isLoading ? null : result.businessYearPage
     const businessYears = businessYearPage?.businessYears ?? []
@@ -163,8 +167,35 @@ function BusinessYearsPage() {
         })
     }
 
+    function selectBusinessYear(businessYear: BusinessYear) {
+        if (!businessYear.code) return
+
+        localStorage.setItem(businessYearStorageKey, businessYear.code)
+        setSelectedBusinessYear(businessYear.code)
+    }
+
     return (
         <div className="p-4">
+            <div className="mb-8 max-w-sm">
+                <h2 className="mb-2 text-sm font-medium">Summary</h2>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Value</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>Selected business year</TableCell>
+                            <TableCell className="font-medium">
+                                {selectedBusinessYear ?? 'Not selected'}
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </div>
+
             {businessYearPage && (
                 <Pager
                     firstItem={firstBusinessYear}
@@ -221,6 +252,25 @@ function BusinessYearsPage() {
                         businessYears.map((businessYear, index) => (
                             <TableRow
                                 key={`${businessYear.code ?? 'business-year'}-${businessYear.year ?? index}`}
+                                aria-selected={
+                                    businessYear.code === selectedBusinessYear
+                                }
+                                className={
+                                    businessYear.code
+                                        ? 'cursor-pointer aria-selected:bg-muted'
+                                        : undefined
+                                }
+                                tabIndex={businessYear.code ? 0 : undefined}
+                                onClick={() => selectBusinessYear(businessYear)}
+                                onKeyDown={(event) => {
+                                    if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                    ) {
+                                        event.preventDefault()
+                                        selectBusinessYear(businessYear)
+                                    }
+                                }}
                             >
                                 <TableCell className="font-medium">
                                     {businessYear.code ?? '—'}
