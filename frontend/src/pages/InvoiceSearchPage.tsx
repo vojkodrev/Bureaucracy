@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import DatePickerField from '@/components/DatePickerField'
+import Pager from '@/components/Pager'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 
 type Invoice = {
     invoiceNumber: string
@@ -77,9 +91,10 @@ const searchInvoicesQuery = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL ?? 'http://localhost:8080/graphql'
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyInvoices: Invoice[] = []
-const invoiceGridColumns = '1fr minmax(0, 2.4fr) 0.8fr 1fr 1fr 1fr'
+const defaultPageSize = 20
+const maximumPageSize = 100
 
 const currencyFormatter = new Intl.NumberFormat('en-IE', {
     style: 'currency',
@@ -100,7 +115,8 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         from: searchParams.get('from') ?? '',
         to: searchParams.get('to') ?? '',
         page: searchParams.get('page') ?? '1',
-        pageSize: searchParams.get('pageSize') ?? '20',
+        pageSize:
+            searchParams.get('pageSize') ?? String(defaultPageSize),
     }
 }
 
@@ -115,7 +131,15 @@ function optionalDate(value: string): string | null {
 
 function positiveInteger(value: string, fallback: number): number {
     const parsedValue = Number.parseInt(value, 10)
-    return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
+    return Number.isInteger(parsedValue) && parsedValue > 0
+        ? parsedValue
+        : fallback
+}
+
+function dateFromSearchValue(value: string): Date | undefined {
+    if (!value) return undefined
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day)
 }
 
 function formatDate(value: string | null): string {
@@ -124,8 +148,17 @@ function formatDate(value: string | null): string {
 
 function InvoiceSearchPage() {
     const [searchParams, setSearchParams] = useSearchParams()
-    const activeSearch = useMemo(() => searchFormFromParams(searchParams), [searchParams])
+    const activeSearch = useMemo(
+        () => searchFormFromParams(searchParams),
+        [searchParams],
+    )
     const searchKey = searchParams.toString()
+    const [invoiceDateFrom, setInvoiceDateFrom] = useState(() =>
+        dateFromSearchValue(activeSearch.from),
+    )
+    const [invoiceDateTo, setInvoiceDateTo] = useState(() =>
+        dateFromSearchValue(activeSearch.to),
+    )
     const [searchResult, setSearchResult] = useState<InvoiceSearchResult>({
         searchKey: '__initial__',
         invoicePage: null,
@@ -135,12 +168,18 @@ function InvoiceSearchPage() {
     const invoicePage = isLoading ? null : searchResult.invoicePage
     const invoices = invoicePage?.invoices ?? emptyInvoices
     const error = isLoading ? null : searchResult.error
-    const firstInvoice = invoicePage && invoicePage.totalCount > 0
-        ? (invoicePage.page - 1) * invoicePage.pageSize + 1
-        : 0
+    const firstInvoice =
+        invoicePage && invoicePage.totalCount > 0
+            ? (invoicePage.page - 1) * invoicePage.pageSize + 1
+            : 0
     const lastInvoice = invoicePage
         ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
         : 0
+
+    useEffect(() => {
+        setInvoiceDateFrom(dateFromSearchValue(activeSearch.from))
+        setInvoiceDateTo(dateFromSearchValue(activeSearch.to))
+    }, [activeSearch.from, activeSearch.to])
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -157,7 +196,10 @@ function InvoiceSearchPage() {
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
                     page: positiveInteger(activeSearch.page, 1),
-                    pageSize: Math.min(positiveInteger(activeSearch.pageSize, 20), 100),
+                    pageSize: Math.min(
+                        positiveInteger(activeSearch.pageSize, defaultPageSize),
+                        maximumPageSize,
+                    ),
                 },
             }),
             signal: abortController.signal,
@@ -182,10 +224,14 @@ function InvoiceSearchPage() {
                 if (requestError instanceof DOMException && requestError.name === 'AbortError') {
                     return
                 }
+
                 setSearchResult({
                     searchKey,
                     invoicePage: null,
-                    error: requestError instanceof Error ? requestError.message : 'Invoice search failed',
+                    error:
+                        requestError instanceof Error
+                            ? requestError.message
+                            : 'Invoice search failed',
                 })
             })
 
@@ -200,21 +246,21 @@ function InvoiceSearchPage() {
         )
         const paidInvoices = invoices.filter((invoice) => invoice.paymentDate)
 
-        return [
-            { label: 'Total amount', amount: total },
-            {
-                label: 'Unpaid',
-                amount: unpaidInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
-            },
-            {
-                label: 'Past due',
-                amount: pastDueInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
-            },
-            {
-                label: 'Paid',
-                amount: paidInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
-            },
-        ]
+        return {
+            total,
+            unpaid: unpaidInvoices.reduce(
+                (sum, invoice) => sum + (invoice.amount ?? 0),
+                0,
+            ),
+            pastDue: pastDueInvoices.reduce(
+                (sum, invoice) => sum + (invoice.amount ?? 0),
+                0,
+            ),
+            paid: paidInvoices.reduce(
+                (sum, invoice) => sum + (invoice.amount ?? 0),
+                0,
+            ),
+        }
     }, [invoices])
 
     function submitSearch(event: SubmitEvent<HTMLFormElement>) {
@@ -232,189 +278,195 @@ function InvoiceSearchPage() {
     }
 
     function clearSearch() {
+        setInvoiceDateFrom(undefined)
+        setInvoiceDateTo(undefined)
         setSearchParams({})
     }
 
     function changePage(page: number) {
         const nextSearchParams = new URLSearchParams(searchParams)
         nextSearchParams.set('page', String(page))
-        nextSearchParams.set('pageSize', String(invoicePage?.pageSize ?? 20))
+        nextSearchParams.set(
+            'pageSize',
+            String(invoicePage?.pageSize ?? defaultPageSize),
+        )
         setSearchParams(nextSearchParams)
     }
 
     return (
-        <section>
-            <nav aria-label="Breadcrumb" className="text-sm font-medium text-zinc-500">
-                <span className="text-zinc-700">Invoices</span>
-            </nav>
-
+        <div className="p-4">
             <form
-                key={searchParams.toString()}
-                className="mt-6 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+                key={searchKey}
+                className="max-w-2xl"
                 onSubmit={submitSearch}
+                onReset={clearSearch}
             >
-                <div className="grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700 md:col-span-2 md:w-[calc(50%-0.625rem)]">
-                        Invoice number
-                        <input
-                            type="search"
-                            name="invoiceNumber"
-                            defaultValue={activeSearch.invoiceNumber}
-                            placeholder="e.g. 123"
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                        />
-                    </label>
+                <Card>
+                    <CardContent>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
+                                <Input
+                                    id="invoice-number"
+                                    type="search"
+                                    name="invoiceNumber"
+                                    defaultValue={activeSearch.invoiceNumber}
+                                    autoComplete="off"
+                                />
+                            </Field>
 
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
-                        Customer ID
-                        <input
-                            type="search"
-                            name="customerId"
-                            defaultValue={activeSearch.customerId}
-                            placeholder="e.g. C-1001"
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                        />
-                    </label>
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <Field>
+                                    <FieldLabel htmlFor="customer-id">Customer ID</FieldLabel>
+                                    <Input
+                                        id="customer-id"
+                                        type="search"
+                                        name="customerId"
+                                        defaultValue={activeSearch.customerId}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
+                                    <Input
+                                        id="customer-name"
+                                        type="search"
+                                        name="customerName"
+                                        defaultValue={activeSearch.customerName}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+                            </div>
 
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
-                        Customer
-                        <input
-                            type="search"
-                            name="customerName"
-                            defaultValue={activeSearch.customerName}
-                            placeholder="Customer name"
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                        />
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
-                        Invoice date from
-                        <input
-                            type="date"
-                            name="from"
-                            defaultValue={activeSearch.from}
-                            max={activeSearch.to || undefined}
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                        />
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-medium text-zinc-700">
-                        Invoice date to
-                        <input
-                            type="date"
-                            name="to"
-                            defaultValue={activeSearch.to}
-                            min={activeSearch.from || undefined}
-                            className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-zinc-950 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
-                        />
-                    </label>
-                </div>
-
-                <div className="mt-6 flex justify-end gap-3 border-t border-zinc-100 pt-5">
-                    <button
-                        type="button"
-                        onClick={clearSearch}
-                        className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                    >
-                        Clear
-                    </button>
-                    <button
-                        type="submit"
-                        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                    >
-                        Search
-                    </button>
-                </div>
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <DatePickerField
+                                    id="invoice-date-from"
+                                    label="Invoice date from"
+                                    name="from"
+                                    date={invoiceDateFrom}
+                                    onSelect={setInvoiceDateFrom}
+                                />
+                                <DatePickerField
+                                    id="invoice-date-to"
+                                    label="Invoice date to"
+                                    name="to"
+                                    date={invoiceDateTo}
+                                    onSelect={setInvoiceDateTo}
+                                />
+                            </div>
+                        </FieldGroup>
+                    </CardContent>
+                    <CardFooter className="gap-2">
+                        <Button type="submit">Search</Button>
+                        <Button type="reset" variant="outline">Clear</Button>
+                    </CardFooter>
+                </Card>
             </form>
 
-            {invoicePage && (
-                <div className="mt-3 flex items-center justify-end gap-2 text-sm text-zinc-600">
-                    <span className="mr-2 tabular-nums">
-                        {firstInvoice}–{lastInvoice} of {invoicePage.totalCount}
-                    </span>
-                    <button
-                        type="button"
-                        disabled={invoicePage.page <= 1}
-                        onClick={() => changePage(invoicePage.page - 1)}
-                        aria-label="Previous page"
-                        title="Previous page"
-                        className="grid size-10 place-items-center rounded-full text-zinc-700 transition hover:bg-zinc-200/70 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-transparent"
-                    >
-                        <span aria-hidden="true">&lt;</span>
-                    </button>
-                    <button
-                        type="button"
-                        disabled={invoicePage.page >= invoicePage.totalPages}
-                        onClick={() => changePage(invoicePage.page + 1)}
-                        aria-label="Next page"
-                        title="Next page"
-                        className="grid size-10 place-items-center rounded-full text-zinc-700 transition hover:bg-zinc-200/70 disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-transparent"
-                    >
-                        <span aria-hidden="true">&gt;</span>
-                    </button>
-                </div>
-            )}
-
-            <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
-                <div className="min-w-225">
-                    <div
-                        className="grid gap-4 border-b border-zinc-200 bg-zinc-50 px-3 py-3 text-xs font-semibold tracking-wide text-zinc-500 uppercase"
-                        style={{ gridTemplateColumns: invoiceGridColumns }}
-                    >
-                        <span>Invoice number</span>
-                        <span>Customer</span>
-                        <span>Amount</span>
-                        <span>Invoice date</span>
-                        <span>Due date</span>
-                        <span>Payment date</span>
-                    </div>
-
-                    {isLoading && <p className="px-3 py-6 text-sm text-zinc-500">Loading invoices…</p>}
-                    {error && <p className="px-3 py-6 text-sm text-red-700">{error}</p>}
-                    {!isLoading && !error && invoices.length === 0 && (
-                        <p className="px-3 py-6 text-sm text-zinc-500">No invoices found.</p>
-                    )}
-                    {!isLoading && !error && invoices.map((invoice) => (
-                        <Link
-                            key={invoice.invoiceNumber}
-                            to={`/invoice/${invoice.invoiceNumber}`}
-                            className="grid gap-4 border-b border-zinc-100 px-3 py-4 text-sm transition last:border-b-0 hover:bg-zinc-50"
-                            style={{ gridTemplateColumns: invoiceGridColumns }}
-                        >
-                            <span className="font-semibold text-zinc-950">{invoice.invoiceNumber}</span>
-                            <span
-                                className="min-w-0"
-                                style={{
-                                    display: 'block',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                                title={invoice.customerName ?? invoice.customerCode ?? '—'}
-                            >
-                                {invoice.customerName ?? invoice.customerCode ?? '—'}
-                            </span>
-                            <span className="font-medium">{currencyFormatter.format(invoice.amount ?? 0)}</span>
-                            <span className="text-zinc-600">{formatDate(invoice.issueDate)}</span>
-                            <span className="text-zinc-600">{formatDate(invoice.dueDate)}</span>
-                            <span className="text-zinc-600">{formatDate(invoice.paymentDate)}</span>
-                        </Link>
-                    ))}
-                </div>
+            <div className="mt-8">
+                {invoicePage && (
+                    <Pager
+                        firstItem={firstInvoice}
+                        lastItem={lastInvoice}
+                        page={invoicePage.page}
+                        totalItems={invoicePage.totalCount}
+                        totalPages={invoicePage.totalPages}
+                        onPageChange={changePage}
+                    />
+                )}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Invoice number</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Invoice date</TableHead>
+                            <TableHead>Due date</TableHead>
+                            <TableHead>Payment date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    Loading invoices…
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {error && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-destructive">
+                                    {error}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && !error && invoices.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    No invoices found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading &&
+                            !error &&
+                            invoices.map((invoice) => (
+                                <TableRow key={invoice.invoiceNumber}>
+                                    <TableCell className="font-medium">
+                                        {invoice.invoiceNumber}
+                                    </TableCell>
+                                    <TableCell>
+                                        {invoice.customerName ?? invoice.customerCode ?? '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {currencyFormatter.format(invoice.amount ?? 0)}
+                                    </TableCell>
+                                    <TableCell>{formatDate(invoice.issueDate)}</TableCell>
+                                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                                    <TableCell>{formatDate(invoice.paymentDate)}</TableCell>
+                                </TableRow>
+                            ))}
+                    </TableBody>
+                </Table>
             </div>
 
-            <div className="mt-6 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm md:w-[calc(50%-0.625rem)]">
-                {summary.map((item) => (
-                    <div
-                        key={item.label}
-                        className="flex items-center justify-between gap-4 border-b border-zinc-200 p-3 last:border-b-0"
-                    >
-                        <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">{item.label}</p>
-                        <p className="text-base font-semibold text-zinc-950">{currencyFormatter.format(item.amount)}</p>
-                    </div>
-                ))}
+            <div className="mt-8 max-w-sm">
+                <h2 className="mb-2 text-sm font-medium">Summary</h2>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead className="text-right">Value</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell>Total amount</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {currencyFormatter.format(summary.total)}
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Unpaid</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {currencyFormatter.format(summary.unpaid)}
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Past due</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {currencyFormatter.format(summary.pastDue)}
+                            </TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell>Paid</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {currencyFormatter.format(summary.paid)}
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
-        </section>
+        </div>
     )
 }
 

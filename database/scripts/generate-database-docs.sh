@@ -6,13 +6,13 @@ script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 workspace=$(cd "$script_dir/../.." && pwd)
 
 if [[ $# -ne 1 ]]; then
-    echo "Usage: $0 BIROXXX" >&2
+    echo "Usage: $0 DATABASE_NAME" >&2
     exit 2
 fi
 
 database_name=$1
-if [[ ! "$database_name" =~ ^BIRO[0-9]{3}$ ]]; then
-    echo "Database name must match BIROXXX, for example BIRO225." >&2
+if [[ ! "$database_name" =~ ^(BIRO[0-9]{3}|Birokrat)$ ]]; then
+    echo "Database name must match BIROXXX or be Birokrat." >&2
     exit 2
 fi
 
