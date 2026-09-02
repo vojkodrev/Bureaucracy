@@ -327,15 +327,6 @@ function InvoiceSearchPage() {
                 </div>
             </form>
 
-            <div className="mt-6 flex justify-end">
-                <Link
-                    to="/invoice"
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900"
-                >
-                    New invoice
-                </Link>
-            </div>
-
             {invoicePage && (
                 <div className="mt-3 flex items-center justify-end gap-2 text-sm text-zinc-600">
                     <span className="mr-2 tabular-nums">
