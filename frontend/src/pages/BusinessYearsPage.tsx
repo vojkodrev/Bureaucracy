@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import {
+    getSelectedBusinessYear,
+    setSelectedBusinessYear,
+} from '@/lib/business-year'
+import {
     Table,
     TableBody,
     TableCell,
@@ -57,7 +61,6 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const defaultPage = 1
 const defaultPageSize = 20
 const maximumPageSize = 100
-const businessYearStorageKey = 'businessYear'
 
 function positiveInteger(value: string | null, fallback: number): number {
     const parsedValue = Number.parseInt(value ?? '', 10)
@@ -82,9 +85,8 @@ function BusinessYearsPage() {
         businessYearPage: null,
         error: null,
     })
-    const [selectedBusinessYear, setSelectedBusinessYear] = useState<string | null>(
-        () => localStorage.getItem(businessYearStorageKey),
-    )
+    const [selectedBusinessYear, setSelectedBusinessYearState] =
+        useState(getSelectedBusinessYear)
     const isLoading = result.requestKey !== requestKey
     const businessYearPage = isLoading ? null : result.businessYearPage
     const businessYears = businessYearPage?.businessYears ?? []
@@ -170,8 +172,8 @@ function BusinessYearsPage() {
     function selectBusinessYear(businessYear: BusinessYear) {
         if (!businessYear.code) return
 
-        localStorage.setItem(businessYearStorageKey, businessYear.code)
         setSelectedBusinessYear(businessYear.code)
+        setSelectedBusinessYearState(businessYear.code)
     }
 
     return (
@@ -189,7 +191,7 @@ function BusinessYearsPage() {
                         <TableRow>
                             <TableCell>Selected business year</TableCell>
                             <TableCell className="font-medium">
-                                {selectedBusinessYear ?? 'Not selected'}
+                                {selectedBusinessYear}
                             </TableCell>
                         </TableRow>
                     </TableBody>
