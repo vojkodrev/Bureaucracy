@@ -1,6 +1,12 @@
 import { FileSearch } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbList,
+    BreadcrumbPage,
+} from '@/components/ui/breadcrumb'
+import {
     Sidebar,
     SidebarContent,
     SidebarGroup,
@@ -18,6 +24,8 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 
 function LayoutPage() {
     const { pathname } = useLocation()
+    const breadcrumbLabel =
+        pathname === '/invoices/search' ? 'Invoice search' : ''
 
     return (
         <TooltipProvider>
@@ -72,8 +80,19 @@ function LayoutPage() {
                 </Sidebar>
 
                 <SidebarInset>
-                    <header className="flex h-14 shrink-0 items-center border-b px-4 md:hidden">
+                    <header className="flex h-14 shrink-0 items-center gap-4 px-4">
                         <SidebarTrigger />
+                        {breadcrumbLabel && (
+                            <Breadcrumb>
+                                <BreadcrumbList>
+                                    <BreadcrumbItem>
+                                        <BreadcrumbPage>
+                                            {breadcrumbLabel}
+                                        </BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                </BreadcrumbList>
+                            </Breadcrumb>
+                        )}
                     </header>
                     <div className="flex flex-1 flex-col">
                         <Outlet />
