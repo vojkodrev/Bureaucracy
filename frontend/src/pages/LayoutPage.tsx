@@ -1,4 +1,5 @@
-import { FileSearch } from 'lucide-react'
+import { useEffect } from 'react'
+import { CalendarRange, FileSearch } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
     Breadcrumb,
@@ -22,10 +23,45 @@ import {
 } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
+const breadcrumbLabels: Record<string, string> = {
+    '/business-years': 'Business years',
+    '/invoices/search': 'Invoice search',
+}
+
+const searchParameterLabels: Record<string, string> = {
+    customerId: 'Customer ID',
+    customerName: 'Customer name',
+    from: 'Invoice date from',
+    invoiceNumber: 'Invoice number',
+    page: 'Page',
+    pageSize: 'Page size',
+    to: 'Invoice date to',
+}
+
+function searchParameterLabel(name: string): string {
+    return (
+        searchParameterLabels[name] ??
+        name
+            .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+            .replace(/^./, (character) => character.toUpperCase())
+    )
+}
+
 function LayoutPage() {
-    const { pathname } = useLocation()
-    const breadcrumbLabel =
-        pathname === '/invoices/search' ? 'Invoice search' : ''
+    const { pathname, search } = useLocation()
+    const breadcrumbLabel = breadcrumbLabels[pathname]
+
+    useEffect(() => {
+        const searchDetails = Array.from(new URLSearchParams(search))
+            .filter(([, value]) => value.trim() !== '')
+            .map(
+                ([name, value]) =>
+                    `${searchParameterLabel(name)}: ${value}`,
+            )
+        document.title = ['Bureaucracy', breadcrumbLabel, ...searchDetails]
+            .filter(Boolean)
+            .join(' - ')
+    }, [breadcrumbLabel, search])
 
     return (
         <TooltipProvider>
@@ -69,6 +105,20 @@ function LayoutPage() {
                                         >
                                             <FileSearch />
                                             <span>Invoice search</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={
+                                                pathname === '/business-years'
+                                            }
+                                            tooltip="Business years"
+                                            render={
+                                                <NavLink to="/business-years" />
+                                            }
+                                        >
+                                            <CalendarRange />
+                                            <span>Business years</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </SidebarMenu>

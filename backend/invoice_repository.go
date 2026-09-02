@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -12,12 +13,15 @@ type InvoiceRepository struct {
 	database *sql.DB
 }
 
+var businessYearPattern = regexp.MustCompile(`^[0-9]+$`)
+
 func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
 func (repository *InvoiceRepository) Search(
 	ctx context.Context,
+	businessYear string,
 	invoiceNumber *string,
 	customerID *string,
 	customerName *string,
@@ -26,6 +30,9 @@ func (repository *InvoiceRepository) Search(
 	page int,
 	pageSize int,
 ) (*InvoicePage, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
 	if page < 1 {
 		return nil, fmt.Errorf("page must be at least 1")
 	}
@@ -46,16 +53,17 @@ func (repository *InvoiceRepository) Search(
 		sql.Named("issuedFrom", nullableTime(issuedFrom)),
 		sql.Named("issuedTo", nullableTime(issuedTo)),
 	}
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 
 	var totalCount int
-	err := repository.database.QueryRowContext(ctx, `
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
-		FROM [BIRO225].[dbo].[Racuni]
+		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
-		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`,
+		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`, databaseName),
 		queryArguments...,
 	).Scan(&totalCount)
 	if err != nil {
@@ -66,7 +74,7 @@ func (repository *InvoiceRepository) Search(
 		sql.Named("offset", (page-1)*pageSize),
 		sql.Named("pageSize", pageSize),
 	)
-	rows, err := repository.database.QueryContext(ctx, `
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			RecNo,
 			COALESCE(Stevilka, ''),
@@ -85,14 +93,14 @@ func (repository *InvoiceRepository) Search(
 			PlacanoSIT,
 			Sklic,
 			Storno
-		FROM [BIRO225].[dbo].[Racuni]
+		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		ORDER BY Stevilka
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName),
 		queryArguments...,
 	)
 	if err != nil {

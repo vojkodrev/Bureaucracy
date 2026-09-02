@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// SearchInvoices is the resolver for the searchInvoices field.
-func (r *queryResolver) SearchInvoices(ctx context.Context, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error) {
+// BusinessYears is the resolver for the businessYears field.
+func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -20,7 +20,20 @@ func (r *queryResolver) SearchInvoices(ctx context.Context, invoiceNumber *strin
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.Invoices.Search(ctx, invoiceNumber, customerID, customerName, issuedFrom, issuedTo, resultPage, resultPageSize)
+	return r.BusinessYearRepository.List(ctx, resultPage, resultPageSize)
+}
+
+// SearchInvoices is the resolver for the searchInvoices field.
+func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, issuedFrom, issuedTo, resultPage, resultPageSize)
 }
 
 // Query returns QueryResolver implementation.

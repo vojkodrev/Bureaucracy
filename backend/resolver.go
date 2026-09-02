@@ -3,9 +3,13 @@ package main
 //go:generate go tool gqlgen generate
 
 type Resolver struct {
-	Invoices *InvoiceRepository
+	BusinessYearRepository *BusinessYearRepository
+	Invoices               *InvoiceRepository
 }
 
-func NewResolver(invoices *InvoiceRepository) *Resolver {
-	return &Resolver{Invoices: invoices}
+func NewResolver(businessYears *BusinessYearRepository, invoices *InvoiceRepository) *Resolver {
+	return &Resolver{
+		BusinessYearRepository: businessYears,
+		Invoices:               invoices,
+	}
 }

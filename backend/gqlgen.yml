@@ -18,6 +18,12 @@ models:
   Time:
     model:
       - github.com/99designs/gqlgen/graphql.Time
+  BusinessYear:
+    model:
+      - bureaucracy/backend.BusinessYear
+  BusinessYearPage:
+    model:
+      - bureaucracy/backend.BusinessYearPage
   Invoice:
     model:
       - bureaucracy/backend.Invoice

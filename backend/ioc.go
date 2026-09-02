@@ -8,6 +8,7 @@ func CoreProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(NewAppConfig),
 		fx.Provide(NewDatabase),
+		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewInvoiceRepository),
 		fx.Provide(NewResolver),
 		fx.Provide(NewGraphQLServer),
