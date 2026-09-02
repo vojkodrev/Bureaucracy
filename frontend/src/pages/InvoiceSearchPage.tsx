@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import DatePickerField from '@/components/DatePickerField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -94,6 +95,28 @@ function InvoiceSearchPage() {
             </form>
 
             <div className="mt-8">
+                <div className="mb-2 flex items-center justify-end gap-2">
+                    <span className="text-sm text-muted-foreground">
+                        1 of 6
+                    </span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Previous page"
+                        disabled
+                    >
+                        <ChevronLeft />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        aria-label="Next page"
+                    >
+                        <ChevronRight />
+                    </Button>
+                </div>
                 <Table>
                     <TableHeader>
                         <TableRow>
