@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type InvoiceRepository struct {
@@ -15,16 +16,58 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
-func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *string, customerID *string, limit int) ([]*Invoice, error) {
-	if limit < 1 || limit > 100 {
-		return nil, fmt.Errorf("limit must be between 1 and 100")
+func (repository *InvoiceRepository) Search(
+	ctx context.Context,
+	invoiceNumber *string,
+	customerID *string,
+	customerName *string,
+	issuedFrom *time.Time,
+	issuedTo *time.Time,
+	page int,
+	pageSize int,
+) (*InvoicePage, error) {
+	if page < 1 {
+		return nil, fmt.Errorf("page must be at least 1")
+	}
+	if pageSize < 1 || pageSize > 100 {
+		return nil, fmt.Errorf("pageSize must be between 1 and 100")
+	}
+	if issuedFrom != nil && issuedTo != nil && issuedFrom.After(*issuedTo) {
+		return nil, fmt.Errorf("issuedFrom must not be after issuedTo")
 	}
 
 	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
 	customerIDPattern := optionalLikePattern(customerID)
+	customerNamePattern := optionalLikePattern(customerName)
+	queryArguments := []any{
+		sql.Named("invoiceNumber", invoiceNumberPattern),
+		sql.Named("customerID", customerIDPattern),
+		sql.Named("customerName", customerNamePattern),
+		sql.Named("issuedFrom", nullableTime(issuedFrom)),
+		sql.Named("issuedTo", nullableTime(issuedTo)),
+	}
 
+	var totalCount int
+	err := repository.database.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM [BIRO225].[dbo].[Racuni]
+		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
+		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
+		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
+		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
+		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`,
+		queryArguments...,
+	).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("count invoices: %w", err)
+	}
+
+	queryArguments = append(queryArguments,
+		sql.Named("offset", (page-1)*pageSize),
+		sql.Named("pageSize", pageSize),
+	)
 	rows, err := repository.database.QueryContext(ctx, `
-		SELECT TOP (@limit)
+		SELECT
 			RecNo,
 			COALESCE(Stevilka, ''),
 			DatumIzstavitve,
@@ -45,10 +88,12 @@ func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *
 		FROM [BIRO225].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
-		ORDER BY Stevilka`,
-		sql.Named("limit", limit),
-		sql.Named("invoiceNumber", invoiceNumberPattern),
-		sql.Named("customerID", customerIDPattern),
+		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
+		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
+		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+		ORDER BY Stevilka
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
+		queryArguments...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("search invoices: %w", err)
@@ -90,7 +135,25 @@ func (repository *InvoiceRepository) Search(ctx context.Context, invoiceNumber *
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read invoices: %w", err)
 	}
-	return invoices, nil
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = (totalCount + pageSize - 1) / pageSize
+	}
+	return &InvoicePage{
+		Invoices:   invoices,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
+func nullableTime(value *time.Time) sql.NullTime {
+	if value == nil {
+		return sql.NullTime{}
+	}
+
+	return sql.NullTime{Time: *value, Valid: true}
 }
 
 func optionalLikePattern(value *string) string {

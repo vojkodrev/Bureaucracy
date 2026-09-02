@@ -20,6 +20,22 @@ type Invoice {
   cancelled: Boolean
 }
 
+type InvoicePage {
+  invoices: [Invoice!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type Query {
-  searchInvoices(invoiceNumber: String, customerId: String, limit: Int = 20): [Invoice!]!
+  searchInvoices(
+    invoiceNumber: String
+    customerId: String
+    customerName: String
+    issuedFrom: Time
+    issuedTo: Time
+    page: Int = 1
+    pageSize: Int = 20
+  ): InvoicePage!
 }

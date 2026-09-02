@@ -21,3 +21,6 @@ models:
   Invoice:
     model:
       - bureaucracy/backend.Invoice
+  InvoicePage:
+    model:
+      - bureaucracy/backend.InvoicePage
