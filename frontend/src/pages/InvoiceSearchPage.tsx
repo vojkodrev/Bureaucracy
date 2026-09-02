@@ -8,6 +8,16 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { dateFromSearchValue, optionalDate } from '@/lib/dates'
+import { optionalFilter } from '@/lib/filters'
+import { formatCurrency, formatDate } from '@/lib/formatters'
+import type { Invoice, InvoicePage } from '@/lib/invoice-types'
+import {
+    defaultPage,
+    defaultPageSize,
+    maximumPageSize,
+    positiveInteger,
+} from '@/lib/pagination'
 import {
     Table,
     TableBody,
@@ -17,16 +27,6 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-type Invoice = {
-    invoiceNumber: string
-    customerCode: string | null
-    customerName: string | null
-    amount: number | null
-    issueDate: string | null
-    dueDate: string | null
-    paymentDate: string | null
-}
-
 type SearchForm = {
     invoiceNumber: string
     customerId: string
@@ -35,14 +35,6 @@ type SearchForm = {
     to: string
     page: string
     pageSize: string
-}
-
-type InvoicePage = {
-    invoices: Invoice[]
-    totalCount: number
-    page: number
-    pageSize: number
-    totalPages: number
 }
 
 type SearchInvoicesResponse = {
@@ -96,19 +88,6 @@ const searchInvoicesQuery = `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyInvoices: Invoice[] = []
-const defaultPageSize = 20
-const maximumPageSize = 100
-
-const currencyFormatter = new Intl.NumberFormat('en-IE', {
-    style: 'currency',
-    currency: 'EUR',
-})
-
-const dateFormatter = new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-})
 
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
     return {
@@ -121,32 +100,6 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         pageSize:
             searchParams.get('pageSize') ?? String(defaultPageSize),
     }
-}
-
-function optionalFilter(value: string): string | null {
-    const trimmedValue = value.trim()
-    return trimmedValue === '' ? null : trimmedValue
-}
-
-function optionalDate(value: string): string | null {
-    return value === '' ? null : `${value}T00:00:00.000Z`
-}
-
-function positiveInteger(value: string, fallback: number): number {
-    const parsedValue = Number.parseInt(value, 10)
-    return Number.isInteger(parsedValue) && parsedValue > 0
-        ? parsedValue
-        : fallback
-}
-
-function dateFromSearchValue(value: string): Date | undefined {
-    if (!value) return undefined
-    const [year, month, day] = value.split('-').map(Number)
-    return new Date(year, month - 1, day)
-}
-
-function formatDate(value: string | null): string {
-    return value ? dateFormatter.format(new Date(value)) : '—'
 }
 
 function InvoiceSearchPage() {
@@ -199,7 +152,7 @@ function InvoiceSearchPage() {
                     customerName: optionalFilter(activeSearch.customerName),
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
-                    page: positiveInteger(activeSearch.page, 1),
+                    page: positiveInteger(activeSearch.page, defaultPage),
                     pageSize: Math.min(
                         positiveInteger(activeSearch.pageSize, defaultPageSize),
                         maximumPageSize,
@@ -422,7 +375,7 @@ function InvoiceSearchPage() {
                                         {invoice.customerName ?? invoice.customerCode ?? '—'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {currencyFormatter.format(invoice.amount ?? 0)}
+                                        {formatCurrency(invoice.amount ?? 0)}
                                     </TableCell>
                                     <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                                     <TableCell>{formatDate(invoice.dueDate)}</TableCell>
@@ -446,25 +399,25 @@ function InvoiceSearchPage() {
                         <TableRow>
                             <TableCell>Total amount</TableCell>
                             <TableCell className="text-right font-medium">
-                                {currencyFormatter.format(summary.total)}
+                                {formatCurrency(summary.total)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Unpaid</TableCell>
                             <TableCell className="text-right font-medium">
-                                {currencyFormatter.format(summary.unpaid)}
+                                {formatCurrency(summary.unpaid)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Past due</TableCell>
                             <TableCell className="text-right font-medium">
-                                {currencyFormatter.format(summary.pastDue)}
+                                {formatCurrency(summary.pastDue)}
                             </TableCell>
                         </TableRow>
                         <TableRow>
                             <TableCell>Paid</TableCell>
                             <TableCell className="text-right font-medium">
-                                {currencyFormatter.format(summary.paid)}
+                                {formatCurrency(summary.paid)}
                             </TableCell>
                         </TableRow>
                     </TableBody>

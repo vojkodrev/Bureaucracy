@@ -6,6 +6,12 @@ import {
     setSelectedBusinessYear,
 } from '@/lib/business-year'
 import {
+    defaultPage,
+    defaultPageSize,
+    maximumPageSize,
+    positiveInteger,
+} from '@/lib/pagination'
+import {
     Table,
     TableBody,
     TableCell,
@@ -58,16 +64,6 @@ const businessYearsQuery = `
 `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
-const defaultPage = 1
-const defaultPageSize = 20
-const maximumPageSize = 100
-
-function positiveInteger(value: string | null, fallback: number): number {
-    const parsedValue = Number.parseInt(value ?? '', 10)
-    return Number.isInteger(parsedValue) && parsedValue > 0
-        ? parsedValue
-        : fallback
-}
 
 function BusinessYearsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
