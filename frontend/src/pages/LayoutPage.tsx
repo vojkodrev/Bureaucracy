@@ -159,7 +159,10 @@ function LayoutPage() {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <Collapsible.Root
-                                        defaultOpen
+                                        defaultOpen={
+                                            pathname === '/invoices/search' ||
+                                            isInvoicePage
+                                        }
                                         render={<SidebarMenuItem />}
                                     >
                                         <Collapsible.Trigger
