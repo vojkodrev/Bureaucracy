@@ -11,6 +11,20 @@ export type Invoice = {
     issueDate: string | null
     dueDate: string | null
     paymentDate: string | null
+    items?: InvoiceItem[]
+}
+
+export type InvoiceItem = {
+    id: number
+    sequence: number | null
+    productCode: string | null
+    productName: string | null
+    unit: string | null
+    quantity: number | null
+    discount: number | null
+    taxCode: string | null
+    netAmount: number | null
+    grossAmount: number | null
 }
 
 export type InvoicePage = {

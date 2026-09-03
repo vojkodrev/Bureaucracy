@@ -36,6 +36,9 @@ models:
   InvoicePage:
     model:
       - bureaucracy/backend.InvoicePage
+  InvoiceItem:
+    model:
+      - bureaucracy/backend.InvoiceItem
   Product:
     model:
       - bureaucracy/backend.Product

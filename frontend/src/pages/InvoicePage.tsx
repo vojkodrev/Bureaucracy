@@ -13,9 +13,18 @@ import {
     MenubarMenu,
     MenubarTrigger,
 } from '@/components/ui/menubar'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue } from '@/lib/dates'
-import type { Invoice } from '@/lib/invoice-types'
+import { formatCurrency } from '@/lib/formatters'
+import type { Invoice, InvoiceItem } from '@/lib/invoice-types'
 
 type InvoiceResponse = {
     data?: { invoice: Invoice | null }
@@ -43,6 +52,18 @@ const invoiceQuery = `
             customerPostalCode
             customerCity
             customerCountry
+            items {
+                id
+                sequence
+                productCode
+                productName
+                unit
+                quantity
+                discount
+                taxCode
+                netAmount
+                grossAmount
+            }
         }
     }
 `
@@ -64,6 +85,7 @@ function InvoicePage() {
     const [customerCountry, setCustomerCountry] = useState('')
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
+    const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({
@@ -118,6 +140,7 @@ function InvoicePage() {
                 setCustomerCountry(invoice.customerCountry ?? '')
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
+                setInvoiceItems(invoice.items ?? [])
                 setLoadResult({ requestKey, error: null })
             })
             .catch((requestError: unknown) => {
@@ -165,13 +188,6 @@ function InvoicePage() {
                     </MenubarContent>
                 </MenubarMenu>
             </Menubar>
-
-            {isLoading && (
-                <p className="mb-6 text-sm text-muted-foreground">Loading invoice…</p>
-            )}
-            {error && (
-                <p className="mb-6 text-sm text-destructive">{error}</p>
-            )}
 
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card>
@@ -276,6 +292,76 @@ function InvoicePage() {
                         </FieldGroup>
                     </CardContent>
                 </Card>
+            </div>
+
+            <div className="mt-8">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>#</TableHead>
+                            <TableHead>Product code</TableHead>
+                            <TableHead>Product name</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead className="text-right">Quantity</TableHead>
+                            <TableHead className="text-right">Discount</TableHead>
+                            <TableHead>Tax code</TableHead>
+                            <TableHead className="text-right">Net amount</TableHead>
+                            <TableHead className="text-right">Gross amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                    Loading invoice items…
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {error && (
+                            <TableRow>
+                                <TableCell colSpan={9} className="h-24 text-center text-destructive">
+                                    {error}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && !error && invoiceItems.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                    No invoice items found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading &&
+                            !error &&
+                            invoiceItems.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>{item.sequence ?? '—'}</TableCell>
+                                    <TableCell className="font-medium">
+                                        {item.productCode ?? '—'}
+                                    </TableCell>
+                                    <TableCell>{item.productName ?? '—'}</TableCell>
+                                    <TableCell>{item.unit ?? '—'}</TableCell>
+                                    <TableCell className="text-right">
+                                        {item.quantity ?? '—'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {item.discount == null ? '—' : `${item.discount}%`}
+                                    </TableCell>
+                                    <TableCell>{item.taxCode ?? '—'}</TableCell>
+                                    <TableCell className="text-right">
+                                        {item.netAmount == null
+                                            ? '—'
+                                            : formatCurrency(item.netAmount)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {item.grossAmount == null
+                                            ? '—'
+                                            : formatCurrency(item.grossAmount)}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                    </TableBody>
+                </Table>
             </div>
         </div>
     )

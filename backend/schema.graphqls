@@ -60,6 +60,20 @@ type Invoice {
   paidAmount: Float
   paymentReference: String
   cancelled: Boolean
+  items: [InvoiceItem!]!
+}
+
+type InvoiceItem {
+  id: Int!
+  sequence: Int
+  productCode: String
+  productName: String
+  unit: String
+  quantity: Float
+  discount: Float
+  taxCode: String
+  netAmount: Float
+  grossAmount: Float
 }
 
 type InvoicePage {

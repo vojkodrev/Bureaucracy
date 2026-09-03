@@ -92,10 +92,24 @@ type ComplexityRoot struct {
 		ID                 func(childComplexity int) int
 		InvoiceNumber      func(childComplexity int) int
 		IssueDate          func(childComplexity int) int
+		Items              func(childComplexity int) int
 		PaidAmount         func(childComplexity int) int
 		PaymentDate        func(childComplexity int) int
 		PaymentReference   func(childComplexity int) int
 		ServiceDate        func(childComplexity int) int
+	}
+
+	InvoiceItem struct {
+		Discount    func(childComplexity int) int
+		GrossAmount func(childComplexity int) int
+		ID          func(childComplexity int) int
+		NetAmount   func(childComplexity int) int
+		ProductCode func(childComplexity int) int
+		ProductName func(childComplexity int) int
+		Quantity    func(childComplexity int) int
+		Sequence    func(childComplexity int) int
+		TaxCode     func(childComplexity int) int
+		Unit        func(childComplexity int) int
 	}
 
 	InvoicePage struct {
@@ -427,6 +441,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.IssueDate(childComplexity), true
+	case "Invoice.items":
+		if e.ComplexityRoot.Invoice.Items == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.Items(childComplexity), true
 	case "Invoice.paidAmount":
 		if e.ComplexityRoot.Invoice.PaidAmount == nil {
 			break
@@ -451,6 +471,67 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.ServiceDate(childComplexity), true
+
+	case "InvoiceItem.discount":
+		if e.ComplexityRoot.InvoiceItem.Discount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.Discount(childComplexity), true
+	case "InvoiceItem.grossAmount":
+		if e.ComplexityRoot.InvoiceItem.GrossAmount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.GrossAmount(childComplexity), true
+	case "InvoiceItem.id":
+		if e.ComplexityRoot.InvoiceItem.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.ID(childComplexity), true
+	case "InvoiceItem.netAmount":
+		if e.ComplexityRoot.InvoiceItem.NetAmount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.NetAmount(childComplexity), true
+	case "InvoiceItem.productCode":
+		if e.ComplexityRoot.InvoiceItem.ProductCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.ProductCode(childComplexity), true
+	case "InvoiceItem.productName":
+		if e.ComplexityRoot.InvoiceItem.ProductName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.ProductName(childComplexity), true
+	case "InvoiceItem.quantity":
+		if e.ComplexityRoot.InvoiceItem.Quantity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.Quantity(childComplexity), true
+	case "InvoiceItem.sequence":
+		if e.ComplexityRoot.InvoiceItem.Sequence == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.Sequence(childComplexity), true
+	case "InvoiceItem.taxCode":
+		if e.ComplexityRoot.InvoiceItem.TaxCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.TaxCode(childComplexity), true
+	case "InvoiceItem.unit":
+		if e.ComplexityRoot.InvoiceItem.Unit == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.Unit(childComplexity), true
 
 	case "InvoicePage.invoices":
 		if e.ComplexityRoot.InvoicePage.Invoices == nil {
@@ -832,8 +913,36 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_paymentReference(ctx, field)
 	case "cancelled":
 		return ec.fieldContext_Invoice_cancelled(ctx, field)
+	case "items":
+		return ec.fieldContext_Invoice_items(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Invoice", field.Name)
+}
+
+func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_InvoiceItem_id(ctx, field)
+	case "sequence":
+		return ec.fieldContext_InvoiceItem_sequence(ctx, field)
+	case "productCode":
+		return ec.fieldContext_InvoiceItem_productCode(ctx, field)
+	case "productName":
+		return ec.fieldContext_InvoiceItem_productName(ctx, field)
+	case "unit":
+		return ec.fieldContext_InvoiceItem_unit(ctx, field)
+	case "quantity":
+		return ec.fieldContext_InvoiceItem_quantity(ctx, field)
+	case "discount":
+		return ec.fieldContext_InvoiceItem_discount(ctx, field)
+	case "taxCode":
+		return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
+	case "netAmount":
+		return ec.fieldContext_InvoiceItem_netAmount(ctx, field)
+	case "grossAmount":
+		return ec.fieldContext_InvoiceItem_grossAmount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type InvoiceItem", field.Name)
 }
 
 func (ec *executionContext) childFields_InvoicePage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2385,6 +2494,268 @@ func (ec *executionContext) _Invoice_cancelled(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_Invoice_cancelled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_items(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_items(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*InvoiceItem) graphql.Marshaler {
+			return ec.marshalNInvoiceItem2ᚕᚖbureaucracyᚋbackendᚐInvoiceItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Invoice",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InvoiceItem_id(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_sequence(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_sequence(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Sequence, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *int) graphql.Marshaler {
+			return ec.marshalOInt2ᚖint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_sequence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_productCode(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_productCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_productCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_productName(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_productName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_productName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_unit(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_unit(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Unit, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_quantity(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_quantity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Quantity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_discount(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_discount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Discount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_discount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_taxCode(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TaxCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_taxCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_netAmount(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_netAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NetAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_netAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_grossAmount(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_grossAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.GrossAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_grossAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) _InvoicePage_invoices(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
@@ -4584,6 +4955,94 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "items":
+			out.Values[i] = ec._Invoice_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var invoiceItemImplementors = []string{"InvoiceItem"}
+
+func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionSet, obj *InvoiceItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invoiceItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvoiceItem")
+		case "id":
+			out.Values[i] = ec._InvoiceItem_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sequence":
+			out.Values[i] = ec._InvoiceItem_sequence(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "productCode":
+			out.Values[i] = ec._InvoiceItem_productCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "productName":
+			out.Values[i] = ec._InvoiceItem_productName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "unit":
+			out.Values[i] = ec._InvoiceItem_unit(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "quantity":
+			out.Values[i] = ec._InvoiceItem_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "discount":
+			out.Values[i] = ec._InvoiceItem_discount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "taxCode":
+			out.Values[i] = ec._InvoiceItem_taxCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "netAmount":
+			out.Values[i] = ec._InvoiceItem_netAmount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "grossAmount":
+			out.Values[i] = ec._InvoiceItem_grossAmount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5492,6 +5951,32 @@ func (ec *executionContext) marshalNInvoice2ᚖbureaucracyᚋbackendᚐInvoice(c
 		return graphql.Null
 	}
 	return ec._Invoice(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInvoiceItem2ᚕᚖbureaucracyᚋbackendᚐInvoiceItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*InvoiceItem) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNInvoiceItem2ᚖbureaucracyᚋbackendᚐInvoiceItem(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInvoiceItem2ᚖbureaucracyᚋbackendᚐInvoiceItem(ctx context.Context, sel ast.SelectionSet, v *InvoiceItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InvoiceItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInvoicePage2bureaucracyᚋbackendᚐInvoicePage(ctx context.Context, sel ast.SelectionSet, v InvoicePage) graphql.Marshaler {

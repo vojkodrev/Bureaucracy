@@ -93,7 +93,68 @@ func (repository *InvoiceRepository) GetByNumber(
 		value := cancelled.Int16 != 0
 		invoice.Cancelled = &value
 	}
+
+	items, err := repository.getItems(ctx, invoiceDatabaseName, customerDatabaseName, invoiceNumber)
+	if err != nil {
+		return nil, err
+	}
+	invoice.Items = items
 	return invoice, nil
+}
+
+func (repository *InvoiceRepository) getItems(
+	ctx context.Context,
+	invoiceDatabaseName string,
+	productDatabaseName string,
+	invoiceNumber string,
+) ([]*InvoiceItem, error) {
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT
+			rs.RecNo,
+			rs.Zaporedje,
+			rs.Artikel,
+			a.Opis,
+			a.Enota,
+			rs.Kolicina,
+			CAST(rs.Rabat AS float),
+			rs.SifraDavka,
+			rs.ZnesekBrezDavka,
+			rs.Znesek
+		FROM [%s].[dbo].[RacuniSpecifikacija] rs
+		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
+		WHERE rs.Stevilka = @invoiceNumber
+		  AND ISNULL(rs.Deleted, 0) = 0
+		ORDER BY rs.Zaporedje, rs.RecNo`, invoiceDatabaseName, productDatabaseName),
+		sql.Named("invoiceNumber", invoiceNumber),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get invoice items: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]*InvoiceItem, 0)
+	for rows.Next() {
+		item := &InvoiceItem{}
+		if err := rows.Scan(
+			&item.ID,
+			&item.Sequence,
+			&item.ProductCode,
+			&item.ProductName,
+			&item.Unit,
+			&item.Quantity,
+			&item.Discount,
+			&item.TaxCode,
+			&item.NetAmount,
+			&item.GrossAmount,
+		); err != nil {
+			return nil, fmt.Errorf("scan invoice item: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read invoice items: %w", err)
+	}
+	return items, nil
 }
 
 func (repository *InvoiceRepository) Search(
