@@ -108,6 +108,20 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
     }
 }
 
+function searchParamsFromForm(search: SearchForm): URLSearchParams {
+    const searchParams = new URLSearchParams()
+
+    for (const key of ['invoiceNumber', 'customerId', 'customerName', 'from', 'to'] as const) {
+        if (search[key]) {
+            searchParams.set(key, search[key])
+        }
+    }
+
+    searchParams.set('page', search.page)
+    searchParams.set('pageSize', search.pageSize)
+    return searchParams
+}
+
 function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
@@ -248,7 +262,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         }
 
         if (mode === ComponentMode.Page) {
-            setSearchParams(nextSearch)
+            setSearchParams(searchParamsFromForm(nextSearch))
         } else {
             setDialogSearch(nextSearch)
         }
@@ -268,10 +282,11 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     function changePage(page: number) {
         const pageSize = String(invoicePage?.pageSize ?? defaultPageSize)
         if (mode === ComponentMode.Page) {
-            const nextSearchParams = new URLSearchParams(searchParams)
-            nextSearchParams.set('page', String(page))
-            nextSearchParams.set('pageSize', pageSize)
-            setSearchParams(nextSearchParams)
+            setSearchParams(searchParamsFromForm({
+                ...activeSearch,
+                page: String(page),
+                pageSize,
+            }))
         } else {
             setDialogSearch((currentSearch) => ({
                 ...currentSearch,
