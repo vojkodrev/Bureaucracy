@@ -24,6 +24,12 @@ models:
   BusinessYearPage:
     model:
       - bureaucracy/backend.BusinessYearPage
+  Customer:
+    model:
+      - bureaucracy/backend.Customer
+  CustomerPage:
+    model:
+      - bureaucracy/backend.CustomerPage
   Invoice:
     model:
       - bureaucracy/backend.Invoice
