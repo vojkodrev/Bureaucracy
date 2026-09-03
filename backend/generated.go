@@ -57,7 +57,6 @@ type ComplexityRoot struct {
 		Contact            func(childComplexity int) int
 		Country            func(childComplexity int) int
 		CustomerID         func(childComplexity int) int
-		Disabled           func(childComplexity int) int
 		Discount           func(childComplexity int) int
 		Email              func(childComplexity int) int
 		ID                 func(childComplexity int) int
@@ -226,12 +225,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Customer.CustomerID(childComplexity), true
-	case "Customer.disabled":
-		if e.ComplexityRoot.Customer.Disabled == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Customer.Disabled(childComplexity), true
 	case "Customer.discount":
 		if e.ComplexityRoot.Customer.Discount == nil {
 			break
@@ -633,8 +626,6 @@ func (ec *executionContext) childFields_Customer(ctx context.Context, field grap
 		return ec.fieldContext_Customer_paymentTerm(ctx, field)
 	case "discount":
 		return ec.fieldContext_Customer_discount(ctx, field)
-	case "disabled":
-		return ec.fieldContext_Customer_disabled(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Customer", field.Name)
 }
@@ -1575,29 +1566,6 @@ func (ec *executionContext) _Customer_discount(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_Customer_discount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type Float does not have child fields"))
-}
-
-func (ec *executionContext) _Customer_disabled(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Customer_disabled(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.Disabled, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *bool) graphql.Marshaler {
-			return ec.marshalOBoolean2ᚖbool(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_Customer_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
 func (ec *executionContext) _CustomerPage_customers(ctx context.Context, field graphql.CollectedField, obj *CustomerPage) (ret graphql.Marshaler) {
@@ -3704,11 +3672,6 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "discount":
 			out.Values[i] = ec._Customer_discount(ctx, field, obj)
-			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
-			}
-		case "disabled":
-			out.Values[i] = ec._Customer_disabled(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

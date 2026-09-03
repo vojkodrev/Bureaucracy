@@ -13,7 +13,6 @@ export type Customer = {
     registrationNumber: string | null
     paymentTerm: number | null
     discount: number | null
-    disabled: boolean | null
 }
 
 export type CustomerPage = {

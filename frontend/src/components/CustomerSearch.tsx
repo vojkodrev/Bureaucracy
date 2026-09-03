@@ -78,7 +78,6 @@ const searchCustomersQuery = `
                 registrationNumber
                 paymentTerm
                 discount
-                disabled
             }
             totalCount
             page
@@ -317,27 +316,26 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                             <TableHead>Email</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead>Tax number</TableHead>
-                            <TableHead>Disabled</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                                     Loading customers…
                                 </TableCell>
                             </TableRow>
                         )}
                         {error && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-destructive">
+                                <TableCell colSpan={8} className="h-24 text-center text-destructive">
                                     {error}
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading && !error && customers.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                                     No customers found.
                                 </TableCell>
                             </TableRow>
@@ -376,13 +374,6 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                     <TableCell>{customer.email ?? '—'}</TableCell>
                                     <TableCell>{customer.phone ?? '—'}</TableCell>
                                     <TableCell>{customer.taxNumber ?? '—'}</TableCell>
-                                    <TableCell>
-                                        {customer.disabled == null
-                                            ? '—'
-                                            : customer.disabled
-                                                ? 'Yes'
-                                                : 'No'}
-                                    </TableCell>
                                 </TableRow>
                             ))}
                     </TableBody>

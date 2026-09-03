@@ -15,7 +15,6 @@ type Customer struct {
 	RegistrationNumber *string  `json:"registrationNumber"`
 	PaymentTerm        *int     `json:"paymentTerm"`
 	Discount           *float64 `json:"discount"`
-	Disabled           *bool    `json:"disabled"`
 }
 
 type CustomerPage struct {

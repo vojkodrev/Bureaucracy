@@ -69,8 +69,7 @@ func (repository *CustomerRepository) Search(
 			DavcnaStevilka,
 			MaticnaStevilka,
 			PlacilniRok,
-			RabatGeneralno,
-			NeUporabljaj
+			RabatGeneralno
 		FROM [%s].[dbo].[Partner]
 		WHERE (@customerID = '' OR Sifra LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR Partner LIKE @customerName ESCAPE '\')
@@ -86,7 +85,6 @@ func (repository *CustomerRepository) Search(
 	customers := make([]*Customer, 0)
 	for rows.Next() {
 		customer := &Customer{}
-		var disabled sql.NullInt16
 		if err := rows.Scan(
 			&customer.ID,
 			&customer.CustomerID,
@@ -102,13 +100,8 @@ func (repository *CustomerRepository) Search(
 			&customer.RegistrationNumber,
 			&customer.PaymentTerm,
 			&customer.Discount,
-			&disabled,
 		); err != nil {
 			return nil, fmt.Errorf("scan customer: %w", err)
-		}
-		if disabled.Valid {
-			value := disabled.Int16 != 0
-			customer.Disabled = &value
 		}
 		customers = append(customers, customer)
 	}

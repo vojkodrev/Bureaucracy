@@ -30,7 +30,6 @@ type Customer {
   registrationNumber: String
   paymentTerm: Int
   discount: Float
-  disabled: Boolean
 }
 
 type CustomerPage {
