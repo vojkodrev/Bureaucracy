@@ -4,8 +4,10 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
     Breadcrumb,
     BreadcrumbItem,
+    BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import {
     Sidebar,
@@ -51,11 +53,27 @@ function searchParameterLabel(name: string): string {
     )
 }
 
+function invoiceNumberFromPathname(pathname: string): string | undefined {
+    if (!pathname.startsWith('/invoice/')) {
+        return undefined
+    }
+
+    const invoiceNumber = pathname.slice('/invoice/'.length)
+    try {
+        return decodeURIComponent(invoiceNumber)
+    } catch {
+        return invoiceNumber
+    }
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
+    const invoiceNumber = invoiceNumberFromPathname(pathname)
+    const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
     const breadcrumbLabel =
         breadcrumbLabels[pathname] ??
-        (pathname.startsWith('/invoice/') ? 'Invoice' : undefined)
+        (invoiceNumber ? `Invoice ${invoiceNumber}` : undefined) ??
+        (isInvoicePage ? 'Invoice' : undefined)
 
     useEffect(() => {
         const searchDetails = Array.from(new URLSearchParams(search))
@@ -132,7 +150,8 @@ function LayoutPage() {
                                         <SidebarMenuButton
                                             isActive={
                                                 pathname ===
-                                                '/invoices/search'
+                                                '/invoices/search' ||
+                                                isInvoicePage
                                             }
                                             tooltip="Invoice search"
                                             render={
@@ -171,11 +190,47 @@ function LayoutPage() {
                         {breadcrumbLabel && (
                             <Breadcrumb>
                                 <BreadcrumbList>
-                                    <BreadcrumbItem>
-                                        <BreadcrumbPage>
-                                            {breadcrumbLabel}
-                                        </BreadcrumbPage>
-                                    </BreadcrumbItem>
+                                    {isInvoicePage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink
+                                                    render={<NavLink to="/invoices/search" />}
+                                                >
+                                                    Invoice search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {invoiceNumber ? (
+                                                    <BreadcrumbLink
+                                                        render={<NavLink to="/invoice" />}
+                                                    >
+                                                        Invoice
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>
+                                                        Invoice
+                                                    </BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {invoiceNumber && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>
+                                                            {invoiceNumber}
+                                                        </BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage>
+                                                {breadcrumbLabel}
+                                            </BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    )}
                                 </BreadcrumbList>
                             </Breadcrumb>
                         )}

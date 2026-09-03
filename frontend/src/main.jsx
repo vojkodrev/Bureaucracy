@@ -25,7 +25,11 @@ createRoot(document.getElementById('root')).render(
                     path="/invoices/search"
                     element={<InvoiceSearchPage />}
                 />
-                <Route path="/invoice/:invoiceNumber" element={<InvoicePage />} />
+                <Route path="/invoice" element={<InvoicePage key="new" />} />
+                <Route
+                    path="/invoice/:invoiceNumber"
+                    element={<InvoicePage key="detail" />}
+                />
                 <Route
                     path="/products/search"
                     element={<ProductSearchPage />}
