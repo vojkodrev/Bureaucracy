@@ -6,6 +6,7 @@ import DatePickerField from '@/components/DatePickerField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
     Menubar,
     MenubarContent,
@@ -53,6 +54,8 @@ const invoiceQuery = `
             customerPostalCode
             customerCity
             customerCountry
+            introductoryText
+            closingText
             items {
                 id
                 sequence
@@ -87,6 +90,8 @@ function InvoicePage() {
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
     const [serviceDate, setServiceDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
+    const [introductoryText, setIntroductoryText] = useState('')
+    const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -143,6 +148,8 @@ function InvoicePage() {
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
                 setServiceDate(dateFromInvoiceValue(invoice.serviceDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
+                setIntroductoryText(invoice.introductoryText ?? '')
+                setClosingText(invoice.closingText ?? '')
                 setInvoiceItems(invoice.items ?? [])
                 setLoadResult({ requestKey, error: null })
             })
@@ -306,7 +313,17 @@ function InvoicePage() {
                 </Card>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 space-y-6">
+                <Field>
+                    <FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
+                    <Textarea
+                        id="introductory-text"
+                        name="introductoryText"
+                        value={introductoryText}
+                        onChange={(event) => setIntroductoryText(event.target.value)}
+                    />
+                </Field>
+
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -382,6 +399,16 @@ function InvoicePage() {
                             ))}
                     </TableBody>
                 </Table>
+
+                <Field>
+                    <FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
+                    <Textarea
+                        id="closing-text"
+                        name="closingText"
+                        value={closingText}
+                        onChange={(event) => setClosingText(event.target.value)}
+                    />
+                </Field>
             </div>
         </div>
     )

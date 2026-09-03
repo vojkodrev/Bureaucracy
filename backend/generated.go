@@ -79,6 +79,7 @@ type ComplexityRoot struct {
 	Invoice struct {
 		Amount             func(childComplexity int) int
 		Cancelled          func(childComplexity int) int
+		ClosingText        func(childComplexity int) int
 		Currency           func(childComplexity int) int
 		CustomerAddress    func(childComplexity int) int
 		CustomerCity       func(childComplexity int) int
@@ -90,6 +91,7 @@ type ComplexityRoot struct {
 		DueDate            func(childComplexity int) int
 		GoodsAmount        func(childComplexity int) int
 		ID                 func(childComplexity int) int
+		IntroductoryText   func(childComplexity int) int
 		InvoiceNumber      func(childComplexity int) int
 		IssueDate          func(childComplexity int) int
 		Items              func(childComplexity int) int
@@ -363,6 +365,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.Cancelled(childComplexity), true
+	case "Invoice.closingText":
+		if e.ComplexityRoot.Invoice.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.ClosingText(childComplexity), true
 	case "Invoice.currency":
 		if e.ComplexityRoot.Invoice.Currency == nil {
 			break
@@ -429,6 +437,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.ID(childComplexity), true
+	case "Invoice.introductoryText":
+		if e.ComplexityRoot.Invoice.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.IntroductoryText(childComplexity), true
 	case "Invoice.invoiceNumber":
 		if e.ComplexityRoot.Invoice.InvoiceNumber == nil {
 			break
@@ -911,6 +925,10 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_paidAmount(ctx, field)
 	case "paymentReference":
 		return ec.fieldContext_Invoice_paymentReference(ctx, field)
+	case "introductoryText":
+		return ec.fieldContext_Invoice_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_Invoice_closingText(ctx, field)
 	case "cancelled":
 		return ec.fieldContext_Invoice_cancelled(ctx, field)
 	case "items":
@@ -2470,6 +2488,52 @@ func (ec *executionContext) _Invoice_paymentReference(ctx context.Context, field
 	)
 }
 func (ec *executionContext) fieldContext_Invoice_paymentReference(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_introductoryText(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_closingText(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -4947,6 +5011,16 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "paymentReference":
 			out.Values[i] = ec._Invoice_paymentReference(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "introductoryText":
+			out.Values[i] = ec._Invoice_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._Invoice_closingText(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

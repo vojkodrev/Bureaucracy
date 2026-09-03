@@ -59,6 +59,8 @@ type Invoice {
   goodsAmount: Float
   paidAmount: Float
   paymentReference: String
+  introductoryText: String
+  closingText: String
   cancelled: Boolean
   items: [InvoiceItem!]!
 }

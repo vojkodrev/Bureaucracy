@@ -54,6 +54,8 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.ZnesekBlaga,
 			r.PlacanoSIT,
 			r.Sklic,
+			r.SpremniText,
+			r.Klavzula,
 			r.Storno
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
@@ -82,6 +84,8 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.GoodsAmount,
 		&invoice.PaidAmount,
 		&invoice.PaymentReference,
+		&invoice.IntroductoryText,
+		&invoice.ClosingText,
 		&cancelled,
 	); err != nil {
 		if err == sql.ErrNoRows {

@@ -12,6 +12,8 @@ export type Invoice = {
     serviceDate?: string | null
     dueDate: string | null
     paymentDate: string | null
+    introductoryText?: string | null
+    closingText?: string | null
     items?: InvoiceItem[]
 }
 

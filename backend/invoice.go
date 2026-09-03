@@ -21,6 +21,8 @@ type Invoice struct {
 	GoodsAmount        *float64       `json:"goodsAmount"`
 	PaidAmount         *float64       `json:"paidAmount"`
 	PaymentReference   *string        `json:"paymentReference"`
+	IntroductoryText   *string        `json:"introductoryText"`
+	ClosingText        *string        `json:"closingText"`
 	Cancelled          *bool          `json:"cancelled"`
 	Items              []*InvoiceItem `json:"items"`
 }
