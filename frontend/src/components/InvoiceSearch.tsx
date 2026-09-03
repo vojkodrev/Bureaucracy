@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import Pager from '@/components/Pager'
 import { Button } from '@/components/ui/button'
@@ -137,6 +138,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         [activeSearch],
     )
     const [selectedInvoiceNumber, setSelectedInvoiceNumber] = useState<string | null>(null)
+    const [customerId, setCustomerId] = useState(activeSearch.customerId)
+    const [customerName, setCustomerName] = useState(activeSearch.customerName)
     const [invoiceDateFrom, setInvoiceDateFrom] = useState(() =>
         dateFromSearchValue(activeSearch.from),
     )
@@ -161,9 +164,11 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         : 0
 
     useEffect(() => {
+        setCustomerId(activeSearch.customerId)
+        setCustomerName(activeSearch.customerName)
         setInvoiceDateFrom(dateFromSearchValue(activeSearch.from))
         setInvoiceDateTo(dateFromSearchValue(activeSearch.to))
-    }, [activeSearch.from, activeSearch.to])
+    }, [activeSearch.customerId, activeSearch.customerName, activeSearch.from, activeSearch.to])
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -324,24 +329,23 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                             </Field>
 
                             <div className="grid gap-6 sm:grid-cols-2">
-                                <Field>
-                                    <FieldLabel htmlFor="customer-id">Customer ID</FieldLabel>
-                                    <Input
-                                        id="customer-id"
-                                        type="search"
-                                        name="customerId"
-                                        defaultValue={activeSearch.customerId}
-                                        autoComplete="off"
-                                    />
-                                </Field>
+                                <CustomerPickerField
+                                    id="customer-id"
+                                    label="Customer ID"
+                                    name="customerId"
+                                    customerId={customerId}
+                                    onCustomerIdChange={setCustomerId}
+                                    onCustomerNameChange={setCustomerName}
+                                />
                                 <Field>
                                     <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
                                     <Input
                                         id="customer-name"
                                         type="search"
                                         name="customerName"
-                                        defaultValue={activeSearch.customerName}
+                                        value={customerName}
                                         autoComplete="off"
+                                        onChange={(event) => setCustomerName(event.target.value)}
                                     />
                                 </Field>
                             </div>

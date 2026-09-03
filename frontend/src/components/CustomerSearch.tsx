@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { SubmitEvent } from 'react'
+import type { SubmitEvent, SyntheticEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import { Button } from '@/components/ui/button'
@@ -205,6 +205,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
 
     function submitSearch(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
+        event.stopPropagation()
         const formData = new FormData(event.currentTarget)
         const nextSearch: SearchForm = {
             customerId: String(formData.get('customerId') ?? '').trim(),
@@ -221,7 +222,8 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
         }
     }
 
-    function clearSearch() {
+    function clearSearch(event: SyntheticEvent<HTMLFormElement>) {
+        event.stopPropagation()
         setSelectedCustomerId(null)
         if (mode === ComponentMode.Page) {
             setSearchParams({})
