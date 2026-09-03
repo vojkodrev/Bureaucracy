@@ -74,7 +74,7 @@ func (repository *CustomerRepository) Search(
 		FROM [%s].[dbo].[Partner]
 		WHERE (@customerID = '' OR Sifra LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR Partner LIKE @customerName ESCAPE '\')
-		ORDER BY Partner, Sifra
+		ORDER BY Sifra
 		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName),
 		queryArguments...,
 	)
