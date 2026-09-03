@@ -1,5 +1,14 @@
 import { useEffect } from 'react'
-import { CalendarRange, FileSearch, PackageSearch, Users } from 'lucide-react'
+import { Collapsible } from '@base-ui/react/collapsible'
+import {
+    CalendarRange,
+    ChevronRight,
+    FileText,
+    PackageSearch,
+    Plus,
+    Search,
+    Users,
+} from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
     Breadcrumb,
@@ -19,6 +28,9 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
     SidebarProvider,
     SidebarRail,
     SidebarTrigger,
@@ -146,22 +158,57 @@ function LayoutPage() {
                                             <span>Customer search</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            isActive={
-                                                pathname ===
-                                                '/invoices/search' ||
-                                                isInvoicePage
-                                            }
-                                            tooltip="Invoice search"
+                                    <Collapsible.Root
+                                        defaultOpen
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
                                             render={
-                                                <NavLink to="/invoices/search" />
+                                                <SidebarMenuButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/invoices/search' ||
+                                                        isInvoicePage
+                                                    }
+                                                    tooltip="Invoices"
+                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                />
                                             }
                                         >
-                                            <FileSearch />
-                                            <span>Invoice search</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                            <FileText />
+                                            <span>Invoices</span>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/invoices/search'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/invoices/search" />
+                                                    }
+                                                >
+                                                    <Search />
+                                                    <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname === '/invoice'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/invoice" />
+                                                    }
+                                                >
+                                                    <Plus />
+                                                    <span>Invoice</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={
