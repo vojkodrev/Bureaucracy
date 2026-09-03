@@ -15,6 +15,32 @@ type BusinessYearPage {
   totalPages: Int!
 }
 
+type Customer {
+  id: Int!
+  customerId: String
+  name: String
+  address: String
+  postalCode: String
+  city: String
+  country: String
+  contact: String
+  email: String
+  phone: String
+  taxNumber: String
+  registrationNumber: String
+  paymentTerm: Int
+  discount: Float
+  disabled: Boolean
+}
+
+type CustomerPage {
+  customers: [Customer!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type Invoice {
   id: Int!
   invoiceNumber: String!
@@ -48,6 +74,14 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): BusinessYearPage!
+
+  searchCustomers(
+    businessYear: String!
+    customerId: String
+    customerName: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): CustomerPage!
 
   searchInvoices(
     businessYear: String!
