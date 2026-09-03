@@ -45,6 +45,7 @@ const invoiceQuery = `
             id
             invoiceNumber
             issueDate
+            serviceDate
             paymentDate
             customerCode
             customerName
@@ -84,6 +85,7 @@ function InvoicePage() {
     const [customerCity, setCustomerCity] = useState('')
     const [customerCountry, setCustomerCountry] = useState('')
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
+    const [dispatchDate, setDispatchDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
@@ -139,6 +141,7 @@ function InvoicePage() {
                 setCustomerCity(invoice.customerCity ?? '')
                 setCustomerCountry(invoice.customerCountry ?? '')
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
+                setDispatchDate(dateFromInvoiceValue(invoice.serviceDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
                 setInvoiceItems(invoice.items ?? [])
                 setLoadResult({ requestKey, error: null })
@@ -289,6 +292,15 @@ function InvoicePage() {
                                 date={paymentDate}
                                 onSelect={setPaymentDate}
                             />
+
+                            <DatePickerField
+                                id="dispatch-date"
+                                label="Dispatch date"
+                                name="dispatchDate"
+                                date={dispatchDate}
+                                onSelect={setDispatchDate}
+                            />
+
                         </FieldGroup>
                     </CardContent>
                 </Card>
@@ -301,8 +313,8 @@ function InvoicePage() {
                             <TableHead>#</TableHead>
                             <TableHead>Product code</TableHead>
                             <TableHead>Product name</TableHead>
-                            <TableHead className="text-right">Price per item</TableHead>
-                            <TableHead className="text-right">Tax amount per item</TableHead>
+                            <TableHead className="text-right">Unit price</TableHead>
+                            <TableHead className="text-right">Unit tax</TableHead>
                             <TableHead className="text-right">Quantity</TableHead>
                             <TableHead className="text-right">Discount</TableHead>
                             <TableHead className="text-right">Net amount</TableHead>

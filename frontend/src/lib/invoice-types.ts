@@ -9,6 +9,7 @@ export type Invoice = {
     customerCountry?: string | null
     amount: number | null
     issueDate: string | null
+    serviceDate?: string | null
     dueDate: string | null
     paymentDate: string | null
     items?: InvoiceItem[]
