@@ -68,6 +68,26 @@ type InvoicePage {
   totalPages: Int!
 }
 
+type Product {
+  id: Int!
+  productCode: String
+  name: String
+  barcode: String
+  unit: String
+  netPrice: Float
+  grossPrice: Float
+  taxRate: Float
+  taxCode: String
+}
+
+type ProductPage {
+  products: [Product!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type Query {
   businessYears(
     page: Int = 1
@@ -92,4 +112,12 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): InvoicePage!
+
+  searchProducts(
+    businessYear: String!
+    productCode: String
+    productName: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): ProductPage!
 }
