@@ -85,7 +85,7 @@ function InvoicePage() {
     const [customerCity, setCustomerCity] = useState('')
     const [customerCountry, setCustomerCountry] = useState('')
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
-    const [dispatchDate, setDispatchDate] = useState<Date | undefined>()
+    const [serviceDate, setServiceDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
@@ -141,7 +141,7 @@ function InvoicePage() {
                 setCustomerCity(invoice.customerCity ?? '')
                 setCustomerCountry(invoice.customerCountry ?? '')
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
-                setDispatchDate(dateFromInvoiceValue(invoice.serviceDate))
+                setServiceDate(dateFromInvoiceValue(invoice.serviceDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
                 setInvoiceItems(invoice.items ?? [])
                 setLoadResult({ requestKey, error: null })
@@ -294,11 +294,11 @@ function InvoicePage() {
                             />
 
                             <DatePickerField
-                                id="dispatch-date"
-                                label="Dispatch date"
-                                name="dispatchDate"
-                                date={dispatchDate}
-                                onSelect={setDispatchDate}
+                                id="service-date"
+                                label="Service date"
+                                name="serviceDate"
+                                date={serviceDate}
+                                onSelect={setServiceDate}
                             />
 
                         </FieldGroup>
