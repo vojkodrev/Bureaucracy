@@ -26,16 +26,16 @@ type Invoice struct {
 }
 
 type InvoiceItem struct {
-	ID          int      `json:"id"`
-	Sequence    *int     `json:"sequence"`
-	ProductCode *string  `json:"productCode"`
-	ProductName *string  `json:"productName"`
-	Unit        *string  `json:"unit"`
-	Quantity    *float64 `json:"quantity"`
-	Discount    *float64 `json:"discount"`
-	TaxCode     *string  `json:"taxCode"`
-	NetAmount   *float64 `json:"netAmount"`
-	GrossAmount *float64 `json:"grossAmount"`
+	ID            int      `json:"id"`
+	Sequence      *int     `json:"sequence"`
+	ProductCode   *string  `json:"productCode"`
+	ProductName   *string  `json:"productName"`
+	UnitPrice     *float64 `json:"unitPrice"`
+	UnitTaxAmount *float64 `json:"unitTaxAmount"`
+	Quantity      *float64 `json:"quantity"`
+	Discount      *float64 `json:"discount"`
+	NetAmount     *float64 `json:"netAmount"`
+	GrossAmount   *float64 `json:"grossAmount"`
 }
 
 type InvoicePage struct {

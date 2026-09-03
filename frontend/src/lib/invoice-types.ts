@@ -19,10 +19,10 @@ export type InvoiceItem = {
     sequence: number | null
     productCode: string | null
     productName: string | null
-    unit: string | null
+    unitPrice: number | null
+    unitTaxAmount: number | null
     quantity: number | null
     discount: number | null
-    taxCode: string | null
     netAmount: number | null
     grossAmount: number | null
 }

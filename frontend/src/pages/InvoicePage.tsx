@@ -57,10 +57,10 @@ const invoiceQuery = `
                 sequence
                 productCode
                 productName
-                unit
+                unitPrice
+                unitTaxAmount
                 quantity
                 discount
-                taxCode
                 netAmount
                 grossAmount
             }
@@ -301,10 +301,10 @@ function InvoicePage() {
                             <TableHead>#</TableHead>
                             <TableHead>Product code</TableHead>
                             <TableHead>Product name</TableHead>
-                            <TableHead>Unit</TableHead>
+                            <TableHead className="text-right">Price per item</TableHead>
+                            <TableHead className="text-right">Tax amount per item</TableHead>
                             <TableHead className="text-right">Quantity</TableHead>
                             <TableHead className="text-right">Discount</TableHead>
-                            <TableHead>Tax code</TableHead>
                             <TableHead className="text-right">Net amount</TableHead>
                             <TableHead className="text-right">Gross amount</TableHead>
                         </TableRow>
@@ -340,14 +340,22 @@ function InvoicePage() {
                                         {item.productCode ?? '—'}
                                     </TableCell>
                                     <TableCell>{item.productName ?? '—'}</TableCell>
-                                    <TableCell>{item.unit ?? '—'}</TableCell>
+                                    <TableCell className="text-right">
+                                        {item.unitPrice == null
+                                            ? '—'
+                                            : formatCurrency(item.unitPrice)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {item.unitTaxAmount == null
+                                            ? '—'
+                                            : formatCurrency(item.unitTaxAmount)}
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         {item.quantity ?? '—'}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {item.discount == null ? '—' : `${item.discount}%`}
                                     </TableCell>
-                                    <TableCell>{item.taxCode ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {item.netAmount == null
                                             ? '—'

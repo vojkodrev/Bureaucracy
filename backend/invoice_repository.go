@@ -114,10 +114,10 @@ func (repository *InvoiceRepository) getItems(
 			rs.Zaporedje,
 			rs.Artikel,
 			a.Opis,
-			a.Enota,
+			rs.ZnesekBrezDavka / NULLIF(rs.Kolicina, 0),
+			(rs.Znesek - rs.ZnesekBrezDavka) / NULLIF(rs.Kolicina, 0),
 			rs.Kolicina,
 			CAST(rs.Rabat AS float),
-			rs.SifraDavka,
 			rs.ZnesekBrezDavka,
 			rs.Znesek
 		FROM [%s].[dbo].[RacuniSpecifikacija] rs
@@ -140,10 +140,10 @@ func (repository *InvoiceRepository) getItems(
 			&item.Sequence,
 			&item.ProductCode,
 			&item.ProductName,
-			&item.Unit,
+			&item.UnitPrice,
+			&item.UnitTaxAmount,
 			&item.Quantity,
 			&item.Discount,
-			&item.TaxCode,
 			&item.NetAmount,
 			&item.GrossAmount,
 		); err != nil {

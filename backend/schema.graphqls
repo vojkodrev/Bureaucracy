@@ -68,10 +68,10 @@ type InvoiceItem {
   sequence: Int
   productCode: String
   productName: String
-  unit: String
+  unitPrice: Float
+  unitTaxAmount: Float
   quantity: Float
   discount: Float
-  taxCode: String
   netAmount: Float
   grossAmount: Float
 }

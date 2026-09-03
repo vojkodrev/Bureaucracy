@@ -100,16 +100,16 @@ type ComplexityRoot struct {
 	}
 
 	InvoiceItem struct {
-		Discount    func(childComplexity int) int
-		GrossAmount func(childComplexity int) int
-		ID          func(childComplexity int) int
-		NetAmount   func(childComplexity int) int
-		ProductCode func(childComplexity int) int
-		ProductName func(childComplexity int) int
-		Quantity    func(childComplexity int) int
-		Sequence    func(childComplexity int) int
-		TaxCode     func(childComplexity int) int
-		Unit        func(childComplexity int) int
+		Discount      func(childComplexity int) int
+		GrossAmount   func(childComplexity int) int
+		ID            func(childComplexity int) int
+		NetAmount     func(childComplexity int) int
+		ProductCode   func(childComplexity int) int
+		ProductName   func(childComplexity int) int
+		Quantity      func(childComplexity int) int
+		Sequence      func(childComplexity int) int
+		UnitPrice     func(childComplexity int) int
+		UnitTaxAmount func(childComplexity int) int
 	}
 
 	InvoicePage struct {
@@ -520,18 +520,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.InvoiceItem.Sequence(childComplexity), true
-	case "InvoiceItem.taxCode":
-		if e.ComplexityRoot.InvoiceItem.TaxCode == nil {
+	case "InvoiceItem.unitPrice":
+		if e.ComplexityRoot.InvoiceItem.UnitPrice == nil {
 			break
 		}
 
-		return e.ComplexityRoot.InvoiceItem.TaxCode(childComplexity), true
-	case "InvoiceItem.unit":
-		if e.ComplexityRoot.InvoiceItem.Unit == nil {
+		return e.ComplexityRoot.InvoiceItem.UnitPrice(childComplexity), true
+	case "InvoiceItem.unitTaxAmount":
+		if e.ComplexityRoot.InvoiceItem.UnitTaxAmount == nil {
 			break
 		}
 
-		return e.ComplexityRoot.InvoiceItem.Unit(childComplexity), true
+		return e.ComplexityRoot.InvoiceItem.UnitTaxAmount(childComplexity), true
 
 	case "InvoicePage.invoices":
 		if e.ComplexityRoot.InvoicePage.Invoices == nil {
@@ -929,14 +929,14 @@ func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field g
 		return ec.fieldContext_InvoiceItem_productCode(ctx, field)
 	case "productName":
 		return ec.fieldContext_InvoiceItem_productName(ctx, field)
-	case "unit":
-		return ec.fieldContext_InvoiceItem_unit(ctx, field)
+	case "unitPrice":
+		return ec.fieldContext_InvoiceItem_unitPrice(ctx, field)
+	case "unitTaxAmount":
+		return ec.fieldContext_InvoiceItem_unitTaxAmount(ctx, field)
 	case "quantity":
 		return ec.fieldContext_InvoiceItem_quantity(ctx, field)
 	case "discount":
 		return ec.fieldContext_InvoiceItem_discount(ctx, field)
-	case "taxCode":
-		return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
 	case "netAmount":
 		return ec.fieldContext_InvoiceItem_netAmount(ctx, field)
 	case "grossAmount":
@@ -2620,27 +2620,50 @@ func (ec *executionContext) fieldContext_InvoiceItem_productName(_ context.Conte
 	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
-func (ec *executionContext) _InvoiceItem_unit(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+func (ec *executionContext) _InvoiceItem_unitPrice(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_InvoiceItem_unit(ctx, field)
+			return ec.fieldContext_InvoiceItem_unitPrice(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.Unit, nil
+			return obj.UnitPrice, nil
 		},
 		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
 		},
 		true,
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_InvoiceItem_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+func (ec *executionContext) fieldContext_InvoiceItem_unitPrice(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_unitTaxAmount(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_unitTaxAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UnitTaxAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_unitTaxAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) _InvoiceItem_quantity(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
@@ -2687,29 +2710,6 @@ func (ec *executionContext) _InvoiceItem_discount(ctx context.Context, field gra
 }
 func (ec *executionContext) fieldContext_InvoiceItem_discount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
-}
-
-func (ec *executionContext) _InvoiceItem_taxCode(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.TaxCode, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
-			return ec.marshalOString2ᚖstring(ctx, selections, v)
-		},
-		true,
-		false,
-	)
-}
-func (ec *executionContext) fieldContext_InvoiceItem_taxCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _InvoiceItem_netAmount(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
@@ -5013,8 +5013,13 @@ func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
-		case "unit":
-			out.Values[i] = ec._InvoiceItem_unit(ctx, field, obj)
+		case "unitPrice":
+			out.Values[i] = ec._InvoiceItem_unitPrice(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "unitTaxAmount":
+			out.Values[i] = ec._InvoiceItem_unitTaxAmount(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
@@ -5025,11 +5030,6 @@ func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionS
 			}
 		case "discount":
 			out.Values[i] = ec._InvoiceItem_discount(ctx, field, obj)
-			if out.Values[i] == graphql.RequiredNull {
-				out.Invalids++
-			}
-		case "taxCode":
-			out.Values[i] = ec._InvoiceItem_taxCode(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
