@@ -77,23 +77,25 @@ type ComplexityRoot struct {
 	}
 
 	Invoice struct {
-		Amount           func(childComplexity int) int
-		Cancelled        func(childComplexity int) int
-		Currency         func(childComplexity int) int
-		CustomerAddress  func(childComplexity int) int
-		CustomerCity     func(childComplexity int) int
-		CustomerCode     func(childComplexity int) int
-		CustomerContact  func(childComplexity int) int
-		CustomerName     func(childComplexity int) int
-		DueDate          func(childComplexity int) int
-		GoodsAmount      func(childComplexity int) int
-		ID               func(childComplexity int) int
-		InvoiceNumber    func(childComplexity int) int
-		IssueDate        func(childComplexity int) int
-		PaidAmount       func(childComplexity int) int
-		PaymentDate      func(childComplexity int) int
-		PaymentReference func(childComplexity int) int
-		ServiceDate      func(childComplexity int) int
+		Amount             func(childComplexity int) int
+		Cancelled          func(childComplexity int) int
+		Currency           func(childComplexity int) int
+		CustomerAddress    func(childComplexity int) int
+		CustomerCity       func(childComplexity int) int
+		CustomerCode       func(childComplexity int) int
+		CustomerContact    func(childComplexity int) int
+		CustomerCountry    func(childComplexity int) int
+		CustomerName       func(childComplexity int) int
+		CustomerPostalCode func(childComplexity int) int
+		DueDate            func(childComplexity int) int
+		GoodsAmount        func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		InvoiceNumber      func(childComplexity int) int
+		IssueDate          func(childComplexity int) int
+		PaidAmount         func(childComplexity int) int
+		PaymentDate        func(childComplexity int) int
+		PaymentReference   func(childComplexity int) int
+		ServiceDate        func(childComplexity int) int
 	}
 
 	InvoicePage struct {
@@ -126,6 +128,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		BusinessYears   func(childComplexity int, page *int, pageSize *int) int
+		Invoice         func(childComplexity int, businessYear string, invoiceNumber string) int
 		SearchCustomers func(childComplexity int, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) int
 		SearchInvoices  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) int
 		SearchProducts  func(childComplexity int, businessYear string, productCode *string, productName *string, page *int, pageSize *int) int
@@ -138,6 +141,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
+	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) (*CustomerPage, error)
 	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, page *int, pageSize *int) (*InvoicePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, page *int, pageSize *int) (*ProductPage, error)
@@ -375,12 +379,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.CustomerContact(childComplexity), true
+	case "Invoice.customerCountry":
+		if e.ComplexityRoot.Invoice.CustomerCountry == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.CustomerCountry(childComplexity), true
 	case "Invoice.customerName":
 		if e.ComplexityRoot.Invoice.CustomerName == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Invoice.CustomerName(childComplexity), true
+	case "Invoice.customerPostalCode":
+		if e.ComplexityRoot.Invoice.CustomerPostalCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.CustomerPostalCode(childComplexity), true
 	case "Invoice.dueDate":
 		if e.ComplexityRoot.Invoice.DueDate == nil {
 			break
@@ -565,6 +581,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.BusinessYears(childComplexity, args["page"].(*int), args["pageSize"].(*int)), true
 
+	case "Query.invoice":
+		if e.ComplexityRoot.Query.Invoice == nil {
+			break
+		}
+
+		args, err := ec.field_Query_invoice_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Invoice(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(string)), true
 	case "Query.searchCustomers":
 		if e.ComplexityRoot.Query.SearchCustomers == nil {
 			break
@@ -785,8 +812,12 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_customerName(ctx, field)
 	case "customerAddress":
 		return ec.fieldContext_Invoice_customerAddress(ctx, field)
+	case "customerPostalCode":
+		return ec.fieldContext_Invoice_customerPostalCode(ctx, field)
 	case "customerCity":
 		return ec.fieldContext_Invoice_customerCity(ctx, field)
+	case "customerCountry":
+		return ec.fieldContext_Invoice_customerCountry(ctx, field)
 	case "customerContact":
 		return ec.fieldContext_Invoice_customerContact(ctx, field)
 	case "currency":
@@ -1010,6 +1041,28 @@ func (ec *executionContext) field_Query_businessYears_args(ctx context.Context, 
 		return nil, err
 	}
 	args["pageSize"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_invoice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumber",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["invoiceNumber"] = arg1
 	return args, nil
 }
 
@@ -2104,6 +2157,29 @@ func (ec *executionContext) fieldContext_Invoice_customerAddress(_ context.Conte
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _Invoice_customerPostalCode(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_customerPostalCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerPostalCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_customerPostalCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Invoice_customerCity(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2124,6 +2200,29 @@ func (ec *executionContext) _Invoice_customerCity(ctx context.Context, field gra
 	)
 }
 func (ec *executionContext) fieldContext_Invoice_customerCity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_customerCountry(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_customerCountry(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCountry, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_customerCountry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -2781,6 +2880,50 @@ func (ec *executionContext) fieldContext_Query_businessYears(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_businessYears_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_invoice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_invoice(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Invoice(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumber"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Invoice) graphql.Marshaler {
+			return ec.marshalOInvoice2ᚖbureaucracyᚋbackendᚐInvoice(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_invoice(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Invoice(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_invoice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4391,8 +4534,18 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "customerPostalCode":
+			out.Values[i] = ec._Invoice_customerPostalCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "customerCity":
 			out.Values[i] = ec._Invoice_customerCity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCountry":
+			out.Values[i] = ec._Invoice_customerCountry(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
@@ -4677,6 +4830,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_businessYears(ctx, field)
 				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "invoice":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_invoice(ctx, field)
+				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -5592,6 +5767,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOInvoice2ᚖbureaucracyᚋbackendᚐInvoice(ctx context.Context, sel ast.SelectionSet, v *Invoice) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Invoice(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

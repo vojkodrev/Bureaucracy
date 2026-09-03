@@ -1,0 +1,225 @@
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import CustomerPickerField from '@/components/CustomerPickerField'
+import DatePickerField from '@/components/DatePickerField'
+import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { getSelectedBusinessYear } from '@/lib/business-year'
+import { dateFromSearchValue } from '@/lib/dates'
+import type { Invoice } from '@/lib/invoice-types'
+
+type InvoiceResponse = {
+    data?: { invoice: Invoice | null }
+    errors?: { message: string }[]
+}
+
+type InvoiceLoadResult = {
+    invoiceNumber: string
+    error: string | null
+}
+
+const invoiceQuery = `
+    query Invoice($businessYear: String!, $invoiceNumber: String!) {
+        invoice(
+            businessYear: $businessYear
+            invoiceNumber: $invoiceNumber
+        ) {
+            id
+            invoiceNumber
+            issueDate
+            paymentDate
+            customerCode
+            customerName
+            customerAddress
+            customerPostalCode
+            customerCity
+            customerCountry
+        }
+    }
+`
+
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+
+function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
+    return value ? dateFromSearchValue(value.slice(0, 10)) : undefined
+}
+
+function InvoicePage() {
+    const { invoiceNumber: routeInvoiceNumber } = useParams()
+    const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
+    const [customerId, setCustomerId] = useState('')
+    const [customerName, setCustomerName] = useState('')
+    const [customerAddress, setCustomerAddress] = useState('')
+    const [customerPostalCode, setCustomerPostalCode] = useState('')
+    const [customerCity, setCustomerCity] = useState('')
+    const [customerCountry, setCustomerCountry] = useState('')
+    const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
+    const [paymentDate, setPaymentDate] = useState<Date | undefined>()
+    const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({
+        invoiceNumber: '__initial__',
+        error: null,
+    })
+    const isLoading = Boolean(routeInvoiceNumber) &&
+        loadResult.invoiceNumber !== routeInvoiceNumber
+    const error = loadResult.invoiceNumber === routeInvoiceNumber
+        ? loadResult.error
+        : null
+
+    useEffect(() => {
+        if (!routeInvoiceNumber) {
+            return
+        }
+
+        const abortController = new AbortController()
+
+        void fetch(graphqlUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: invoiceQuery,
+                variables: {
+                    businessYear: getSelectedBusinessYear(),
+                    invoiceNumber: routeInvoiceNumber,
+                },
+            }),
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Loading invoice failed (${response.status})`)
+                }
+
+                const result = (await response.json()) as InvoiceResponse
+                if (result.errors?.length) {
+                    throw new Error(result.errors.map(({ message }) => message).join(', '))
+                }
+                if (!result.data?.invoice) {
+                    throw new Error(`Invoice ${routeInvoiceNumber} was not found`)
+                }
+
+                const invoice = result.data.invoice
+                setInvoiceNumber(invoice.invoiceNumber)
+                setCustomerId(invoice.customerCode ?? '')
+                setCustomerName(invoice.customerName ?? '')
+                setCustomerAddress(invoice.customerAddress ?? '')
+                setCustomerPostalCode(invoice.customerPostalCode ?? '')
+                setCustomerCity(invoice.customerCity ?? '')
+                setCustomerCountry(invoice.customerCountry ?? '')
+                setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
+                setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
+                setLoadResult({ invoiceNumber: routeInvoiceNumber, error: null })
+            })
+            .catch((requestError: unknown) => {
+                if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                    return
+                }
+                setLoadResult({
+                    invoiceNumber: routeInvoiceNumber,
+                    error:
+                        requestError instanceof Error
+                            ? requestError.message
+                            : 'Loading invoice failed',
+                })
+            })
+
+        return () => abortController.abort()
+    }, [routeInvoiceNumber])
+
+    return (
+        <div className="max-w-2xl p-4">
+            {isLoading && (
+                <p className="mb-6 text-sm text-muted-foreground">Loading invoice…</p>
+            )}
+            {error && (
+                <p className="mb-6 text-sm text-destructive">{error}</p>
+            )}
+
+            <div className="grid gap-6 sm:grid-cols-2">
+                <Field>
+                    <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
+                    <Input
+                        id="invoice-number"
+                        value={invoiceNumber}
+                        onChange={(event) => setInvoiceNumber(event.target.value)}
+                    />
+                </Field>
+
+                <DatePickerField
+                    id="invoice-date"
+                    label="Invoice date"
+                    name="invoiceDate"
+                    date={invoiceDate}
+                    onSelect={setInvoiceDate}
+                />
+
+                <DatePickerField
+                    id="payment-date"
+                    label="Payment date"
+                    name="paymentDate"
+                    date={paymentDate}
+                    onSelect={setPaymentDate}
+                />
+
+                <CustomerPickerField
+                    id="customer-id"
+                    label="Customer ID"
+                    name="customerId"
+                    customerId={customerId}
+                    onCustomerIdChange={setCustomerId}
+                    onCustomerNameChange={setCustomerName}
+                    onCustomerAddressChange={setCustomerAddress}
+                    onCustomerPostalCodeChange={setCustomerPostalCode}
+                    onCustomerCityChange={setCustomerCity}
+                    onCustomerCountryChange={setCustomerCountry}
+                />
+
+                <Field>
+                    <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
+                    <Input
+                        id="customer-name"
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                    />
+                </Field>
+
+                <Field>
+                    <FieldLabel htmlFor="customer-address">Customer address</FieldLabel>
+                    <Input
+                        id="customer-address"
+                        value={customerAddress}
+                        onChange={(event) => setCustomerAddress(event.target.value)}
+                    />
+                </Field>
+
+                <Field>
+                    <FieldLabel htmlFor="customer-postal-code">Customer postal code</FieldLabel>
+                    <Input
+                        id="customer-postal-code"
+                        value={customerPostalCode}
+                        onChange={(event) => setCustomerPostalCode(event.target.value)}
+                    />
+                </Field>
+
+                <Field>
+                    <FieldLabel htmlFor="customer-city">Customer city</FieldLabel>
+                    <Input
+                        id="customer-city"
+                        value={customerCity}
+                        onChange={(event) => setCustomerCity(event.target.value)}
+                    />
+                </Field>
+
+                <Field>
+                    <FieldLabel htmlFor="customer-country">Customer country</FieldLabel>
+                    <Input
+                        id="customer-country"
+                        value={customerCountry}
+                        onChange={(event) => setCustomerCountry(event.target.value)}
+                    />
+                </Field>
+            </div>
+        </div>
+    )
+}
+
+export default InvoicePage

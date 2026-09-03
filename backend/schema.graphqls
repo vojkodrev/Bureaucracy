@@ -50,7 +50,9 @@ type Invoice {
   customerCode: String
   customerName: String
   customerAddress: String
+  customerPostalCode: String
   customerCity: String
+  customerCountry: String
   customerContact: String
   currency: String
   amount: Float
@@ -93,6 +95,11 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): BusinessYearPage!
+
+  invoice(
+    businessYear: String!
+    invoiceNumber: String!
+  ): Invoice
 
   searchCustomers(
     businessYear: String!

@@ -19,6 +19,83 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
+func (repository *InvoiceRepository) GetByNumber(
+	ctx context.Context,
+	businessYear string,
+	invoiceNumber string,
+) (*Invoice, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	invoiceNumber = strings.TrimSpace(invoiceNumber)
+	if invoiceNumber == "" {
+		return nil, fmt.Errorf("invoiceNumber is required")
+	}
+
+	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	customerDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	row := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT
+			r.RecNo,
+			COALESCE(r.Stevilka, ''),
+			r.DatumIzstavitve,
+			r.DatumDUR,
+			r.DatumZapadlosti,
+			r.DatumPlacila,
+			r.SifraPartnerja,
+			r.ImePartnerja,
+			r.NaslovPartnerja,
+			p.Posta,
+			r.KrajPartnerja,
+			p.Drzava,
+			r.KontaktPartnerja,
+			r.Valuta,
+			r.Znesek,
+			r.ZnesekBlaga,
+			r.PlacanoSIT,
+			r.Sklic,
+			r.Storno
+		FROM [%s].[dbo].[Racuni] r
+		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
+		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, customerDatabaseName),
+		sql.Named("invoiceNumber", invoiceNumber),
+	)
+
+	invoice := &Invoice{}
+	var cancelled sql.NullInt16
+	if err := row.Scan(
+		&invoice.ID,
+		&invoice.InvoiceNumber,
+		&invoice.IssueDate,
+		&invoice.ServiceDate,
+		&invoice.DueDate,
+		&invoice.PaymentDate,
+		&invoice.CustomerCode,
+		&invoice.CustomerName,
+		&invoice.CustomerAddress,
+		&invoice.CustomerPostalCode,
+		&invoice.CustomerCity,
+		&invoice.CustomerCountry,
+		&invoice.CustomerContact,
+		&invoice.Currency,
+		&invoice.Amount,
+		&invoice.GoodsAmount,
+		&invoice.PaidAmount,
+		&invoice.PaymentReference,
+		&cancelled,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get invoice: %w", err)
+	}
+	if cancelled.Valid {
+		value := cancelled.Int16 != 0
+		invoice.Cancelled = &value
+	}
+	return invoice, nil
+}
+
 func (repository *InvoiceRepository) Search(
 	ctx context.Context,
 	businessYear string,

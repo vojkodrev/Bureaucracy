@@ -23,6 +23,11 @@ func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *
 	return r.BusinessYearRepository.List(ctx, resultPage, resultPageSize)
 }
 
+// Invoice is the resolver for the invoice field.
+func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error) {
+	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
+}
+
 // SearchCustomers is the resolver for the searchCustomers field.
 func (r *queryResolver) SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) (*CustomerPage, error) {
 	resultPage := 1

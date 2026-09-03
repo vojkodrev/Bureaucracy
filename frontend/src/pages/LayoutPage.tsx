@@ -53,7 +53,9 @@ function searchParameterLabel(name: string): string {
 
 function LayoutPage() {
     const { pathname, search } = useLocation()
-    const breadcrumbLabel = breadcrumbLabels[pathname]
+    const breadcrumbLabel =
+        breadcrumbLabels[pathname] ??
+        (pathname.startsWith('/invoice/') ? 'Invoice' : undefined)
 
     useEffect(() => {
         const searchDetails = Array.from(new URLSearchParams(search))

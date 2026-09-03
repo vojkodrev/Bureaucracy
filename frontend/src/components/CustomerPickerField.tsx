@@ -28,6 +28,10 @@ type CustomerPickerFieldProps = {
     name: string
     onCustomerIdChange: (customerId: string) => void
     onCustomerNameChange: (customerName: string) => void
+    onCustomerAddressChange?: (customerAddress: string) => void
+    onCustomerPostalCodeChange?: (customerPostalCode: string) => void
+    onCustomerCityChange?: (customerCity: string) => void
+    onCustomerCountryChange?: (customerCountry: string) => void
 }
 
 function CustomerPickerField({
@@ -37,6 +41,10 @@ function CustomerPickerField({
     name,
     onCustomerIdChange,
     onCustomerNameChange,
+    onCustomerAddressChange,
+    onCustomerPostalCodeChange,
+    onCustomerCityChange,
+    onCustomerCountryChange,
 }: CustomerPickerFieldProps) {
     const [open, setOpen] = useState(false)
 
@@ -44,6 +52,10 @@ function CustomerPickerField({
         setOpen(false)
         onCustomerIdChange(customer.customerId ?? '')
         onCustomerNameChange(customer.name ?? '')
+        onCustomerAddressChange?.(customer.address ?? '')
+        onCustomerPostalCodeChange?.(customer.postalCode ?? '')
+        onCustomerCityChange?.(customer.city ?? '')
+        onCustomerCountryChange?.(customer.country ?? '')
     }
 
     return (
