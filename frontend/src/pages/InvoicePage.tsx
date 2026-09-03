@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
-import { Field, FieldLabel } from '@/components/ui/field'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue } from '@/lib/dates'
@@ -126,7 +127,7 @@ function InvoicePage() {
     }, [routeInvoiceNumber])
 
     return (
-        <div className="max-w-2xl p-4">
+        <div className="max-w-5xl p-4">
             {isLoading && (
                 <p className="mb-6 text-sm text-muted-foreground">Loading invoice…</p>
             )}
@@ -134,89 +135,109 @@ function InvoicePage() {
                 <p className="mb-6 text-sm text-destructive">{error}</p>
             )}
 
-            <div className="grid gap-6 sm:grid-cols-2">
-                <Field>
-                    <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
-                    <Input
-                        id="invoice-number"
-                        value={invoiceNumber}
-                        onChange={(event) => setInvoiceNumber(event.target.value)}
-                    />
-                </Field>
+            <div className="grid items-start gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Customer</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FieldGroup>
+                            <CustomerPickerField
+                                id="customer-id"
+                                label="ID"
+                                name="customerId"
+                                customerId={customerId}
+                                onCustomerIdChange={setCustomerId}
+                                onCustomerNameChange={setCustomerName}
+                                onCustomerAddressChange={setCustomerAddress}
+                                onCustomerPostalCodeChange={setCustomerPostalCode}
+                                onCustomerCityChange={setCustomerCity}
+                                onCustomerCountryChange={setCustomerCountry}
+                            />
 
-                <DatePickerField
-                    id="invoice-date"
-                    label="Invoice date"
-                    name="invoiceDate"
-                    date={invoiceDate}
-                    onSelect={setInvoiceDate}
-                />
+                            <Field>
+                                <FieldLabel htmlFor="customer-name">Name</FieldLabel>
+                                <Input
+                                    id="customer-name"
+                                    value={customerName}
+                                    onChange={(event) => setCustomerName(event.target.value)}
+                                />
+                            </Field>
 
-                <DatePickerField
-                    id="payment-date"
-                    label="Payment date"
-                    name="paymentDate"
-                    date={paymentDate}
-                    onSelect={setPaymentDate}
-                />
+                            <Field>
+                                <FieldLabel htmlFor="customer-address">Address</FieldLabel>
+                                <Input
+                                    id="customer-address"
+                                    value={customerAddress}
+                                    onChange={(event) => setCustomerAddress(event.target.value)}
+                                />
+                            </Field>
 
-                <CustomerPickerField
-                    id="customer-id"
-                    label="Customer ID"
-                    name="customerId"
-                    customerId={customerId}
-                    onCustomerIdChange={setCustomerId}
-                    onCustomerNameChange={setCustomerName}
-                    onCustomerAddressChange={setCustomerAddress}
-                    onCustomerPostalCodeChange={setCustomerPostalCode}
-                    onCustomerCityChange={setCustomerCity}
-                    onCustomerCountryChange={setCustomerCountry}
-                />
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <Field>
+                                    <FieldLabel htmlFor="customer-postal-code">Postal code</FieldLabel>
+                                    <Input
+                                        id="customer-postal-code"
+                                        value={customerPostalCode}
+                                        onChange={(event) => setCustomerPostalCode(event.target.value)}
+                                    />
+                                </Field>
 
-                <Field>
-                    <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
-                    <Input
-                        id="customer-name"
-                        value={customerName}
-                        onChange={(event) => setCustomerName(event.target.value)}
-                    />
-                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="customer-city">City</FieldLabel>
+                                    <Input
+                                        id="customer-city"
+                                        value={customerCity}
+                                        onChange={(event) => setCustomerCity(event.target.value)}
+                                    />
+                                </Field>
+                            </div>
 
-                <Field>
-                    <FieldLabel htmlFor="customer-address">Customer address</FieldLabel>
-                    <Input
-                        id="customer-address"
-                        value={customerAddress}
-                        onChange={(event) => setCustomerAddress(event.target.value)}
-                    />
-                </Field>
+                            <Field>
+                                <FieldLabel htmlFor="customer-country">Country</FieldLabel>
+                                <Input
+                                    id="customer-country"
+                                    value={customerCountry}
+                                    onChange={(event) => setCustomerCountry(event.target.value)}
+                                />
+                            </Field>
+                        </FieldGroup>
+                    </CardContent>
+                </Card>
 
-                <Field>
-                    <FieldLabel htmlFor="customer-postal-code">Customer postal code</FieldLabel>
-                    <Input
-                        id="customer-postal-code"
-                        value={customerPostalCode}
-                        onChange={(event) => setCustomerPostalCode(event.target.value)}
-                    />
-                </Field>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>General information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="invoice-number">Number</FieldLabel>
+                                <Input
+                                    id="invoice-number"
+                                    value={invoiceNumber}
+                                    onChange={(event) => setInvoiceNumber(event.target.value)}
+                                />
+                            </Field>
 
-                <Field>
-                    <FieldLabel htmlFor="customer-city">Customer city</FieldLabel>
-                    <Input
-                        id="customer-city"
-                        value={customerCity}
-                        onChange={(event) => setCustomerCity(event.target.value)}
-                    />
-                </Field>
+                            <DatePickerField
+                                id="invoice-date"
+                                label="Date"
+                                name="invoiceDate"
+                                date={invoiceDate}
+                                onSelect={setInvoiceDate}
+                            />
 
-                <Field>
-                    <FieldLabel htmlFor="customer-country">Customer country</FieldLabel>
-                    <Input
-                        id="customer-country"
-                        value={customerCountry}
-                        onChange={(event) => setCustomerCountry(event.target.value)}
-                    />
-                </Field>
+                            <DatePickerField
+                                id="payment-date"
+                                label="Payment date"
+                                name="paymentDate"
+                                date={paymentDate}
+                                onSelect={setPaymentDate}
+                            />
+                        </FieldGroup>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
