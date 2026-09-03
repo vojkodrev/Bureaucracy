@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
+import { Printer, Save, Undo2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import {
+    Menubar,
+    MenubarContent,
+    MenubarItem,
+    MenubarMenu,
+    MenubarTrigger,
+} from '@/components/ui/menubar'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
@@ -15,7 +23,7 @@ type InvoiceResponse = {
 }
 
 type InvoiceLoadResult = {
-    invoiceNumber: string
+    requestKey: string
     error: string | null
 }
 
@@ -56,13 +64,15 @@ function InvoicePage() {
     const [customerCountry, setCustomerCountry] = useState('')
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
+    const [reloadVersion, setReloadVersion] = useState(0)
+    const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({
-        invoiceNumber: '__initial__',
+        requestKey: '__initial__',
         error: null,
     })
     const isLoading = Boolean(routeInvoiceNumber) &&
-        loadResult.invoiceNumber !== routeInvoiceNumber
-    const error = loadResult.invoiceNumber === routeInvoiceNumber
+        loadResult.requestKey !== requestKey
+    const error = loadResult.requestKey === requestKey
         ? loadResult.error
         : null
 
@@ -108,14 +118,14 @@ function InvoicePage() {
                 setCustomerCountry(invoice.customerCountry ?? '')
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
-                setLoadResult({ invoiceNumber: routeInvoiceNumber, error: null })
+                setLoadResult({ requestKey, error: null })
             })
             .catch((requestError: unknown) => {
                 if (requestError instanceof DOMException && requestError.name === 'AbortError') {
                     return
                 }
                 setLoadResult({
-                    invoiceNumber: routeInvoiceNumber,
+                    requestKey,
                     error:
                         requestError instanceof Error
                             ? requestError.message
@@ -124,10 +134,38 @@ function InvoicePage() {
             })
 
         return () => abortController.abort()
-    }, [routeInvoiceNumber])
+    }, [requestKey, routeInvoiceNumber])
 
     return (
         <div className="max-w-5xl p-4">
+            <Menubar className="mb-6 w-fit">
+                <MenubarMenu>
+                    <MenubarTrigger>File</MenubarTrigger>
+                    <MenubarContent>
+                        <MenubarItem disabled>
+                            <Save />
+                            Save
+                        </MenubarItem>
+                        <MenubarItem disabled>
+                            <Printer />
+                            Print
+                        </MenubarItem>
+                    </MenubarContent>
+                </MenubarMenu>
+                <MenubarMenu>
+                    <MenubarTrigger>Edit</MenubarTrigger>
+                    <MenubarContent>
+                        <MenubarItem
+                            disabled={!routeInvoiceNumber || isLoading}
+                            onClick={() => setReloadVersion((version) => version + 1)}
+                        >
+                            <Undo2 />
+                            Revert
+                        </MenubarItem>
+                    </MenubarContent>
+                </MenubarMenu>
+            </Menubar>
+
             {isLoading && (
                 <p className="mb-6 text-sm text-muted-foreground">Loading invoice…</p>
             )}
