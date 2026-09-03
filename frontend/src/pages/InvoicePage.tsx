@@ -54,6 +54,7 @@ const invoiceQuery = `
             customerPostalCode
             customerCity
             customerCountry
+            paidAmount
             introductoryText
             closingText
             items {
@@ -90,6 +91,7 @@ function InvoicePage() {
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
     const [serviceDate, setServiceDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
+    const [paidAmount, setPaidAmount] = useState('')
     const [introductoryText, setIntroductoryText] = useState('')
     const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
@@ -148,6 +150,7 @@ function InvoicePage() {
                 setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
                 setServiceDate(dateFromInvoiceValue(invoice.serviceDate))
                 setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
+                setPaidAmount(invoice.paidAmount == null ? '' : String(invoice.paidAmount))
                 setIntroductoryText(invoice.introductoryText ?? '')
                 setClosingText(invoice.closingText ?? '')
                 setInvoiceItems(invoice.items ?? [])
@@ -168,6 +171,13 @@ function InvoicePage() {
 
         return () => abortController.abort()
     }, [requestKey, routeInvoiceNumber])
+
+    const totalIncludingVat = invoiceItems.reduce(
+        (total, item) => total + (item.grossAmount ?? 0),
+        0,
+    )
+    const paidAmountValue = Number(paidAmount) || 0
+    const balanceDue = totalIncludingVat - paidAmountValue
 
     return (
         <div className="max-w-5xl p-4">
@@ -409,6 +419,50 @@ function InvoicePage() {
                         onChange={(event) => setClosingText(event.target.value)}
                     />
                 </Field>
+
+                <Card className="ml-auto w-full max-w-sm">
+                    <CardHeader>
+                        <CardTitle>Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead className="text-right">Value</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell>Total incl. VAT</TableCell>
+                                    <TableCell className="text-right font-medium">
+                                        {formatCurrency(totalIncludingVat)}
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell>Paid amount</TableCell>
+                                    <TableCell>
+                                        <Input
+                                            aria-label="Paid amount"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={paidAmount}
+                                            onChange={(event) => setPaidAmount(event.target.value)}
+                                            className="ml-auto text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell>Balance due</TableCell>
+                                    <TableCell className="text-right font-medium">
+                                        {formatCurrency(balanceDue)}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
