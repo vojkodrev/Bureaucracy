@@ -49,6 +49,19 @@ func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string,
 	return r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, issuedFrom, issuedTo, resultPage, resultPageSize)
 }
 
+// SearchProducts is the resolver for the searchProducts field.
+func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, page *int, pageSize *int) (*ProductPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.Products.Search(ctx, businessYear, productCode, productName, resultPage, resultPageSize)
+}
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 

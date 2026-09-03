@@ -4,6 +4,7 @@ import BusinessYearsPage from './pages/BusinessYearsPage.tsx'
 import CustomerSearchPage from './pages/CustomerSearchPage.tsx'
 import LayoutPage from './pages/LayoutPage.tsx'
 import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
+import ProductSearchPage from './pages/ProductSearchPage.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -22,6 +23,10 @@ createRoot(document.getElementById('root')).render(
                 <Route
                     path="/invoices/search"
                     element={<InvoiceSearchPage />}
+                />
+                <Route
+                    path="/products/search"
+                    element={<ProductSearchPage />}
                 />
             </Route>
         </Routes>

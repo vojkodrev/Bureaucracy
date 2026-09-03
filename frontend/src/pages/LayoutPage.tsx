@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { CalendarRange, FileSearch, Users } from 'lucide-react'
+import { CalendarRange, FileSearch, PackageSearch, Users } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
     Breadcrumb,
@@ -27,6 +27,7 @@ const breadcrumbLabels: Record<string, string> = {
     '/business-years': 'Business years',
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
+    '/products/search': 'Product search',
 }
 
 const searchParameterLabels: Record<string, string> = {
@@ -36,6 +37,8 @@ const searchParameterLabels: Record<string, string> = {
     invoiceNumber: 'Invoice number',
     page: 'Page',
     pageSize: 'Page size',
+    productCode: 'Product code',
+    productName: 'Product name',
     to: 'Invoice date to',
 }
 
@@ -93,6 +96,21 @@ function LayoutPage() {
                         <SidebarGroup>
                             <SidebarGroupContent>
                                 <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={
+                                                pathname ===
+                                                '/products/search'
+                                            }
+                                            tooltip="Product search"
+                                            render={
+                                                <NavLink to="/products/search" />
+                                            }
+                                        >
+                                            <PackageSearch />
+                                            <span>Product search</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={
