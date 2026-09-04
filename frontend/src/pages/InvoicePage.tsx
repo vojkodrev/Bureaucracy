@@ -656,7 +656,8 @@ function InvoicePage() {
                                         <Input
                                             id="new-product-name"
                                             value={newProductName}
-                                            onChange={(event) => setNewProductName(event.target.value)}
+                                            readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field>
@@ -664,7 +665,8 @@ function InvoicePage() {
                                         <Input
                                             id="new-product-unit"
                                             value={newProductUnit}
-                                            onChange={(event) => setNewProductUnit(event.target.value)}
+                                            readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field className="sm:col-start-1">
@@ -682,7 +684,7 @@ function InvoicePage() {
                                 <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
                                     <Field>
                                         <FieldLabel htmlFor="new-product-net-unit-price">
-                                            Cena brez davka na EM
+                                            Net unit price
                                         </FieldLabel>
                                         <Input
                                             id="new-product-net-unit-price"
@@ -694,27 +696,29 @@ function InvoicePage() {
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="new-product-tax-base">
-                                            Osnova za davek
+                                            Taxable amount
                                         </FieldLabel>
                                         <Input
                                             id="new-product-tax-base"
                                             value={decimalValue(newTaxBase)}
                                             readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="new-product-net-value">
-                                            Vrednost brez davka
+                                            Net amount before discount
                                         </FieldLabel>
                                         <Input
                                             id="new-product-net-value"
                                             value={decimalValue(newNetValue)}
                                             readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field>
                                         <FieldLabel htmlFor="new-product-tax-rate">
-                                            Davek (%)
+                                            VAT rate (%)
                                         </FieldLabel>
                                         <Input
                                             id="new-product-tax-rate"
@@ -727,7 +731,7 @@ function InvoicePage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <Field>
                                             <FieldLabel htmlFor="new-product-discount">
-                                                Popust (%)
+                                                Discount (%)
                                             </FieldLabel>
                                             <Input
                                                 id="new-product-discount"
@@ -740,43 +744,47 @@ function InvoicePage() {
                                         </Field>
                                         <Field>
                                             <FieldLabel htmlFor="new-product-discount-amount">
-                                                Znesek popusta
+                                                Discount amount
                                             </FieldLabel>
                                             <Input
                                                 id="new-product-discount-amount"
                                                 value={decimalValue(newDiscountAmount)}
                                                 readOnly
+                                                className="bg-muted/50 text-muted-foreground"
                                             />
                                         </Field>
                                     </div>
                                     <Field>
                                         <FieldLabel htmlFor="new-product-tax-amount">
-                                            Znesek davka
+                                            VAT amount
                                         </FieldLabel>
                                         <Input
                                             id="new-product-tax-amount"
                                             value={decimalValue(newTaxAmount)}
                                             readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field className="sm:col-start-2">
                                         <FieldLabel htmlFor="new-product-gross-value">
-                                            Vrednost z davkom
+                                            Gross amount
                                         </FieldLabel>
                                         <Input
                                             id="new-product-gross-value"
                                             value={decimalValue(newGrossValue)}
                                             readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                     <Field className="sm:col-start-2">
                                         <FieldLabel htmlFor="new-product-gross-unit-price">
-                                            Cena z davkom na EM
+                                            Gross unit price
                                         </FieldLabel>
                                         <Input
                                             id="new-product-gross-unit-price"
                                             value={decimalValue(newGrossUnitPrice)}
                                             readOnly
+                                            className="bg-muted/50 text-muted-foreground"
                                         />
                                     </Field>
                                 </div>
