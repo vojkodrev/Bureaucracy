@@ -29,7 +29,7 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 }
 
 // SearchCustomers is the resolver for the searchCustomers field.
-func (r *queryResolver) SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) (*CustomerPage, error) {
+func (r *queryResolver) SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -38,7 +38,7 @@ func (r *queryResolver) SearchCustomers(ctx context.Context, businessYear string
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.Customers.Search(ctx, businessYear, customerID, customerName, resultPage, resultPageSize)
+	return r.Customers.Search(ctx, businessYear, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // SearchInvoices is the resolver for the searchInvoices field.
@@ -55,7 +55,7 @@ func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string,
 }
 
 // SearchProducts is the resolver for the searchProducts field.
-func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, page *int, pageSize *int) (*ProductPage, error) {
+func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -64,7 +64,7 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.Products.Search(ctx, businessYear, productCode, productName, resultPage, resultPageSize)
+	return r.Products.Search(ctx, businessYear, productCode, productName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // Query returns QueryResolver implementation.

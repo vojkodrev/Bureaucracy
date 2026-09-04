@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
+import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -10,7 +11,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
@@ -31,7 +31,29 @@ type SearchForm = {
     productName: string
     page: string
     pageSize: string
+    sortBy: ProductSortColumn | ''
+    sortDirection: SortDirection | ''
 }
+
+type ProductSortColumn =
+    | 'productCode'
+    | 'name'
+    | 'barcode'
+    | 'unit'
+    | 'netPrice'
+    | 'grossPrice'
+    | 'taxRate'
+type SortDirection = 'asc' | 'desc'
+
+const productSortColumns: { key: ProductSortColumn, label: string, alignRight?: boolean }[] = [
+    { key: 'productCode', label: 'Product code' },
+    { key: 'name', label: 'Name' },
+    { key: 'barcode', label: 'Barcode' },
+    { key: 'unit', label: 'Unit' },
+    { key: 'netPrice', label: 'Net price', alignRight: true },
+    { key: 'grossPrice', label: 'Gross price', alignRight: true },
+    { key: 'taxRate', label: 'Tax rate', alignRight: true },
+]
 
 type SearchProductsResponse = {
     data?: { searchProducts: ProductPage }
@@ -54,6 +76,8 @@ const searchProductsQuery = `
         $businessYear: String!
         $productCode: String
         $productName: String
+        $sortBy: String
+        $sortDirection: String
         $page: Int
         $pageSize: Int
     ) {
@@ -61,6 +85,8 @@ const searchProductsQuery = `
             businessYear: $businessYear
             productCode: $productCode
             productName: $productName
+            sortBy: $sortBy
+            sortDirection: $sortDirection
             page: $page
             pageSize: $pageSize
         ) {
@@ -87,11 +113,22 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyProducts: Product[] = []
 
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
+    const sortByValue = searchParams.get('sortBy')
+    const sortDirectionValue = searchParams.get('sortDirection')
+    const sortBy = productSortColumns.some(({ key }) => key === sortByValue)
+        ? sortByValue as ProductSortColumn
+        : ''
+    const sortDirection = sortDirectionValue === 'asc' || sortDirectionValue === 'desc'
+        ? sortDirectionValue
+        : ''
+
     return {
         productCode: searchParams.get('productCode') ?? '',
         productName: searchParams.get('productName') ?? '',
         page: searchParams.get('page') ?? String(defaultPage),
         pageSize: searchParams.get('pageSize') ?? String(defaultPageSize),
+        sortBy: sortDirection ? sortBy : '',
+        sortDirection: sortBy ? sortDirection : '',
     }
 }
 
@@ -106,6 +143,10 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
     }
     searchParams.set('page', search.page)
     searchParams.set('pageSize', search.pageSize)
+    if (search.sortBy && search.sortDirection) {
+        searchParams.set('sortBy', search.sortBy)
+        searchParams.set('sortDirection', search.sortDirection)
+    }
     return searchParams
 }
 
@@ -153,6 +194,8 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                     businessYear: getSelectedBusinessYear(),
                     productCode: optionalFilter(activeSearch.productCode),
                     productName: optionalFilter(activeSearch.productName),
+                    sortBy: activeSearch.sortBy || null,
+                    sortDirection: activeSearch.sortDirection || null,
                     page: positiveInteger(activeSearch.page, defaultPage),
                     pageSize: Math.min(
                         positiveInteger(activeSearch.pageSize, defaultPageSize),
@@ -205,6 +248,8 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
             productName: String(formData.get('productName') ?? '').trim(),
             page: String(defaultPage),
             pageSize: activeSearch.pageSize,
+            sortBy: activeSearch.sortBy,
+            sortDirection: activeSearch.sortDirection,
         }
 
         setSelectedProductId(null)
@@ -239,6 +284,26 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                 page: String(page),
                 pageSize,
             }))
+        }
+    }
+
+    function changeSort(sortBy: ProductSortColumn) {
+        const sortDirection = activeSearch.sortBy !== sortBy
+            ? 'asc'
+            : activeSearch.sortDirection === 'asc'
+                ? 'desc'
+                : ''
+        const nextSearch: SearchForm = {
+            ...activeSearch,
+            page: String(defaultPage),
+            sortBy: sortDirection ? sortBy : '',
+            sortDirection,
+        }
+
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
         }
     }
 
@@ -303,13 +368,17 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Product code</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Barcode</TableHead>
-                            <TableHead>Unit</TableHead>
-                            <TableHead className="text-right">Net price</TableHead>
-                            <TableHead className="text-right">Gross price</TableHead>
-                            <TableHead className="text-right">Tax rate</TableHead>
+                            {productSortColumns.map(({ key, label, alignRight }) => (
+                                <SortableTableHead
+                                    key={key}
+                                    label={label}
+                                    direction={activeSearch.sortBy === key
+                                        ? activeSearch.sortDirection
+                                        : ''}
+                                    alignRight={alignRight}
+                                    onSort={() => changeSort(key)}
+                                />
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>

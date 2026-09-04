@@ -145,9 +145,9 @@ type ComplexityRoot struct {
 	Query struct {
 		BusinessYears   func(childComplexity int, page *int, pageSize *int) int
 		Invoice         func(childComplexity int, businessYear string, invoiceNumber string) int
-		SearchCustomers func(childComplexity int, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) int
+		SearchCustomers func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchProducts  func(childComplexity int, businessYear string, productCode *string, productName *string, page *int, pageSize *int) int
+		SearchProducts  func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 	}
 }
 
@@ -158,9 +158,9 @@ type ComplexityRoot struct {
 type QueryResolver interface {
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
-	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, page *int, pageSize *int) (*CustomerPage, error)
+	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
 	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error)
-	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, page *int, pageSize *int) (*ProductPage, error)
+	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -697,7 +697,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchCustomers(childComplexity, args["businessYear"].(string), args["customerId"].(*string), args["customerName"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchCustomers(childComplexity, args["businessYear"].(string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchInvoices":
 		if e.ComplexityRoot.Query.SearchInvoices == nil {
 			break
@@ -719,7 +719,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchProducts(childComplexity, args["businessYear"].(string), args["productCode"].(*string), args["productName"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchProducts(childComplexity, args["businessYear"].(string), args["productCode"].(*string), args["productName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 
 	}
 	return 0, false
@@ -1220,22 +1220,38 @@ func (ec *executionContext) field_Query_searchCustomers_args(ctx context.Context
 		return nil, err
 	}
 	args["customerName"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg4
+	args["pageSize"] = arg6
 	return args, nil
 }
 
@@ -1352,22 +1368,38 @@ func (ec *executionContext) field_Query_searchProducts_args(ctx context.Context,
 		return nil, err
 	}
 	args["productName"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg4
+	args["pageSize"] = arg6
 	return args, nil
 }
 
@@ -3391,7 +3423,7 @@ func (ec *executionContext) _Query_searchCustomers(ctx context.Context, field gr
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchCustomers(ctx, fc.Args["businessYear"].(string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchCustomers(ctx, fc.Args["businessYear"].(string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *CustomerPage) graphql.Marshaler {
@@ -3479,7 +3511,7 @@ func (ec *executionContext) _Query_searchProducts(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchProducts(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchProducts(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *ProductPage) graphql.Marshaler {

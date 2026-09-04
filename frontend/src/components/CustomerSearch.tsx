@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
+import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -10,7 +11,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
@@ -30,7 +30,31 @@ type SearchForm = {
     customerName: string
     page: string
     pageSize: string
+    sortBy: CustomerSortColumn | ''
+    sortDirection: SortDirection | ''
 }
+
+type CustomerSortColumn =
+    | 'customerId'
+    | 'name'
+    | 'address'
+    | 'city'
+    | 'contact'
+    | 'email'
+    | 'phone'
+    | 'taxNumber'
+type SortDirection = 'asc' | 'desc'
+
+const customerSortColumns: { key: CustomerSortColumn, label: string }[] = [
+    { key: 'customerId', label: 'Customer ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'address', label: 'Address' },
+    { key: 'city', label: 'City' },
+    { key: 'contact', label: 'Contact' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'taxNumber', label: 'Tax number' },
+]
 
 type SearchCustomersResponse = {
     data?: { searchCustomers: CustomerPage }
@@ -53,6 +77,8 @@ const searchCustomersQuery = `
         $businessYear: String!
         $customerId: String
         $customerName: String
+        $sortBy: String
+        $sortDirection: String
         $page: Int
         $pageSize: Int
     ) {
@@ -60,6 +86,8 @@ const searchCustomersQuery = `
             businessYear: $businessYear
             customerId: $customerId
             customerName: $customerName
+            sortBy: $sortBy
+            sortDirection: $sortDirection
             page: $page
             pageSize: $pageSize
         ) {
@@ -91,11 +119,22 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyCustomers: Customer[] = []
 
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
+    const sortByValue = searchParams.get('sortBy')
+    const sortDirectionValue = searchParams.get('sortDirection')
+    const sortBy = customerSortColumns.some(({ key }) => key === sortByValue)
+        ? sortByValue as CustomerSortColumn
+        : ''
+    const sortDirection = sortDirectionValue === 'asc' || sortDirectionValue === 'desc'
+        ? sortDirectionValue
+        : ''
+
     return {
         customerId: searchParams.get('customerId') ?? '',
         customerName: searchParams.get('customerName') ?? '',
         page: searchParams.get('page') ?? String(defaultPage),
         pageSize: searchParams.get('pageSize') ?? String(defaultPageSize),
+        sortBy: sortDirection ? sortBy : '',
+        sortDirection: sortBy ? sortDirection : '',
     }
 }
 
@@ -110,6 +149,10 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
     }
     searchParams.set('page', search.page)
     searchParams.set('pageSize', search.pageSize)
+    if (search.sortBy && search.sortDirection) {
+        searchParams.set('sortBy', search.sortBy)
+        searchParams.set('sortDirection', search.sortDirection)
+    }
     return searchParams
 }
 
@@ -160,6 +203,8 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                     businessYear: getSelectedBusinessYear(),
                     customerId: optionalFilter(activeSearch.customerId),
                     customerName: optionalFilter(activeSearch.customerName),
+                    sortBy: activeSearch.sortBy || null,
+                    sortDirection: activeSearch.sortDirection || null,
                     page: positiveInteger(activeSearch.page, defaultPage),
                     pageSize: Math.min(
                         positiveInteger(activeSearch.pageSize, defaultPageSize),
@@ -212,6 +257,8 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
             customerName: String(formData.get('customerName') ?? '').trim(),
             page: String(defaultPage),
             pageSize: activeSearch.pageSize,
+            sortBy: activeSearch.sortBy,
+            sortDirection: activeSearch.sortDirection,
         }
 
         setSelectedCustomerId(null)
@@ -246,6 +293,26 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                 page: String(page),
                 pageSize,
             }))
+        }
+    }
+
+    function changeSort(sortBy: CustomerSortColumn) {
+        const sortDirection = activeSearch.sortBy !== sortBy
+            ? 'asc'
+            : activeSearch.sortDirection === 'asc'
+                ? 'desc'
+                : ''
+        const nextSearch: SearchForm = {
+            ...activeSearch,
+            page: String(defaultPage),
+            sortBy: sortDirection ? sortBy : '',
+            sortDirection,
+        }
+
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
         }
     }
 
@@ -310,14 +377,16 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Customer ID</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Address</TableHead>
-                            <TableHead>City</TableHead>
-                            <TableHead>Contact</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Phone</TableHead>
-                            <TableHead>Tax number</TableHead>
+                            {customerSortColumns.map(({ key, label }) => (
+                                <SortableTableHead
+                                    key={key}
+                                    label={label}
+                                    direction={activeSearch.sortBy === key
+                                        ? activeSearch.sortDirection
+                                        : ''}
+                                    onSort={() => changeSort(key)}
+                                />
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>

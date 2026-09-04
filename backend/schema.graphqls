@@ -121,6 +121,8 @@ type Query {
     businessYear: String!
     customerId: String
     customerName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): CustomerPage!
@@ -142,6 +144,8 @@ type Query {
     businessYear: String!
     productCode: String
     productName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
