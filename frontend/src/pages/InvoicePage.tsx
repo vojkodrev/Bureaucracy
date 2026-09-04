@@ -125,6 +125,16 @@ function invoiceNumberAfter(invoiceNumber?: string): string {
     return String(Number.isNaN(value) ? 1 : value + 1).padStart(5, '0')
 }
 
+function optionalNumber(value: string): number | null {
+    if (!value.trim()) return null
+    const number = Number(value)
+    return Number.isFinite(number) ? number : null
+}
+
+function decimalValue(value: number | null): string {
+    return value == null ? '' : value.toFixed(2)
+}
+
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {
@@ -161,6 +171,10 @@ function InvoicePage() {
     const [newProductCode, setNewProductCode] = useState('')
     const [newProductName, setNewProductName] = useState('')
     const [newProductUnit, setNewProductUnit] = useState('')
+    const [newProductQuantity, setNewProductQuantity] = useState('')
+    const [newProductNetPrice, setNewProductNetPrice] = useState('')
+    const [newProductTaxRate, setNewProductTaxRate] = useState('')
+    const [newProductDiscount, setNewProductDiscount] = useState('0')
     const [reloadVersion, setReloadVersion] = useState(0)
     const [printError, setPrintError] = useState<string | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -318,16 +332,40 @@ function InvoicePage() {
     )
     const paidAmountValue = Number(paidAmount) || 0
     const balanceDue = totalIncludingVat - paidAmountValue
+    const newQuantityValue = optionalNumber(newProductQuantity)
+    const newUnitPriceValue = optionalNumber(newProductNetPrice)
+    const newTaxRateValue = optionalNumber(newProductTaxRate)
+    const newDiscountValue = optionalNumber(newProductDiscount) ?? 0
+    const newNetValue = newQuantityValue == null || newUnitPriceValue == null
+        ? null
+        : newQuantityValue * newUnitPriceValue
+    const newDiscountAmount = newNetValue == null
+        ? null
+        : newNetValue * newDiscountValue / 100
+    const newTaxBase = newNetValue == null || newDiscountAmount == null
+        ? null
+        : newNetValue - newDiscountAmount
+    const newTaxAmount = newTaxBase == null || newTaxRateValue == null
+        ? null
+        : newTaxBase * newTaxRateValue / 100
+    const newGrossValue = newTaxBase == null || newTaxAmount == null
+        ? null
+        : newTaxBase + newTaxAmount
+    const newGrossUnitPrice = newUnitPriceValue == null || newTaxRateValue == null
+        ? null
+        : newUnitPriceValue * (1 + newTaxRateValue / 100)
 
     const resetNewProduct = () => {
         setNewProductCode('')
         setNewProductName('')
         setNewProductUnit('')
+        setNewProductQuantity('')
+        setNewProductNetPrice('')
+        setNewProductTaxRate('')
+        setNewProductDiscount('0')
     }
 
     const addProduct = () => {
-        if (!newProductCode.trim()) return
-
         setInvoiceItems((items) => [
             ...items,
             {
@@ -336,12 +374,16 @@ function InvoicePage() {
                 productCode: newProductCode.trim(),
                 productName: newProductName.trim() || null,
                 unit: newProductUnit.trim() || null,
-                unitPrice: null,
-                unitTaxAmount: null,
-                quantity: null,
-                discount: null,
-                netAmount: null,
-                grossAmount: null,
+                taxRate: newTaxRateValue,
+                unitPrice: newUnitPriceValue,
+                unitTaxAmount:
+                    newUnitPriceValue == null || newTaxRateValue == null
+                        ? null
+                        : newUnitPriceValue * newTaxRateValue / 100,
+                quantity: newQuantityValue,
+                discount: newDiscountValue,
+                netAmount: newTaxBase,
+                grossAmount: newGrossValue,
             },
         ])
         resetNewProduct()
@@ -554,7 +596,7 @@ function InvoicePage() {
                             </DialogTrigger>
                             <DialogContent
                                 showCloseButton={false}
-                                className="sm:max-w-2xl"
+                                className="sm:max-w-3xl"
                             >
                                 <DialogHeader>
                                     <DialogTitle>Add product</DialogTitle>
@@ -571,13 +613,19 @@ function InvoicePage() {
                                         onProductCodeChange={setNewProductCode}
                                         onProductNameChange={setNewProductName}
                                         onProductUnitChange={setNewProductUnit}
+                                        onProductNetPriceChange={(price) =>
+                                            setNewProductNetPrice(price == null ? '' : String(price))
+                                        }
+                                        onProductTaxRateChange={(rate) =>
+                                            setNewProductTaxRate(rate == null ? '' : String(rate))
+                                        }
                                     />
                                     <Field>
                                         <FieldLabel htmlFor="new-product-name">Product name</FieldLabel>
                                         <Input
                                             id="new-product-name"
                                             value={newProductName}
-                                            readOnly
+                                            onChange={(event) => setNewProductName(event.target.value)}
                                         />
                                     </Field>
                                     <Field>
@@ -585,6 +633,118 @@ function InvoicePage() {
                                         <Input
                                             id="new-product-unit"
                                             value={newProductUnit}
+                                            onChange={(event) => setNewProductUnit(event.target.value)}
+                                        />
+                                    </Field>
+                                    <Field className="sm:col-start-1">
+                                        <FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel>
+                                        <Input
+                                            id="new-product-quantity"
+                                            type="number"
+                                            min="0"
+                                            step="any"
+                                            value={newProductQuantity}
+                                            onChange={(event) => setNewProductQuantity(event.target.value)}
+                                        />
+                                    </Field>
+                                </div>
+                                <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-net-unit-price">
+                                            Cena brez davka na EM
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-net-unit-price"
+                                            type="number"
+                                            step="0.01"
+                                            value={newProductNetPrice}
+                                            onChange={(event) => setNewProductNetPrice(event.target.value)}
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-tax-base">
+                                            Osnova za davek
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-tax-base"
+                                            value={decimalValue(newTaxBase)}
+                                            readOnly
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-net-value">
+                                            Vrednost brez davka
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-net-value"
+                                            value={decimalValue(newNetValue)}
+                                            readOnly
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-tax-rate">
+                                            Davek (%)
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-tax-rate"
+                                            type="number"
+                                            step="0.01"
+                                            value={newProductTaxRate}
+                                            onChange={(event) => setNewProductTaxRate(event.target.value)}
+                                        />
+                                    </Field>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Field>
+                                            <FieldLabel htmlFor="new-product-discount">
+                                                Popust (%)
+                                            </FieldLabel>
+                                            <Input
+                                                id="new-product-discount"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={newProductDiscount}
+                                                onChange={(event) => setNewProductDiscount(event.target.value)}
+                                            />
+                                        </Field>
+                                        <Field>
+                                            <FieldLabel htmlFor="new-product-discount-amount">
+                                                Znesek popusta
+                                            </FieldLabel>
+                                            <Input
+                                                id="new-product-discount-amount"
+                                                value={decimalValue(newDiscountAmount)}
+                                                readOnly
+                                            />
+                                        </Field>
+                                    </div>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-tax-amount">
+                                            Znesek davka
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-tax-amount"
+                                            value={decimalValue(newTaxAmount)}
+                                            readOnly
+                                        />
+                                    </Field>
+                                    <Field className="sm:col-start-2">
+                                        <FieldLabel htmlFor="new-product-gross-value">
+                                            Vrednost z davkom
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-gross-value"
+                                            value={decimalValue(newGrossValue)}
+                                            readOnly
+                                        />
+                                    </Field>
+                                    <Field className="sm:col-start-2">
+                                        <FieldLabel htmlFor="new-product-gross-unit-price">
+                                            Cena z davkom na EM
+                                        </FieldLabel>
+                                        <Input
+                                            id="new-product-gross-unit-price"
+                                            value={decimalValue(newGrossUnitPrice)}
                                             readOnly
                                         />
                                     </Field>
@@ -599,7 +759,6 @@ function InvoicePage() {
                                         render={
                                             <Button
                                                 type="button"
-                                                disabled={!newProductCode.trim()}
                                                 onClick={addProduct}
                                             />
                                         }
@@ -613,115 +772,115 @@ function InvoicePage() {
                     <CardContent>
                         <Table>
                             <TableHeader>
-                        <TableRow>
-                            <TableHead>#</TableHead>
-                            <TableHead>Product code</TableHead>
-                            <TableHead>Product name</TableHead>
-                            <TableHead className="text-right">Unit price</TableHead>
-                            <TableHead className="text-right">Unit tax</TableHead>
-                            <TableHead className="text-right">Quantity</TableHead>
-                            <TableHead className="text-right">Discount</TableHead>
-                            <TableHead className="text-right">Net amount</TableHead>
-                            <TableHead className="text-right">Gross amount</TableHead>
-                            <TableHead className="w-8">
-                                <span className="sr-only">Actions</span>
-                            </TableHead>
-                        </TableRow>
+                                <TableRow>
+                                    <TableHead>#</TableHead>
+                                    <TableHead>Product code</TableHead>
+                                    <TableHead>Product name</TableHead>
+                                    <TableHead className="text-right">Unit price</TableHead>
+                                    <TableHead className="text-right">Unit tax</TableHead>
+                                    <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Discount</TableHead>
+                                    <TableHead className="text-right">Net amount</TableHead>
+                                    <TableHead className="text-right">Gross amount</TableHead>
+                                    <TableHead className="w-8">
+                                        <span className="sr-only">Actions</span>
+                                    </TableHead>
+                                </TableRow>
                             </TableHeader>
                             <TableBody>
-                        {isLoading && (
-                            <TableRow>
-                                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
-                                    Loading invoice items…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                                <TableCell colSpan={10} className="h-24 text-center text-destructive">
-                                    {error}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading && !error && invoiceItems.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
-                                    No invoice items found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading &&
-                            !error &&
-                            invoiceItems.map((item, index) => (
-                                <TableRow key={`${item.id}-${index}`}>
-                                    <TableCell>{item.sequence ?? '—'}</TableCell>
-                                    <TableCell className="font-medium">
-                                        {item.productCode ?? '—'}
-                                    </TableCell>
-                                    <TableCell>{item.productName ?? '—'}</TableCell>
-                                    <TableCell className="text-right">
-                                        {item.unitPrice == null
-                                            ? '—'
-                                            : formatCurrency(item.unitPrice)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {item.unitTaxAmount == null
-                                            ? '—'
-                                            : formatCurrency(item.unitTaxAmount)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {item.quantity ?? '—'}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {item.discount == null ? '—' : `${item.discount}%`}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {item.netAmount == null
-                                            ? '—'
-                                            : formatCurrency(item.netAmount)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {item.grossAmount == null
-                                            ? '—'
-                                            : formatCurrency(item.grossAmount)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger
-                                                render={
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon-xs"
-                                                        aria-label={`Remove ${item.productName ?? item.productCode ?? 'product'}`}
-                                                    />
-                                                }
-                                            >
-                                                <Trash2 />
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Remove product?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to remove {item.productName ?? item.productCode ?? 'this product'} from the invoice?
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                        variant="destructive"
-                                                        onClick={() => setInvoiceItems((items) =>
-                                                            items.filter((_, itemIndex) => itemIndex !== index),
-                                                        )}
+                                {isLoading && (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                                            Loading invoice items…
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {error && (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="h-24 text-center text-destructive">
+                                            {error}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {!isLoading && !error && invoiceItems.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                                            No invoice items found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {!isLoading &&
+                                    !error &&
+                                    invoiceItems.map((item, index) => (
+                                        <TableRow key={`${item.id}-${index}`}>
+                                            <TableCell>{item.sequence ?? '—'}</TableCell>
+                                            <TableCell className="font-medium">
+                                                {item.productCode ?? '—'}
+                                            </TableCell>
+                                            <TableCell>{item.productName ?? '—'}</TableCell>
+                                            <TableCell className="text-right">
+                                                {item.unitPrice == null
+                                                    ? '—'
+                                                    : formatCurrency(item.unitPrice)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.unitTaxAmount == null
+                                                    ? '—'
+                                                    : formatCurrency(item.unitTaxAmount)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.quantity ?? '—'}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.discount == null ? '—' : `${item.discount}%`}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.netAmount == null
+                                                    ? '—'
+                                                    : formatCurrency(item.netAmount)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.grossAmount == null
+                                                    ? '—'
+                                                    : formatCurrency(item.grossAmount)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger
+                                                        render={
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon-xs"
+                                                                aria-label={`Remove ${item.productName ?? item.productCode ?? 'product'}`}
+                                                            />
+                                                        }
                                                     >
-                                                        Remove
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                                        <Trash2 />
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Remove product?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Are you sure you want to remove {item.productName ?? item.productCode ?? 'this product'} from the invoice?
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                variant="destructive"
+                                                                onClick={() => setInvoiceItems((items) =>
+                                                                    items.filter((_, itemIndex) => itemIndex !== index),
+                                                                )}
+                                                            >
+                                                                Remove
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                             </TableBody>
                         </Table>
                     </CardContent>

@@ -24,6 +24,7 @@ export type InvoiceItem = {
     productCode: string | null
     productName: string | null
     unit?: string | null
+    taxRate?: number | null
     unitPrice: number | null
     unitTaxAmount: number | null
     quantity: number | null
