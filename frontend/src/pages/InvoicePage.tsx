@@ -78,7 +78,7 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 function invoicePdfUrl(invoiceNumber: string): string {
     const url = new URL(graphqlUrl)
     url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/pdf`
-    url.search = ''
+    url.searchParams.set('_', String(Date.now()))
     url.hash = ''
     return url.toString()
 }
@@ -104,7 +104,6 @@ function InvoicePage() {
     const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
-    const [isPrinting, setIsPrinting] = useState(false)
     const [printError, setPrintError] = useState<string | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({
@@ -189,36 +188,17 @@ function InvoicePage() {
     const paidAmountValue = Number(paidAmount) || 0
     const balanceDue = totalIncludingVat - paidAmountValue
 
-    const printInvoice = async () => {
+    const printInvoice = () => {
         const numberToPrint = invoiceNumber.trim()
-        if (!numberToPrint || isPrinting) return
+        if (!numberToPrint) return
 
-        const pdfTab = window.open('', '_blank')
+        const pdfTab = window.open(invoicePdfUrl(numberToPrint), '_blank')
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the invoice PDF.')
             return
         }
-
-        setIsPrinting(true)
+        pdfTab.opener = null
         setPrintError(null)
-        try {
-            const response = await fetch(invoicePdfUrl(numberToPrint))
-            if (!response.ok) {
-                throw new Error(`Preparing PDF failed (${response.status})`)
-            }
-            const pdfUrl = URL.createObjectURL(await response.blob())
-            pdfTab.location.href = pdfUrl
-            window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000)
-        } catch (printRequestError: unknown) {
-            pdfTab.close()
-            setPrintError(
-                printRequestError instanceof Error
-                    ? printRequestError.message
-                    : 'Preparing PDF failed',
-            )
-        } finally {
-            setIsPrinting(false)
-        }
     }
 
     return (
@@ -232,11 +212,11 @@ function InvoicePage() {
                             Save
                         </MenubarItem>
                         <MenubarItem
-                            disabled={!invoiceNumber.trim() || isPrinting}
-                            onClick={() => void printInvoice()}
+                            disabled={!invoiceNumber.trim()}
+                            onClick={printInvoice}
                         >
                             <Printer />
-                            {isPrinting ? 'Preparing PDF…' : 'Print'}
+                            Print
                         </MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>

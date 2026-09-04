@@ -49,13 +49,16 @@ func NewHTTPServer(config *AppConfig, resolver *Resolver, printGenerator *Invoic
 	})
 	router.GET("/api/invoices/:invoiceNumber/pdf", func(context *gin.Context) {
 		invoiceNumber := strings.TrimSpace(context.Param("invoiceNumber"))
-		pdf, err := printGenerator.Generate(invoiceNumber)
+		pdf, err := printGenerator.Generate(context.Request.Context(), invoiceNumber)
 		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		filename := strings.NewReplacer("\"", "", "\r", "", "\n", "").Replace(invoiceNumber)
+		context.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+		context.Header("Pragma", "no-cache")
+		context.Header("Expires", "0")
 		context.Header("Content-Disposition", fmt.Sprintf(`inline; filename="invoice-%s.pdf"`, filename))
 		context.Data(http.StatusOK, "application/pdf", pdf)
 	})

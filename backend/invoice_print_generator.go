@@ -2,13 +2,22 @@ package main
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"html"
 	"html/template"
-	"strconv"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
+
+	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 )
 
 type document struct {
@@ -22,8 +31,12 @@ var htmlTemplate string
 //go:embed print/invoice/template.css
 var cssTemplate string
 
+//go:embed print/invoice/logo.webp
+var logo []byte
+
 type InvoicePrintGenerator struct {
-	template *template.Template
+	template   *template.Template
+	chromePath string
 }
 
 func NewInvoicePrintGenerator() (*InvoicePrintGenerator, error) {
@@ -31,13 +44,19 @@ func NewInvoicePrintGenerator() (*InvoicePrintGenerator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse invoice print template: %w", err)
 	}
-	return &InvoicePrintGenerator{template: tmpl}, nil
+	return &InvoicePrintGenerator{
+		template:   tmpl,
+		chromePath: findChrome(),
+	}, nil
 }
 
-func (generator *InvoicePrintGenerator) Generate(invoiceNumber string) ([]byte, error) {
+func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoiceNumber string) ([]byte, error) {
 	invoiceNumber = strings.TrimSpace(invoiceNumber)
 	if invoiceNumber == "" {
 		return nil, fmt.Errorf("invoice number is required")
+	}
+	if generator.chromePath == "" {
+		return nil, fmt.Errorf("Chrome is required to generate invoice PDFs; set CHROME_PATH")
 	}
 
 	// This round trip establishes XML as the source document. Replace this
@@ -55,53 +74,128 @@ func (generator *InvoicePrintGenerator) Generate(invoiceNumber string) ([]byte, 
 	if err := generator.template.Execute(&renderedHTML, struct {
 		CSS      template.CSS
 		Document document
-	}{CSS: template.CSS(cssTemplate), Document: printDocument}); err != nil {
+		Logo     template.URL
+	}{
+		CSS:      template.CSS(cssTemplate),
+		Document: printDocument,
+		Logo:     template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+	}); err != nil {
 		return nil, fmt.Errorf("render invoice HTML: %w", err)
 	}
 
-	// The initial renderer supports the plain text inside <main>. HTML/CSS remains
-	// the presentation boundary for the complete invoice renderer added later.
-	htmlDocument := renderedHTML.String()
-	mainElement := strings.Index(htmlDocument, "<main")
-	if mainElement < 0 {
-		return nil, fmt.Errorf("invoice HTML does not contain printable content")
-	}
-	contentStart := strings.Index(htmlDocument[mainElement:], ">")
-	if contentStart < 0 {
-		return nil, fmt.Errorf("invoice HTML contains an invalid main element")
-	}
-	contentStart += mainElement + 1
-	contentEnd := strings.Index(htmlDocument[contentStart:], "</main>")
-	if contentEnd < 0 {
-		return nil, fmt.Errorf("invoice HTML contains an invalid main element")
-	}
-	text := strings.TrimSpace(html.UnescapeString(htmlDocument[contentStart : contentStart+contentEnd]))
-	return onePageA4PDF(text), nil
+	return generator.htmlToPDF(ctx, renderedHTML.Bytes())
 }
 
-func onePageA4PDF(text string) []byte {
-	escapedText := strings.NewReplacer(`\`, `\\`, `(`, `\(`, `)`, `\)`).Replace(text)
-	stream := "BT\n/F1 18 Tf\n56.7 785 Td\n(" + escapedText + ") Tj\nET\n"
-	objects := []string{
-		"<< /Type /Catalog /Pages 2 0 R >>",
-		"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-		"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-		"<< /Length " + strconv.Itoa(len(stream)) + " >>\nstream\n" + stream + "endstream",
-		"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+func (generator *InvoicePrintGenerator) htmlToPDF(ctx context.Context, htmlDocument []byte) ([]byte, error) {
+	temporaryDirectory, err := os.MkdirTemp("", "bureaucracy-invoice-print-*")
+	if err != nil {
+		return nil, fmt.Errorf("create invoice print directory: %w", err)
+	}
+	defer os.RemoveAll(temporaryDirectory)
+
+	htmlPath := filepath.Join(temporaryDirectory, "invoice.html")
+	if err := os.WriteFile(htmlPath, htmlDocument, 0o600); err != nil {
+		return nil, fmt.Errorf("write invoice HTML: %w", err)
 	}
 
-	var pdf bytes.Buffer
-	pdf.WriteString("%PDF-1.4\n")
-	offsets := make([]int, len(objects)+1)
-	for index, object := range objects {
-		offsets[index+1] = pdf.Len()
-		fmt.Fprintf(&pdf, "%d 0 obj\n%s\nendobj\n", index+1, object)
+	allocatorOptions := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath(generator.chromePath),
+		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.UserDataDir(filepath.Join(temporaryDirectory, "chrome-profile")),
+	)
+	allocatorContext, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
+	defer cancelAllocator()
+	browserContext, cancelBrowser := chromedp.NewContext(allocatorContext)
+	defer cancelBrowser()
+	browserContext, cancelTimeout := context.WithTimeout(browserContext, 30*time.Second)
+	defer cancelTimeout()
+
+	var pdf []byte
+	documentURL := (&url.URL{Scheme: "file", Path: htmlPath}).String()
+	if err := chromedp.Run(browserContext,
+		chromedp.Navigate(documentURL),
+		chromedp.WaitReady("body"),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var err error
+			pdf, _, err = page.PrintToPDF().
+				WithPrintBackground(true).
+				WithPreferCSSPageSize(true).
+				Do(ctx)
+			return err
+		}),
+	); err != nil {
+		return nil, fmt.Errorf("generate invoice PDF: %w", err)
 	}
-	xrefOffset := pdf.Len()
-	fmt.Fprintf(&pdf, "xref\n0 %d\n0000000000 65535 f \n", len(objects)+1)
-	for _, offset := range offsets[1:] {
-		fmt.Fprintf(&pdf, "%010d 00000 n \n", offset)
+	if !bytes.HasPrefix(pdf, []byte("%PDF-")) {
+		return nil, fmt.Errorf("Chrome returned an invalid invoice PDF")
 	}
-	fmt.Fprintf(&pdf, "trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", len(objects)+1, xrefOffset)
-	return pdf.Bytes()
+	return pdf, nil
+}
+
+func findChrome() string {
+	if configuredPath := strings.TrimSpace(os.Getenv("CHROME_PATH")); configuredPath != "" {
+		return configuredPath
+	}
+
+	for _, name := range []string{
+		"google-chrome",
+		"google-chrome-stable",
+		"chrome",
+		"chromium",
+		"chromium-browser",
+		"microsoft-edge",
+		"msedge",
+		"brave-browser",
+		"brave",
+	} {
+		if path, err := exec.LookPath(name); err == nil {
+			return path
+		}
+	}
+	for _, path := range chromeInstallPaths() {
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			return path
+		}
+	}
+	return ""
+}
+
+func chromeInstallPaths() []string {
+	switch runtime.GOOS {
+	case "darwin":
+		return []string{
+			"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+			"/Applications/Chromium.app/Contents/MacOS/Chromium",
+			"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+			"/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+		}
+	case "windows":
+		var paths []string
+		for _, baseDirectory := range []string{
+			os.Getenv("LOCALAPPDATA"),
+			os.Getenv("ProgramFiles"),
+			os.Getenv("ProgramFiles(x86)"),
+		} {
+			if baseDirectory == "" {
+				continue
+			}
+			paths = append(paths,
+				filepath.Join(baseDirectory, "Google", "Chrome", "Application", "chrome.exe"),
+				filepath.Join(baseDirectory, "Chromium", "Application", "chrome.exe"),
+				filepath.Join(baseDirectory, "Microsoft", "Edge", "Application", "msedge.exe"),
+				filepath.Join(baseDirectory, "BraveSoftware", "Brave-Browser", "Application", "brave.exe"),
+			)
+		}
+		return paths
+	default:
+		return []string{
+			"/usr/bin/google-chrome",
+			"/usr/bin/google-chrome-stable",
+			"/usr/bin/chromium",
+			"/usr/bin/chromium-browser",
+			"/usr/bin/microsoft-edge",
+			"/usr/bin/brave-browser",
+			"/snap/bin/chromium",
+		}
+	}
 }

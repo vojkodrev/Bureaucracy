@@ -5,6 +5,25 @@
     <style>{{.CSS}}</style>
 </head>
 <body>
-    <main data-invoice-number="{{.Document.InvoiceNumber}}">Hello world</main>
+    <main data-invoice-number="{{.Document.InvoiceNumber}}">
+        <header class="document-header">
+            <div class="company-details">
+                <div class="company-address">
+                    <strong>DREVI d.o.o.</strong>
+                    <span>Ob železnici 16</span>
+                    <span>1000&nbsp;&nbsp;LJUBLJANA</span>
+                </div>
+                <div class="company-contact">
+                    <span>email: drevi@siol.net&nbsp;&nbsp;&nbsp;&nbsp; www.drevi.si</span>
+                    <span>MATIČNA ŠT: 5314518&nbsp;&nbsp;&nbsp;&nbsp; ID.ŠT.: SI35954086</span>
+                    <span>VLOŽNA ŠT: 1/3514/00</span>
+                    <strong>TRR: SI56 0400 0027 8805 004</strong>
+                </div>
+            </div>
+            <img class="company-logo" src="{{.Logo}}" alt="DREVI logo">
+        </header>
+
+        <section class="invoice-content">Hello world</section>
+    </main>
 </body>
 </html>
