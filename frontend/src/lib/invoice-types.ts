@@ -39,3 +39,13 @@ export type InvoicePage = {
     pageSize: number
     totalPages: number
 }
+
+export type InvoiceResponse = {
+    data?: { invoice: Invoice | null }
+    errors?: { message: string }[]
+}
+
+export type LatestInvoiceResponse = {
+    data?: { searchInvoices: { invoices: Pick<Invoice, 'invoiceNumber'>[] } }
+    errors?: { message: string }[]
+}

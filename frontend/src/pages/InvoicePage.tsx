@@ -46,24 +46,14 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import type { BusinessYearResponse } from '@/lib/business-year-types'
 import { dateFromSearchValue } from '@/lib/dates'
 import { formatCurrency } from '@/lib/formatters'
-import type { Invoice, InvoiceItem } from '@/lib/invoice-types'
-
-type InvoiceResponse = {
-    data?: { invoice: Invoice | null }
-    errors?: { message: string }[]
-}
-
-type LatestInvoiceResponse = {
-    data?: { searchInvoices: { invoices: Pick<Invoice, 'invoiceNumber'>[] } }
-    errors?: { message: string }[]
-}
-
-type BusinessYearResponse = {
-    data?: { businessYear: { description: string | null } | null }
-    errors?: { message: string }[]
-}
+import type {
+    InvoiceItem,
+    InvoiceResponse,
+    LatestInvoiceResponse,
+} from '@/lib/invoice-types'
 
 type InvoiceLoadResult = {
     requestKey: string
