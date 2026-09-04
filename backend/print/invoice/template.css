@@ -15,6 +15,7 @@ main {
     box-sizing: border-box;
     width: 210mm;
     height: 297mm;
+    padding: 7.92mm 21.78mm 1mm 17.82mm;
 }
 
 .document-header {
@@ -24,10 +25,6 @@ main {
     justify-content: space-between;
     width: 100%;
     height: 11.972%;
-    padding: 2.5mm 16mm;
-    border-top: 1px solid #222;
-    border-right: 1px solid #222;
-    border-left: 1px solid #222;
 }
 
 .company-details {
@@ -56,11 +53,7 @@ main {
 
 .company-logo {
     display: block;
-    width: 30mm;
-    height: 30mm;
+    width: 25mm;
+    height: 25mm;
     object-fit: contain;
-}
-
-.invoice-content {
-    padding: 6mm 16mm;
 }
