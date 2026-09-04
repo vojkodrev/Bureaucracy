@@ -32,6 +32,11 @@ type InvoiceResponse = {
     errors?: { message: string }[]
 }
 
+type LatestInvoiceResponse = {
+    data?: { searchInvoices: { invoices: Pick<Invoice, 'invoiceNumber'>[] } }
+    errors?: { message: string }[]
+}
+
 type InvoiceLoadResult = {
     requestKey: string
     error: string | null
@@ -72,6 +77,27 @@ const invoiceQuery = `
         }
     }
 `
+
+const latestInvoiceQuery = `
+    query LatestInvoice($businessYear: String!) {
+        searchInvoices(
+            businessYear: $businessYear
+            sortBy: "invoiceNumber"
+            sortDirection: "desc"
+            page: 1
+            pageSize: 1
+        ) {
+            invoices {
+                invoiceNumber
+            }
+        }
+    }
+`
+
+function invoiceNumberAfter(invoiceNumber?: string): string {
+    const value = Number.parseInt(invoiceNumber ?? '', 10)
+    return String(Number.isNaN(value) ? 1 : value + 1).padStart(5, '0')
+}
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
@@ -181,6 +207,45 @@ function InvoicePage() {
 
         return () => abortController.abort()
     }, [requestKey, routeInvoiceNumber])
+
+    useEffect(() => {
+        if (routeInvoiceNumber) {
+            return
+        }
+
+        const abortController = new AbortController()
+
+        void fetch(graphqlUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: latestInvoiceQuery,
+                variables: { businessYear: getSelectedBusinessYear() },
+            }),
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Loading latest invoice failed (${response.status})`)
+                }
+
+                const result = (await response.json()) as LatestInvoiceResponse
+                if (result.errors?.length) {
+                    throw new Error(result.errors.map(({ message }) => message).join(', '))
+                }
+                setInvoiceNumber(invoiceNumberAfter(
+                    result.data?.searchInvoices.invoices[0]?.invoiceNumber,
+                ))
+            })
+            .catch((requestError: unknown) => {
+                if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                    return
+                }
+                console.error(requestError)
+            })
+
+        return () => abortController.abort()
+    }, [routeInvoiceNumber])
 
     const totalIncludingVat = invoiceItems.reduce(
         (total, item) => total + (item.grossAmount ?? 0),
