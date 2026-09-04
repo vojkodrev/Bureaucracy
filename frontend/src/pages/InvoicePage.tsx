@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Printer, Save, Trash2, Undo2 } from 'lucide-react'
+import { Plus, Printer, Save, Trash2, Undo2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
+import ProductPickerField from '@/components/ProductPickerField'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,6 +17,16 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -156,6 +167,9 @@ function InvoicePage() {
     const [introductoryText, setIntroductoryText] = useState('')
     const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
+    const [addProductOpen, setAddProductOpen] = useState(false)
+    const [newProductCode, setNewProductCode] = useState('')
+    const [newProductName, setNewProductName] = useState('')
     const [reloadVersion, setReloadVersion] = useState(0)
     const [printError, setPrintError] = useState<string | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -313,6 +327,32 @@ function InvoicePage() {
     )
     const paidAmountValue = Number(paidAmount) || 0
     const balanceDue = totalIncludingVat - paidAmountValue
+
+    const resetNewProduct = () => {
+        setNewProductCode('')
+        setNewProductName('')
+    }
+
+    const addProduct = () => {
+        if (!newProductCode.trim()) return
+
+        setInvoiceItems((items) => [
+            ...items,
+            {
+                id: Math.min(0, ...items.map(({ id }) => id)) - 1,
+                sequence: Math.max(0, ...items.map(({ sequence }) => sequence ?? 0)) + 1,
+                productCode: newProductCode.trim(),
+                productName: newProductName.trim() || null,
+                unitPrice: null,
+                unitTaxAmount: null,
+                quantity: null,
+                discount: null,
+                netAmount: null,
+                grossAmount: null,
+            },
+        ])
+        resetNewProduct()
+    }
 
     const printInvoice = () => {
         const numberToPrint = invoiceNumber.trim()
@@ -506,8 +546,62 @@ function InvoicePage() {
                 </Field>
 
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="flex-row items-center justify-between">
                         <CardTitle>Products</CardTitle>
+                        <Dialog
+                            open={addProductOpen}
+                            onOpenChange={(open) => {
+                                setAddProductOpen(open)
+                                if (!open) resetNewProduct()
+                            }}
+                        >
+                            <DialogTrigger render={<Button type="button" size="sm" />}>
+                                <Plus />
+                                Add product
+                            </DialogTrigger>
+                            <DialogContent showCloseButton={false}>
+                                <DialogHeader>
+                                    <DialogTitle>Add product</DialogTitle>
+                                    <DialogDescription>
+                                        Search for a product to add to this invoice.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <ProductPickerField
+                                    id="new-product-code"
+                                    label="Product code"
+                                    name="newProductCode"
+                                    productCode={newProductCode}
+                                    onProductCodeChange={setNewProductCode}
+                                    onProductNameChange={setNewProductName}
+                                />
+                                <Field>
+                                    <FieldLabel htmlFor="new-product-name">Product name</FieldLabel>
+                                    <Input
+                                        id="new-product-name"
+                                        value={newProductName}
+                                        readOnly
+                                    />
+                                </Field>
+                                <DialogFooter>
+                                    <DialogClose
+                                        render={<Button type="button" variant="outline" />}
+                                    >
+                                        Cancel
+                                    </DialogClose>
+                                    <DialogClose
+                                        render={
+                                            <Button
+                                                type="button"
+                                                disabled={!newProductCode.trim()}
+                                                onClick={addProduct}
+                                            />
+                                        }
+                                    >
+                                        Add
+                                    </DialogClose>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </CardHeader>
                     <CardContent>
                         <Table>
