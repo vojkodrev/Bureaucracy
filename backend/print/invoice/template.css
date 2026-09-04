@@ -12,10 +12,11 @@ body {
 }
 
 main {
+    position: relative;
     box-sizing: border-box;
     width: 210mm;
     height: 297mm;
-    padding: 7.92mm 21.78mm 1mm 17.82mm;
+    padding: 7.92mm 21.78mm 7.92mm 17.82mm;
 }
 
 .document-header {
@@ -263,4 +264,17 @@ main {
 .signature {
     margin-top: 9mm;
     margin-left: 1mm;
+}
+
+.document-footer {
+    position: absolute;
+    right: 21.78mm;
+    bottom: 7.92mm;
+    left: 17.82mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 2.6mm;
+    line-height: 1.05;
+    text-align: center;
 }
