@@ -214,7 +214,8 @@ main {
     padding-right: 1mm;
 }
 
-.total-rule {
+.total-rule,
+.total-rule + strong {
     border-top: 0.3mm solid #111;
 }
 
