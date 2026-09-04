@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Printer, Save, Undo2 } from 'lucide-react'
+import { Printer, Save, Trash2, Undo2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -510,34 +522,37 @@ function InvoicePage() {
                             <TableHead className="text-right">Discount</TableHead>
                             <TableHead className="text-right">Net amount</TableHead>
                             <TableHead className="text-right">Gross amount</TableHead>
+                            <TableHead className="w-8">
+                                <span className="sr-only">Actions</span>
+                            </TableHead>
                         </TableRow>
                             </TableHeader>
                             <TableBody>
                         {isLoading && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                                     Loading invoice items…
                                 </TableCell>
                             </TableRow>
                         )}
                         {error && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-destructive">
+                                <TableCell colSpan={10} className="h-24 text-center text-destructive">
                                     {error}
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading && !error && invoiceItems.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
+                                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                                     No invoice items found.
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading &&
                             !error &&
-                            invoiceItems.map((item) => (
-                                <TableRow key={item.id}>
+                            invoiceItems.map((item, index) => (
+                                <TableRow key={`${item.id}-${index}`}>
                                     <TableCell>{item.sequence ?? '—'}</TableCell>
                                     <TableCell className="font-medium">
                                         {item.productCode ?? '—'}
@@ -568,6 +583,41 @@ function InvoicePage() {
                                         {item.grossAmount == null
                                             ? '—'
                                             : formatCurrency(item.grossAmount)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger
+                                                render={
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        aria-label={`Remove ${item.productName ?? item.productCode ?? 'product'}`}
+                                                    />
+                                                }
+                                            >
+                                                <Trash2 />
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Remove product?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to remove {item.productName ?? item.productCode ?? 'this product'} from the invoice?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        variant="destructive"
+                                                        onClick={() => setInvoiceItems((items) =>
+                                                            items.filter((_, itemIndex) => itemIndex !== index),
+                                                        )}
+                                                    >
+                                                        Remove
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
