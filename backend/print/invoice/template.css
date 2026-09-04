@@ -30,7 +30,8 @@ main {
 .company-details {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 6mm;
     font-size: 2.7mm;
     line-height: 1.08;
     text-align: left;
@@ -53,7 +54,7 @@ main {
 
 .company-logo {
     display: block;
-    width: 25mm;
-    height: 25mm;
+    width: auto;
+    height: 100px;
     object-fit: contain;
 }
