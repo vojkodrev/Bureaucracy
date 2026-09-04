@@ -75,6 +75,14 @@ const invoiceQuery = `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
+function invoicePdfUrl(invoiceNumber: string): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/pdf`
+    url.search = ''
+    url.hash = ''
+    return url.toString()
+}
+
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
     return value ? dateFromSearchValue(value.slice(0, 10)) : undefined
 }
@@ -96,6 +104,8 @@ function InvoicePage() {
     const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
+    const [isPrinting, setIsPrinting] = useState(false)
+    const [printError, setPrintError] = useState<string | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({
         requestKey: '__initial__',
@@ -179,6 +189,38 @@ function InvoicePage() {
     const paidAmountValue = Number(paidAmount) || 0
     const balanceDue = totalIncludingVat - paidAmountValue
 
+    const printInvoice = async () => {
+        const numberToPrint = invoiceNumber.trim()
+        if (!numberToPrint || isPrinting) return
+
+        const pdfTab = window.open('', '_blank')
+        if (!pdfTab) {
+            setPrintError('Allow pop-ups to open the invoice PDF.')
+            return
+        }
+
+        setIsPrinting(true)
+        setPrintError(null)
+        try {
+            const response = await fetch(invoicePdfUrl(numberToPrint))
+            if (!response.ok) {
+                throw new Error(`Preparing PDF failed (${response.status})`)
+            }
+            const pdfUrl = URL.createObjectURL(await response.blob())
+            pdfTab.location.href = pdfUrl
+            window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000)
+        } catch (printRequestError: unknown) {
+            pdfTab.close()
+            setPrintError(
+                printRequestError instanceof Error
+                    ? printRequestError.message
+                    : 'Preparing PDF failed',
+            )
+        } finally {
+            setIsPrinting(false)
+        }
+    }
+
     return (
         <div className="max-w-5xl p-4">
             <Menubar className="mb-6 w-fit">
@@ -189,9 +231,12 @@ function InvoicePage() {
                             <Save />
                             Save
                         </MenubarItem>
-                        <MenubarItem disabled>
+                        <MenubarItem
+                            disabled={!invoiceNumber.trim() || isPrinting}
+                            onClick={() => void printInvoice()}
+                        >
                             <Printer />
-                            Print
+                            {isPrinting ? 'Preparing PDF…' : 'Print'}
                         </MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>
@@ -208,6 +253,12 @@ function InvoicePage() {
                     </MenubarContent>
                 </MenubarMenu>
             </Menubar>
+
+            {printError && (
+                <p className="mb-6 text-sm text-destructive" role="alert">
+                    {printError}
+                </p>
+            )}
 
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card>
@@ -334,8 +385,13 @@ function InvoicePage() {
                     />
                 </Field>
 
-                <Table>
-                    <TableHeader>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Products</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
                         <TableRow>
                             <TableHead>#</TableHead>
                             <TableHead>Product code</TableHead>
@@ -347,8 +403,8 @@ function InvoicePage() {
                             <TableHead className="text-right">Net amount</TableHead>
                             <TableHead className="text-right">Gross amount</TableHead>
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                            </TableHeader>
+                            <TableBody>
                         {isLoading && (
                             <TableRow>
                                 <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
@@ -407,8 +463,10 @@ function InvoicePage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                    </TableBody>
-                </Table>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
 
                 <Field>
                     <FieldLabel htmlFor="closing-text">Closing text</FieldLabel>

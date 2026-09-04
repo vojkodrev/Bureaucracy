@@ -1,0 +1,10 @@
+@page {
+    size: A4;
+    margin: 20mm;
+}
+
+html,
+body {
+    margin: 0;
+    font-family: sans-serif;
+}

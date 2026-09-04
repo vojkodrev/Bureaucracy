@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -15,13 +17,13 @@ import (
 	"go.uber.org/fx"
 )
 
-type GraphQLServer struct {
+type HTTPServer struct {
 	config *AppConfig
 	router *gin.Engine
 	server *http.Server
 }
 
-func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
+func NewHTTPServer(config *AppConfig, resolver *Resolver, printGenerator *InvoicePrintGenerator) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -45,8 +47,20 @@ func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
 	router.GET("/health", func(context *gin.Context) {
 		context.Status(http.StatusNoContent)
 	})
+	router.GET("/api/invoices/:invoiceNumber/pdf", func(context *gin.Context) {
+		invoiceNumber := strings.TrimSpace(context.Param("invoiceNumber"))
+		pdf, err := printGenerator.Generate(invoiceNumber)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-	return &GraphQLServer{
+		filename := strings.NewReplacer("\"", "", "\r", "", "\n", "").Replace(invoiceNumber)
+		context.Header("Content-Disposition", fmt.Sprintf(`inline; filename="invoice-%s.pdf"`, filename))
+		context.Data(http.StatusOK, "application/pdf", pdf)
+	})
+
+	return &HTTPServer{
 		config: config,
 		router: router,
 		server: &http.Server{
@@ -57,7 +71,7 @@ func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
 	}
 }
 
-func RegisterGraphQLServerLifecycle(lifecycle fx.Lifecycle, server *GraphQLServer) {
+func RegisterHTTPServerLifecycle(lifecycle fx.Lifecycle, server *HTTPServer) {
 	var listener net.Listener
 	lifecycle.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
@@ -69,10 +83,10 @@ func RegisterGraphQLServerLifecycle(lifecycle fx.Lifecycle, server *GraphQLServe
 
 			go func() {
 				if err := server.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					slog.Error("GraphQL server stopped unexpectedly", "error", err)
+					slog.Error("HTTP server stopped unexpectedly", "error", err)
 				}
 			}()
-			slog.Info("GraphQL server listening", "url", "http://localhost:"+server.config.Port+"/graphql")
+			slog.Info("HTTP server listening", "url", "http://localhost:"+server.config.Port)
 			return nil
 		},
 		OnStop: server.server.Shutdown,

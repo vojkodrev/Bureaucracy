@@ -11,9 +11,10 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewCustomerRepository),
 		fx.Provide(NewInvoiceRepository),
+		fx.Provide(NewInvoicePrintGenerator),
 		fx.Provide(NewProductRepository),
 		fx.Provide(NewResolver),
-		fx.Provide(NewGraphQLServer),
+		fx.Provide(NewHTTPServer),
 		fx.Provide(NewApplication),
 	)
 }
@@ -23,7 +24,7 @@ func CoreInvocations() fx.Option {
 	return fx.Options(
 		fx.Invoke(RegisterDatabaseLifecycle),
 		fx.Invoke(RegisterApplicationLifecycle),
-		fx.Invoke(RegisterGraphQLServerLifecycle),
+		fx.Invoke(RegisterHTTPServerLifecycle),
 	)
 }
 
