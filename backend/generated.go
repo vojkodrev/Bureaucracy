@@ -110,6 +110,8 @@ type ComplexityRoot struct {
 		ProductName   func(childComplexity int) int
 		Quantity      func(childComplexity int) int
 		Sequence      func(childComplexity int) int
+		TaxRate       func(childComplexity int) int
+		Unit          func(childComplexity int) int
 		UnitPrice     func(childComplexity int) int
 		UnitTaxAmount func(childComplexity int) int
 	}
@@ -536,6 +538,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.InvoiceItem.Sequence(childComplexity), true
+	case "InvoiceItem.taxRate":
+		if e.ComplexityRoot.InvoiceItem.TaxRate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.TaxRate(childComplexity), true
+	case "InvoiceItem.unit":
+		if e.ComplexityRoot.InvoiceItem.Unit == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.Unit(childComplexity), true
 	case "InvoiceItem.unitPrice":
 		if e.ComplexityRoot.InvoiceItem.UnitPrice == nil {
 			break
@@ -960,6 +974,10 @@ func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field g
 		return ec.fieldContext_InvoiceItem_productCode(ctx, field)
 	case "productName":
 		return ec.fieldContext_InvoiceItem_productName(ctx, field)
+	case "unit":
+		return ec.fieldContext_InvoiceItem_unit(ctx, field)
+	case "taxRate":
+		return ec.fieldContext_InvoiceItem_taxRate(ctx, field)
 	case "unitPrice":
 		return ec.fieldContext_InvoiceItem_unitPrice(ctx, field)
 	case "unitTaxAmount":
@@ -2757,6 +2775,52 @@ func (ec *executionContext) _InvoiceItem_productName(ctx context.Context, field 
 }
 func (ec *executionContext) fieldContext_InvoiceItem_productName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_unit(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_unit(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Unit, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceItem_taxRate(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_taxRate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TaxRate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_taxRate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) _InvoiceItem_unitPrice(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
@@ -5203,6 +5267,16 @@ func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionS
 			}
 		case "productName":
 			out.Values[i] = ec._InvoiceItem_productName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "unit":
+			out.Values[i] = ec._InvoiceItem_unit(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "taxRate":
+			out.Values[i] = ec._InvoiceItem_taxRate(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

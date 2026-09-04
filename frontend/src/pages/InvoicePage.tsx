@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Printer, Save, Trash2, Undo2 } from 'lucide-react'
+import { Pencil, Plus, Printer, Save, Trash2, Undo2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
@@ -85,6 +85,8 @@ const invoiceQuery = `
                 sequence
                 productCode
                 productName
+                unit
+                taxRate
                 unitPrice
                 unitTaxAmount
                 quantity
@@ -167,7 +169,8 @@ function InvoicePage() {
     const [introductoryText, setIntroductoryText] = useState('')
     const [closingText, setClosingText] = useState('')
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
-    const [addProductOpen, setAddProductOpen] = useState(false)
+    const [productDialogOpen, setProductDialogOpen] = useState(false)
+    const [editingProductIndex, setEditingProductIndex] = useState<number | null>(null)
     const [newProductCode, setNewProductCode] = useState('')
     const [newProductName, setNewProductName] = useState('')
     const [newProductUnit, setNewProductUnit] = useState('')
@@ -356,6 +359,7 @@ function InvoicePage() {
         : newUnitPriceValue * (1 + newTaxRateValue / 100)
 
     const resetNewProduct = () => {
+        setEditingProductIndex(null)
         setNewProductCode('')
         setNewProductName('')
         setNewProductUnit('')
@@ -365,12 +369,15 @@ function InvoicePage() {
         setNewProductDiscount('0')
     }
 
-    const addProduct = () => {
-        setInvoiceItems((items) => [
-            ...items,
-            {
-                id: Math.min(0, ...items.map(({ id }) => id)) - 1,
-                sequence: Math.max(0, ...items.map(({ sequence }) => sequence ?? 0)) + 1,
+    const saveProduct = () => {
+        setInvoiceItems((items) => {
+            const existingItem = editingProductIndex == null
+                ? null
+                : items[editingProductIndex]
+            const item: InvoiceItem = {
+                id: existingItem?.id ?? Math.min(0, ...items.map(({ id }) => id)) - 1,
+                sequence: existingItem?.sequence ??
+                    Math.max(0, ...items.map(({ sequence }) => sequence ?? 0)) + 1,
                 productCode: newProductCode.trim(),
                 productName: newProductName.trim() || null,
                 unit: newProductUnit.trim() || null,
@@ -384,9 +391,31 @@ function InvoicePage() {
                 discount: newDiscountValue,
                 netAmount: newTaxBase,
                 grossAmount: newGrossValue,
-            },
-        ])
+            }
+
+            if (editingProductIndex == null) return [...items, item]
+            return items.map((currentItem, index) =>
+                index === editingProductIndex ? item : currentItem,
+            )
+        })
         resetNewProduct()
+    }
+
+    const editProduct = (item: InvoiceItem, index: number) => {
+        const taxRate = item.taxRate ?? (
+            item.unitPrice && item.unitTaxAmount != null
+                ? item.unitTaxAmount / item.unitPrice * 100
+                : null
+        )
+        setEditingProductIndex(index)
+        setNewProductCode(item.productCode ?? '')
+        setNewProductName(item.productName ?? '')
+        setNewProductUnit(item.unit ?? '')
+        setNewProductQuantity(item.quantity == null ? '' : String(item.quantity))
+        setNewProductNetPrice(item.unitPrice == null ? '' : String(item.unitPrice))
+        setNewProductTaxRate(taxRate == null ? '' : String(taxRate))
+        setNewProductDiscount(item.discount == null ? '0' : String(item.discount))
+        setProductDialogOpen(true)
     }
 
     const printInvoice = () => {
@@ -584,9 +613,9 @@ function InvoicePage() {
                     <CardHeader className="flex-row items-center justify-between">
                         <CardTitle>Products</CardTitle>
                         <Dialog
-                            open={addProductOpen}
+                            open={productDialogOpen}
                             onOpenChange={(open) => {
-                                setAddProductOpen(open)
+                                setProductDialogOpen(open)
                                 if (!open) resetNewProduct()
                             }}
                         >
@@ -599,9 +628,11 @@ function InvoicePage() {
                                 className="sm:max-w-3xl"
                             >
                                 <DialogHeader>
-                                    <DialogTitle>Add product</DialogTitle>
+                                    <DialogTitle>
+                                        {editingProductIndex == null ? 'Add product' : 'Edit product'}
+                                    </DialogTitle>
                                     <DialogDescription>
-                                        Search for a product to add to this invoice.
+                                        Search for a product or change the line details.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_8rem]">
@@ -759,11 +790,11 @@ function InvoicePage() {
                                         render={
                                             <Button
                                                 type="button"
-                                                onClick={addProduct}
+                                                onClick={saveProduct}
                                             />
                                         }
                                     >
-                                        Add
+                                        {editingProductIndex == null ? 'Add' : 'Save'}
                                     </DialogClose>
                                 </DialogFooter>
                             </DialogContent>
@@ -782,7 +813,7 @@ function InvoicePage() {
                                     <TableHead className="text-right">Discount</TableHead>
                                     <TableHead className="text-right">Net amount</TableHead>
                                     <TableHead className="text-right">Gross amount</TableHead>
-                                    <TableHead className="w-8">
+                                    <TableHead className="w-16">
                                         <span className="sr-only">Actions</span>
                                     </TableHead>
                                 </TableRow>
@@ -845,6 +876,16 @@ function InvoicePage() {
                                                     : formatCurrency(item.grossAmount)}
                                             </TableCell>
                                             <TableCell>
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        aria-label={`Edit ${item.productName ?? item.productCode ?? 'product'}`}
+                                                        onClick={() => editProduct(item, index)}
+                                                    >
+                                                        <Pencil />
+                                                    </Button>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger
                                                         render={
@@ -878,6 +919,7 @@ function InvoicePage() {
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
