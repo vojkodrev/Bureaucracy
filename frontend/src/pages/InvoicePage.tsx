@@ -37,6 +37,11 @@ type LatestInvoiceResponse = {
     errors?: { message: string }[]
 }
 
+type BusinessYearResponse = {
+    data?: { businessYear: { description: string | null } | null }
+    errors?: { message: string }[]
+}
+
 type InvoiceLoadResult = {
     requestKey: string
     error: string | null
@@ -94,6 +99,14 @@ const latestInvoiceQuery = `
     }
 `
 
+const businessYearQuery = `
+    query BusinessYear($code: String!) {
+        businessYear(code: $code) {
+            description
+        }
+    }
+`
+
 function invoiceNumberAfter(invoiceNumber?: string): string {
     const value = Number.parseInt(invoiceNumber ?? '', 10)
     return String(Number.isNaN(value) ? 1 : value + 1).padStart(5, '0')
@@ -117,6 +130,7 @@ function dateFromInvoiceValue(value: string | null | undefined): Date | undefine
 function InvoicePage() {
     const { invoiceNumber: routeInvoiceNumber } = useParams()
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
+    const [businessYearDescription, setBusinessYearDescription] = useState('')
     const [customerId, setCustomerId] = useState('')
     const [customerName, setCustomerName] = useState('')
     const [customerAddress, setCustomerAddress] = useState('')
@@ -246,6 +260,40 @@ function InvoicePage() {
 
         return () => abortController.abort()
     }, [routeInvoiceNumber])
+
+    useEffect(() => {
+        const selectedBusinessYear = getSelectedBusinessYear()
+        const abortController = new AbortController()
+
+        void fetch(graphqlUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: businessYearQuery,
+                variables: { code: selectedBusinessYear },
+            }),
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Loading business year failed (${response.status})`)
+                }
+
+                const result = (await response.json()) as BusinessYearResponse
+                if (result.errors?.length) {
+                    throw new Error(result.errors.map(({ message }) => message).join(', '))
+                }
+                setBusinessYearDescription(result.data?.businessYear?.description ?? '')
+            })
+            .catch((requestError: unknown) => {
+                if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                    return
+                }
+                console.error(requestError)
+            })
+
+        return () => abortController.abort()
+    }, [])
 
     const totalIncludingVat = invoiceItems.reduce(
         (total, item) => total + (item.grossAmount ?? 0),
@@ -385,14 +433,25 @@ function InvoicePage() {
                     </CardHeader>
                     <CardContent>
                         <FieldGroup>
-                            <Field>
-                                <FieldLabel htmlFor="invoice-number">Number</FieldLabel>
-                                <Input
-                                    id="invoice-number"
-                                    value={invoiceNumber}
-                                    onChange={(event) => setInvoiceNumber(event.target.value)}
-                                />
-                            </Field>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field>
+                                    <FieldLabel htmlFor="invoice-number">Number</FieldLabel>
+                                    <Input
+                                        id="invoice-number"
+                                        value={invoiceNumber}
+                                        onChange={(event) => setInvoiceNumber(event.target.value)}
+                                    />
+                                </Field>
+
+                                <Field>
+                                    <FieldLabel htmlFor="business-year">Business year</FieldLabel>
+                                    <Input
+                                        id="business-year"
+                                        value={businessYearDescription}
+                                        readOnly
+                                    />
+                                </Field>
+                            </div>
 
                             <DatePickerField
                                 id="invoice-date"

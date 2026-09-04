@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// BusinessYear is the resolver for the businessYear field.
+func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
+	return r.BusinessYearRepository.GetByCode(ctx, code)
+}
+
 // BusinessYears is the resolver for the businessYears field.
 func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error) {
 	resultPage := 1

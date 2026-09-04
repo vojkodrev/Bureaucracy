@@ -107,6 +107,8 @@ type ProductPage {
 }
 
 type Query {
+  businessYear(code: String!): BusinessYear
+
   businessYears(
     page: Int = 1
     pageSize: Int = 20
