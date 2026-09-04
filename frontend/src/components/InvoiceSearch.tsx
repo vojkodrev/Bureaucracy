@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import Pager from '@/components/Pager'
+import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -37,7 +38,27 @@ type SearchForm = {
     to: string
     page: string
     pageSize: string
+    sortBy: InvoiceSortColumn | ''
+    sortDirection: SortDirection | ''
 }
+
+type InvoiceSortColumn =
+    | 'invoiceNumber'
+    | 'customer'
+    | 'amount'
+    | 'issueDate'
+    | 'dueDate'
+    | 'paymentDate'
+type SortDirection = 'asc' | 'desc'
+
+const invoiceSortColumns: InvoiceSortColumn[] = [
+    'invoiceNumber',
+    'customer',
+    'amount',
+    'issueDate',
+    'dueDate',
+    'paymentDate',
+]
 
 type SearchInvoicesResponse = {
     data?: { searchInvoices: InvoicePage }
@@ -63,6 +84,8 @@ const searchInvoicesQuery = `
         $customerName: String
         $issuedFrom: Time
         $issuedTo: Time
+        $sortBy: String
+        $sortDirection: String
         $page: Int
         $pageSize: Int
     ) {
@@ -73,6 +96,8 @@ const searchInvoicesQuery = `
             customerName: $customerName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
+            sortBy: $sortBy
+            sortDirection: $sortDirection
             page: $page
             pageSize: $pageSize
         ) {
@@ -97,6 +122,15 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyInvoices: Invoice[] = []
 
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
+    const sortByValue = searchParams.get('sortBy')
+    const sortDirectionValue = searchParams.get('sortDirection')
+    const sortBy = invoiceSortColumns.includes(sortByValue as InvoiceSortColumn)
+        ? sortByValue as InvoiceSortColumn
+        : ''
+    const sortDirection = sortDirectionValue === 'asc' || sortDirectionValue === 'desc'
+        ? sortDirectionValue
+        : ''
+
     return {
         invoiceNumber: searchParams.get('invoiceNumber') ?? '',
         customerId: searchParams.get('customerId') ?? '',
@@ -106,6 +140,8 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         page: searchParams.get('page') ?? '1',
         pageSize:
             searchParams.get('pageSize') ?? String(defaultPageSize),
+        sortBy: sortDirection ? sortBy : '',
+        sortDirection: sortBy ? sortDirection : '',
     }
 }
 
@@ -120,6 +156,10 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
 
     searchParams.set('page', search.page)
     searchParams.set('pageSize', search.pageSize)
+    if (search.sortBy && search.sortDirection) {
+        searchParams.set('sortBy', search.sortBy)
+        searchParams.set('sortDirection', search.sortDirection)
+    }
     return searchParams
 }
 
@@ -185,6 +225,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     customerName: optionalFilter(activeSearch.customerName),
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
+                    sortBy: activeSearch.sortBy || null,
+                    sortDirection: activeSearch.sortDirection || null,
                     page: positiveInteger(activeSearch.page, defaultPage),
                     pageSize: Math.min(
                         positiveInteger(activeSearch.pageSize, defaultPageSize),
@@ -264,6 +306,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
             to: String(formData.get('to') ?? ''),
             page: '1',
             pageSize: activeSearch.pageSize,
+            sortBy: activeSearch.sortBy,
+            sortDirection: activeSearch.sortDirection,
         }
 
         if (mode === ComponentMode.Page) {
@@ -298,6 +342,26 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                 page: String(page),
                 pageSize,
             }))
+        }
+    }
+
+    function changeSort(sortBy: InvoiceSortColumn) {
+        const sortDirection = activeSearch.sortBy !== sortBy
+            ? 'asc'
+            : activeSearch.sortDirection === 'asc'
+                ? 'desc'
+                : ''
+        const nextSearch: SearchForm = {
+            ...activeSearch,
+            page: '1',
+            sortBy: sortDirection ? sortBy : '',
+            sortDirection,
+        }
+
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
         }
     }
 
@@ -389,12 +453,24 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Invoice number</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead>Invoice date</TableHead>
-                            <TableHead>Due date</TableHead>
-                            <TableHead>Payment date</TableHead>
+                            {invoiceSortColumns.map((sortBy) => (
+                                <SortableTableHead
+                                    key={sortBy}
+                                    label={{
+                                        invoiceNumber: 'Invoice number',
+                                        customer: 'Customer',
+                                        amount: 'Amount',
+                                        issueDate: 'Invoice date',
+                                        dueDate: 'Due date',
+                                        paymentDate: 'Payment date',
+                                    }[sortBy]}
+                                    direction={activeSearch.sortBy === sortBy
+                                        ? activeSearch.sortDirection
+                                        : ''}
+                                    alignRight={sortBy === 'amount'}
+                                    onSort={() => changeSort(sortBy)}
+                                />
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>

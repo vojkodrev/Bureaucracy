@@ -132,6 +132,8 @@ type Query {
     customerName: String
     issuedFrom: Time
     issuedTo: Time
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): InvoicePage!

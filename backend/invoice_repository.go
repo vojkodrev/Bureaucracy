@@ -177,6 +177,8 @@ func (repository *InvoiceRepository) Search(
 	customerName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	sortBy *string,
+	sortDirection *string,
 	page int,
 	pageSize int,
 ) (*InvoicePage, error) {
@@ -192,6 +194,10 @@ func (repository *InvoiceRepository) Search(
 	if issuedFrom != nil && issuedTo != nil && issuedFrom.After(*issuedTo) {
 		return nil, fmt.Errorf("issuedFrom must not be after issuedTo")
 	}
+	orderBy, err := invoiceOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
+	}
 
 	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
 	customerIDPattern := optionalLikePattern(customerID)
@@ -206,7 +212,7 @@ func (repository *InvoiceRepository) Search(
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 
 	var totalCount int
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
@@ -249,8 +255,8 @@ func (repository *InvoiceRepository) Search(
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
-		ORDER BY Stevilka
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName),
+		ORDER BY %s
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -304,6 +310,33 @@ func (repository *InvoiceRepository) Search(
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func invoiceOrderBy(sortBy *string, sortDirection *string) (string, error) {
+	if sortBy == nil && sortDirection == nil {
+		return "Stevilka, RecNo", nil
+	}
+	if sortBy == nil || sortDirection == nil {
+		return "", fmt.Errorf("sortBy and sortDirection must be provided together")
+	}
+
+	columns := map[string]string{
+		"invoiceNumber": "Stevilka",
+		"customer":      "ImePartnerja",
+		"amount":        "Znesek",
+		"issueDate":     "DatumIzstavitve",
+		"dueDate":       "DatumZapadlosti",
+		"paymentDate":   "DatumPlacila",
+	}
+	column, ok := columns[*sortBy]
+	if !ok {
+		return "", fmt.Errorf("invalid invoice sort column %q", *sortBy)
+	}
+	direction := strings.ToUpper(*sortDirection)
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sortDirection must be asc or desc")
+	}
+	return column + " " + direction + ", RecNo " + direction, nil
 }
 
 func nullableTime(value *time.Time) sql.NullTime {

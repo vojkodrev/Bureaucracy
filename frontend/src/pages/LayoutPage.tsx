@@ -56,6 +56,17 @@ const searchParameterLabels: Record<string, string> = {
     to: 'Invoice date to',
 }
 
+const searchParameterValues: Record<string, Record<string, string>> = {
+    sortBy: {
+        invoiceNumber: 'Invoice number',
+        customer: 'Customer',
+        amount: 'Amount',
+        issueDate: 'Invoice date',
+        dueDate: 'Due date',
+        paymentDate: 'Payment date',
+    },
+}
+
 function searchParameterLabel(name: string): string {
     return (
         searchParameterLabels[name] ??
@@ -63,6 +74,10 @@ function searchParameterLabel(name: string): string {
             .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
             .replace(/^./, (character) => character.toUpperCase())
     )
+}
+
+function searchParameterValue(name: string, value: string): string {
+    return searchParameterValues[name]?.[value] ?? value
 }
 
 function invoiceNumberFromPathname(pathname: string): string | undefined {
@@ -88,12 +103,25 @@ function LayoutPage() {
         (isInvoicePage ? 'Invoice' : undefined)
 
     useEffect(() => {
-        const searchDetails = Array.from(new URLSearchParams(search))
-            .filter(([, value]) => value.trim() !== '')
+        const searchParams = new URLSearchParams(search)
+        const searchDetails = Array.from(searchParams)
+            .filter(
+                ([name, value]) =>
+                    value.trim() !== '' &&
+                    name !== 'sortBy' &&
+                    name !== 'sortDirection',
+            )
             .map(
                 ([name, value]) =>
-                    `${searchParameterLabel(name)}: ${value}`,
+                    `${searchParameterLabel(name)}: ${searchParameterValue(name, value)}`,
             )
+        const sortBy = searchParams.get('sortBy')
+        const sortDirection = searchParams.get('sortDirection')
+        if (sortBy && (sortDirection === 'asc' || sortDirection === 'desc')) {
+            searchDetails.push(
+                `Sort: ${searchParameterValue('sortBy', sortBy)} ${sortDirection === 'asc' ? 'A' : 'D'}`,
+            )
+        }
         document.title = ['Bureaucracy', breadcrumbLabel, ...searchDetails]
             .filter(Boolean)
             .join(' - ')
