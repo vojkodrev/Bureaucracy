@@ -170,6 +170,7 @@ function InvoicePage() {
     const [addProductOpen, setAddProductOpen] = useState(false)
     const [newProductCode, setNewProductCode] = useState('')
     const [newProductName, setNewProductName] = useState('')
+    const [newProductUnit, setNewProductUnit] = useState('')
     const [reloadVersion, setReloadVersion] = useState(0)
     const [printError, setPrintError] = useState<string | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -331,6 +332,7 @@ function InvoicePage() {
     const resetNewProduct = () => {
         setNewProductCode('')
         setNewProductName('')
+        setNewProductUnit('')
     }
 
     const addProduct = () => {
@@ -343,6 +345,7 @@ function InvoicePage() {
                 sequence: Math.max(0, ...items.map(({ sequence }) => sequence ?? 0)) + 1,
                 productCode: newProductCode.trim(),
                 productName: newProductName.trim() || null,
+                unit: newProductUnit.trim() || null,
                 unitPrice: null,
                 unitTaxAmount: null,
                 quantity: null,
@@ -559,29 +562,43 @@ function InvoicePage() {
                                 <Plus />
                                 Add product
                             </DialogTrigger>
-                            <DialogContent showCloseButton={false}>
+                            <DialogContent
+                                showCloseButton={false}
+                                className="sm:max-w-2xl"
+                            >
                                 <DialogHeader>
                                     <DialogTitle>Add product</DialogTitle>
                                     <DialogDescription>
                                         Search for a product to add to this invoice.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <ProductPickerField
-                                    id="new-product-code"
-                                    label="Product code"
-                                    name="newProductCode"
-                                    productCode={newProductCode}
-                                    onProductCodeChange={setNewProductCode}
-                                    onProductNameChange={setNewProductName}
-                                />
-                                <Field>
-                                    <FieldLabel htmlFor="new-product-name">Product name</FieldLabel>
-                                    <Input
-                                        id="new-product-name"
-                                        value={newProductName}
-                                        readOnly
+                                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_8rem]">
+                                    <ProductPickerField
+                                        id="new-product-code"
+                                        label="Product code"
+                                        name="newProductCode"
+                                        productCode={newProductCode}
+                                        onProductCodeChange={setNewProductCode}
+                                        onProductNameChange={setNewProductName}
+                                        onProductUnitChange={setNewProductUnit}
                                     />
-                                </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-name">Product name</FieldLabel>
+                                        <Input
+                                            id="new-product-name"
+                                            value={newProductName}
+                                            readOnly
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="new-product-unit">Unit</FieldLabel>
+                                        <Input
+                                            id="new-product-unit"
+                                            value={newProductUnit}
+                                            readOnly
+                                        />
+                                    </Field>
+                                </div>
                                 <DialogFooter>
                                     <DialogClose
                                         render={<Button type="button" variant="outline" />}

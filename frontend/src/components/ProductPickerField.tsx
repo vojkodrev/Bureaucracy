@@ -28,6 +28,7 @@ type ProductPickerFieldProps = {
     name: string
     onProductCodeChange: (productCode: string) => void
     onProductNameChange: (productName: string) => void
+    onProductUnitChange?: (productUnit: string) => void
 }
 
 function ProductPickerField({
@@ -37,6 +38,7 @@ function ProductPickerField({
     name,
     onProductCodeChange,
     onProductNameChange,
+    onProductUnitChange,
 }: ProductPickerFieldProps) {
     const [open, setOpen] = useState(false)
 
@@ -44,6 +46,7 @@ function ProductPickerField({
         setOpen(false)
         onProductCodeChange(product.productCode ?? '')
         onProductNameChange(product.name ?? '')
+        onProductUnitChange?.(product.unit ?? '')
     }
 
     return (
