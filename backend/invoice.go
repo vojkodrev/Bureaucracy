@@ -15,6 +15,7 @@ type Invoice struct {
 	CustomerPostalCode *string        `json:"customerPostalCode"`
 	CustomerCity       *string        `json:"customerCity"`
 	CustomerCountry    *string        `json:"customerCountry"`
+	IssuePlace         *string        `json:"issuePlace"`
 	CustomerContact    *string        `json:"customerContact"`
 	Currency           *string        `json:"currency"`
 	Amount             *float64       `json:"amount"`

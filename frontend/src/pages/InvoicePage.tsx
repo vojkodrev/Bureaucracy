@@ -75,9 +75,10 @@ const invoiceQuery = `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
-function invoicePdfUrl(invoiceNumber: string): string {
+function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {
     const url = new URL(graphqlUrl)
     url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/pdf`
+    url.searchParams.set('businessYear', businessYear)
     url.searchParams.set('_', String(Date.now()))
     url.hash = ''
     return url.toString()
@@ -192,7 +193,10 @@ function InvoicePage() {
         const numberToPrint = invoiceNumber.trim()
         if (!numberToPrint) return
 
-        const pdfTab = window.open(invoicePdfUrl(numberToPrint), '_blank')
+        const pdfTab = window.open(
+            invoicePdfUrl(numberToPrint, getSelectedBusinessYear()),
+            '_blank',
+        )
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the invoice PDF.')
             return

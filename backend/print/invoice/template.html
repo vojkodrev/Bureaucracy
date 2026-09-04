@@ -23,6 +23,38 @@
             <img class="company-logo" src="{{.Logo}}" alt="DREVI logo">
         </header>
 
+        <section class="invoice-overview">
+            <address class="customer-address">
+                <span>{{.Document.Customer.Name}}</span>
+                <span>{{.Document.Customer.Address}}</span>
+                <span class="customer-location">
+                    {{.Document.Customer.Location}}
+                </span>
+            </address>
+
+            <div class="invoice-details">
+                <div class="invoice-detail invoice-title">
+                    <strong>Račun :</strong>
+                    <strong>{{.Document.InvoiceNumber}}</strong>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Datum :</strong>
+                    <span>{{.Document.IssueDate}}</span>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Valuta :</strong>
+                    <span>{{.Document.DueDate}}</span>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Kraj izdaje :</strong>
+                    <span>{{.Document.IssuePlace}}</span>
+                </div>
+                <div class="invoice-detail service-date">
+                    <strong>Datum odpreme/opravljene storitve :</strong>
+                    <span>{{.Document.ServiceDate}}</span>
+                </div>
+            </div>
+        </section>
     </main>
 </body>
 </html>

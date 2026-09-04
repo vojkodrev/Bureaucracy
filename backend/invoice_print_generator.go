@@ -20,9 +20,20 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type document struct {
-	XMLName       xml.Name `xml:"invoice"`
-	InvoiceNumber string   `xml:"number"`
+type invoicePrintDocument struct {
+	XMLName       xml.Name             `xml:"invoice"`
+	InvoiceNumber string               `xml:"number"`
+	IssueDate     string               `xml:"issueDate"`
+	DueDate       string               `xml:"dueDate"`
+	ServiceDate   string               `xml:"serviceDate"`
+	IssuePlace    string               `xml:"issuePlace"`
+	Customer      invoicePrintCustomer `xml:"customer"`
+}
+
+type invoicePrintCustomer struct {
+	Name     string `xml:"name"`
+	Address  string `xml:"address"`
+	Location string `xml:"location"`
 }
 
 //go:embed print/invoice/template.html
@@ -50,22 +61,30 @@ func NewInvoicePrintGenerator() (*InvoicePrintGenerator, error) {
 	}, nil
 }
 
-func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoiceNumber string) ([]byte, error) {
-	invoiceNumber = strings.TrimSpace(invoiceNumber)
-	if invoiceNumber == "" {
-		return nil, fmt.Errorf("invoice number is required")
+func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *Invoice) ([]byte, error) {
+	if invoice == nil {
+		return nil, fmt.Errorf("invoice is required")
 	}
 	if generator.chromePath == "" {
 		return nil, fmt.Errorf("Chrome is required to generate invoice PDFs; set CHROME_PATH")
 	}
 
-	// This round trip establishes XML as the source document. Replace this
-	// temporary model with XML built from InvoiceRepository data later.
-	xmlDocument, err := xml.Marshal(document{InvoiceNumber: invoiceNumber})
+	xmlDocument, err := xml.Marshal(invoicePrintDocument{
+		InvoiceNumber: invoice.InvoiceNumber,
+		IssueDate:     formatPrintDate(invoice.IssueDate),
+		DueDate:       formatPrintDate(invoice.DueDate),
+		ServiceDate:   formatPrintDate(invoice.ServiceDate),
+		IssuePlace:    valueOrDefault(invoice.IssuePlace, "1000 Ljubljana"),
+		Customer: invoicePrintCustomer{
+			Name:     stringValue(invoice.CustomerName),
+			Address:  stringValue(invoice.CustomerAddress),
+			Location: customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity),
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create invoice XML: %w", err)
 	}
-	var printDocument document
+	var printDocument invoicePrintDocument
 	if err := xml.Unmarshal(xmlDocument, &printDocument); err != nil {
 		return nil, fmt.Errorf("read invoice XML: %w", err)
 	}
@@ -73,7 +92,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoiceNum
 	var renderedHTML bytes.Buffer
 	if err := generator.template.Execute(&renderedHTML, struct {
 		CSS      template.CSS
-		Document document
+		Document invoicePrintDocument
 		Logo     template.URL
 	}{
 		CSS:      template.CSS(cssTemplate),
@@ -84,6 +103,39 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoiceNum
 	}
 
 	return generator.htmlToPDF(ctx, renderedHTML.Bytes())
+}
+
+func formatPrintDate(value *time.Time) string {
+	if value == nil {
+		return ""
+	}
+	return value.Format("2.1.2006")
+}
+
+func stringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(*value)
+}
+
+func valueOrDefault(value *string, fallback string) string {
+	if result := stringValue(value); result != "" {
+		return result
+	}
+	return fallback
+}
+
+func customerLocation(postalCode *string, city *string) string {
+	postal := stringValue(postalCode)
+	location := stringValue(city)
+	if postal == "" || strings.HasPrefix(strings.ToUpper(location), strings.ToUpper(postal)) {
+		return location
+	}
+	if location == "" {
+		return postal
+	}
+	return postal + "    " + location
 }
 
 func (generator *InvoicePrintGenerator) htmlToPDF(ctx context.Context, htmlDocument []byte) ([]byte, error) {

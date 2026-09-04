@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -23,7 +21,11 @@ type HTTPServer struct {
 	server *http.Server
 }
 
-func NewHTTPServer(config *AppConfig, resolver *Resolver, printGenerator *InvoicePrintGenerator) *HTTPServer {
+func NewHTTPServer(
+	config *AppConfig,
+	resolver *Resolver,
+	invoicePrintHandler *InvoicePrintHandler,
+) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -47,21 +49,7 @@ func NewHTTPServer(config *AppConfig, resolver *Resolver, printGenerator *Invoic
 	router.GET("/health", func(context *gin.Context) {
 		context.Status(http.StatusNoContent)
 	})
-	router.GET("/api/invoices/:invoiceNumber/pdf", func(context *gin.Context) {
-		invoiceNumber := strings.TrimSpace(context.Param("invoiceNumber"))
-		pdf, err := printGenerator.Generate(context.Request.Context(), invoiceNumber)
-		if err != nil {
-			context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		filename := strings.NewReplacer("\"", "", "\r", "", "\n", "").Replace(invoiceNumber)
-		context.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-		context.Header("Pragma", "no-cache")
-		context.Header("Expires", "0")
-		context.Header("Content-Disposition", fmt.Sprintf(`inline; filename="invoice-%s.pdf"`, filename))
-		context.Data(http.StatusOK, "application/pdf", pdf)
-	})
+	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
 
 	return &HTTPServer{
 		config: config,
