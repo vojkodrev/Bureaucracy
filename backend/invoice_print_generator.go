@@ -23,6 +23,7 @@ import (
 type invoicePrintDocument struct {
 	XMLName       xml.Name             `xml:"invoice"`
 	InvoiceNumber string               `xml:"number"`
+	Title         string               `xml:"title"`
 	IssueDate     string               `xml:"issueDate"`
 	DueDate       string               `xml:"dueDate"`
 	ServiceDate   string               `xml:"serviceDate"`
@@ -61,7 +62,7 @@ func NewInvoicePrintGenerator() (*InvoicePrintGenerator, error) {
 	}, nil
 }
 
-func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *Invoice) ([]byte, error) {
+func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *Invoice, businessYear int) ([]byte, error) {
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
 	}
@@ -69,8 +70,10 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		return nil, fmt.Errorf("Chrome is required to generate invoice PDFs; set CHROME_PATH")
 	}
 
+	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
-		InvoiceNumber: invoice.InvoiceNumber,
+		InvoiceNumber: displayNumber,
+		Title:         "Drevi d.o.o. račun " + displayNumber,
 		IssueDate:     formatPrintDate(invoice.IssueDate),
 		DueDate:       formatPrintDate(invoice.DueDate),
 		ServiceDate:   formatPrintDate(invoice.ServiceDate),
