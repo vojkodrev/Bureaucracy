@@ -15,6 +15,7 @@ type Invoice struct {
 	CustomerPostalCode *string        `json:"customerPostalCode"`
 	CustomerCity       *string        `json:"customerCity"`
 	CustomerCountry    *string        `json:"customerCountry"`
+	CustomerTaxID      *string        `json:"customerTaxId"`
 	IssuePlace         *string        `json:"issuePlace"`
 	CustomerContact    *string        `json:"customerContact"`
 	Currency           *string        `json:"currency"`
@@ -33,6 +34,8 @@ type InvoiceItem struct {
 	Sequence      *int     `json:"sequence"`
 	ProductCode   *string  `json:"productCode"`
 	ProductName   *string  `json:"productName"`
+	Unit          *string  `json:"unit"`
+	TaxRate       *float64 `json:"taxRate"`
 	UnitPrice     *float64 `json:"unitPrice"`
 	UnitTaxAmount *float64 `json:"unitTaxAmount"`
 	Quantity      *float64 `json:"quantity"`

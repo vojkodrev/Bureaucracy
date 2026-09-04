@@ -24,7 +24,7 @@ main {
     align-items: stretch;
     justify-content: space-between;
     width: 100%;
-    height: 100px;
+    height: 26.46mm;
 }
 
 .company-details {
@@ -55,7 +55,7 @@ main {
 .company-logo {
     display: block;
     width: auto;
-    height: 100px;
+    height: 26.46mm;
     object-fit: contain;
 }
 
@@ -63,7 +63,7 @@ main {
     display: flex;
     align-items: stretch;
     justify-content: space-between;
-    margin-top: 60px;
+    margin-top: 15.88mm;
     font-size: 4mm;
 }
 
@@ -104,4 +104,163 @@ main {
 
 .invoice-title {
     font-size: 4mm;
+}
+
+.invoice-body {
+    margin-top: 20mm;
+    font-size: 2.8mm;
+}
+
+.customer-tax-id,
+.introductory-text,
+.amount-in-words,
+.closing-text,
+.signature {
+    margin: 0;
+}
+
+.customer-tax-id {
+    margin-left: 2mm;
+}
+
+.introductory-text {
+    margin: 8mm 2mm 1mm;
+    white-space: pre-line;
+}
+
+.items-table,
+.tax-specification table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table {
+    table-layout: fixed;
+    border-top: 0.25mm solid #111;
+    border-bottom: 0.25mm solid #111;
+    font-size: 2.25mm;
+}
+
+.items-table th {
+    padding: 1.5mm 0.7mm;
+    border-bottom: 0.2mm solid #333;
+    font-weight: 700;
+    line-height: 1.05;
+}
+
+.items-table td {
+    padding: 1mm 0.7mm;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.items-table th:nth-child(1),
+.items-table td:nth-child(1) {
+    width: 4%;
+    text-align: center;
+}
+
+.items-table th:nth-child(2),
+.items-table td:nth-child(2) {
+    width: 31%;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+}
+
+.items-table th:nth-child(3),
+.items-table td:nth-child(3) {
+    width: 7%;
+}
+
+.items-table th:nth-child(4),
+.items-table td:nth-child(4) {
+    width: 6%;
+    text-align: left;
+}
+
+.items-table th:nth-child(5),
+.items-table td:nth-child(5),
+.items-table th:nth-child(7),
+.items-table td:nth-child(7),
+.items-table th:nth-child(8),
+.items-table td:nth-child(8),
+.items-table th:nth-child(10),
+.items-table td:nth-child(10),
+.items-table th:nth-child(11),
+.items-table td:nth-child(11) {
+    width: 8%;
+}
+
+.items-table th:nth-child(6),
+.items-table td:nth-child(6),
+.items-table th:nth-child(9),
+.items-table td:nth-child(9) {
+    width: 6%;
+}
+
+.invoice-totals {
+    display: grid;
+    grid-template-columns: 1fr 28mm;
+    width: 76mm;
+    margin-left: auto;
+    font-size: 2.8mm;
+    line-height: 1.35;
+    text-align: right;
+}
+
+.invoice-totals > :nth-child(even) {
+    padding-right: 1mm;
+}
+
+.total-rule {
+    border-top: 0.3mm solid #111;
+}
+
+.amount-in-words {
+    margin-top: -4mm;
+    padding: 1mm 0.5mm;
+    border-bottom: 0.4mm solid #111;
+    font-size: 2.8mm;
+}
+
+.tax-specification {
+    margin-top: 8mm;
+}
+
+.tax-specification h2 {
+    margin: 0;
+    padding-bottom: 0.5mm;
+    border-bottom: 0.3mm solid #111;
+    font-size: 3mm;
+}
+
+.tax-specification table {
+    font-size: 2.6mm;
+}
+
+.tax-specification th,
+.tax-specification td {
+    padding: 0.8mm 0.5mm;
+    border-bottom: 0.2mm solid #444;
+}
+
+.tax-specification th:first-child,
+.tax-specification td:first-child {
+    text-align: left;
+}
+
+.tax-specification th:not(:first-child),
+.tax-specification td:not(:first-child) {
+    text-align: right;
+}
+
+.closing-text {
+    margin-top: 7mm;
+    white-space: pre-line;
+}
+
+.signature {
+    margin-top: 9mm;
+    margin-left: 1mm;
 }

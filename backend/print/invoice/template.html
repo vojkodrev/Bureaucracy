@@ -56,6 +56,84 @@
                 </div>
             </div>
         </section>
+
+        <section class="invoice-body">
+            <p class="customer-tax-id">Ident. št. za DDV: {{.Document.Customer.TaxID}}</p>
+
+            <p class="introductory-text">{{.Document.IntroText}}</p>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Št.</th>
+                        <th>Opis</th>
+                        <th>Količina</th>
+                        <th>Enota</th>
+                        <th>Cena brez<br>DDV</th>
+                        <th>Popust</th>
+                        <th>Znesek<br>popusta</th>
+                        <th>Cena s<br>popustom</th>
+                        <th>DDV</th>
+                        <th>Cena z DDV</th>
+                        <th>Znesek br.<br>DDV</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Document.Items}}
+                    <tr>
+                        <td>{{.Sequence}}</td>
+                        <td>{{.Description}}</td>
+                        <td>{{.Quantity}}</td>
+                        <td>{{.Unit}}</td>
+                        <td>{{.UnitPrice}}</td>
+                        <td>{{.Discount}}</td>
+                        <td>{{.DiscountAmount}}</td>
+                        <td>{{.DiscountedPrice}}</td>
+                        <td>{{.TaxRate}}</td>
+                        <td>{{.UnitPriceWithTax}}</td>
+                        <td>{{.NetAmount}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div class="invoice-totals">
+                <strong>Znesek brez DDV skupaj</strong><strong>{{.Document.NetTotal}}</strong>
+                <strong>DDV skupaj</strong><strong>{{.Document.TaxTotal}}</strong>
+                <strong>Znesek z DDV skupaj</strong><strong>{{.Document.GrossTotal}}</strong>
+                <span class="total-rule"></span><strong>{{.Document.GrossTotal}}</strong>
+            </div>
+
+            <p class="amount-in-words">Z besedo EUR: {{.Document.AmountInWords}}</p>
+
+            <section class="tax-specification">
+                <h2>Specifikacija davka</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Opis davka</th>
+                            <th>Stopnja davka</th>
+                            <th>Osnova brez davka</th>
+                            <th>Znesek davka</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Document.TaxSummaries}}
+                        <tr>
+                            <td>{{.Description}}</td>
+                            <td>{{.Rate}}</td>
+                            <td>{{.NetAmount}}</td>
+                            <td>{{.TaxAmount}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </section>
+
+            <p class="closing-text">{{.Document.ClosingText}}</p>
+
+            <p class="signature">Direktor:<br>Vojko Drev,dipl.inž.rač.in inf.</p>
+        </section>
     </main>
 </body>
 </html>
