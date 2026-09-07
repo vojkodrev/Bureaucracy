@@ -6,6 +6,7 @@ import LayoutPage from './pages/LayoutPage.tsx'
 import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
 import InvoicePage from './pages/invoice/InvoicePage.tsx'
 import ProductSearchPage from './pages/ProductSearchPage.tsx'
+import { Toaster } from './components/ui/toast.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -36,5 +37,6 @@ createRoot(document.getElementById('root')).render(
                 />
             </Route>
         </Routes>
+        <Toaster />
     </BrowserRouter>,
 )

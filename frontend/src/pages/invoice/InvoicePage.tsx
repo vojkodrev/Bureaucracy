@@ -8,6 +8,7 @@ import { dateForApi, dateFromSearchValue } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
 import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { numberOrNull } from '@/lib/numbers'
+import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceMenu from './InvoiceMenu'
@@ -217,6 +218,11 @@ function InvoicePage() {
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
             const savedInvoice = result.data?.saveInvoice
             if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
+            toast.add({
+                title: 'Invoice saved',
+                description: `Invoice ${savedInvoice.invoiceNumber} was created successfully.`,
+                type: 'success',
+            })
             navigate(`/invoice/${encodeURIComponent(savedInvoice.invoiceNumber)}`)
         } catch (requestError: unknown) {
             setSaveError(requestError instanceof Error ? requestError.message : 'Saving invoice failed')
