@@ -234,13 +234,18 @@ function InvoicePage() {
     const onSaveShortcut = useEffectEvent(() => {
         void saveInvoice()
     })
+    const onPrintShortcut = useEffectEvent(printInvoice)
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return
+            if (!(event.ctrlKey || event.metaKey)) return
+
+            const key = event.key.toLowerCase()
+            if (key !== 's' && key !== 'p') return
 
             event.preventDefault()
-            onSaveShortcut()
+            if (key === 's') onSaveShortcut()
+            if (key === 'p') onPrintShortcut()
         }
 
         window.addEventListener('keydown', handleKeyDown)

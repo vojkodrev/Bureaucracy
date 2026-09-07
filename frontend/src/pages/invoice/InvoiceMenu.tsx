@@ -30,6 +30,7 @@ function InvoiceMenu({ canSave, canPrint, canRevert, isSaving, onSave, onPrint, 
                     </MenubarItem>
                     <MenubarItem disabled={!canPrint} onClick={onPrint}>
                         <Printer />Print
+                        <MenubarShortcut>Ctrl+P</MenubarShortcut>
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
