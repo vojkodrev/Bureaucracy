@@ -10,6 +10,10 @@ The backend exposes BIRO225 invoices through an English GraphQL API.
 Open the GraphQL playground at <http://localhost:8080/> or send requests to
 `http://localhost:8080/graphql`.
 
+Invoice PDFs are served as inline documents from
+`GET /api/invoices/:invoiceNumber/pdf`. The placeholder implementation does
+not query the database yet.
+
 ```graphql
 query SearchInvoices($invoiceNumber: String, $customerId: String, $customerName: String, $issuedFrom: Time, $issuedTo: Time, $page: Int, $pageSize: Int) {
   searchInvoices(invoiceNumber: $invoiceNumber, customerId: $customerId, customerName: $customerName, issuedFrom: $issuedFrom, issuedTo: $issuedTo, page: $page, pageSize: $pageSize) {

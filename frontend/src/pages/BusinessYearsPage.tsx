@@ -5,6 +5,7 @@ import {
     getSelectedBusinessYear,
     setSelectedBusinessYear,
 } from '@/lib/business-year'
+import type { BusinessYear } from '@/lib/business-year-types'
 import {
     defaultPage,
     defaultPageSize,
@@ -19,13 +20,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-
-type BusinessYear = {
-    code: string | null
-    description: string | null
-    year: number | null
-    derivedFrom: string | null
-}
 
 type BusinessYearPage = {
     businessYears: BusinessYear[]

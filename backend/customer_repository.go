@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 type CustomerRepository struct {
@@ -19,6 +20,8 @@ func (repository *CustomerRepository) Search(
 	businessYear string,
 	customerID *string,
 	customerName *string,
+	sortBy *string,
+	sortDirection *string,
 	page int,
 	pageSize int,
 ) (*CustomerPage, error) {
@@ -31,6 +34,10 @@ func (repository *CustomerRepository) Search(
 	if pageSize < 1 || pageSize > 100 {
 		return nil, fmt.Errorf("pageSize must be between 1 and 100")
 	}
+	orderBy, err := customerOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
+	}
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	queryArguments := []any{
@@ -39,7 +46,7 @@ func (repository *CustomerRepository) Search(
 	}
 
 	var totalCount int
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[Partner]
 		WHERE (@customerID = '' OR Sifra LIKE @customerID ESCAPE '\')
@@ -73,8 +80,8 @@ func (repository *CustomerRepository) Search(
 		FROM [%s].[dbo].[Partner]
 		WHERE (@customerID = '' OR Sifra LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR Partner LIKE @customerName ESCAPE '\')
-		ORDER BY Sifra
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName),
+		ORDER BY %s
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -121,4 +128,33 @@ func (repository *CustomerRepository) Search(
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func customerOrderBy(sortBy *string, sortDirection *string) (string, error) {
+	if sortBy == nil && sortDirection == nil {
+		return "Sifra, RecNo", nil
+	}
+	if sortBy == nil || sortDirection == nil {
+		return "", fmt.Errorf("sortBy and sortDirection must be provided together")
+	}
+
+	columns := map[string]string{
+		"customerId": "Sifra",
+		"name":       "Partner",
+		"address":    "Ulica",
+		"city":       "Kraj",
+		"contact":    "Kontakt",
+		"email":      "Email",
+		"phone":      "Telefon",
+		"taxNumber":  "DavcnaStevilka",
+	}
+	column, ok := columns[*sortBy]
+	if !ok {
+		return "", fmt.Errorf("invalid customer sort column %q", *sortBy)
+	}
+	direction := strings.ToUpper(*sortDirection)
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sortDirection must be asc or desc")
+	}
+	return column + " " + direction + ", RecNo " + direction, nil
 }

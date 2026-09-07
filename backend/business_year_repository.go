@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 type BusinessYearRepository struct {
@@ -12,6 +13,40 @@ type BusinessYearRepository struct {
 
 func NewBusinessYearRepository(database *sql.DB) *BusinessYearRepository {
 	return &BusinessYearRepository{database: database}
+}
+
+func (repository *BusinessYearRepository) GetByCode(
+	ctx context.Context,
+	code string,
+) (*BusinessYear, error) {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return nil, fmt.Errorf("business year code is required")
+	}
+
+	businessYear := &BusinessYear{}
+	err := repository.database.QueryRowContext(ctx, `
+		SELECT
+			Oznaka,
+			Opis,
+			LetoPoslovanja,
+			IzhajaIz
+		FROM [Birokrat].[dbo].[PoslovnaLeta]
+		WHERE Oznaka = @code`,
+		sql.Named("code", code),
+	).Scan(
+		&businessYear.Code,
+		&businessYear.Description,
+		&businessYear.Year,
+		&businessYear.DerivedFrom,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get business year: %w", err)
+	}
+	return businessYear, nil
 }
 
 func (repository *BusinessYearRepository) List(

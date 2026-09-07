@@ -36,9 +36,15 @@ models:
   InvoicePage:
     model:
       - bureaucracy/backend.InvoicePage
+  InvoiceItem:
+    model:
+      - bureaucracy/backend.InvoiceItem
   Product:
     model:
       - bureaucracy/backend.Product
   ProductPage:
     model:
       - bureaucracy/backend.ProductPage
+  TaxCode:
+    model:
+      - bureaucracy/backend.TaxCode

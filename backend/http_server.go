@@ -15,13 +15,17 @@ import (
 	"go.uber.org/fx"
 )
 
-type GraphQLServer struct {
+type HTTPServer struct {
 	config *AppConfig
 	router *gin.Engine
 	server *http.Server
 }
 
-func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
+func NewHTTPServer(
+	config *AppConfig,
+	resolver *Resolver,
+	invoicePrintHandler *InvoicePrintHandler,
+) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -45,8 +49,9 @@ func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
 	router.GET("/health", func(context *gin.Context) {
 		context.Status(http.StatusNoContent)
 	})
+	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
 
-	return &GraphQLServer{
+	return &HTTPServer{
 		config: config,
 		router: router,
 		server: &http.Server{
@@ -57,7 +62,7 @@ func NewGraphQLServer(config *AppConfig, resolver *Resolver) *GraphQLServer {
 	}
 }
 
-func RegisterGraphQLServerLifecycle(lifecycle fx.Lifecycle, server *GraphQLServer) {
+func RegisterHTTPServerLifecycle(lifecycle fx.Lifecycle, server *HTTPServer) {
 	var listener net.Listener
 	lifecycle.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
@@ -69,10 +74,10 @@ func RegisterGraphQLServerLifecycle(lifecycle fx.Lifecycle, server *GraphQLServe
 
 			go func() {
 				if err := server.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					slog.Error("GraphQL server stopped unexpectedly", "error", err)
+					slog.Error("HTTP server stopped unexpectedly", "error", err)
 				}
 			}()
-			slog.Info("GraphQL server listening", "url", "http://localhost:"+server.config.Port+"/graphql")
+			slog.Info("HTTP server listening", "url", "http://localhost:"+server.config.Port)
 			return nil
 		},
 		OnStop: server.server.Shutdown,

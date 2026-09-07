@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 type ProductRepository struct {
@@ -19,6 +20,8 @@ func (repository *ProductRepository) Search(
 	businessYear string,
 	productCode *string,
 	productName *string,
+	sortBy *string,
+	sortDirection *string,
 	page int,
 	pageSize int,
 ) (*ProductPage, error) {
@@ -31,6 +34,10 @@ func (repository *ProductRepository) Search(
 	if pageSize < 1 || pageSize > 100 {
 		return nil, fmt.Errorf("pageSize must be between 1 and 100")
 	}
+	orderBy, err := productOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
+	}
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	queryArguments := []any{
@@ -39,7 +46,7 @@ func (repository *ProductRepository) Search(
 	}
 
 	var totalCount int
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[Artikel]
 		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
@@ -68,8 +75,8 @@ func (repository *ProductRepository) Search(
 		FROM [%s].[dbo].[Artikel]
 		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
 		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')
-		ORDER BY Artikel
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName),
+		ORDER BY %s
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -111,4 +118,32 @@ func (repository *ProductRepository) Search(
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func productOrderBy(sortBy *string, sortDirection *string) (string, error) {
+	if sortBy == nil && sortDirection == nil {
+		return "Artikel, RecNo", nil
+	}
+	if sortBy == nil || sortDirection == nil {
+		return "", fmt.Errorf("sortBy and sortDirection must be provided together")
+	}
+
+	columns := map[string]string{
+		"productCode": "Artikel",
+		"name":        "Opis",
+		"barcode":     "BarKoda",
+		"unit":        "Enota",
+		"netPrice":    "CenaBrezDavka",
+		"grossPrice":  "CenaZDavkom",
+		"taxRate":     "Davek",
+	}
+	column, ok := columns[*sortBy]
+	if !ok {
+		return "", fmt.Errorf("invalid product sort column %q", *sortBy)
+	}
+	direction := strings.ToUpper(*sortDirection)
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sortDirection must be asc or desc")
+	}
+	return column + " " + direction + ", RecNo " + direction, nil
 }

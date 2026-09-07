@@ -50,14 +50,35 @@ type Invoice {
   customerCode: String
   customerName: String
   customerAddress: String
+  customerPostalCode: String
   customerCity: String
+  customerCountry: String
   customerContact: String
   currency: String
   amount: Float
   goodsAmount: Float
   paidAmount: Float
   paymentReference: String
+  introductoryText: String
+  closingText: String
   cancelled: Boolean
+  items: [InvoiceItem!]!
+}
+
+type InvoiceItem {
+  id: Int!
+  sequence: Int
+  productCode: String
+  productName: String
+  unit: String
+  taxCode: String
+  taxRate: Float
+  unitPrice: Float
+  unitTaxAmount: Float
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
 }
 
 type InvoicePage {
@@ -66,6 +87,40 @@ type InvoicePage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
+}
+
+input InvoiceItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+}
+
+type TaxCode {
+  id: Int!
+  code: String!
+  description: String
+  rate: Float
+}
+
+input InvoiceInput {
+  id: Int
+  invoiceNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  paymentDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  paidAmount: Float
+  introductoryText: String
+  closingText: String
+  items: [InvoiceItemInput!]!
 }
 
 type Product {
@@ -89,15 +144,24 @@ type ProductPage {
 }
 
 type Query {
+  businessYear(code: String!): BusinessYear
+
   businessYears(
     page: Int = 1
     pageSize: Int = 20
   ): BusinessYearPage!
 
+  invoice(
+    businessYear: String!
+    invoiceNumber: String!
+  ): Invoice
+
   searchCustomers(
     businessYear: String!
     customerId: String
     customerName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): CustomerPage!
@@ -109,6 +173,8 @@ type Query {
     customerName: String
     issuedFrom: Time
     issuedTo: Time
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): InvoicePage!
@@ -117,7 +183,15 @@ type Query {
     businessYear: String!
     productCode: String
     productName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+
+  taxCodes(businessYear: String!): [TaxCode!]!
+}
+
+type Mutation {
+  saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
 }

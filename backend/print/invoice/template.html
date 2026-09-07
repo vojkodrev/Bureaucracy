@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{.Document.Title}}</title>
+    <style>{{.CSS}}</style>
+</head>
+<body>
+    <main data-invoice-number="{{.Document.InvoiceNumber}}">
+        <header class="document-header">
+            <div class="company-details">
+                <div class="company-address">
+                    <strong>DREVI d.o.o.</strong>
+                    <span>Ob železnici 16</span>
+                    <span>1000&nbsp;&nbsp;LJUBLJANA</span>
+                </div>
+                <div class="company-contact">
+                    <span>email: drevi@siol.net&nbsp;&nbsp;&nbsp;&nbsp; www.drevi.si</span>
+                    <span>MATIČNA ŠT: 5314518&nbsp;&nbsp;&nbsp;&nbsp; ID.ŠT.: SI35954086</span>
+                    <span>VLOŽNA ŠT: 1/3514/00</span>
+                    <strong>TRR: SI56 0400 0027 8805 004</strong>
+                </div>
+            </div>
+            <img class="company-logo" src="{{.Logo}}" alt="DREVI logo">
+        </header>
+
+        <section class="invoice-overview">
+            <address class="customer-address">
+                <span>{{.Document.Customer.Name}}</span>
+                <span>{{.Document.Customer.Address}}</span>
+                <span class="customer-location">
+                    {{.Document.Customer.Location}}
+                </span>
+            </address>
+
+            <div class="invoice-details">
+                <div class="invoice-detail invoice-title">
+                    <strong>Račun :</strong>
+                    <strong>{{.Document.InvoiceNumber}}</strong>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Datum :</strong>
+                    <span>{{.Document.IssueDate}}</span>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Valuta :</strong>
+                    <span>{{.Document.DueDate}}</span>
+                </div>
+                <div class="invoice-detail">
+                    <strong>Kraj izdaje :</strong>
+                    <span>{{.Document.IssuePlace}}</span>
+                </div>
+                <div class="invoice-detail service-date">
+                    <strong>Datum odpreme/opravljene storitve :</strong>
+                    <span>{{.Document.ServiceDate}}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="invoice-body">
+            <p class="customer-tax-id">Ident. št. za DDV: {{.Document.Customer.TaxID}}</p>
+
+            <p class="introductory-text">{{.Document.IntroText}}</p>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Št.</th>
+                        <th>Opis</th>
+                        <th>Količina</th>
+                        <th>Enota</th>
+                        <th>Cena brez<br>DDV</th>
+                        <th>Popust</th>
+                        <th>Znesek<br>popusta</th>
+                        <th>Cena s<br>popustom</th>
+                        <th>DDV</th>
+                        <th>Cena z DDV</th>
+                        <th>Znesek br.<br>DDV</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Document.Items}}
+                    <tr>
+                        <td>{{.Sequence}}</td>
+                        <td>{{.Description}}</td>
+                        <td>{{.Quantity}}</td>
+                        <td>{{.Unit}}</td>
+                        <td>{{.UnitPrice}}</td>
+                        <td>{{.Discount}}</td>
+                        <td>{{.DiscountAmount}}</td>
+                        <td>{{.DiscountedPrice}}</td>
+                        <td>{{.TaxRate}}</td>
+                        <td>{{.UnitPriceWithTax}}</td>
+                        <td>{{.NetAmount}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div class="invoice-totals">
+                <strong>Znesek brez DDV skupaj</strong><strong>{{.Document.NetTotal}}</strong>
+                <strong>DDV skupaj</strong><strong>{{.Document.TaxTotal}}</strong>
+                <strong>Znesek z DDV skupaj</strong><strong>{{.Document.GrossTotal}}</strong>
+                <span class="total-rule"></span><strong>{{.Document.GrossTotal}}</strong>
+            </div>
+
+            <p class="amount-in-words">Z besedo EUR: {{.Document.AmountInWords}}</p>
+
+            <section class="tax-specification">
+                <h2>Specifikacija davka</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Opis davka</th>
+                            <th>Stopnja davka</th>
+                            <th>Osnova brez davka</th>
+                            <th>Znesek davka</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Document.TaxSummaries}}
+                        <tr>
+                            <td>{{.Description}}</td>
+                            <td>{{.Rate}}</td>
+                            <td>{{.NetAmount}}</td>
+                            <td>{{.TaxAmount}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </section>
+
+            <p class="closing-text">{{.Document.ClosingText}}</p>
+
+            <p class="signature">Direktor:<br>Vojko Drev,dipl.inž.rač.in inf.</p>
+        </section>
+
+        <footer class="document-footer">
+            <span>DREVI d.o.o., Ob železnici 16, 1000 Ljubljana, Matična št.: 5314518, TRR:SI56 0400 0027 8805 004 OTP banka d.d.,</span>
+            <span>Telefon: 01 542 75 50, fax: 01 542 75 54, E-pošta: DREV@SIOL.NET, http://www.drevi.si, Ident. št. za DDV: SI35954086</span>
+            <span>Os.kap.50.075,00 EUR, SWIFT KBMASI2X, IBAN: SI56 0400 0027 8805 004</span>
+        </footer>
+    </main>
+</body>
+</html>
