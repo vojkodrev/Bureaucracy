@@ -8,19 +8,24 @@ import {
 } from '@/components/ui/menubar'
 
 type InvoiceMenuProps = {
+    canSave: boolean
     canPrint: boolean
     canRevert: boolean
+    isSaving: boolean
+    onSave: () => void
     onPrint: () => void
     onRevert: () => void
 }
 
-function InvoiceMenu({ canPrint, canRevert, onPrint, onRevert }: InvoiceMenuProps) {
+function InvoiceMenu({ canSave, canPrint, canRevert, isSaving, onSave, onPrint, onRevert }: InvoiceMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem disabled><Save />Save</MenubarItem>
+                    <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
+                        <Save />{isSaving ? 'Saving…' : 'Save'}
+                    </MenubarItem>
                     <MenubarItem disabled={!canPrint} onClick={onPrint}>
                         <Printer />Print
                     </MenubarItem>

@@ -2,5 +2,38 @@
 
 package model
 
+import (
+	"time"
+)
+
+type InvoiceInput struct {
+	ID               *int                `json:"id,omitempty"`
+	InvoiceNumber    string              `json:"invoiceNumber"`
+	IssueDate        *time.Time          `json:"issueDate,omitempty"`
+	ServiceDate      *time.Time          `json:"serviceDate,omitempty"`
+	PaymentDate      *time.Time          `json:"paymentDate,omitempty"`
+	CustomerCode     *string             `json:"customerCode,omitempty"`
+	CustomerName     *string             `json:"customerName,omitempty"`
+	CustomerAddress  *string             `json:"customerAddress,omitempty"`
+	CustomerCity     *string             `json:"customerCity,omitempty"`
+	PaidAmount       *float64            `json:"paidAmount,omitempty"`
+	IntroductoryText *string             `json:"introductoryText,omitempty"`
+	ClosingText      *string             `json:"closingText,omitempty"`
+	Items            []*InvoiceItemInput `json:"items"`
+}
+
+type InvoiceItemInput struct {
+	ID          *int     `json:"id,omitempty"`
+	Sequence    *int     `json:"sequence,omitempty"`
+	ProductCode string   `json:"productCode"`
+	Quantity    *float64 `json:"quantity,omitempty"`
+	Discount    *float64 `json:"discount,omitempty"`
+	NetAmount   *float64 `json:"netAmount,omitempty"`
+	GrossAmount *float64 `json:"grossAmount,omitempty"`
+}
+
+type Mutation struct {
+}
+
 type Query struct {
 }

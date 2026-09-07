@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import type { BusinessYearResponse } from '@/lib/business-year-types'
-import { dateFromSearchValue } from '@/lib/dates'
+import { dateForApi, dateFromSearchValue } from '@/lib/dates'
+import { emptyToNull } from '@/lib/form-input'
 import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
+import { numberOrNull } from '@/lib/numbers'
 import CustomerInputFields from './CustomerInputFields'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceMenu from './InvoiceMenu'
@@ -34,7 +36,20 @@ const latestInvoiceQuery = `
 `
 
 const businessYearQuery = `query BusinessYear($code: String!) { businessYear(code: $code) { description } }`
+const saveInvoiceMutation = `
+    mutation SaveInvoice($businessYear: String!, $invoice: InvoiceInput!) {
+        saveInvoice(businessYear: $businessYear, invoice: $invoice) {
+            id
+            invoiceNumber
+        }
+    }
+`
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+
+type SaveInvoiceResponse = {
+    data?: { saveInvoice: { id: number; invoiceNumber: string } }
+    errors?: { message: string }[]
+}
 
 function invoiceNumberAfter(invoiceNumber?: string): string {
     const value = Number.parseInt(invoiceNumber ?? '', 10)
@@ -56,6 +71,7 @@ function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {
 
 function InvoicePage() {
     const { invoiceNumber: routeInvoiceNumber } = useParams()
+    const navigate = useNavigate()
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
     const [businessYearDescription, setBusinessYearDescription] = useState('')
     const [customerId, setCustomerId] = useState('')
@@ -73,6 +89,8 @@ function InvoicePage() {
     const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
     const [reloadVersion, setReloadVersion] = useState(0)
     const [printError, setPrintError] = useState<string | null>(null)
+    const [saveError, setSaveError] = useState<string | null>(null)
+    const [isSaving, setIsSaving] = useState(false)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
@@ -157,11 +175,69 @@ function InvoicePage() {
         setPrintError(null)
     }
 
+    const saveInvoice = async () => {
+        if (routeInvoiceNumber || isSaving) return
+        setIsSaving(true)
+        setSaveError(null)
+        try {
+            const response = await fetch(graphqlUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: saveInvoiceMutation,
+                    variables: {
+                        businessYear: getSelectedBusinessYear(),
+                        invoice: {
+                            invoiceNumber: invoiceNumber.trim(),
+                            issueDate: dateForApi(invoiceDate),
+                            serviceDate: dateForApi(serviceDate),
+                            paymentDate: dateForApi(paymentDate),
+                            customerCode: emptyToNull(customerId),
+                            customerName: emptyToNull(customerName),
+                            customerAddress: emptyToNull(customerAddress),
+                            customerCity: emptyToNull(customerCity),
+                            paidAmount: numberOrNull(paidAmount),
+                            introductoryText: emptyToNull(introductoryText),
+                            closingText: emptyToNull(closingText),
+                            items: invoiceItems.map((item, index) => ({
+                                sequence: index + 1,
+                                productCode: item.productCode?.trim() ?? '',
+                                quantity: item.quantity,
+                                discount: item.discount,
+                                netAmount: item.netAmount,
+                                grossAmount: item.grossAmount,
+                            })),
+                        },
+                    },
+                }),
+            })
+            if (!response.ok) throw new Error(`Saving invoice failed (${response.status})`)
+            const result = (await response.json()) as SaveInvoiceResponse
+            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+            const savedInvoice = result.data?.saveInvoice
+            if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
+            navigate(`/invoice/${encodeURIComponent(savedInvoice.invoiceNumber)}`)
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error ? requestError.message : 'Saving invoice failed')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
     const totalIncludingVat = invoiceItems.reduce((total, item) => total + (item.grossAmount ?? 0), 0)
     return (
         <div className="max-w-5xl p-4">
-            <InvoiceMenu canPrint={Boolean(invoiceNumber.trim())} canRevert={Boolean(routeInvoiceNumber) && !isLoading} onPrint={printInvoice} onRevert={() => setReloadVersion((version) => version + 1)} />
+            <InvoiceMenu
+                canSave={!routeInvoiceNumber && Boolean(invoiceNumber.trim())}
+                canPrint={Boolean(invoiceNumber.trim())}
+                canRevert={Boolean(routeInvoiceNumber) && !isLoading}
+                isSaving={isSaving}
+                onSave={() => void saveInvoice()}
+                onPrint={printInvoice}
+                onRevert={() => setReloadVersion((version) => version + 1)}
+            />
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
+            {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} />
                 <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} paymentDate={paymentDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onPaymentDateChange={setPaymentDate} onServiceDateChange={setServiceDate} />

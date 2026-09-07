@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"bureaucracy/backend/graph/model"
 )
 
 type InvoiceRepository struct {
@@ -17,6 +19,169 @@ var businessYearPattern = regexp.MustCompile(`^[0-9]+$`)
 
 func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
+}
+
+// Save atomically upserts an invoice and its complete item collection.
+func (repository *InvoiceRepository) Save(ctx context.Context, businessYear string, input model.InvoiceInput) (*Invoice, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	input.InvoiceNumber = strings.TrimSpace(input.InvoiceNumber)
+	if input.InvoiceNumber == "" {
+		return nil, fmt.Errorf("invoiceNumber is required")
+	}
+	for index, item := range input.Items {
+		if item == nil {
+			return nil, fmt.Errorf("invoice item %d is required", index+1)
+		}
+		item.ProductCode = strings.TrimSpace(item.ProductCode)
+		if item.ProductCode == "" {
+			return nil, fmt.Errorf("productCode is required for invoice item %d", index+1)
+		}
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	productDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	tx, err := repository.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin saving invoice: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err = tx.ExecContext(ctx, "SET XACT_ABORT ON"); err != nil {
+		return nil, fmt.Errorf("enable invoice transaction abort: %w", err)
+	}
+
+	oldInvoiceNumber := input.InvoiceNumber
+	invoiceID := 0
+	if input.ID != nil && *input.ID > 0 {
+		invoiceID = *input.ID
+		if err = tx.QueryRowContext(ctx, fmt.Sprintf("SELECT COALESCE(Stevilka, '') FROM [%s].[dbo].[Racuni] WHERE RecNo = @id", databaseName), sql.Named("id", invoiceID)).Scan(&oldInvoiceNumber); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, fmt.Errorf("invoice RecNo %d was not found", invoiceID)
+			}
+			return nil, fmt.Errorf("find invoice for update: %w", err)
+		}
+		result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`
+			UPDATE [%s].[dbo].[Racuni]
+			SET Stevilka=@invoiceNumber, DatumIzstavitve=@issueDate, DatumDUR=@serviceDate,
+				DatumPlacila=@paymentDate, SifraPartnerja=@customerCode, ImePartnerja=@customerName,
+				NaslovPartnerja=@customerAddress, KrajPartnerja=@customerCity, PlacanoSIT=@paidAmount,
+				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=@goodsAmount
+			WHERE RecNo=@id`, databaseName), invoiceArguments(input, invoiceID)...)
+		if updateErr != nil {
+			return nil, fmt.Errorf("update invoice: %w", updateErr)
+		}
+		affected, affectedErr := result.RowsAffected()
+		if affectedErr != nil || affected != 1 {
+			return nil, fmt.Errorf("update invoice RecNo %d affected %d rows", invoiceID, affected)
+		}
+	} else {
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+			INSERT INTO [%s].[dbo].[Racuni] (
+				Stevilka, DatumIzstavitve, DatumDUR, DatumPlacila, SifraPartnerja,
+				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT,
+				SpremniText, Klavzula, Znesek, ZnesekBlaga, Storno
+			) OUTPUT INSERTED.RecNo VALUES (
+				@invoiceNumber, @issueDate, @serviceDate, @paymentDate, @customerCode,
+				@customerName, @customerAddress, @customerCity, @paidAmount,
+				@introductoryText, @closingText, @amount, @goodsAmount, 0
+			)`, databaseName), invoiceArguments(input, 0)...).Scan(&invoiceID)
+		if err != nil {
+			return nil, fmt.Errorf("insert invoice: %w", err)
+		}
+	}
+
+	if _, err = tx.ExecContext(ctx, "CREATE TABLE #SavedInvoiceItems (RecNo int NOT NULL PRIMARY KEY)"); err != nil {
+		return nil, fmt.Errorf("prepare invoice item synchronization: %w", err)
+	}
+	for index, item := range input.Items {
+		sequence := index + 1
+		if item.Sequence != nil {
+			sequence = *item.Sequence
+		}
+		itemID := 0
+		if item.ID != nil && *item.ID > 0 {
+			itemID = *item.ID
+			result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`
+				UPDATE [%s].[dbo].[RacuniSpecifikacija]
+				SET Stevilka=@invoiceNumber, Zaporedje=@sequence, Artikel=@productCode,
+					Datum=@issueDate, Kolicina=@quantity, Rabat=@discount,
+					ZnesekBrezDavka=@netAmount, Znesek=@grossAmount, Deleted=0,
+					SifraDavka=(SELECT TOP 1 SifraDavka FROM [%s].[dbo].[Artikel] WHERE Artikel=@productCode)
+				WHERE RecNo=@id AND Stevilka IN (@oldInvoiceNumber, @invoiceNumber)`, databaseName, productDatabaseName), invoiceItemArguments(input, item, itemID, sequence, oldInvoiceNumber)...)
+			if updateErr != nil {
+				return nil, fmt.Errorf("update invoice item %d: %w", index+1, updateErr)
+			}
+			affected, affectedErr := result.RowsAffected()
+			if affectedErr != nil || affected != 1 {
+				return nil, fmt.Errorf("invoice item RecNo %d was not found", itemID)
+			}
+		} else {
+			err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+				INSERT INTO [%s].[dbo].[RacuniSpecifikacija] (
+					Stevilka, Zaporedje, Artikel, Datum, Kolicina, Rabat,
+					ZnesekBrezDavka, Znesek, Deleted, SifraDavka
+				) OUTPUT INSERTED.RecNo VALUES (
+					@invoiceNumber, @sequence, @productCode, @issueDate, @quantity, @discount,
+					@netAmount, @grossAmount, 0,
+					(SELECT TOP 1 SifraDavka FROM [%s].[dbo].[Artikel] WHERE Artikel=@productCode)
+				)`, databaseName, productDatabaseName), invoiceItemArguments(input, item, 0, sequence, oldInvoiceNumber)...).Scan(&itemID)
+			if err != nil {
+				return nil, fmt.Errorf("insert invoice item %d: %w", index+1, err)
+			}
+		}
+		if _, err = tx.ExecContext(ctx, "INSERT INTO #SavedInvoiceItems (RecNo) VALUES (@id)", sql.Named("id", itemID)); err != nil {
+			return nil, fmt.Errorf("retain invoice item %d: %w", index+1, err)
+		}
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`
+		DELETE item FROM [%s].[dbo].[RacuniSpecifikacija] item
+		WHERE item.Stevilka IN (@oldInvoiceNumber, @invoiceNumber)
+		  AND NOT EXISTS (SELECT 1 FROM #SavedInvoiceItems saved WHERE saved.RecNo=item.RecNo)`, databaseName),
+		sql.Named("oldInvoiceNumber", oldInvoiceNumber), sql.Named("invoiceNumber", input.InvoiceNumber)); err != nil {
+		return nil, fmt.Errorf("remove stale invoice items: %w", err)
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit invoice: %w", err)
+	}
+	return repository.GetByNumber(ctx, businessYear, input.InvoiceNumber)
+}
+
+func invoiceArguments(input model.InvoiceInput, id int) []any {
+	goodsAmount, amount := 0.0, 0.0
+	for _, item := range input.Items {
+		if item.NetAmount != nil {
+			goodsAmount += *item.NetAmount
+		}
+		if item.GrossAmount != nil {
+			amount += *item.GrossAmount
+		}
+	}
+	return []any{
+		sql.Named("id", id), sql.Named("invoiceNumber", input.InvoiceNumber),
+		sql.Named("issueDate", nullableInputTime(input.IssueDate)), sql.Named("serviceDate", nullableInputTime(input.ServiceDate)),
+		sql.Named("paymentDate", nullableInputTime(input.PaymentDate)), sql.Named("customerCode", input.CustomerCode),
+		sql.Named("customerName", input.CustomerName), sql.Named("customerAddress", input.CustomerAddress),
+		sql.Named("customerCity", input.CustomerCity), sql.Named("paidAmount", input.PaidAmount),
+		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
+		sql.Named("amount", amount), sql.Named("goodsAmount", goodsAmount),
+	}
+}
+
+func invoiceItemArguments(input model.InvoiceInput, item *model.InvoiceItemInput, id, sequence int, oldInvoiceNumber string) []any {
+	return []any{
+		sql.Named("id", id), sql.Named("oldInvoiceNumber", oldInvoiceNumber), sql.Named("invoiceNumber", input.InvoiceNumber),
+		sql.Named("sequence", sequence), sql.Named("productCode", item.ProductCode),
+		sql.Named("issueDate", nullableInputTime(input.IssueDate)), sql.Named("quantity", item.Quantity),
+		sql.Named("discount", item.Discount), sql.Named("netAmount", item.NetAmount), sql.Named("grossAmount", item.GrossAmount),
+	}
+}
+
+func nullableInputTime(value *time.Time) any {
+	if value == nil {
+		return nil
+	}
+	return *value
 }
 
 func (repository *InvoiceRepository) GetByNumber(

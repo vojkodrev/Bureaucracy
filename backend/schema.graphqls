@@ -88,6 +88,32 @@ type InvoicePage {
   totalPages: Int!
 }
 
+input InvoiceItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+}
+
+input InvoiceInput {
+  id: Int
+  invoiceNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  paymentDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  paidAmount: Float
+  introductoryText: String
+  closingText: String
+  items: [InvoiceItemInput!]!
+}
+
 type Product {
   id: Int!
   productCode: String
@@ -153,4 +179,8 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+}
+
+type Mutation {
+  saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
 }
