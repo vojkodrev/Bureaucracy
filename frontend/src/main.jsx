@@ -4,7 +4,7 @@ import BusinessYearsPage from './pages/BusinessYearsPage.tsx'
 import CustomerSearchPage from './pages/CustomerSearchPage.tsx'
 import LayoutPage from './pages/LayoutPage.tsx'
 import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
-import InvoicePage from './pages/InvoicePage.tsx'
+import InvoicePage from './pages/invoice/InvoicePage.tsx'
 import ProductSearchPage from './pages/ProductSearchPage.tsx'
 import './index.css'
 
