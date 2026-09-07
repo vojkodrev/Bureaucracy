@@ -26,6 +26,7 @@ type InvoiceItemInput struct {
 	ID          *int     `json:"id,omitempty"`
 	Sequence    *int     `json:"sequence,omitempty"`
 	ProductCode string   `json:"productCode"`
+	TaxCode     string   `json:"taxCode"`
 	Quantity    *float64 `json:"quantity,omitempty"`
 	Discount    *float64 `json:"discount,omitempty"`
 	NetAmount   *float64 `json:"netAmount,omitempty"`

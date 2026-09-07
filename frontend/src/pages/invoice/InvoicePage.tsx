@@ -22,7 +22,7 @@ const invoiceQuery = `
             id invoiceNumber issueDate serviceDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
             paidAmount introductoryText closingText
-            items { id sequence productCode productName unit taxRate unitPrice unitTaxAmount quantity discount netAmount grossAmount }
+            items { id sequence productCode productName unit taxCode taxRate unitPrice unitTaxAmount quantity discount netAmount grossAmount }
         }
     }
 `
@@ -202,6 +202,7 @@ function InvoicePage() {
                             items: invoiceItems.map((item, index) => ({
                                 sequence: index + 1,
                                 productCode: item.productCode?.trim() ?? '',
+                                taxCode: item.taxCode?.trim() ?? '',
                                 quantity: item.quantity,
                                 discount: item.discount,
                                 netAmount: item.netAmount,

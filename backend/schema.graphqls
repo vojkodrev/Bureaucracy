@@ -71,6 +71,7 @@ type InvoiceItem {
   productCode: String
   productName: String
   unit: String
+  taxCode: String
   taxRate: Float
   unitPrice: Float
   unitTaxAmount: Float
@@ -92,10 +93,18 @@ input InvoiceItemInput {
   id: Int
   sequence: Int
   productCode: String!
+  taxCode: String!
   quantity: Float
   discount: Float
   netAmount: Float
   grossAmount: Float
+}
+
+type TaxCode {
+  id: Int!
+  code: String!
+  description: String
+  rate: Float
 }
 
 input InvoiceInput {
@@ -179,6 +188,8 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+
+  taxCodes(businessYear: String!): [TaxCode!]!
 }
 
 type Mutation {

@@ -45,3 +45,6 @@ models:
   ProductPage:
     model:
       - bureaucracy/backend.ProductPage
+  TaxCode:
+    model:
+      - bureaucracy/backend.TaxCode

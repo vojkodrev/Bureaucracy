@@ -38,10 +38,13 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 		if item.ProductCode == "" {
 			return nil, fmt.Errorf("productCode is required for invoice item %d", index+1)
 		}
+		item.TaxCode = strings.TrimSpace(item.TaxCode)
+		if item.TaxCode == "" {
+			return nil, fmt.Errorf("taxCode is required for invoice item %d", index+1)
+		}
 	}
 
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	productDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	tx, err := repository.database.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin saving invoice: %w", err)
@@ -107,8 +110,8 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 				SET Stevilka=@invoiceNumber, Zaporedje=@sequence, Artikel=@productCode,
 					Datum=@issueDate, Kolicina=@quantity, Rabat=@discount,
 					ZnesekBrezDavka=@netAmount, Znesek=@grossAmount, Deleted=0,
-					SifraDavka=(SELECT TOP 1 SifraDavka FROM [%s].[dbo].[Artikel] WHERE Artikel=@productCode)
-				WHERE RecNo=@id AND Stevilka IN (@oldInvoiceNumber, @invoiceNumber)`, databaseName, productDatabaseName), invoiceItemArguments(input, item, itemID, sequence, oldInvoiceNumber)...)
+					SifraDavka=@taxCode
+				WHERE RecNo=@id AND Stevilka IN (@oldInvoiceNumber, @invoiceNumber)`, databaseName), invoiceItemArguments(input, item, itemID, sequence, oldInvoiceNumber)...)
 			if updateErr != nil {
 				return nil, fmt.Errorf("update invoice item %d: %w", index+1, updateErr)
 			}
@@ -123,9 +126,8 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 					ZnesekBrezDavka, Znesek, Deleted, SifraDavka
 				) OUTPUT INSERTED.RecNo VALUES (
 					@invoiceNumber, @sequence, @productCode, @issueDate, @quantity, @discount,
-					@netAmount, @grossAmount, 0,
-					(SELECT TOP 1 SifraDavka FROM [%s].[dbo].[Artikel] WHERE Artikel=@productCode)
-				)`, databaseName, productDatabaseName), invoiceItemArguments(input, item, 0, sequence, oldInvoiceNumber)...).Scan(&itemID)
+					@netAmount, @grossAmount, 0, @taxCode
+				)`, databaseName), invoiceItemArguments(input, item, 0, sequence, oldInvoiceNumber)...).Scan(&itemID)
 			if err != nil {
 				return nil, fmt.Errorf("insert invoice item %d: %w", index+1, err)
 			}
@@ -172,6 +174,7 @@ func invoiceItemArguments(input model.InvoiceInput, item *model.InvoiceItemInput
 	return []any{
 		sql.Named("id", id), sql.Named("oldInvoiceNumber", oldInvoiceNumber), sql.Named("invoiceNumber", input.InvoiceNumber),
 		sql.Named("sequence", sequence), sql.Named("productCode", item.ProductCode),
+		sql.Named("taxCode", item.TaxCode),
 		sql.Named("issueDate", nullableInputTime(input.IssueDate)), sql.Named("quantity", item.Quantity),
 		sql.Named("discount", item.Discount), sql.Named("netAmount", item.NetAmount), sql.Named("grossAmount", item.GrossAmount),
 	}
@@ -288,7 +291,8 @@ func (repository *InvoiceRepository) getItems(
 			rs.Artikel,
 			a.Opis,
 			a.Enota,
-			CAST(a.Davek AS float),
+			rs.SifraDavka,
+			CAST(COALESCE(pd.Procent, a.Davek) AS float),
 			rs.ZnesekBrezDavka / NULLIF(rs.Kolicina, 0),
 			(rs.Znesek - rs.ZnesekBrezDavka) / NULLIF(rs.Kolicina, 0),
 			rs.Kolicina,
@@ -297,9 +301,10 @@ func (repository *InvoiceRepository) getItems(
 			rs.Znesek
 		FROM [%s].[dbo].[RacuniSpecifikacija] rs
 		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
+		LEFT JOIN [%s].[dbo].[PrometniDavek] pd ON pd.Sifra = rs.SifraDavka
 		WHERE rs.Stevilka = @invoiceNumber
 		  AND ISNULL(rs.Deleted, 0) = 0
-		ORDER BY rs.Zaporedje, rs.RecNo`, invoiceDatabaseName, productDatabaseName),
+		ORDER BY rs.Zaporedje, rs.RecNo`, invoiceDatabaseName, productDatabaseName, productDatabaseName),
 		sql.Named("invoiceNumber", invoiceNumber),
 	)
 	if err != nil {
@@ -316,6 +321,7 @@ func (repository *InvoiceRepository) getItems(
 			&item.ProductCode,
 			&item.ProductName,
 			&item.Unit,
+			&item.TaxCode,
 			&item.TaxRate,
 			&item.UnitPrice,
 			&item.UnitTaxAmount,

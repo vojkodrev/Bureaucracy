@@ -112,6 +112,7 @@ type ComplexityRoot struct {
 		ProductName   func(childComplexity int) int
 		Quantity      func(childComplexity int) int
 		Sequence      func(childComplexity int) int
+		TaxCode       func(childComplexity int) int
 		TaxRate       func(childComplexity int) int
 		Unit          func(childComplexity int) int
 		UnitPrice     func(childComplexity int) int
@@ -157,6 +158,14 @@ type ComplexityRoot struct {
 		SearchCustomers func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchProducts  func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		TaxCodes        func(childComplexity int, businessYear string) int
+	}
+
+	TaxCode struct {
+		Code        func(childComplexity int) int
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Rate        func(childComplexity int) int
 	}
 }
 
@@ -174,6 +183,7 @@ type QueryResolver interface {
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
 	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
+	TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -547,6 +557,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.InvoiceItem.Sequence(childComplexity), true
+	case "InvoiceItem.taxCode":
+		if e.ComplexityRoot.InvoiceItem.TaxCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.TaxCode(childComplexity), true
 	case "InvoiceItem.taxRate":
 		if e.ComplexityRoot.InvoiceItem.TaxRate == nil {
 			break
@@ -768,6 +784,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SearchProducts(childComplexity, args["businessYear"].(string), args["productCode"].(*string), args["productName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.taxCodes":
+		if e.ComplexityRoot.Query.TaxCodes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_taxCodes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.TaxCodes(childComplexity, args["businessYear"].(string)), true
+
+	case "TaxCode.code":
+		if e.ComplexityRoot.TaxCode.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TaxCode.Code(childComplexity), true
+	case "TaxCode.description":
+		if e.ComplexityRoot.TaxCode.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TaxCode.Description(childComplexity), true
+	case "TaxCode.id":
+		if e.ComplexityRoot.TaxCode.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TaxCode.ID(childComplexity), true
+	case "TaxCode.rate":
+		if e.ComplexityRoot.TaxCode.Rate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TaxCode.Rate(childComplexity), true
 
 	}
 	return 0, false
@@ -1015,6 +1067,8 @@ func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field g
 		return ec.fieldContext_InvoiceItem_productName(ctx, field)
 	case "unit":
 		return ec.fieldContext_InvoiceItem_unit(ctx, field)
+	case "taxCode":
+		return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
 	case "taxRate":
 		return ec.fieldContext_InvoiceItem_taxRate(ctx, field)
 	case "unitPrice":
@@ -1087,6 +1141,20 @@ func (ec *executionContext) childFields_ProductPage(ctx context.Context, field g
 		return ec.fieldContext_ProductPage_totalPages(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type ProductPage", field.Name)
+}
+
+func (ec *executionContext) childFields_TaxCode(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_TaxCode_id(ctx, field)
+	case "code":
+		return ec.fieldContext_TaxCode_code(ctx, field)
+	case "description":
+		return ec.fieldContext_TaxCode_description(ctx, field)
+	case "rate":
+		return ec.fieldContext_TaxCode_rate(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type TaxCode", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1506,6 +1574,20 @@ func (ec *executionContext) field_Query_searchProducts_args(ctx context.Context,
 		return nil, err
 	}
 	args["pageSize"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_taxCodes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
 	return args, nil
 }
 
@@ -2861,6 +2943,29 @@ func (ec *executionContext) fieldContext_InvoiceItem_unit(_ context.Context, fie
 	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _InvoiceItem_taxCode(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_taxCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TaxCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_taxCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _InvoiceItem_taxRate(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3785,6 +3890,50 @@ func (ec *executionContext) fieldContext_Query_searchProducts(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_taxCodes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_taxCodes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().TaxCodes(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*TaxCode) graphql.Marshaler {
+			return ec.marshalNTaxCode2ᚕᚖbureaucracyᚋbackendᚐTaxCodeᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_taxCodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TaxCode(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_taxCodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3859,6 +4008,98 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _TaxCode_id(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TaxCode_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TaxCode_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TaxCode", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _TaxCode_code(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TaxCode_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TaxCode_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TaxCode", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _TaxCode_description(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TaxCode_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_TaxCode_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TaxCode", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _TaxCode_rate(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TaxCode_rate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Rate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_TaxCode_rate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TaxCode", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5045,7 +5286,7 @@ func (ec *executionContext) unmarshalInputInvoiceItemInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "sequence", "productCode", "quantity", "discount", "netAmount", "grossAmount"}
+	fieldsInOrder := [...]string{"id", "sequence", "productCode", "taxCode", "quantity", "discount", "netAmount", "grossAmount"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5073,6 +5314,13 @@ func (ec *executionContext) unmarshalInputInvoiceItemInput(ctx context.Context, 
 				return it, err
 			}
 			it.ProductCode = data
+		case "taxCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taxCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaxCode = data
 		case "quantity":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
 			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
@@ -5566,6 +5814,11 @@ func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "taxCode":
+			out.Values[i] = ec._InvoiceItem_taxCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "taxRate":
 			out.Values[i] = ec._InvoiceItem_taxRate(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -6016,6 +6269,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "taxCodes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_taxCodes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -6029,6 +6304,59 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var taxCodeImplementors = []string{"TaxCode"}
+
+func (ec *executionContext) _TaxCode(ctx context.Context, sel ast.SelectionSet, obj *TaxCode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, taxCodeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TaxCode")
+		case "id":
+			out.Values[i] = ec._TaxCode_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "code":
+			out.Values[i] = ec._TaxCode_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._TaxCode_description(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "rate":
+			out.Values[i] = ec._TaxCode_rate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -6703,6 +7031,32 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTaxCode2ᚕᚖbureaucracyᚋbackendᚐTaxCodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*TaxCode) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTaxCode2ᚖbureaucracyᚋbackendᚐTaxCode(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTaxCode2ᚖbureaucracyᚋbackendᚐTaxCode(ctx context.Context, sel ast.SelectionSet, v *TaxCode) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TaxCode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

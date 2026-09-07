@@ -7,13 +7,15 @@ type Resolver struct {
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
 	Products               *ProductRepository
+	TaxCodeRepository      *TaxCodeRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, customers *CustomerRepository, invoices *InvoiceRepository, products *ProductRepository) *Resolver {
+func NewResolver(businessYears *BusinessYearRepository, customers *CustomerRepository, invoices *InvoiceRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
 		Customers:              customers,
 		Invoices:               invoices,
 		Products:               products,
+		TaxCodeRepository:      taxCodes,
 	}
 }

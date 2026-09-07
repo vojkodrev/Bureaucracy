@@ -78,6 +78,11 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 	return r.Products.Search(ctx, businessYear, productCode, productName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// TaxCodes is the resolver for the taxCodes field.
+func (r *queryResolver) TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error) {
+	return r.TaxCodeRepository.List(ctx, businessYear)
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

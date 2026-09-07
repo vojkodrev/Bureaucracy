@@ -35,6 +35,7 @@ type InvoiceItem struct {
 	ProductCode   *string  `json:"productCode"`
 	ProductName   *string  `json:"productName"`
 	Unit          *string  `json:"unit"`
+	TaxCode       *string  `json:"taxCode"`
 	TaxRate       *float64 `json:"taxRate"`
 	UnitPrice     *float64 `json:"unitPrice"`
 	UnitTaxAmount *float64 `json:"unitTaxAmount"`

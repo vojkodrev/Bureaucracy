@@ -31,6 +31,7 @@ type ProductPickerFieldProps = {
     onProductUnitChange?: (productUnit: string) => void
     onProductNetPriceChange?: (netPrice: number | null) => void
     onProductTaxRateChange?: (taxRate: number | null) => void
+    onProductTaxCodeChange?: (taxCode: string) => void
 }
 
 function ProductPickerField({
@@ -43,6 +44,7 @@ function ProductPickerField({
     onProductUnitChange,
     onProductNetPriceChange,
     onProductTaxRateChange,
+    onProductTaxCodeChange,
 }: ProductPickerFieldProps) {
     const [open, setOpen] = useState(false)
 
@@ -53,6 +55,7 @@ function ProductPickerField({
         onProductUnitChange?.(product.unit ?? '')
         onProductNetPriceChange?.(product.netPrice)
         onProductTaxRateChange?.(product.taxRate)
+        onProductTaxCodeChange?.(product.taxCode ?? '')
     }
 
     return (
