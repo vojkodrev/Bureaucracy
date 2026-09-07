@@ -4,6 +4,7 @@ import {
     MenubarContent,
     MenubarItem,
     MenubarMenu,
+    MenubarShortcut,
     MenubarTrigger,
 } from '@/components/ui/menubar'
 
@@ -25,6 +26,7 @@ function InvoiceMenu({ canSave, canPrint, canRevert, isSaving, onSave, onPrint, 
                 <MenubarContent>
                     <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
+                        <MenubarShortcut>Ctrl+S</MenubarShortcut>
                     </MenubarItem>
                     <MenubarItem disabled={!canPrint} onClick={onPrint}>
                         <Printer />Print

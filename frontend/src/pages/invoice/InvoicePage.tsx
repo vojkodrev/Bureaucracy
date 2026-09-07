@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -224,6 +224,22 @@ function InvoicePage() {
             setIsSaving(false)
         }
     }
+
+    const onSaveShortcut = useEffectEvent(() => {
+        void saveInvoice()
+    })
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return
+
+            event.preventDefault()
+            onSaveShortcut()
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     const totalIncludingVat = invoiceItems.reduce((total, item) => total + (item.grossAmount ?? 0), 0)
     return (
