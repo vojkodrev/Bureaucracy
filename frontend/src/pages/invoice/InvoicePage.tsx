@@ -73,6 +73,7 @@ function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {
 function InvoicePage() {
     const { invoiceNumber: routeInvoiceNumber } = useParams()
     const navigate = useNavigate()
+    const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
     const [businessYearDescription, setBusinessYearDescription] = useState('')
     const [customerId, setCustomerId] = useState('')
@@ -96,6 +97,10 @@ function InvoicePage() {
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
+    const canSaveInvoice = Boolean(invoiceNumber.trim()) &&
+        !isLoading &&
+        !error &&
+        (!routeInvoiceNumber || invoiceId != null)
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
@@ -110,6 +115,7 @@ function InvoicePage() {
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
             if (!result.data?.invoice) throw new Error(`Invoice ${routeInvoiceNumber} was not found`)
             const invoice = result.data.invoice
+            setInvoiceId(invoice.id ?? null)
             setInvoiceNumber(invoice.invoiceNumber)
             setCustomerId(invoice.customerCode ?? '')
             setCustomerName(invoice.customerName ?? '')
@@ -177,7 +183,7 @@ function InvoicePage() {
     }
 
     const saveInvoice = async () => {
-        if (routeInvoiceNumber || isSaving) return
+        if (!canSaveInvoice || isSaving) return
         setIsSaving(true)
         setSaveError(null)
         try {
@@ -189,6 +195,7 @@ function InvoicePage() {
                     variables: {
                         businessYear: getSelectedBusinessYear(),
                         invoice: {
+                            id: invoiceId,
                             invoiceNumber: invoiceNumber.trim(),
                             issueDate: dateForApi(invoiceDate),
                             serviceDate: dateForApi(serviceDate),
@@ -201,6 +208,7 @@ function InvoicePage() {
                             introductoryText: emptyToNull(introductoryText),
                             closingText: emptyToNull(closingText),
                             items: invoiceItems.map((item, index) => ({
+                                id: item.id > 0 ? item.id : null,
                                 sequence: index + 1,
                                 productCode: item.productCode?.trim() ?? '',
                                 taxCode: item.taxCode?.trim() ?? '',
@@ -220,10 +228,14 @@ function InvoicePage() {
             if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
             toast.add({
                 title: 'Invoice saved',
-                description: `Invoice ${savedInvoice.invoiceNumber} was created successfully.`,
+                description: `Invoice ${savedInvoice.invoiceNumber} was ${routeInvoiceNumber ? 'updated' : 'created'} successfully.`,
                 type: 'success',
             })
-            navigate(`/invoice/${encodeURIComponent(savedInvoice.invoiceNumber)}`)
+            if (routeInvoiceNumber === savedInvoice.invoiceNumber) {
+                setReloadVersion((version) => version + 1)
+            } else {
+                navigate(`/invoice/${encodeURIComponent(savedInvoice.invoiceNumber)}`)
+            }
         } catch (requestError: unknown) {
             setSaveError(requestError instanceof Error ? requestError.message : 'Saving invoice failed')
         } finally {
@@ -256,7 +268,7 @@ function InvoicePage() {
     return (
         <div className="max-w-5xl p-4">
             <InvoiceMenu
-                canSave={!routeInvoiceNumber && Boolean(invoiceNumber.trim())}
+                canSave={canSaveInvoice}
                 canPrint={Boolean(invoiceNumber.trim())}
                 canRevert={Boolean(routeInvoiceNumber) && !isLoading}
                 isSaving={isSaving}
