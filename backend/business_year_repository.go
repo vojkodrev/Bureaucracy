@@ -49,6 +49,40 @@ func (repository *BusinessYearRepository) GetByCode(
 	return businessYear, nil
 }
 
+func (repository *BusinessYearRepository) GetByCalendarYear(
+	ctx context.Context,
+	year int,
+) (*BusinessYear, error) {
+	if year < 1 || year > 9999 {
+		return nil, fmt.Errorf("calendar year must be between 1 and 9999")
+	}
+
+	businessYear := &BusinessYear{}
+	err := repository.database.QueryRowContext(ctx, `
+		SELECT TOP (1)
+			Oznaka,
+			Opis,
+			LetoPoslovanja,
+			IzhajaIz
+		FROM [Birokrat].[dbo].[PoslovnaLeta]
+		WHERE LetoPoslovanja = @year
+		ORDER BY Oznaka DESC`,
+		sql.Named("year", year),
+	).Scan(
+		&businessYear.Code,
+		&businessYear.Description,
+		&businessYear.Year,
+		&businessYear.DerivedFrom,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get business year by calendar year: %w", err)
+	}
+	return businessYear, nil
+}
+
 func (repository *BusinessYearRepository) List(
 	ctx context.Context,
 	page int,
