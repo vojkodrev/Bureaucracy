@@ -9,9 +9,11 @@ require (
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/joho/godotenv v1.5.1
+	github.com/makiuchi-d/gozxing v0.1.1
 	github.com/microsoft/go-mssqldb v1.10.0
 	github.com/vektah/gqlparser/v2 v2.5.36
 	go.uber.org/fx v1.24.0
+	golang.org/x/text v0.40.0
 )
 
 require (
@@ -62,8 +64,8 @@ require (
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 

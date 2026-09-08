@@ -130,6 +130,10 @@
                 </table>
             </section>
 
+            {{if .Document.PaymentQRCode}}
+            <img class="payment-qr" src="{{.PaymentQR}}" alt="UPN QR koda za plačilo računa">
+            {{end}}
+
             <p class="closing-text">{{.Document.ClosingText}}</p>
 
             <p class="signature">Direktor:<br>Vojko Drev,dipl.inž.rač.in inf.</p>

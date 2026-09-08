@@ -267,6 +267,16 @@ main {
     margin-left: 1mm;
 }
 
+.payment-qr {
+    float: right;
+    display: block;
+    width: 42mm;
+    height: 42mm;
+    margin: 0;
+    padding: 0;
+    transform: translate(2mm, 7mm);
+}
+
 .document-footer {
     position: absolute;
     right: 21.78mm;
