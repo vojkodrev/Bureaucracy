@@ -38,6 +38,7 @@ type invoicePrintDocument struct {
 	AmountInWords string               `xml:"amountInWords"`
 	TaxSummaries  []invoicePrintTax    `xml:"taxes>tax"`
 	ClosingText   string               `xml:"closingText"`
+	PaymentQRCode string               `xml:"paymentQRCode"`
 }
 
 type invoicePrintCustomer struct {
@@ -111,6 +112,10 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if invoice.Amount == nil {
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
+	paymentQRCode, err := generateUPNQRCode(invoice, displayNumber, grossTotal)
+	if err != nil {
+		return nil, err
+	}
 
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
 		InvoiceNumber: displayNumber,
@@ -133,6 +138,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		AmountInWords: amountInWords(grossTotal),
 		TaxSummaries:  taxSummaries,
 		ClosingText:   strings.ReplaceAll(stringValue(invoice.ClosingText), "#ŠTEVILKA#", displayNumber),
+		PaymentQRCode: paymentQRCode,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create invoice XML: %w", err)
@@ -144,13 +150,15 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 
 	var renderedHTML bytes.Buffer
 	if err := generator.template.Execute(&renderedHTML, struct {
-		CSS      template.CSS
-		Document invoicePrintDocument
-		Logo     template.URL
+		CSS       template.CSS
+		Document  invoicePrintDocument
+		Logo      template.URL
+		PaymentQR template.URL
 	}{
-		CSS:      template.CSS(cssTemplate),
-		Document: printDocument,
-		Logo:     template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+		CSS:       template.CSS(cssTemplate),
+		Document:  printDocument,
+		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+		PaymentQR: template.URL(printDocument.PaymentQRCode),
 	}); err != nil {
 		return nil, fmt.Errorf("render invoice HTML: %w", err)
 	}
