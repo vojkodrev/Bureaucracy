@@ -119,6 +119,7 @@ function InvoicePage() {
     const navigate = useNavigate()
     const preserveDuplicateRef = useRef(false)
     const allowNextNavigationRef = useRef(false)
+    const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
     const [businessYearDescription, setBusinessYearDescription] = useState('')
@@ -211,8 +212,17 @@ function InvoicePage() {
             }))
             allowNextNavigationRef.current = false
             setLoadResult({ requestKey, error: null })
+            if (pendingRevertRef.current) {
+                pendingRevertRef.current = false
+                toast.add({
+                    title: 'Invoice reverted',
+                    description: `Invoice ${invoice.invoiceNumber} was restored to its last saved version.`,
+                    type: 'success',
+                })
+            }
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return
+            pendingRevertRef.current = false
             setLoadResult({ requestKey, error: requestError instanceof Error ? requestError.message : 'Loading invoice failed' })
         })
         return () => abortController.abort()
@@ -408,6 +418,7 @@ function InvoicePage() {
 
         setSaveError(null)
         setPrintError(null)
+        pendingRevertRef.current = true
         setReloadVersion((version) => version + 1)
     }
 
