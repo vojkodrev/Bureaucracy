@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { getSelectedBusinessYear } from '@/lib/business-year'
@@ -14,8 +14,35 @@ import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
+import UnsavedInvoiceAlert from './UnsavedInvoiceAlert'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
+
+type InvoiceDraft = {
+    invoiceNumber: string
+    customerId: string
+    customerName: string
+    customerAddress: string
+    customerPostalCode: string
+    customerCity: string
+    customerCountry: string
+    invoiceDate?: Date
+    serviceDate?: Date
+    paymentDate?: Date
+    paidAmount: string
+    introductoryText: string
+    closingText: string
+    invoiceItems: InvoiceItem[]
+}
+
+function serializeDraft(draft: InvoiceDraft): string {
+    return JSON.stringify({
+        ...draft,
+        invoiceDate: draft.invoiceDate?.getTime() ?? null,
+        serviceDate: draft.serviceDate?.getTime() ?? null,
+        paymentDate: draft.paymentDate?.getTime() ?? null,
+    })
+}
 
 const invoiceQuery = `
     query Invoice($businessYear: String!, $invoiceNumber: String!) {
@@ -91,6 +118,7 @@ function InvoicePage() {
     const { invoiceNumber: routeInvoiceNumber } = useParams()
     const navigate = useNavigate()
     const preserveDuplicateRef = useRef(false)
+    const allowNextNavigationRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
     const [businessYearDescription, setBusinessYearDescription] = useState('')
@@ -112,6 +140,9 @@ function InvoicePage() {
     const [saveError, setSaveError] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [isDuplicating, setIsDuplicating] = useState(false)
+    const [cleanDraft, setCleanDraft] = useState<string | null>(null)
+    const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
@@ -120,6 +151,19 @@ function InvoicePage() {
         !isLoading &&
         !error &&
         (!routeInvoiceNumber || invoiceId != null || invoiceNumber !== routeInvoiceNumber)
+    const draft = serializeDraft({
+        invoiceNumber, customerId, customerName, customerAddress, customerPostalCode,
+        customerCity, customerCountry, invoiceDate, serviceDate, paymentDate, paidAmount,
+        introductoryText, closingText, invoiceItems,
+    })
+    const hasUnsavedChanges = cleanDraft !== null && draft !== cleanDraft
+    const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+        !allowNextNavigationRef.current &&
+        hasUnsavedChanges &&
+        (currentLocation.pathname !== nextLocation.pathname ||
+            currentLocation.search !== nextLocation.search ||
+            currentLocation.hash !== nextLocation.hash),
+    )
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
@@ -149,6 +193,23 @@ function InvoicePage() {
             setIntroductoryText(invoice.introductoryText ?? '')
             setClosingText(invoice.closingText ?? '')
             setInvoiceItems(invoice.items ?? [])
+            setCleanDraft(serializeDraft({
+                invoiceNumber: invoice.invoiceNumber,
+                customerId: invoice.customerCode ?? '',
+                customerName: invoice.customerName ?? '',
+                customerAddress: invoice.customerAddress ?? '',
+                customerPostalCode: invoice.customerPostalCode ?? '',
+                customerCity: invoice.customerCity ?? '',
+                customerCountry: invoice.customerCountry ?? '',
+                invoiceDate: dateFromInvoiceValue(invoice.issueDate),
+                serviceDate: dateFromInvoiceValue(invoice.serviceDate),
+                paymentDate: dateFromInvoiceValue(invoice.paymentDate),
+                paidAmount: invoice.paidAmount == null ? '' : String(invoice.paidAmount),
+                introductoryText: invoice.introductoryText ?? '',
+                closingText: invoice.closingText ?? '',
+                invoiceItems: invoice.items ?? [],
+            }))
+            allowNextNavigationRef.current = false
             setLoadResult({ requestKey, error: null })
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return
@@ -161,8 +222,11 @@ function InvoicePage() {
         if (routeInvoiceNumber) return
         if (preserveDuplicateRef.current) {
             preserveDuplicateRef.current = false
+            allowNextNavigationRef.current = false
             return
         }
+
+        allowNextNavigationRef.current = false
 
         setInvoiceId(null)
         setInvoiceNumber('')
@@ -179,11 +243,20 @@ function InvoicePage() {
         setIntroductoryText('')
         setClosingText('')
         setInvoiceItems([])
+        setCleanDraft(null)
         setSaveError(null)
         setPrintError(null)
 
         const abortController = new AbortController()
-        void fetchNextInvoiceNumber(abortController.signal).then(setInvoiceNumber).catch((requestError: unknown) => {
+        void fetchNextInvoiceNumber(abortController.signal).then((nextInvoiceNumber) => {
+            setInvoiceNumber(nextInvoiceNumber)
+            setCleanDraft(serializeDraft({
+                invoiceNumber: nextInvoiceNumber,
+                customerId: '', customerName: '', customerAddress: '', customerPostalCode: '',
+                customerCity: '', customerCountry: '', invoiceDate: undefined, serviceDate: undefined,
+                paymentDate: undefined, paidAmount: '', introductoryText: '', closingText: '', invoiceItems: [],
+            }))
+        }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
         })
         return () => abortController.abort()
@@ -265,9 +338,11 @@ function InvoicePage() {
                 description: `Invoice ${savedInvoice.invoiceNumber} was ${isCreating ? 'created' : 'updated'} successfully.`,
                 type: 'success',
             })
+            setCleanDraft(draft)
             if (routeInvoiceNumber === savedInvoice.invoiceNumber) {
                 setReloadVersion((version) => version + 1)
             } else {
+                allowNextNavigationRef.current = true
                 navigate(`/invoice/${encodeURIComponent(savedInvoice.invoiceNumber)}`)
             }
         } catch (requestError: unknown) {
@@ -279,6 +354,18 @@ function InvoicePage() {
 
     const duplicateInvoice = async () => {
         if (invoiceId == null || isDuplicating) return
+
+        if (hasUnsavedChanges) {
+            setConfirmingDuplicate(true)
+            return
+        }
+
+        await performDuplicateInvoice()
+    }
+
+    const performDuplicateInvoice = async () => {
+        if (invoiceId == null || isDuplicating) return
+        setConfirmingDuplicate(false)
         setIsDuplicating(true)
         setSaveError(null)
         try {
@@ -289,7 +376,9 @@ function InvoicePage() {
                 ...item,
                 id: -index - 1,
             })))
+            setCleanDraft('__unsaved_duplicate__')
             preserveDuplicateRef.current = true
+            allowNextNavigationRef.current = true
             navigate('/invoice')
             toast.add({
                 title: 'Invoice duplicated',
@@ -305,6 +394,17 @@ function InvoicePage() {
 
     const revertInvoice = () => {
         if (!routeInvoiceNumber || isLoading || isSaving || isDuplicating) return
+
+        if (hasUnsavedChanges) {
+            setConfirmingRevert(true)
+            return
+        }
+
+        performRevert()
+    }
+
+    const performRevert = () => {
+        setConfirmingRevert(false)
 
         setSaveError(null)
         setPrintError(null)
@@ -332,6 +432,15 @@ function InvoicePage() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
+    useEffect(() => {
+        if (!hasUnsavedChanges) return
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault()
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [hasUnsavedChanges])
+
     const totalIncludingVat = invoiceItems.reduce((total, item) => total + (item.grossAmount ?? 0), 0)
     return (
         <div className="max-w-5xl p-4">
@@ -346,6 +455,30 @@ function InvoicePage() {
                 onPrint={printInvoice}
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
+            />
+            <UnsavedInvoiceAlert
+                open={blocker.state === 'blocked'}
+                onOpenChange={(open) => { if (!open && blocker.state === 'blocked') blocker.reset() }}
+                onDiscard={() => {
+                    if (blocker.state !== 'blocked') return
+                    allowNextNavigationRef.current = true
+                    setCleanDraft(draft)
+                    blocker.proceed()
+                }}
+            />
+            <UnsavedInvoiceAlert
+                open={confirmingRevert}
+                onOpenChange={setConfirmingRevert}
+                onDiscard={performRevert}
+                actionLabel="Discard and revert"
+            />
+            <UnsavedInvoiceAlert
+                open={confirmingDuplicate}
+                onOpenChange={setConfirmingDuplicate}
+                onDiscard={() => void performDuplicateInvoice()}
+                title="Duplicate with unsaved changes?"
+                description="Your changes have not been saved to the original invoice. The new duplicate will be created from the values currently shown."
+                actionLabel="Duplicate anyway"
             />
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
