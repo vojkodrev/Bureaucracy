@@ -54,7 +54,7 @@ function ToastList() {
 
 function Toaster() {
     return (
-        <ToastPrimitive.Provider toastManager={toast}>
+        <ToastPrimitive.Provider toastManager={toast} timeout={120_000}>
             <ToastPrimitive.Portal>
                 <ToastViewport><ToastList /></ToastViewport>
             </ToastPrimitive.Portal>

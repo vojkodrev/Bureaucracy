@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -57,6 +57,23 @@ function invoiceNumberAfter(invoiceNumber?: string): string {
     return String(Number.isNaN(value) ? 1 : value + 1).padStart(5, '0')
 }
 
+async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: latestInvoiceQuery,
+            variables: { businessYear: getSelectedBusinessYear() },
+        }),
+        signal,
+    })
+    if (!response.ok) throw new Error(`Loading latest invoice failed (${response.status})`)
+
+    const result = (await response.json()) as LatestInvoiceResponse
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    return invoiceNumberAfter(result.data?.searchInvoices.invoices[0]?.invoiceNumber)
+}
+
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
     return value ? dateFromSearchValue(value.slice(0, 10)) : undefined
 }
@@ -73,6 +90,7 @@ function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {
 function InvoicePage() {
     const { invoiceNumber: routeInvoiceNumber } = useParams()
     const navigate = useNavigate()
+    const preserveDuplicateRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
     const [businessYearDescription, setBusinessYearDescription] = useState('')
@@ -93,6 +111,7 @@ function InvoicePage() {
     const [printError, setPrintError] = useState<string | null>(null)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [isDuplicating, setIsDuplicating] = useState(false)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
@@ -100,7 +119,7 @@ function InvoicePage() {
     const canSaveInvoice = Boolean(invoiceNumber.trim()) &&
         !isLoading &&
         !error &&
-        (!routeInvoiceNumber || invoiceId != null)
+        (!routeInvoiceNumber || invoiceId != null || invoiceNumber !== routeInvoiceNumber)
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
@@ -140,17 +159,31 @@ function InvoicePage() {
 
     useEffect(() => {
         if (routeInvoiceNumber) return
+        if (preserveDuplicateRef.current) {
+            preserveDuplicateRef.current = false
+            return
+        }
+
+        setInvoiceId(null)
+        setInvoiceNumber('')
+        setCustomerId('')
+        setCustomerName('')
+        setCustomerAddress('')
+        setCustomerPostalCode('')
+        setCustomerCity('')
+        setCustomerCountry('')
+        setInvoiceDate(undefined)
+        setServiceDate(undefined)
+        setPaymentDate(undefined)
+        setPaidAmount('')
+        setIntroductoryText('')
+        setClosingText('')
+        setInvoiceItems([])
+        setSaveError(null)
+        setPrintError(null)
+
         const abortController = new AbortController()
-        void fetch(graphqlUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: latestInvoiceQuery, variables: { businessYear: getSelectedBusinessYear() } }),
-            signal: abortController.signal,
-        }).then(async (response) => {
-            if (!response.ok) throw new Error(`Loading latest invoice failed (${response.status})`)
-            const result = (await response.json()) as LatestInvoiceResponse
-            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-            setInvoiceNumber(invoiceNumberAfter(result.data?.searchInvoices.invoices[0]?.invoiceNumber))
-        }).catch((requestError: unknown) => {
+        void fetchNextInvoiceNumber(abortController.signal).then(setInvoiceNumber).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
         })
         return () => abortController.abort()
@@ -184,6 +217,7 @@ function InvoicePage() {
 
     const saveInvoice = async () => {
         if (!canSaveInvoice || isSaving) return
+        const isCreating = invoiceId == null
         setIsSaving(true)
         setSaveError(null)
         try {
@@ -228,7 +262,7 @@ function InvoicePage() {
             if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
             toast.add({
                 title: 'Invoice saved',
-                description: `Invoice ${savedInvoice.invoiceNumber} was ${routeInvoiceNumber ? 'updated' : 'created'} successfully.`,
+                description: `Invoice ${savedInvoice.invoiceNumber} was ${isCreating ? 'created' : 'updated'} successfully.`,
                 type: 'success',
             })
             if (routeInvoiceNumber === savedInvoice.invoiceNumber) {
@@ -241,6 +275,40 @@ function InvoicePage() {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const duplicateInvoice = async () => {
+        if (invoiceId == null || isDuplicating) return
+        setIsDuplicating(true)
+        setSaveError(null)
+        try {
+            const nextInvoiceNumber = await fetchNextInvoiceNumber()
+            setInvoiceId(null)
+            setInvoiceNumber(nextInvoiceNumber)
+            setInvoiceItems((items) => items.map((item, index) => ({
+                ...item,
+                id: -index - 1,
+            })))
+            preserveDuplicateRef.current = true
+            navigate('/invoice')
+            toast.add({
+                title: 'Invoice duplicated',
+                description: `Invoice number ${nextInvoiceNumber} has been assigned to the new unsaved copy. You can review and edit it before saving.`,
+                type: 'info',
+            })
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error ? requestError.message : 'Duplicating invoice failed')
+        } finally {
+            setIsDuplicating(false)
+        }
+    }
+
+    const revertInvoice = () => {
+        if (!routeInvoiceNumber || isLoading || isSaving || isDuplicating) return
+
+        setSaveError(null)
+        setPrintError(null)
+        setReloadVersion((version) => version + 1)
     }
 
     const onSaveShortcut = useEffectEvent(() => {
@@ -270,11 +338,14 @@ function InvoicePage() {
             <InvoiceMenu
                 canSave={canSaveInvoice}
                 canPrint={Boolean(invoiceNumber.trim())}
-                canRevert={Boolean(routeInvoiceNumber) && !isLoading}
+                canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
+                canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
+                isDuplicating={isDuplicating}
                 onSave={() => void saveInvoice()}
                 onPrint={printInvoice}
-                onRevert={() => setReloadVersion((version) => version + 1)}
+                onRevert={revertInvoice}
+                onDuplicate={() => void duplicateInvoice()}
             />
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
