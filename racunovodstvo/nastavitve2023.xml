@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<nastavitve>
+    <uporabniskoIme>ANON_USER</uporabniskoIme>
+    <geslo>REDACTED</geslo>
+	<naslov>ANON_SERVER</naslov>
+
+	<bazaRacuni>BIRO022</bazaRacuni>
+	<bazaPoslovniPartnerji>BIRO023</bazaPoslovniPartnerji>
+
+	<konti>konti.xml</konti>
+</nastavitve>

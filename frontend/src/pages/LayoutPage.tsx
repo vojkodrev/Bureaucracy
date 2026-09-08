@@ -4,6 +4,7 @@ import {
     CalendarRange,
     ChevronRight,
     FileText,
+    FileDown,
     PackageSearch,
     Plus,
     Search,
@@ -42,6 +43,7 @@ const breadcrumbLabels: Record<string, string> = {
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
     '/products/search': 'Product search',
+    '/export': 'Export data',
 }
 
 const searchParameterLabels: Record<string, string> = {
@@ -266,6 +268,16 @@ function LayoutPage() {
                                         >
                                             <CalendarRange />
                                             <span>Business years</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={pathname === '/export'}
+                                            tooltip="Export data"
+                                            render={<NavLink to="/export" />}
+                                        >
+                                            <FileDown />
+                                            <span>Export data</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </SidebarMenu>
