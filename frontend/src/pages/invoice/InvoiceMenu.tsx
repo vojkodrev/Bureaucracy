@@ -1,4 +1,4 @@
-import { Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -12,13 +12,16 @@ type InvoiceMenuProps = {
     canSave: boolean
     canPrint: boolean
     canRevert: boolean
+    canDuplicate: boolean
     isSaving: boolean
+    isDuplicating: boolean
     onSave: () => void
     onPrint: () => void
     onRevert: () => void
+    onDuplicate: () => void
 }
 
-function InvoiceMenu({ canSave, canPrint, canRevert, isSaving, onSave, onPrint, onRevert }: InvoiceMenuProps) {
+function InvoiceMenu({ canSave, canPrint, canRevert, canDuplicate, isSaving, isDuplicating, onSave, onPrint, onRevert, onDuplicate }: InvoiceMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
@@ -39,6 +42,9 @@ function InvoiceMenu({ canSave, canPrint, canRevert, isSaving, onSave, onPrint, 
                 <MenubarContent>
                     <MenubarItem disabled={!canRevert} onClick={onRevert}>
                         <Undo2 />Revert
+                    </MenubarItem>
+                    <MenubarItem disabled={!canDuplicate || isDuplicating} onClick={onDuplicate}>
+                        <Copy />{isDuplicating ? 'Duplicating…' : 'Duplicate'}
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
