@@ -14,7 +14,7 @@ import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
-import UnsavedInvoiceAlert from './UnsavedInvoiceAlert'
+import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
 
@@ -456,29 +456,23 @@ function InvoicePage() {
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
             />
-            <UnsavedInvoiceAlert
-                open={blocker.state === 'blocked'}
-                onOpenChange={(open) => { if (!open && blocker.state === 'blocked') blocker.reset() }}
-                onDiscard={() => {
+            <UnsavedInvoiceAlerts
+                isNavigationBlocked={blocker.state === 'blocked'}
+                isConfirmingRevert={confirmingRevert}
+                isConfirmingDuplicate={confirmingDuplicate}
+                onCancelNavigation={() => {
+                    if (blocker.state === 'blocked') blocker.reset()
+                }}
+                onDiscardAndNavigate={() => {
                     if (blocker.state !== 'blocked') return
                     allowNextNavigationRef.current = true
                     setCleanDraft(draft)
                     blocker.proceed()
                 }}
-            />
-            <UnsavedInvoiceAlert
-                open={confirmingRevert}
-                onOpenChange={setConfirmingRevert}
-                onDiscard={performRevert}
-                actionLabel="Discard and revert"
-            />
-            <UnsavedInvoiceAlert
-                open={confirmingDuplicate}
-                onOpenChange={setConfirmingDuplicate}
-                onDiscard={() => void performDuplicateInvoice()}
-                title="Duplicate with unsaved changes?"
-                description="Your changes have not been saved to the original invoice. The new duplicate will be created from the values currently shown."
-                actionLabel="Duplicate anyway"
+                onConfirmingRevertChange={setConfirmingRevert}
+                onDiscardAndRevert={performRevert}
+                onConfirmingDuplicateChange={setConfirmingDuplicate}
+                onDuplicateAnyway={() => void performDuplicateInvoice()}
             />
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
