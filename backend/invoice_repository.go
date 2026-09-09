@@ -67,7 +67,8 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 		result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`
 			UPDATE [%s].[dbo].[Racuni]
 			SET Stevilka=@invoiceNumber, DatumIzstavitve=@issueDate, DatumDUR=@serviceDate,
-				DatumPlacila=@paymentDate, SifraPartnerja=@customerCode, ImePartnerja=@customerName,
+				DatumZapadlosti=@dueDate, DatumPlacila=@paymentDate,
+				SifraPartnerja=@customerCode, ImePartnerja=@customerName,
 				NaslovPartnerja=@customerAddress, KrajPartnerja=@customerCity, PlacanoSIT=@paidAmount,
 				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=@goodsAmount
 			WHERE RecNo=@id`, databaseName), invoiceArguments(input, invoiceID)...)
@@ -81,11 +82,11 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 	} else {
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			INSERT INTO [%s].[dbo].[Racuni] (
-				Stevilka, DatumIzstavitve, DatumDUR, DatumPlacila, SifraPartnerja,
+				Stevilka, DatumIzstavitve, DatumDUR, DatumZapadlosti, DatumPlacila, SifraPartnerja,
 				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT,
 				SpremniText, Klavzula, Znesek, ZnesekBlaga, Storno
 			) OUTPUT INSERTED.RecNo VALUES (
-				@invoiceNumber, @issueDate, @serviceDate, @paymentDate, @customerCode,
+				@invoiceNumber, @issueDate, @serviceDate, @dueDate, @paymentDate, @customerCode,
 				@customerName, @customerAddress, @customerCity, @paidAmount,
 				@introductoryText, @closingText, @amount, @goodsAmount, 0
 			)`, databaseName), invoiceArguments(input, 0)...).Scan(&invoiceID)
@@ -162,7 +163,8 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 	return []any{
 		sql.Named("id", id), sql.Named("invoiceNumber", input.InvoiceNumber),
 		sql.Named("issueDate", nullableInputTime(input.IssueDate)), sql.Named("serviceDate", nullableInputTime(input.ServiceDate)),
-		sql.Named("paymentDate", nullableInputTime(input.PaymentDate)), sql.Named("customerCode", input.CustomerCode),
+		sql.Named("dueDate", nullableInputTime(input.DueDate)), sql.Named("paymentDate", nullableInputTime(input.PaymentDate)),
+		sql.Named("customerCode", input.CustomerCode),
 		sql.Named("customerName", input.CustomerName), sql.Named("customerAddress", input.CustomerAddress),
 		sql.Named("customerCity", input.CustomerCity), sql.Named("paidAmount", input.PaidAmount),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),

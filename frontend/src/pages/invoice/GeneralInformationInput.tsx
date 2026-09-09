@@ -7,10 +7,12 @@ type GeneralInformationInputProps = {
     invoiceNumber: string
     businessYearDescription: string
     invoiceDate?: Date
+    dueDate?: Date
     paymentDate?: Date
     serviceDate?: Date
     onInvoiceNumberChange: (value: string) => void
     onInvoiceDateChange: (date?: Date) => void
+    onDueDateChange: (date?: Date) => void
     onPaymentDateChange: (date?: Date) => void
     onServiceDateChange: (date?: Date) => void
 }
@@ -26,6 +28,7 @@ function GeneralInformationInput(props: GeneralInformationInputProps) {
                         <Field><FieldLabel htmlFor="business-year">Business year</FieldLabel><Input id="business-year" value={props.businessYearDescription} readOnly /></Field>
                     </div>
                     <DatePickerField id="invoice-date" label="Invoice date" name="invoiceDate" date={props.invoiceDate} onSelect={props.onInvoiceDateChange} />
+                    <DatePickerField id="due-date" label="Due date" name="dueDate" date={props.dueDate} onSelect={props.onDueDateChange} />
                     <DatePickerField id="payment-date" label="Payment date" name="paymentDate" date={props.paymentDate} onSelect={props.onPaymentDateChange} />
                     <DatePickerField id="service-date" label="Service date" name="serviceDate" date={props.serviceDate} onSelect={props.onServiceDateChange} />
                 </FieldGroup>

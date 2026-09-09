@@ -16,6 +16,7 @@ type CustomerInputFieldsProps = {
     onCustomerPostalCodeChange: (value: string) => void
     onCustomerCityChange: (value: string) => void
     onCustomerCountryChange: (value: string) => void
+    onCustomerPaymentTermChange: (paymentTerm: number | null) => void
 }
 
 function CustomerInputFields(props: CustomerInputFieldsProps) {
@@ -33,6 +34,7 @@ function CustomerInputFields(props: CustomerInputFieldsProps) {
                         onCustomerPostalCodeChange={props.onCustomerPostalCodeChange}
                         onCustomerCityChange={props.onCustomerCityChange}
                         onCustomerCountryChange={props.onCustomerCountryChange}
+                        onCustomerPaymentTermChange={props.onCustomerPaymentTermChange}
                     />
                     <Field><FieldLabel htmlFor="customer-name">Name</FieldLabel><Input id="customer-name" value={props.customerName} onChange={(event) => props.onCustomerNameChange(event.target.value)} /></Field>
                     <Field><FieldLabel htmlFor="customer-address">Address</FieldLabel><Input id="customer-address" value={props.customerAddress} onChange={(event) => props.onCustomerAddressChange(event.target.value)} /></Field>

@@ -135,6 +135,7 @@ input InvoiceInput {
   invoiceNumber: String!
   issueDate: Time
   serviceDate: Time
+  dueDate: Time
   paymentDate: Time
   customerCode: String
   customerName: String

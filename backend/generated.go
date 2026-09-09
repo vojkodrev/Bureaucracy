@@ -5788,7 +5788,7 @@ func (ec *executionContext) unmarshalInputInvoiceInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "invoiceNumber", "issueDate", "serviceDate", "paymentDate", "customerCode", "customerName", "customerAddress", "customerCity", "paidAmount", "introductoryText", "closingText", "items"}
+	fieldsInOrder := [...]string{"id", "invoiceNumber", "issueDate", "serviceDate", "dueDate", "paymentDate", "customerCode", "customerName", "customerAddress", "customerCity", "paidAmount", "introductoryText", "closingText", "items"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5823,6 +5823,13 @@ func (ec *executionContext) unmarshalInputInvoiceInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.ServiceDate = data
+		case "dueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DueDate = data
 		case "paymentDate":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentDate"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)

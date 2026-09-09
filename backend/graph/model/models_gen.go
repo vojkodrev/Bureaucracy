@@ -28,6 +28,7 @@ type InvoiceInput struct {
 	InvoiceNumber    string              `json:"invoiceNumber"`
 	IssueDate        *time.Time          `json:"issueDate,omitempty"`
 	ServiceDate      *time.Time          `json:"serviceDate,omitempty"`
+	DueDate          *time.Time          `json:"dueDate,omitempty"`
 	PaymentDate      *time.Time          `json:"paymentDate,omitempty"`
 	CustomerCode     *string             `json:"customerCode,omitempty"`
 	CustomerName     *string             `json:"customerName,omitempty"`

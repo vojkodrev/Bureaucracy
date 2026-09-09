@@ -17,3 +17,11 @@ export function dateForApi(date?: Date): string | null {
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}T00:00:00Z`
 }
+
+export function dateAfterDays(date: Date | undefined, days: number | null): Date | undefined {
+    if (!date || days == null) return undefined
+
+    const result = new Date(date)
+    result.setDate(result.getDate() + days)
+    return result
+}

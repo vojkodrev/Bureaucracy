@@ -32,6 +32,7 @@ type CustomerPickerFieldProps = {
     onCustomerPostalCodeChange?: (customerPostalCode: string) => void
     onCustomerCityChange?: (customerCity: string) => void
     onCustomerCountryChange?: (customerCountry: string) => void
+    onCustomerPaymentTermChange?: (paymentTerm: number | null) => void
 }
 
 function CustomerPickerField({
@@ -45,6 +46,7 @@ function CustomerPickerField({
     onCustomerPostalCodeChange,
     onCustomerCityChange,
     onCustomerCountryChange,
+    onCustomerPaymentTermChange,
 }: CustomerPickerFieldProps) {
     const [open, setOpen] = useState(false)
 
@@ -56,6 +58,7 @@ function CustomerPickerField({
         onCustomerPostalCodeChange?.(customer.postalCode ?? '')
         onCustomerCityChange?.(customer.city ?? '')
         onCustomerCountryChange?.(customer.country ?? '')
+        onCustomerPaymentTermChange?.(customer.paymentTerm)
     }
 
     return (
