@@ -30,6 +30,9 @@ models:
   CustomerPage:
     model:
       - bureaucracy/backend.CustomerPage
+  Country:
+    model:
+      - bureaucracy/backend.Country
   Invoice:
     model:
       - bureaucracy/backend.Invoice

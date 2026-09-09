@@ -40,6 +40,12 @@ type CustomerPage {
   totalPages: Int!
 }
 
+type Country {
+  id: Int!
+  code: String!
+  name: String!
+}
+
 input CustomerInput {
   id: Int
   customerId: String!
@@ -178,6 +184,8 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): BusinessYearPage!
+
+  countries(businessYear: String!): [Country!]!
 
   invoice(
     businessYear: String!

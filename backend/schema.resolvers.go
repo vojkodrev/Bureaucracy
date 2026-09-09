@@ -44,6 +44,11 @@ func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *
 	return r.BusinessYearRepository.List(ctx, resultPage, resultPageSize)
 }
 
+// Countries is the resolver for the countries field.
+func (r *queryResolver) Countries(ctx context.Context, businessYear string) ([]*Country, error) {
+	return r.CountryRepository.List(ctx, businessYear)
+}
+
 // Invoice is the resolver for the invoice field.
 func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error) {
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)

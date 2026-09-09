@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import CountryComboboxField from '@/components/CountryComboboxField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -285,7 +286,7 @@ function CustomerPage() {
                                 <Field><FieldLabel htmlFor="customer-postal-code">Postal code</FieldLabel><Input id="customer-postal-code" maxLength={10} value={draft.postalCode} onChange={(event) => setField('postalCode', event.target.value)} /></Field>
                                 <Field><FieldLabel htmlFor="customer-city">City</FieldLabel><Input id="customer-city" maxLength={50} value={draft.city} onChange={(event) => setField('city', event.target.value)} /></Field>
                             </div>
-                            <Field><FieldLabel htmlFor="customer-country">Country</FieldLabel><Input id="customer-country" maxLength={3} value={draft.country} onChange={(event) => setField('country', event.target.value)} /></Field>
+                            <CountryComboboxField id="customer-country" label="Country" value={draft.country} onChange={(value) => setField('country', value)} />
                         </FieldGroup>
                     </CardContent>
                 </Card>
