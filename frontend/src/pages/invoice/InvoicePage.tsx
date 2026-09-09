@@ -11,6 +11,8 @@ import { numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
 import GeneralInformationInput from './GeneralInformationInput'
+import InvoiceNumberAlert from './InvoiceNumberAlert'
+import type { InvoiceNumberWarning } from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
@@ -85,6 +87,10 @@ function invoiceNumberAfter(invoiceNumber?: string): string {
 }
 
 async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
+    return invoiceNumberAfter(await fetchLatestInvoiceNumber(signal))
+}
+
+async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | undefined> {
     const response = await fetch(graphqlUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +104,7 @@ async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
 
     const result = (await response.json()) as LatestInvoiceResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-    return invoiceNumberAfter(result.data?.searchInvoices.invoices[0]?.invoiceNumber)
+    return result.data?.searchInvoices.invoices[0]?.invoiceNumber
 }
 
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
@@ -144,6 +150,8 @@ function InvoicePage() {
     const [cleanDraft, setCleanDraft] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
+    const [invoiceNumberWarning, setInvoiceNumberWarning] =
+        useState<InvoiceNumberWarning | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
@@ -298,11 +306,41 @@ function InvoicePage() {
         setPrintError(null)
     }
 
-    const saveInvoice = async () => {
+    const requestSaveInvoice = async () => {
         if (!canSaveInvoice || isSaving) return
-        const isCreating = invoiceId == null
         setIsSaving(true)
         setSaveError(null)
+        try {
+            const latestInvoiceNumber = await fetchLatestInvoiceNumber()
+            const numberToSave = invoiceNumber.trim()
+            const canSaveWithoutConfirmation =
+                numberToSave === latestInvoiceNumber ||
+                numberToSave === invoiceNumberAfter(latestInvoiceNumber)
+            if (!canSaveWithoutConfirmation) {
+                const numberValue = Number.parseInt(numberToSave, 10)
+                const nextNumberValue = Number.parseInt(
+                    invoiceNumberAfter(latestInvoiceNumber),
+                    10,
+                )
+                setInvoiceNumberWarning({
+                    kind:
+                        numberValue > nextNumberValue
+                            ? 'skipped'
+                            : 'historical',
+                    latestInvoiceNumber,
+                })
+                return
+            }
+            await performSaveInvoice()
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error ? requestError.message : 'Checking latest invoice failed')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const performSaveInvoice = async () => {
+        const isCreating = invoiceId == null
         try {
             const response = await fetch(graphqlUrl, {
                 method: 'POST',
@@ -357,6 +395,16 @@ function InvoicePage() {
             }
         } catch (requestError: unknown) {
             setSaveError(requestError instanceof Error ? requestError.message : 'Saving invoice failed')
+        }
+    }
+
+    const saveConfirmedInvoice = async () => {
+        if (!canSaveInvoice || isSaving) return
+        setInvoiceNumberWarning(null)
+        setIsSaving(true)
+        setSaveError(null)
+        try {
+            await performSaveInvoice()
         } finally {
             setIsSaving(false)
         }
@@ -423,7 +471,7 @@ function InvoicePage() {
     }
 
     const onSaveShortcut = useEffectEvent(() => {
-        void saveInvoice()
+        void requestSaveInvoice()
     })
     const onPrintShortcut = useEffectEvent(printInvoice)
 
@@ -462,10 +510,18 @@ function InvoicePage() {
                 canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
                 isDuplicating={isDuplicating}
-                onSave={() => void saveInvoice()}
+                onSave={() => void requestSaveInvoice()}
                 onPrint={printInvoice}
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
+            />
+            <InvoiceNumberAlert
+                invoiceNumber={invoiceNumber.trim()}
+                warning={invoiceNumberWarning}
+                onOpenChange={(open) => {
+                    if (!open) setInvoiceNumberWarning(null)
+                }}
+                onConfirm={() => void saveConfirmedInvoice()}
             />
             <UnsavedInvoiceAlerts
                 isNavigationBlocked={blocker.state === 'blocked'}
