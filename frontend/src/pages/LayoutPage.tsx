@@ -119,14 +119,28 @@ function productCodeFromPathname(pathname: string): string | undefined {
     }
 }
 
+function customerIdFromPathname(pathname: string): string | undefined {
+    if (!pathname.startsWith('/customer/')) return undefined
+    const customerId = pathname.slice('/customer/'.length)
+    try {
+        return decodeURIComponent(customerId)
+    } catch {
+        return customerId
+    }
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
     const invoiceNumber = invoiceNumberFromPathname(pathname)
     const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
     const productCode = productCodeFromPathname(pathname)
     const isProductPage = pathname === '/product' || Boolean(productCode)
+    const customerId = customerIdFromPathname(pathname)
+    const isCustomerPage = pathname === '/customer' || Boolean(customerId)
     const [openMenu, setOpenMenu] = useState<string | null>(() =>
-        pathname === '/products/search' || isProductPage
+        pathname === '/customers/search' || isCustomerPage
+            ? 'customers'
+            : pathname === '/products/search' || isProductPage
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
@@ -141,7 +155,9 @@ function LayoutPage() {
         (invoiceNumber ? `Invoice ${invoiceNumber}` : undefined) ??
         (isInvoicePage ? 'Invoice' : undefined) ??
         (productCode ? `Product ${productCode}` : undefined) ??
-        (isProductPage ? 'Product' : undefined)
+        (isProductPage ? 'Product' : undefined) ??
+        (customerId ? `Customer ${customerId}` : undefined) ??
+        (isCustomerPage ? 'Customer' : undefined)
 
     useEffect(() => {
         const searchParams = new URLSearchParams(search)
@@ -169,12 +185,14 @@ function LayoutPage() {
     }, [breadcrumbLabel, search])
 
     useEffect(() => {
-        if (pathname === '/products/search' || isProductPage) {
+        if (pathname === '/customers/search' || isCustomerPage) {
+            setOpenMenu('customers')
+        } else if (pathname === '/products/search' || isProductPage) {
             setOpenMenu('products')
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
         }
-    }, [isInvoicePage, isProductPage, pathname])
+    }, [isCustomerPage, isInvoicePage, isProductPage, pathname])
 
     return (
         <TooltipProvider>
@@ -243,21 +261,38 @@ function LayoutPage() {
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
                                     </Collapsible.Root>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            isActive={
-                                                pathname ===
-                                                '/customers/search'
-                                            }
-                                            tooltip="Customer search"
+                                    <Collapsible.Root
+                                        {...collapsibleMenuProps('customers')}
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
                                             render={
-                                                <NavLink to="/customers/search" />
+                                                <SidebarMenuButton
+                                                    isActive={pathname === '/customers/search' || isCustomerPage}
+                                                    tooltip="Customers"
+                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                />
                                             }
                                         >
                                             <Users />
-                                            <span>Customer search</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                            <span>Customers</span>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton isActive={pathname === '/customers/search'} render={<NavLink to="/customers/search" />}>
+                                                    <Search />
+                                                    <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton isActive={pathname === '/customer'} render={<NavLink to="/customer" />}>
+                                                    <Plus />
+                                                    <span>Customer</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
                                     <Collapsible.Root
                                         {...collapsibleMenuProps('invoices')}
                                         render={<SidebarMenuItem />}
@@ -403,6 +438,32 @@ function LayoutPage() {
                                                     <BreadcrumbSeparator />
                                                     <BreadcrumbItem>
                                                         <BreadcrumbPage>{productCode}</BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isCustomerPage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink render={<NavLink to="/customers/search" />}>
+                                                    Customer search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {customerId ? (
+                                                    <BreadcrumbLink render={<NavLink to="/customer" />}>
+                                                        Customer
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>Customer</BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {customerId && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>{customerId}</BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>
                                             )}

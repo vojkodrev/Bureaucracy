@@ -4,7 +4,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import type { BusinessYearResponse } from '@/lib/business-year-types'
-import { dateForApi, dateFromSearchValue } from '@/lib/dates'
+import { dateAfterDays, dateForApi, dateFromSearchValue } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
 import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
@@ -30,6 +30,7 @@ type InvoiceDraft = {
     customerCountry: string
     invoiceDate?: Date
     serviceDate?: Date
+    dueDate?: Date
     paymentDate?: Date
     paidAmount: string
     introductoryText: string
@@ -42,6 +43,7 @@ function serializeDraft(draft: InvoiceDraft): string {
         ...draft,
         invoiceDate: draft.invoiceDate?.getTime() ?? null,
         serviceDate: draft.serviceDate?.getTime() ?? null,
+        dueDate: draft.dueDate?.getTime() ?? null,
         paymentDate: draft.paymentDate?.getTime() ?? null,
     })
 }
@@ -49,7 +51,7 @@ function serializeDraft(draft: InvoiceDraft): string {
 const invoiceQuery = `
     query Invoice($businessYear: String!, $invoiceNumber: String!) {
         invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
-            id invoiceNumber issueDate serviceDate paymentDate customerCode
+            id invoiceNumber issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
             paidAmount introductoryText closingText
             items { id sequence productCode productName unit taxCode taxRate unitPrice unitTaxAmount quantity discount netAmount grossAmount }
@@ -132,6 +134,7 @@ function InvoicePage() {
     const [customerCountry, setCustomerCountry] = useState('')
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>()
     const [serviceDate, setServiceDate] = useState<Date | undefined>()
+    const [dueDate, setDueDate] = useState<Date | undefined>()
     const [paymentDate, setPaymentDate] = useState<Date | undefined>()
     const [paidAmount, setPaidAmount] = useState('')
     const [introductoryText, setIntroductoryText] = useState('')
@@ -158,7 +161,7 @@ function InvoicePage() {
         (!routeInvoiceNumber || invoiceId != null || invoiceNumber !== routeInvoiceNumber)
     const draft = serializeDraft({
         invoiceNumber, customerId, customerName, customerAddress, customerPostalCode,
-        customerCity, customerCountry, invoiceDate, serviceDate, paymentDate, paidAmount,
+        customerCity, customerCountry, invoiceDate, serviceDate, dueDate, paymentDate, paidAmount,
         introductoryText, closingText, invoiceItems,
     })
     const hasUnsavedChanges = cleanDraft !== null && draft !== cleanDraft
@@ -205,6 +208,7 @@ function InvoicePage() {
             setCustomerCountry(invoice.customerCountry ?? '')
             setInvoiceDate(dateFromInvoiceValue(invoice.issueDate))
             setServiceDate(dateFromInvoiceValue(invoice.serviceDate))
+            setDueDate(dateFromInvoiceValue(invoice.dueDate))
             setPaymentDate(dateFromInvoiceValue(invoice.paymentDate))
             setPaidAmount(invoice.paidAmount == null ? '' : String(invoice.paidAmount))
             setIntroductoryText(invoice.introductoryText ?? '')
@@ -220,6 +224,7 @@ function InvoicePage() {
                 customerCountry: invoice.customerCountry ?? '',
                 invoiceDate: dateFromInvoiceValue(invoice.issueDate),
                 serviceDate: dateFromInvoiceValue(invoice.serviceDate),
+                dueDate: dateFromInvoiceValue(invoice.dueDate),
                 paymentDate: dateFromInvoiceValue(invoice.paymentDate),
                 paidAmount: invoice.paidAmount == null ? '' : String(invoice.paidAmount),
                 introductoryText: invoice.introductoryText ?? '',
@@ -265,6 +270,7 @@ function InvoicePage() {
         setCustomerCountry('')
         setInvoiceDate(today)
         setServiceDate(undefined)
+        setDueDate(undefined)
         setPaymentDate(undefined)
         setPaidAmount('')
         setIntroductoryText('')
@@ -281,7 +287,7 @@ function InvoicePage() {
                 invoiceNumber: nextInvoiceNumber,
                 customerId: '', customerName: '', customerAddress: '', customerPostalCode: '',
                 customerCity: '', customerCountry: '', invoiceDate: today, serviceDate: undefined,
-                paymentDate: undefined, paidAmount: '', introductoryText: '', closingText: '', invoiceItems: [],
+                dueDate: undefined, paymentDate: undefined, paidAmount: '', introductoryText: '', closingText: '', invoiceItems: [],
             }))
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
@@ -371,6 +377,7 @@ function InvoicePage() {
                             invoiceNumber: invoiceNumber.trim(),
                             issueDate: dateForApi(invoiceDate),
                             serviceDate: dateForApi(serviceDate),
+                            dueDate: dateForApi(dueDate),
                             paymentDate: dateForApi(paymentDate),
                             customerCode: emptyToNull(customerId),
                             customerName: emptyToNull(customerName),
@@ -448,6 +455,7 @@ function InvoicePage() {
             setInvoiceId(null)
             setInvoiceNumber(nextInvoiceNumber)
             setInvoiceDate(new Date())
+            setDueDate(undefined)
             setInvoiceItems((items) => items.map((item, index) => ({
                 ...item,
                 id: -index - 1,
@@ -565,8 +573,8 @@ function InvoicePage() {
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
-                <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} />
-                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} paymentDate={paymentDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onPaymentDateChange={setPaymentDate} onServiceDateChange={setServiceDate} />
+                <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} onCustomerPaymentTermChange={(paymentTerm) => setDueDate(dateAfterDays(invoiceDate, paymentTerm))} />
+                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} dueDate={dueDate} paymentDate={paymentDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onDueDateChange={setDueDate} onPaymentDateChange={setPaymentDate} onServiceDateChange={setServiceDate} />
             </div>
             <div className="mt-8 space-y-6">
                 <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel><Textarea id="introductory-text" name="introductoryText" value={introductoryText} onChange={(event) => setIntroductoryText(event.target.value)} /></Field>

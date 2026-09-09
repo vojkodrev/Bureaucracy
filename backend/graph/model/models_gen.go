@@ -6,11 +6,29 @@ import (
 	"time"
 )
 
+type CustomerInput struct {
+	ID                 *int     `json:"id,omitempty"`
+	CustomerID         string   `json:"customerId"`
+	Name               *string  `json:"name,omitempty"`
+	Address            *string  `json:"address,omitempty"`
+	PostalCode         *string  `json:"postalCode,omitempty"`
+	City               *string  `json:"city,omitempty"`
+	Country            *string  `json:"country,omitempty"`
+	Contact            *string  `json:"contact,omitempty"`
+	Email              *string  `json:"email,omitempty"`
+	Phone              *string  `json:"phone,omitempty"`
+	TaxNumber          *string  `json:"taxNumber,omitempty"`
+	RegistrationNumber *string  `json:"registrationNumber,omitempty"`
+	PaymentTerm        *int     `json:"paymentTerm,omitempty"`
+	Discount           *float64 `json:"discount,omitempty"`
+}
+
 type InvoiceInput struct {
 	ID               *int                `json:"id,omitempty"`
 	InvoiceNumber    string              `json:"invoiceNumber"`
 	IssueDate        *time.Time          `json:"issueDate,omitempty"`
 	ServiceDate      *time.Time          `json:"serviceDate,omitempty"`
+	DueDate          *time.Time          `json:"dueDate,omitempty"`
 	PaymentDate      *time.Time          `json:"paymentDate,omitempty"`
 	CustomerCode     *string             `json:"customerCode,omitempty"`
 	CustomerName     *string             `json:"customerName,omitempty"`

@@ -40,6 +40,29 @@ type CustomerPage {
   totalPages: Int!
 }
 
+type Country {
+  id: Int!
+  code: String!
+  name: String!
+}
+
+input CustomerInput {
+  id: Int
+  customerId: String!
+  name: String
+  address: String
+  postalCode: String
+  city: String
+  country: String
+  contact: String
+  email: String
+  phone: String
+  taxNumber: String
+  registrationNumber: String
+  paymentTerm: Int
+  discount: Float
+}
+
 type Invoice {
   id: Int!
   invoiceNumber: String!
@@ -112,6 +135,7 @@ input InvoiceInput {
   invoiceNumber: String!
   issueDate: Time
   serviceDate: Time
+  dueDate: Time
   paymentDate: Time
   customerCode: String
   customerName: String
@@ -162,6 +186,8 @@ type Query {
     pageSize: Int = 20
   ): BusinessYearPage!
 
+  countries(businessYear: String!): [Country!]!
+
   invoice(
     businessYear: String!
     invoiceNumber: String!
@@ -171,6 +197,11 @@ type Query {
     businessYear: String!
     productCode: String!
   ): Product
+
+  customer(
+    businessYear: String!
+    customerId: String!
+  ): Customer
 
   searchCustomers(
     businessYear: String!
@@ -209,6 +240,7 @@ type Query {
 }
 
 type Mutation {
+  saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
 }
