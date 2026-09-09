@@ -34,7 +34,12 @@ func (repository *InvoiceRepository) GetTextTemplate(ctx context.Context, busine
 			 FROM [%s].[dbo].[Klavzule]
 			 WHERE ISNULL(UvodRacun, 0) <> 0
 			 ORDER BY RecNo),
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max))
+			(SELECT TOP 1
+				CASE WHEN ISNULL(Sklic, 0) <> 0
+					THEN N'Pri plačilu se sklicujte na številko #ŠTEVILKA# !'
+						+ NCHAR(13) + NCHAR(10) + COALESCE(CAST(TextKlavzule AS nvarchar(max)), N'')
+					ELSE CAST(TextKlavzule AS nvarchar(max))
+				END
 			 FROM [%s].[dbo].[Klavzule]
 			 WHERE ISNULL(KonecRacun, 0) <> 0
 			 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
