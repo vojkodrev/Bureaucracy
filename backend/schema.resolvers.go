@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// SaveCustomer is the resolver for the saveCustomer field.
+func (r *mutationResolver) SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error) {
+	return r.Customers.Save(ctx, businessYear, customer)
+}
+
 // SaveInvoice is the resolver for the saveInvoice field.
 func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error) {
 	return r.Invoices.Save(ctx, businessYear, invoice)
@@ -47,6 +52,11 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 // Product is the resolver for the product field.
 func (r *queryResolver) Product(ctx context.Context, businessYear string, productCode string) (*Product, error) {
 	return r.Products.GetByCode(ctx, businessYear, productCode)
+}
+
+// Customer is the resolver for the customer field.
+func (r *queryResolver) Customer(ctx context.Context, businessYear string, customerID string) (*Customer, error) {
+	return r.Customers.GetByID(ctx, businessYear, customerID)
 }
 
 // SearchCustomers is the resolver for the searchCustomers field.

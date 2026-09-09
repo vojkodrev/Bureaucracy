@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -157,6 +157,7 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
 }
 
 function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
+    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
         () => searchFormFromParams(searchParams),
@@ -318,7 +319,11 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
 
     function selectCustomer(customer: Customer) {
         setSelectedCustomerId(customer.id)
-        onCustomerSelect?.(customer)
+        if (mode === ComponentMode.Page && customer.customerId) {
+            navigate(`/customer/${encodeURIComponent(customer.customerId)}`)
+        } else {
+            onCustomerSelect?.(customer)
+        }
     }
 
     return (

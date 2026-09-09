@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import BusinessYearsPage from './pages/BusinessYearsPage.tsx'
 import CustomerSearchPage from './pages/CustomerSearchPage.tsx'
+import CustomerPage from './pages/customer/CustomerPage.tsx'
 import LayoutPage from './pages/LayoutPage.tsx'
 import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
 import InvoicePage from './pages/invoice/InvoicePage.tsx'
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
         children: [
             { path: '/business-years', element: <BusinessYearsPage /> },
             { path: '/customers/search', element: <CustomerSearchPage /> },
+            { path: '/customer/:customerId?', element: <CustomerPage /> },
             { path: '/invoices/search', element: <InvoiceSearchPage /> },
             { path: '/invoice/:invoiceNumber?', element: <InvoicePage /> },
             { path: '/products/search', element: <ProductSearchPage /> },
