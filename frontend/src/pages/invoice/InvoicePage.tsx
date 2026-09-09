@@ -150,6 +150,7 @@ function InvoicePage() {
     const [cleanDraft, setCleanDraft] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
+    const [confirmingPrint, setConfirmingPrint] = useState(false)
     const [invoiceNumberWarning, setInvoiceNumberWarning] =
         useState<InvoiceNumberWarning | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -169,6 +170,11 @@ function InvoicePage() {
     const canPrintInvoice = invoiceId != null &&
         Boolean(invoiceNumber.trim()) &&
         !hasUnsavedChanges &&
+        !isLoading &&
+        !error &&
+        !isSaving &&
+        !isDuplicating
+    const canRequestPrintInvoice = Boolean(invoiceNumber.trim()) &&
         !isLoading &&
         !error &&
         !isSaving &&
@@ -305,7 +311,10 @@ function InvoicePage() {
     }, [])
 
     const printInvoice = () => {
-        if (!canPrintInvoice) return
+        if (!canPrintInvoice) {
+            if (canSaveInvoice) setConfirmingPrint(true)
+            return
+        }
         const numberToPrint = invoiceNumber.trim()
         const pdfTab = window.open(invoicePdfUrl(numberToPrint, getSelectedBusinessYear()), '_blank')
         if (!pdfTab) { setPrintError('Allow pop-ups to open the invoice PDF.'); return }
@@ -344,6 +353,11 @@ function InvoicePage() {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const saveBeforePrint = () => {
+        setConfirmingPrint(false)
+        void requestSaveInvoice()
     }
 
     const performSaveInvoice = async () => {
@@ -512,7 +526,7 @@ function InvoicePage() {
         <div className="max-w-5xl p-4">
             <InvoiceMenu
                 canSave={canSaveInvoice}
-                canPrint={canPrintInvoice}
+                canPrint={canRequestPrintInvoice}
                 canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
                 canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
@@ -534,6 +548,7 @@ function InvoicePage() {
                 isNavigationBlocked={blocker.state === 'blocked'}
                 isConfirmingRevert={confirmingRevert}
                 isConfirmingDuplicate={confirmingDuplicate}
+                isConfirmingPrint={confirmingPrint}
                 onCancelNavigation={() => {
                     if (blocker.state === 'blocked') blocker.reset()
                 }}
@@ -547,6 +562,8 @@ function InvoicePage() {
                 onDiscardAndRevert={performRevert}
                 onConfirmingDuplicateChange={setConfirmingDuplicate}
                 onDuplicateAnyway={() => void performDuplicateInvoice()}
+                onConfirmingPrintChange={setConfirmingPrint}
+                onSaveBeforePrint={saveBeforePrint}
             />
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}

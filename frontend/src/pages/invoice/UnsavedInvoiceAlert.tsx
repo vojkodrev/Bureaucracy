@@ -8,6 +8,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import type { Button } from '@/components/ui/button'
+import type { ComponentProps } from 'react'
 
 type UnsavedInvoiceAlertProps = {
     open: boolean
@@ -16,6 +18,7 @@ type UnsavedInvoiceAlertProps = {
     actionLabel?: string
     title?: string
     description?: string
+    actionVariant?: ComponentProps<typeof Button>['variant']
 }
 
 function UnsavedInvoiceAlert({
@@ -25,6 +28,7 @@ function UnsavedInvoiceAlert({
     actionLabel = 'Leave without saving',
     title = 'Discard unsaved changes?',
     description = 'This invoice has changes that have not been saved. If you continue, those changes will be lost.',
+    actionVariant = 'destructive',
 }: UnsavedInvoiceAlertProps) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -35,7 +39,7 @@ function UnsavedInvoiceAlert({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={onDiscard}>
+                    <AlertDialogAction variant={actionVariant} onClick={onDiscard}>
                         {actionLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
