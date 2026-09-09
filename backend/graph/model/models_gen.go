@@ -36,5 +36,16 @@ type InvoiceItemInput struct {
 type Mutation struct {
 }
 
+type ProductInput struct {
+	ID          *int     `json:"id,omitempty"`
+	ProductCode string   `json:"productCode"`
+	Name        *string  `json:"name,omitempty"`
+	Unit        *string  `json:"unit,omitempty"`
+	NetPrice    *float64 `json:"netPrice,omitempty"`
+	GrossPrice  *float64 `json:"grossPrice,omitempty"`
+	TaxRate     *float64 `json:"taxRate,omitempty"`
+	TaxCode     *string  `json:"taxCode,omitempty"`
+}
+
 type Query struct {
 }

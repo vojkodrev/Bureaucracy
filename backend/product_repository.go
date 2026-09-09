@@ -4,11 +4,139 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"strings"
+
+	"bureaucracy/backend/graph/model"
 )
 
 type ProductRepository struct {
 	database *sql.DB
+}
+
+func (repository *ProductRepository) GetByCode(ctx context.Context, businessYear string, productCode string) (*Product, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	productCode = strings.TrimSpace(productCode)
+	if productCode == "" {
+		return nil, fmt.Errorf("productCode is required")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	product := &Product{}
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT RecNo, Artikel, Opis, BarKoda, Enota, CenaBrezDavka,
+			CenaZDavkom, CAST(Davek AS float), SifraDavka
+		FROM [%s].[dbo].[Artikel]
+		WHERE Artikel = @productCode`, databaseName),
+		sql.Named("productCode", productCode),
+	).Scan(
+		&product.ID,
+		&product.ProductCode,
+		&product.Name,
+		&product.Barcode,
+		&product.Unit,
+		&product.NetPrice,
+		&product.GrossPrice,
+		&product.TaxRate,
+		&product.TaxCode,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get product: %w", err)
+	}
+	return product, nil
+}
+
+func (repository *ProductRepository) Save(ctx context.Context, businessYear string, input model.ProductInput) (*Product, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	input.ProductCode = strings.TrimSpace(input.ProductCode)
+	if input.ProductCode == "" {
+		return nil, fmt.Errorf("productCode is required")
+	}
+	if len([]rune(input.ProductCode)) > 25 {
+		return nil, fmt.Errorf("productCode must be at most 25 characters")
+	}
+	input.Name = trimmedProductString(input.Name)
+	input.Unit = trimmedProductString(input.Unit)
+	input.TaxCode = trimmedProductString(input.TaxCode)
+	if input.Name == nil {
+		return nil, fmt.Errorf("name is required")
+	}
+	if len([]rune(*input.Name)) > 100 {
+		return nil, fmt.Errorf("name must be at most 100 characters")
+	}
+	if input.Unit != nil && len([]rune(*input.Unit)) > 10 {
+		return nil, fmt.Errorf("unit must be at most 10 characters")
+	}
+	if input.TaxCode != nil && len([]rune(*input.TaxCode)) > 2 {
+		return nil, fmt.Errorf("taxCode must be at most 2 characters")
+	}
+	for name, value := range map[string]*float64{
+		"netPrice": input.NetPrice, "grossPrice": input.GrossPrice, "taxRate": input.TaxRate,
+	} {
+		if value != nil && (*value < 0 || math.IsNaN(*value) || math.IsInf(*value, 0)) {
+			return nil, fmt.Errorf("%s must be a non-negative number", name)
+		}
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	arguments := []any{
+		sql.Named("productCode", input.ProductCode),
+		sql.Named("name", input.Name),
+		sql.Named("unit", input.Unit),
+		sql.Named("netPrice", input.NetPrice),
+		sql.Named("grossPrice", input.GrossPrice),
+		sql.Named("taxRate", input.TaxRate),
+		sql.Named("taxCode", input.TaxCode),
+	}
+
+	if input.ID != nil && *input.ID > 0 {
+		arguments = append(arguments, sql.Named("id", *input.ID))
+		result, err := repository.database.ExecContext(ctx, fmt.Sprintf(`
+			UPDATE [%s].[dbo].[Artikel]
+			SET Artikel=@productCode, Opis=@name, Enota=@unit,
+				CenaBrezDavka=@netPrice, CenaZDavkom=@grossPrice,
+				Davek=@taxRate, SifraDavka=@taxCode
+			WHERE RecNo=@id`, databaseName), arguments...)
+		if err != nil {
+			return nil, fmt.Errorf("update product: %w", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil || affected != 1 {
+			return nil, fmt.Errorf("product RecNo %d was not found", *input.ID)
+		}
+	} else {
+		_, err := repository.database.ExecContext(ctx, fmt.Sprintf(`
+			INSERT INTO [%s].[dbo].[Artikel] (
+				Artikel, Opis, Enota, CenaBrezDavka,
+				CenaZDavkom, Davek, SifraDavka
+			) VALUES (
+				@productCode, @name, @unit, @netPrice,
+				@grossPrice, @taxRate, @taxCode
+			)`, databaseName), arguments...)
+		if err != nil {
+			return nil, fmt.Errorf("insert product: %w", err)
+		}
+	}
+
+	return repository.GetByCode(ctx, businessYear, input.ProductCode)
+}
+
+func trimmedProductString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
 
 func NewProductRepository(database *sql.DB) *ProductRepository {
