@@ -307,7 +307,7 @@ function ProductPage() {
                                 />
                                 <Field>
                                     <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
-                                    <NumberInput id="product-tax-rate" min="0" step="0.01" value={draft.taxRate} readOnly />
+                                    <NumberInput id="product-tax-rate" min="0" step="0.01" value={draft.taxRate} disabled />
                                 </Field>
                             </div>
                         </FieldGroup>
