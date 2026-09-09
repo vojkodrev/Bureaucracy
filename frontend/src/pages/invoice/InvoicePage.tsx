@@ -166,6 +166,13 @@ function InvoicePage() {
         introductoryText, closingText, invoiceItems,
     })
     const hasUnsavedChanges = cleanDraft !== null && draft !== cleanDraft
+    const canPrintInvoice = invoiceId != null &&
+        Boolean(invoiceNumber.trim()) &&
+        !hasUnsavedChanges &&
+        !isLoading &&
+        !error &&
+        !isSaving &&
+        !isDuplicating
     const blocker = useBlocker(({ currentLocation, nextLocation }) =>
         !allowNextNavigationRef.current &&
         hasUnsavedChanges &&
@@ -298,8 +305,8 @@ function InvoicePage() {
     }, [])
 
     const printInvoice = () => {
+        if (!canPrintInvoice) return
         const numberToPrint = invoiceNumber.trim()
-        if (!numberToPrint) return
         const pdfTab = window.open(invoicePdfUrl(numberToPrint, getSelectedBusinessYear()), '_blank')
         if (!pdfTab) { setPrintError('Allow pop-ups to open the invoice PDF.'); return }
         pdfTab.opener = null
@@ -505,7 +512,7 @@ function InvoicePage() {
         <div className="max-w-5xl p-4">
             <InvoiceMenu
                 canSave={canSaveInvoice}
-                canPrint={Boolean(invoiceNumber.trim())}
+                canPrint={canPrintInvoice}
                 canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
                 canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
