@@ -73,7 +73,7 @@ func (repository *CustomerRepository) Search(
 			Kontakt,
 			Email,
 			Telefon,
-			DavcnaStevilka,
+			IDStevilka,
 			MaticnaStevilka,
 			PlacilniRok,
 			RabatGeneralno
@@ -146,7 +146,7 @@ func customerOrderBy(sortBy *string, sortDirection *string) (string, error) {
 		"contact":    "Kontakt",
 		"email":      "Email",
 		"phone":      "Telefon",
-		"taxNumber":  "DavcnaStevilka",
+		"taxNumber":  "IDStevilka",
 	}
 	column, ok := columns[*sortBy]
 	if !ok {
