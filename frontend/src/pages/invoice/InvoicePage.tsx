@@ -258,6 +258,7 @@ function InvoicePage() {
         }
 
         allowNextNavigationRef.current = false
+        const today = new Date()
 
         setInvoiceId(null)
         setInvoiceNumber('')
@@ -267,7 +268,7 @@ function InvoicePage() {
         setCustomerPostalCode('')
         setCustomerCity('')
         setCustomerCountry('')
-        setInvoiceDate(undefined)
+        setInvoiceDate(today)
         setServiceDate(undefined)
         setPaymentDate(undefined)
         setPaidAmount('')
@@ -284,7 +285,7 @@ function InvoicePage() {
             setCleanDraft(serializeDraft({
                 invoiceNumber: nextInvoiceNumber,
                 customerId: '', customerName: '', customerAddress: '', customerPostalCode: '',
-                customerCity: '', customerCountry: '', invoiceDate: undefined, serviceDate: undefined,
+                customerCity: '', customerCountry: '', invoiceDate: today, serviceDate: undefined,
                 paymentDate: undefined, paidAmount: '', introductoryText: '', closingText: '', invoiceItems: [],
             }))
         }).catch((requestError: unknown) => {
@@ -451,6 +452,7 @@ function InvoicePage() {
             const nextInvoiceNumber = await fetchNextInvoiceNumber()
             setInvoiceId(null)
             setInvoiceNumber(nextInvoiceNumber)
+            setInvoiceDate(new Date())
             setInvoiceItems((items) => items.map((item, index) => ({
                 ...item,
                 id: -index - 1,

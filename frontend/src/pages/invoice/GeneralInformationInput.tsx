@@ -25,7 +25,7 @@ function GeneralInformationInput(props: GeneralInformationInputProps) {
                         <Field><FieldLabel htmlFor="invoice-number">Number</FieldLabel><Input id="invoice-number" value={props.invoiceNumber} onChange={(event) => props.onInvoiceNumberChange(event.target.value)} /></Field>
                         <Field><FieldLabel htmlFor="business-year">Business year</FieldLabel><Input id="business-year" value={props.businessYearDescription} readOnly /></Field>
                     </div>
-                    <DatePickerField id="invoice-date" label="Date" name="invoiceDate" date={props.invoiceDate} onSelect={props.onInvoiceDateChange} />
+                    <DatePickerField id="invoice-date" label="Invoice date" name="invoiceDate" date={props.invoiceDate} onSelect={props.onInvoiceDateChange} />
                     <DatePickerField id="payment-date" label="Payment date" name="paymentDate" date={props.paymentDate} onSelect={props.onPaymentDateChange} />
                     <DatePickerField id="service-date" label="Service date" name="serviceDate" date={props.serviceDate} onSelect={props.onServiceDateChange} />
                 </FieldGroup>
