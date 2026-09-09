@@ -264,6 +264,7 @@ func productOrderBy(sortBy *string, sortDirection *string) (string, error) {
 		"netPrice":    "CenaBrezDavka",
 		"grossPrice":  "CenaZDavkom",
 		"taxRate":     "Davek",
+		"taxCode":     "SifraDavka",
 	}
 	column, ok := columns[*sortBy]
 	if !ok {

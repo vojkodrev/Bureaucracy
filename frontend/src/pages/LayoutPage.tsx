@@ -71,6 +71,7 @@ const searchParameterValues: Record<string, Record<string, string>> = {
         unit: 'Unit',
         netPrice: 'Net price',
         grossPrice: 'Gross price',
+        taxCode: 'Tax code',
         taxRate: 'Tax rate',
         customerId: 'Customer ID',
         address: 'Address',

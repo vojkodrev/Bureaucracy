@@ -41,6 +41,7 @@ type ProductSortColumn =
     | 'unit'
     | 'netPrice'
     | 'grossPrice'
+    | 'taxCode'
     | 'taxRate'
 type SortDirection = 'asc' | 'desc'
 
@@ -50,6 +51,7 @@ const productSortColumns: { key: ProductSortColumn, label: string, alignRight?: 
     { key: 'unit', label: 'Unit' },
     { key: 'netPrice', label: 'Net price', alignRight: true },
     { key: 'grossPrice', label: 'Gross price', alignRight: true },
+    { key: 'taxCode', label: 'Tax code' },
     { key: 'taxRate', label: 'Tax rate', alignRight: true },
 ]
 
@@ -386,21 +388,21 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                     <TableBody>
                         {isLoading && (
                             <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     Loading products…
                                 </TableCell>
                             </TableRow>
                         )}
                         {error && (
                             <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-destructive">
+                            <TableCell colSpan={7} className="h-24 text-center text-destructive">
                                     {error}
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading && !error && products.length === 0 && (
                             <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     No products found.
                                 </TableCell>
                             </TableRow>
@@ -440,6 +442,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                                             ? '—'
                                             : formatCurrency(product.grossPrice)}
                                     </TableCell>
+                                    <TableCell>{product.taxCode ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {product.taxRate == null
                                             ? '—'
