@@ -112,6 +112,11 @@ type InvoicePage {
   totalPages: Int!
 }
 
+type InvoiceTextTemplate {
+  introductoryText: String
+  closingText: String
+}
+
 input InvoiceItemInput {
   id: Int
   sequence: Int
@@ -192,6 +197,8 @@ type Query {
     businessYear: String!
     invoiceNumber: String!
   ): Invoice
+
+  invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
 
   product(
     businessYear: String!

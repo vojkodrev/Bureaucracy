@@ -21,6 +21,32 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
+func (repository *InvoiceRepository) GetTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	template := &InvoiceTextTemplate{}
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT
+			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max))
+			 FROM [%s].[dbo].[Klavzule]
+			 WHERE ISNULL(UvodRacun, 0) <> 0
+			 ORDER BY RecNo),
+			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max))
+			 FROM [%s].[dbo].[Klavzule]
+			 WHERE ISNULL(KonecRacun, 0) <> 0
+			 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
+		&template.IntroductoryText,
+		&template.ClosingText,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get invoice text template: %w", err)
+	}
+	return template, nil
+}
+
 // Save atomically upserts an invoice and its complete item collection.
 func (repository *InvoiceRepository) Save(ctx context.Context, businessYear string, input model.InvoiceInput) (*Invoice, error) {
 	if !businessYearPattern.MatchString(businessYear) {

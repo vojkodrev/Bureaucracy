@@ -39,6 +39,9 @@ models:
   InvoicePage:
     model:
       - bureaucracy/backend.InvoicePage
+  InvoiceTextTemplate:
+    model:
+      - bureaucracy/backend.InvoiceTextTemplate
   InvoiceItem:
     model:
       - bureaucracy/backend.InvoiceItem

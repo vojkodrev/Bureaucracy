@@ -133,6 +133,11 @@ type ComplexityRoot struct {
 		TotalPages func(childComplexity int) int
 	}
 
+	InvoiceTextTemplate struct {
+		ClosingText      func(childComplexity int) int
+		IntroductoryText func(childComplexity int) int
+	}
+
 	Mutation struct {
 		SaveCustomer func(childComplexity int, businessYear string, customer model.CustomerInput) int
 		SaveInvoice  func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
@@ -160,16 +165,17 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		BusinessYear    func(childComplexity int, code string) int
-		BusinessYears   func(childComplexity int, page *int, pageSize *int) int
-		Countries       func(childComplexity int, businessYear string) int
-		Customer        func(childComplexity int, businessYear string, customerID string) int
-		Invoice         func(childComplexity int, businessYear string, invoiceNumber string) int
-		Product         func(childComplexity int, businessYear string, productCode string) int
-		SearchCustomers func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchInvoices  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchProducts  func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		TaxCodes        func(childComplexity int, businessYear string) int
+		BusinessYear        func(childComplexity int, code string) int
+		BusinessYears       func(childComplexity int, page *int, pageSize *int) int
+		Countries           func(childComplexity int, businessYear string) int
+		Customer            func(childComplexity int, businessYear string, customerID string) int
+		Invoice             func(childComplexity int, businessYear string, invoiceNumber string) int
+		InvoiceTextTemplate func(childComplexity int, businessYear string) int
+		Product             func(childComplexity int, businessYear string, productCode string) int
+		SearchCustomers     func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInvoices      func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchProducts      func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		TaxCodes            func(childComplexity int, businessYear string) int
 	}
 
 	TaxCode struct {
@@ -194,6 +200,7 @@ type QueryResolver interface {
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
+	InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error)
 	Product(ctx context.Context, businessYear string, productCode string) (*Product, error)
 	Customer(ctx context.Context, businessYear string, customerID string) (*Customer, error)
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
@@ -654,6 +661,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.InvoicePage.TotalPages(childComplexity), true
 
+	case "InvoiceTextTemplate.closingText":
+		if e.ComplexityRoot.InvoiceTextTemplate.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceTextTemplate.ClosingText(childComplexity), true
+	case "InvoiceTextTemplate.introductoryText":
+		if e.ComplexityRoot.InvoiceTextTemplate.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceTextTemplate.IntroductoryText(childComplexity), true
+
 	case "Mutation.saveCustomer":
 		if e.ComplexityRoot.Mutation.SaveCustomer == nil {
 			break
@@ -830,6 +850,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Invoice(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(string)), true
+	case "Query.invoiceTextTemplate":
+		if e.ComplexityRoot.Query.InvoiceTextTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Query_invoiceTextTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.InvoiceTextTemplate(childComplexity, args["businessYear"].(string)), true
 	case "Query.product":
 		if e.ComplexityRoot.Query.Product == nil {
 			break
@@ -1207,6 +1238,16 @@ func (ec *executionContext) childFields_InvoicePage(ctx context.Context, field g
 	return nil, fmt.Errorf("no field named %q was found under type InvoicePage", field.Name)
 }
 
+func (ec *executionContext) childFields_InvoiceTextTemplate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "introductoryText":
+		return ec.fieldContext_InvoiceTextTemplate_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_InvoiceTextTemplate_closingText(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type InvoiceTextTemplate", field.Name)
+}
+
 func (ec *executionContext) childFields_Product(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -1526,6 +1567,20 @@ func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["customerId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_invoiceTextTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
 	return args, nil
 }
 
@@ -3526,6 +3581,52 @@ func (ec *executionContext) fieldContext_InvoicePage_totalPages(_ context.Contex
 	return graphql.NewScalarFieldContext("InvoicePage", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
+func (ec *executionContext) _InvoiceTextTemplate_introductoryText(ctx context.Context, field graphql.CollectedField, obj *InvoiceTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceTextTemplate_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceTextTemplate_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceTextTemplate_closingText(ctx context.Context, field graphql.CollectedField, obj *InvoiceTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceTextTemplate_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceTextTemplate_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Mutation_saveCustomer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4159,6 +4260,50 @@ func (ec *executionContext) fieldContext_Query_invoice(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_invoice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_invoiceTextTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_invoiceTextTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().InvoiceTextTemplate(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *InvoiceTextTemplate) graphql.Marshaler {
+			return ec.marshalNInvoiceTextTemplate2ᚖbureaucracyᚋbackendᚐInvoiceTextTemplate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_invoiceTextTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceTextTemplate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_invoiceTextTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6683,6 +6828,49 @@ func (ec *executionContext) _InvoicePage(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var invoiceTextTemplateImplementors = []string{"InvoiceTextTemplate"}
+
+func (ec *executionContext) _InvoiceTextTemplate(ctx context.Context, sel ast.SelectionSet, obj *InvoiceTextTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invoiceTextTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvoiceTextTemplate")
+		case "introductoryText":
+			out.Values[i] = ec._InvoiceTextTemplate_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._InvoiceTextTemplate_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -6978,6 +7166,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_invoice(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "invoiceTextTemplate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_invoiceTextTemplate(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -7840,6 +8050,20 @@ func (ec *executionContext) marshalNInvoicePage2ᚖbureaucracyᚋbackendᚐInvoi
 		return graphql.Null
 	}
 	return ec._InvoicePage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInvoiceTextTemplate2bureaucracyᚋbackendᚐInvoiceTextTemplate(ctx context.Context, sel ast.SelectionSet, v InvoiceTextTemplate) graphql.Marshaler {
+	return ec._InvoiceTextTemplate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInvoiceTextTemplate2ᚖbureaucracyᚋbackendᚐInvoiceTextTemplate(ctx context.Context, sel ast.SelectionSet, v *InvoiceTextTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InvoiceTextTemplate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProduct2bureaucracyᚋbackendᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {

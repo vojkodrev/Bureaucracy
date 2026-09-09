@@ -54,6 +54,11 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
 }
 
+// InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
+func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
+	return r.Invoices.GetTextTemplate(ctx, businessYear)
+}
+
 // Product is the resolver for the product field.
 func (r *queryResolver) Product(ctx context.Context, businessYear string, productCode string) (*Product, error) {
 	return r.Products.GetByCode(ctx, businessYear, productCode)

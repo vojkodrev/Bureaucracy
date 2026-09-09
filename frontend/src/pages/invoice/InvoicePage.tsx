@@ -19,6 +19,11 @@ import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
+type InvoiceTextTemplate = { introductoryText: string | null; closingText: string | null }
+type InvoiceTextTemplateResponse = {
+    data?: { invoiceTextTemplate: InvoiceTextTemplate }
+    errors?: { message: string }[]
+}
 
 type InvoiceDraft = {
     invoiceNumber: string
@@ -66,6 +71,11 @@ const latestInvoiceQuery = `
         }
     }
 `
+const invoiceTextTemplateQuery = `
+    query InvoiceTextTemplate($businessYear: String!) {
+        invoiceTextTemplate(businessYear: $businessYear) { introductoryText closingText }
+    }
+`
 
 const businessYearQuery = `query BusinessYear($code: String!) { businessYear(code: $code) { description } }`
 const saveInvoiceMutation = `
@@ -102,6 +112,23 @@ async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | 
     const result = (await response.json()) as LatestInvoiceResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result.data?.searchInvoices.invoices[0]?.invoiceNumber
+}
+
+async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTextTemplate> {
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: invoiceTextTemplateQuery,
+            variables: { businessYear: getSelectedBusinessYear() },
+        }),
+        signal,
+    })
+    if (!response.ok) throw new Error(`Loading invoice text template failed (${response.status})`)
+
+    const result = await response.json() as InvoiceTextTemplateResponse
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
 }
 
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
@@ -281,13 +308,27 @@ function InvoicePage() {
         setPrintError(null)
 
         const abortController = new AbortController()
-        void fetchNextInvoiceNumber(abortController.signal).then((nextInvoiceNumber) => {
+        const templatePromise = fetchInvoiceTextTemplate(abortController.signal).catch((requestError: unknown) => {
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            return { introductoryText: null, closingText: null }
+        })
+        void Promise.all([
+            fetchNextInvoiceNumber(abortController.signal),
+            templatePromise,
+        ]).then(([nextInvoiceNumber, template]) => {
+            const templateIntroductoryText = template.introductoryText ?? ''
+            const templateClosingText = template.closingText ?? ''
             setInvoiceNumber(nextInvoiceNumber)
+            setIntroductoryText(templateIntroductoryText)
+            setClosingText(templateClosingText)
             setCleanDraft(serializeDraft({
                 invoiceNumber: nextInvoiceNumber,
                 customerId: '', customerName: '', customerAddress: '', customerPostalCode: '',
                 customerCity: '', customerCountry: '', invoiceDate: today, serviceDate: undefined,
-                dueDate: undefined, paymentDate: undefined, paidAmount: '', introductoryText: '', closingText: '', invoiceItems: [],
+                dueDate: undefined, paymentDate: undefined, paidAmount: '',
+                introductoryText: templateIntroductoryText,
+                closingText: templateClosingText,
+                invoiceItems: [],
             }))
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)

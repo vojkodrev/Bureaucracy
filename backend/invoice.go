@@ -52,3 +52,8 @@ type InvoicePage struct {
 	PageSize   int        `json:"pageSize"`
 	TotalPages int        `json:"totalPages"`
 }
+
+type InvoiceTextTemplate struct {
+	IntroductoryText *string `json:"introductoryText"`
+	ClosingText      *string `json:"closingText"`
+}
