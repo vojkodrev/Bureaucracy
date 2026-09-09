@@ -39,8 +39,9 @@ function downloadFilename(response: Response, year: string, month: string): stri
 
 function ExportDataPage() {
     const today = new Date()
-    const [month, setMonth] = useState(months[today.getMonth()])
-    const [year, setYear] = useState(String(today.getFullYear()))
+    const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1)
+    const [month, setMonth] = useState(months[previousMonth.getMonth()])
+    const [year, setYear] = useState(String(previousMonth.getFullYear()))
     const [isExporting, setIsExporting] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
