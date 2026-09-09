@@ -8,13 +8,17 @@ import { NumberInput } from '@/components/ui/number-input'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { emptyToNull } from '@/lib/form-input'
 import type { Product } from '@/lib/product-types'
-import { numberOrNull } from '@/lib/numbers'
+import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import ProductMenu from './ProductMenu'
 import UnsavedProductAlert from './UnsavedProductAlert'
 
 type ProductResponse = { data?: { product: Product | null }; errors?: { message: string }[] }
 type SaveProductResponse = { data?: { saveProduct: Product }; errors?: { message: string }[] }
+type LatestProductResponse = {
+    data?: { searchProducts: { products: Pick<Product, 'productCode'>[] } }
+    errors?: { message: string }[]
+}
 type LoadResult = { requestKey: string; error: string | null }
 
 type ProductDraft = {
@@ -30,6 +34,13 @@ const productQuery = `
     query Product($businessYear: String!, $productCode: String!) {
         product(businessYear: $businessYear, productCode: $productCode) {
             id productCode name barcode unit netPrice grossPrice taxRate taxCode
+        }
+    }
+`
+const latestProductQuery = `
+    query LatestProduct($businessYear: String!) {
+        searchProducts(businessYear: $businessYear, sortBy: "productCode", sortDirection: "desc", page: 1, pageSize: 1) {
+            products { productCode }
         }
     }
 `
@@ -64,6 +75,23 @@ function calculateGrossPrice(netPrice: string, taxRate: string): string {
     const tax = numberOrNull(taxRate)
     if (net == null || tax == null) return ''
     return (net * (1 + tax / 100)).toFixed(2)
+}
+
+async function fetchNextProductCode(signal?: AbortSignal): Promise<string> {
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: latestProductQuery,
+            variables: { businessYear: getSelectedBusinessYear() },
+        }),
+        signal,
+    })
+    if (!response.ok) throw new Error(`Loading latest product failed (${response.status})`)
+
+    const result = await response.json() as LatestProductResponse
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    return nextPaddedNumber(result.data?.searchProducts.products[0]?.productCode, 4)
 }
 
 function ProductPage() {
@@ -104,7 +132,16 @@ function ProductPage() {
             setSaveError(null)
             setLoadResult({ requestKey, error: null })
             allowNextNavigationRef.current = false
-            return
+
+            const abortController = new AbortController()
+            void fetchNextProductCode(abortController.signal).then((nextProductCode) => {
+                const newDraft = { ...emptyDraft, productCode: nextProductCode }
+                setDraft(newDraft)
+                setCleanDraft(JSON.stringify(newDraft))
+            }).catch((requestError: unknown) => {
+                if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            })
+            return () => abortController.abort()
         }
 
         const abortController = new AbortController()

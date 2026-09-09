@@ -7,7 +7,7 @@ import type { BusinessYearResponse } from '@/lib/business-year-types'
 import { dateForApi, dateFromSearchValue } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
 import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
-import { numberOrNull } from '@/lib/numbers'
+import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
 import GeneralInformationInput from './GeneralInformationInput'
@@ -81,13 +81,8 @@ type SaveInvoiceResponse = {
     errors?: { message: string }[]
 }
 
-function invoiceNumberAfter(invoiceNumber?: string): string {
-    const value = Number.parseInt(invoiceNumber ?? '', 10)
-    return String(Number.isNaN(value) ? 1 : value + 1).padStart(5, '0')
-}
-
 async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
-    return invoiceNumberAfter(await fetchLatestInvoiceNumber(signal))
+    return nextPaddedNumber(await fetchLatestInvoiceNumber(signal), 5)
 }
 
 async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | undefined> {
@@ -332,11 +327,11 @@ function InvoicePage() {
             const numberToSave = invoiceNumber.trim()
             const canSaveWithoutConfirmation =
                 numberToSave === latestInvoiceNumber ||
-                numberToSave === invoiceNumberAfter(latestInvoiceNumber)
+                numberToSave === nextPaddedNumber(latestInvoiceNumber, 5)
             if (!canSaveWithoutConfirmation) {
                 const numberValue = Number.parseInt(numberToSave, 10)
                 const nextNumberValue = Number.parseInt(
-                    invoiceNumberAfter(latestInvoiceNumber),
+                    nextPaddedNumber(latestInvoiceNumber, 5),
                     10,
                 )
                 setInvoiceNumberWarning({
