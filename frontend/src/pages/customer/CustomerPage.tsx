@@ -275,36 +275,45 @@ function CustomerPage() {
             {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Customer details</CardTitle></CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field><FieldLabel htmlFor="customer-code">Customer ID</FieldLabel><Input id="customer-code" maxLength={10} required value={draft.customerId} onChange={(event) => setField('customerId', event.target.value)} /></Field>
+                                <Field><FieldLabel htmlFor="customer-name">Name</FieldLabel><Input id="customer-name" maxLength={52} required value={draft.name} onChange={(event) => setField('name', event.target.value)} /></Field>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field><FieldLabel htmlFor="customer-tax-number">Tax number</FieldLabel><Input id="customer-tax-number" maxLength={22} value={draft.taxNumber} onChange={(event) => setField('taxNumber', event.target.value)} /></Field>
+                                    <Field><FieldLabel htmlFor="customer-registration-number">Registration number</FieldLabel><Input id="customer-registration-number" maxLength={10} value={draft.registrationNumber} onChange={(event) => setField('registrationNumber', event.target.value)} /></Field>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field><FieldLabel htmlFor="customer-payment-term">Payment term (days)</FieldLabel><NumberInput id="customer-payment-term" min="0" max="32767" step="1" value={draft.paymentTerm} onChange={(event) => setField('paymentTerm', event.target.value)} /></Field>
+                                    <Field><FieldLabel htmlFor="customer-discount">Discount (%)</FieldLabel><NumberInput id="customer-discount" min="0" max="100" step="0.01" value={draft.discount} onChange={(event) => setField('discount', event.target.value)} /></Field>
+                                </div>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle>Contact</CardTitle></CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field><FieldLabel htmlFor="customer-contact">Contact</FieldLabel><Input id="customer-contact" maxLength={60} value={draft.contact} onChange={(event) => setField('contact', event.target.value)} /></Field>
+                                <Field><FieldLabel htmlFor="customer-email">Email</FieldLabel><Input id="customer-email" type="email" maxLength={50} value={draft.email} onChange={(event) => setField('email', event.target.value)} /></Field>
+                                <Field><FieldLabel htmlFor="customer-phone">Phone</FieldLabel><Input id="customer-phone" maxLength={60} value={draft.phone} onChange={(event) => setField('phone', event.target.value)} /></Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                </div>
                 <Card>
-                    <CardHeader><CardTitle>Customer details</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Address</CardTitle></CardHeader>
                     <CardContent>
                         <FieldGroup>
-                            <Field><FieldLabel htmlFor="customer-code">Customer ID</FieldLabel><Input id="customer-code" maxLength={10} required value={draft.customerId} onChange={(event) => setField('customerId', event.target.value)} /></Field>
-                            <Field><FieldLabel htmlFor="customer-name">Name</FieldLabel><Input id="customer-name" maxLength={52} required value={draft.name} onChange={(event) => setField('name', event.target.value)} /></Field>
                             <Field><FieldLabel htmlFor="customer-address">Address</FieldLabel><Input id="customer-address" maxLength={32} value={draft.address} onChange={(event) => setField('address', event.target.value)} /></Field>
                             <div className="grid grid-cols-2 gap-4">
                                 <Field><FieldLabel htmlFor="customer-postal-code">Postal code</FieldLabel><Input id="customer-postal-code" maxLength={10} value={draft.postalCode} onChange={(event) => setField('postalCode', event.target.value)} /></Field>
                                 <Field><FieldLabel htmlFor="customer-city">City</FieldLabel><Input id="customer-city" maxLength={50} value={draft.city} onChange={(event) => setField('city', event.target.value)} /></Field>
                             </div>
                             <CountryComboboxField id="customer-country" label="Country" value={draft.country} onChange={(value) => setField('country', value)} />
-                        </FieldGroup>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle>Contact and business details</CardTitle></CardHeader>
-                    <CardContent>
-                        <FieldGroup>
-                            <Field><FieldLabel htmlFor="customer-contact">Contact</FieldLabel><Input id="customer-contact" maxLength={60} value={draft.contact} onChange={(event) => setField('contact', event.target.value)} /></Field>
-                            <Field><FieldLabel htmlFor="customer-email">Email</FieldLabel><Input id="customer-email" type="email" maxLength={50} value={draft.email} onChange={(event) => setField('email', event.target.value)} /></Field>
-                            <Field><FieldLabel htmlFor="customer-phone">Phone</FieldLabel><Input id="customer-phone" maxLength={60} value={draft.phone} onChange={(event) => setField('phone', event.target.value)} /></Field>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field><FieldLabel htmlFor="customer-tax-number">Tax number</FieldLabel><Input id="customer-tax-number" maxLength={22} value={draft.taxNumber} onChange={(event) => setField('taxNumber', event.target.value)} /></Field>
-                                <Field><FieldLabel htmlFor="customer-registration-number">Registration number</FieldLabel><Input id="customer-registration-number" maxLength={10} value={draft.registrationNumber} onChange={(event) => setField('registrationNumber', event.target.value)} /></Field>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field><FieldLabel htmlFor="customer-payment-term">Payment term (days)</FieldLabel><NumberInput id="customer-payment-term" min="0" max="32767" step="1" value={draft.paymentTerm} onChange={(event) => setField('paymentTerm', event.target.value)} /></Field>
-                                <Field><FieldLabel htmlFor="customer-discount">Discount (%)</FieldLabel><NumberInput id="customer-discount" min="0" max="100" step="0.01" value={draft.discount} onChange={(event) => setField('discount', event.target.value)} /></Field>
-                            </div>
                         </FieldGroup>
                     </CardContent>
                 </Card>
