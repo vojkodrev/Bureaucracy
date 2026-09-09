@@ -143,6 +143,17 @@ type ProductPage {
   totalPages: Int!
 }
 
+input ProductInput {
+  id: Int
+  productCode: String!
+  name: String
+  unit: String
+  netPrice: Float
+  grossPrice: Float
+  taxRate: Float
+  taxCode: String
+}
+
 type Query {
   businessYear(code: String!): BusinessYear
 
@@ -155,6 +166,11 @@ type Query {
     businessYear: String!
     invoiceNumber: String!
   ): Invoice
+
+  product(
+    businessYear: String!
+    productCode: String!
+  ): Product
 
   searchCustomers(
     businessYear: String!
@@ -194,4 +210,5 @@ type Query {
 
 type Mutation {
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
+  saveProduct(businessYear: String!, product: ProductInput!): Product!
 }

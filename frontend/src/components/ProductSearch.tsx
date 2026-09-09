@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -38,20 +38,20 @@ type SearchForm = {
 type ProductSortColumn =
     | 'productCode'
     | 'name'
-    | 'barcode'
     | 'unit'
     | 'netPrice'
     | 'grossPrice'
+    | 'taxCode'
     | 'taxRate'
 type SortDirection = 'asc' | 'desc'
 
 const productSortColumns: { key: ProductSortColumn, label: string, alignRight?: boolean }[] = [
     { key: 'productCode', label: 'Product code' },
     { key: 'name', label: 'Name' },
-    { key: 'barcode', label: 'Barcode' },
     { key: 'unit', label: 'Unit' },
     { key: 'netPrice', label: 'Net price', alignRight: true },
     { key: 'grossPrice', label: 'Gross price', alignRight: true },
+    { key: 'taxCode', label: 'Tax code' },
     { key: 'taxRate', label: 'Tax rate', alignRight: true },
 ]
 
@@ -94,7 +94,6 @@ const searchProductsQuery = `
                 id
                 productCode
                 name
-                barcode
                 unit
                 netPrice
                 grossPrice
@@ -151,6 +150,7 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
 }
 
 function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
+    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
         () => searchFormFromParams(searchParams),
@@ -309,7 +309,11 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
 
     function selectProduct(product: Product) {
         setSelectedProductId(product.id)
-        onProductSelect?.(product)
+        if (mode === ComponentMode.Page && product.productCode) {
+            navigate(`/product/${encodeURIComponent(product.productCode)}`)
+        } else {
+            onProductSelect?.(product)
+        }
     }
 
     return (
@@ -384,21 +388,21 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                     <TableBody>
                         {isLoading && (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     Loading products…
                                 </TableCell>
                             </TableRow>
                         )}
                         {error && (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center text-destructive">
+                            <TableCell colSpan={7} className="h-24 text-center text-destructive">
                                     {error}
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading && !error && products.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     No products found.
                                 </TableCell>
                             </TableRow>
@@ -427,7 +431,6 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                                         {product.productCode ?? '—'}
                                     </TableCell>
                                     <TableCell>{product.name ?? '—'}</TableCell>
-                                    <TableCell>{product.barcode || '—'}</TableCell>
                                     <TableCell>{product.unit ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {product.netPrice == null
@@ -439,6 +442,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                                             ? '—'
                                             : formatCurrency(product.grossPrice)}
                                     </TableCell>
+                                    <TableCell>{product.taxCode ?? '—'}</TableCell>
                                     <TableCell className="text-right">
                                         {product.taxRate == null
                                             ? '—'

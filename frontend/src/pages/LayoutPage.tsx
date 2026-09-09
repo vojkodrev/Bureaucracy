@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Collapsible } from '@base-ui/react/collapsible'
 import {
     CalendarRange,
@@ -68,10 +68,10 @@ const searchParameterValues: Record<string, Record<string, string>> = {
         paymentDate: 'Payment date',
         productCode: 'Product code',
         name: 'Name',
-        barcode: 'Barcode',
         unit: 'Unit',
         netPrice: 'Net price',
         grossPrice: 'Gross price',
+        taxCode: 'Tax code',
         taxRate: 'Tax rate',
         customerId: 'Customer ID',
         address: 'Address',
@@ -109,14 +109,39 @@ function invoiceNumberFromPathname(pathname: string): string | undefined {
     }
 }
 
+function productCodeFromPathname(pathname: string): string | undefined {
+    if (!pathname.startsWith('/product/')) return undefined
+    const productCode = pathname.slice('/product/'.length)
+    try {
+        return decodeURIComponent(productCode)
+    } catch {
+        return productCode
+    }
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
     const invoiceNumber = invoiceNumberFromPathname(pathname)
     const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
+    const productCode = productCodeFromPathname(pathname)
+    const isProductPage = pathname === '/product' || Boolean(productCode)
+    const [openMenu, setOpenMenu] = useState<string | null>(() =>
+        pathname === '/products/search' || isProductPage
+            ? 'products'
+            : pathname === '/invoices/search' || isInvoicePage
+                ? 'invoices'
+                : null,
+    )
+    const collapsibleMenuProps = (menu: string) => ({
+        open: openMenu === menu,
+        onOpenChange: (open: boolean) => setOpenMenu(open ? menu : null),
+    })
     const breadcrumbLabel =
         breadcrumbLabels[pathname] ??
         (invoiceNumber ? `Invoice ${invoiceNumber}` : undefined) ??
-        (isInvoicePage ? 'Invoice' : undefined)
+        (isInvoicePage ? 'Invoice' : undefined) ??
+        (productCode ? `Product ${productCode}` : undefined) ??
+        (isProductPage ? 'Product' : undefined)
 
     useEffect(() => {
         const searchParams = new URLSearchParams(search)
@@ -142,6 +167,14 @@ function LayoutPage() {
             .filter(Boolean)
             .join(' - ')
     }, [breadcrumbLabel, search])
+
+    useEffect(() => {
+        if (pathname === '/products/search' || isProductPage) {
+            setOpenMenu('products')
+        } else if (pathname === '/invoices/search' || isInvoicePage) {
+            setOpenMenu('invoices')
+        }
+    }, [isInvoicePage, isProductPage, pathname])
 
     return (
         <TooltipProvider>
@@ -172,21 +205,44 @@ function LayoutPage() {
                         <SidebarGroup>
                             <SidebarGroupContent>
                                 <SidebarMenu>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            isActive={
-                                                pathname ===
-                                                '/products/search'
-                                            }
-                                            tooltip="Product search"
+                                    <Collapsible.Root
+                                        {...collapsibleMenuProps('products')}
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
                                             render={
-                                                <NavLink to="/products/search" />
+                                                <SidebarMenuButton
+                                                    isActive={pathname === '/products/search' || isProductPage}
+                                                    tooltip="Products"
+                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                />
                                             }
                                         >
                                             <PackageSearch />
-                                            <span>Product search</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                            <span>Products</span>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={pathname === '/products/search'}
+                                                    render={<NavLink to="/products/search" />}
+                                                >
+                                                    <Search />
+                                                    <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={pathname === '/product'}
+                                                    render={<NavLink to="/product" />}
+                                                >
+                                                    <Plus />
+                                                    <span>Product</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={
@@ -203,10 +259,7 @@ function LayoutPage() {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <Collapsible.Root
-                                        defaultOpen={
-                                            pathname === '/invoices/search' ||
-                                            isInvoicePage
-                                        }
+                                        {...collapsibleMenuProps('invoices')}
                                         render={<SidebarMenuItem />}
                                     >
                                         <Collapsible.Trigger
@@ -324,6 +377,32 @@ function LayoutPage() {
                                                         <BreadcrumbPage>
                                                             {invoiceNumber}
                                                         </BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isProductPage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink render={<NavLink to="/products/search" />}>
+                                                    Product search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {productCode ? (
+                                                    <BreadcrumbLink render={<NavLink to="/product" />}>
+                                                        Product
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>Product</BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {productCode && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>{productCode}</BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>
                                             )}

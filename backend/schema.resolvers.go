@@ -16,6 +16,11 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SaveProduct is the resolver for the saveProduct field.
+func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error) {
+	return r.Products.Save(ctx, businessYear, product)
+}
+
 // BusinessYear is the resolver for the businessYear field.
 func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
 	return r.BusinessYearRepository.GetByCode(ctx, code)
@@ -37,6 +42,11 @@ func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *
 // Invoice is the resolver for the invoice field.
 func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error) {
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
+}
+
+// Product is the resolver for the product field.
+func (r *queryResolver) Product(ctx context.Context, businessYear string, productCode string) (*Product, error) {
+	return r.Products.GetByCode(ctx, businessYear, productCode)
 }
 
 // SearchCustomers is the resolver for the searchCustomers field.
