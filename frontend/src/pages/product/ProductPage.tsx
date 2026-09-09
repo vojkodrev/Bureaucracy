@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NumberInput } from '@/components/ui/number-input'
@@ -21,7 +22,6 @@ type ProductDraft = {
     name: string
     unit: string
     netPrice: string
-    grossPrice: string
     taxRate: string
     taxCode: string
 }
@@ -48,7 +48,6 @@ function productDraft(product?: Product | null): ProductDraft {
         name: product?.name ?? '',
         unit: product?.unit ?? '',
         netPrice: product?.netPrice == null ? '' : String(product.netPrice),
-        grossPrice: product?.grossPrice == null ? '' : String(product.grossPrice),
         taxRate: product?.taxRate == null ? '' : String(product.taxRate),
         taxCode: product?.taxCode ?? '',
     }
@@ -58,6 +57,13 @@ function isOptionalNonNegativeNumber(value: string): boolean {
     if (!value.trim()) return true
     const number = Number(value)
     return Number.isFinite(number) && number >= 0
+}
+
+function calculateGrossPrice(netPrice: string, taxRate: string): string {
+    const net = numberOrNull(netPrice)
+    const tax = numberOrNull(taxRate)
+    if (net == null || tax == null) return ''
+    return (net * (1 + tax / 100)).toFixed(2)
 }
 
 function ProductPage() {
@@ -76,9 +82,9 @@ function ProductPage() {
     const isLoading = Boolean(routeProductCode) && loadResult.requestKey !== requestKey
     const loadError = loadResult.requestKey === requestKey ? loadResult.error : null
     const hasUnsavedChanges = JSON.stringify(draft) !== cleanDraft
+    const grossPrice = calculateGrossPrice(draft.netPrice, draft.taxRate)
     const canSave = Boolean(draft.productCode.trim() && draft.name.trim()) &&
         isOptionalNonNegativeNumber(draft.netPrice) &&
-        isOptionalNonNegativeNumber(draft.grossPrice) &&
         isOptionalNonNegativeNumber(draft.taxRate) &&
         !isLoading &&
         !loadError
@@ -154,7 +160,7 @@ function ProductPage() {
                             name: emptyToNull(draft.name),
                             unit: emptyToNull(draft.unit),
                             netPrice: numberOrNull(draft.netPrice),
-                            grossPrice: numberOrNull(draft.grossPrice),
+                            grossPrice: numberOrNull(grossPrice),
                             taxRate: numberOrNull(draft.taxRate),
                             taxCode: emptyToNull(draft.taxCode),
                         },
@@ -252,42 +258,62 @@ function ProductPage() {
             />
             {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
-            <FieldGroup className="grid gap-6 sm:grid-cols-2">
-                <Field>
-                    <FieldLabel htmlFor="product-code">Product code</FieldLabel>
-                    <Input id="product-code" maxLength={25} required value={draft.productCode} onChange={(event) => setField('productCode', event.target.value)} />
-                </Field>
-                <Field>
-                    <FieldLabel htmlFor="product-name">Name</FieldLabel>
-                    <Input id="product-name" maxLength={100} required value={draft.name} onChange={(event) => setField('name', event.target.value)} />
-                </Field>
-                <Field>
-                    <FieldLabel htmlFor="product-unit">Unit</FieldLabel>
-                    <Input id="product-unit" maxLength={10} value={draft.unit} onChange={(event) => setField('unit', event.target.value)} />
-                </Field>
-                <Field>
-                    <FieldLabel htmlFor="product-net-price">Net price</FieldLabel>
-                    <NumberInput id="product-net-price" min="0" step="0.01" value={draft.netPrice} onChange={(event) => setField('netPrice', event.target.value)} />
-                </Field>
-                <Field>
-                    <FieldLabel htmlFor="product-gross-price">Gross price</FieldLabel>
-                    <NumberInput id="product-gross-price" min="0" step="0.01" value={draft.grossPrice} onChange={(event) => setField('grossPrice', event.target.value)} />
-                </Field>
-                <TaxCodeComboboxField
-                    id="product-tax-code"
-                    label="Tax code"
-                    value={draft.taxCode}
-                    onChange={(code, rate) => setDraft((current) => ({
-                        ...current,
-                        taxCode: code,
-                        taxRate: rate == null ? '' : String(rate),
-                    }))}
-                />
-                <Field>
-                    <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
-                    <NumberInput id="product-tax-rate" min="0" step="0.01" value={draft.taxRate} readOnly />
-                </Field>
-            </FieldGroup>
+            <div className="grid items-start gap-6 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Product details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="product-code">Product code</FieldLabel>
+                                <Input id="product-code" maxLength={25} required value={draft.productCode} onChange={(event) => setField('productCode', event.target.value)} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="product-name">Name</FieldLabel>
+                                <Input id="product-name" maxLength={100} required value={draft.name} onChange={(event) => setField('name', event.target.value)} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="product-unit">Unit</FieldLabel>
+                                <Input id="product-unit" maxLength={10} value={draft.unit} onChange={(event) => setField('unit', event.target.value)} />
+                            </Field>
+                        </FieldGroup>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pricing</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="product-net-price">Net price</FieldLabel>
+                                <NumberInput id="product-net-price" min="0" step="0.01" value={draft.netPrice} onChange={(event) => setField('netPrice', event.target.value)} />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="product-gross-price">Gross price</FieldLabel>
+                                <NumberInput id="product-gross-price" min="0" step="0.01" value={grossPrice} disabled />
+                            </Field>
+                            <div className="grid grid-cols-2 gap-4">
+                                <TaxCodeComboboxField
+                                    id="product-tax-code"
+                                    label="Tax code"
+                                    value={draft.taxCode}
+                                    onChange={(code, rate) => setDraft((current) => ({
+                                        ...current,
+                                        taxCode: code,
+                                        taxRate: rate == null ? '' : String(rate),
+                                    }))}
+                                />
+                                <Field>
+                                    <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
+                                    <NumberInput id="product-tax-rate" min="0" step="0.01" value={draft.taxRate} readOnly />
+                                </Field>
+                            </div>
+                        </FieldGroup>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
 }
