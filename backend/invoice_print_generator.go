@@ -385,7 +385,7 @@ func (generator *InvoicePrintGenerator) htmlToPDF(ctx context.Context, htmlDocum
 	defer cancelTimeout()
 
 	var pdf []byte
-	documentURL := (&url.URL{Scheme: "file", Path: htmlPath}).String()
+	documentURL := localFileURL(htmlPath)
 	if err := chromedp.Run(browserContext,
 		chromedp.Navigate(documentURL),
 		chromedp.WaitReady("body"),
@@ -404,6 +404,15 @@ func (generator *InvoicePrintGenerator) htmlToPDF(ctx context.Context, htmlDocum
 		return nil, fmt.Errorf("Chrome returned an invalid invoice PDF")
 	}
 	return pdf, nil
+}
+
+func localFileURL(filePath string) string {
+	urlPath := filepath.ToSlash(filePath)
+	if len(filePath) >= 3 && filePath[1] == ':' &&
+		(filePath[2] == '\\' || filePath[2] == '/') {
+		urlPath = "/" + strings.ReplaceAll(filePath, "\\", "/")
+	}
+	return (&url.URL{Scheme: "file", Path: urlPath}).String()
 }
 
 func findChrome() string {
