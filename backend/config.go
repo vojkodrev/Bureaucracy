@@ -13,7 +13,7 @@ type AppConfig struct {
 	Environment                 string
 	Name                        string
 	Port                        string
-	AllowedOrigin               string
+	AllowedOrigins              []string
 	MSSQLHost                   string
 	MSSQLPort                   string
 	MSSQLDatabase               string
@@ -30,7 +30,7 @@ func NewAppConfig() *AppConfig {
 		Environment:                 envOrDefault("APP_ENV", "development"),
 		Name:                        envOrDefault("APP_NAME", "bureaucracy-backend"),
 		Port:                        envOrDefault("PORT", "8080"),
-		AllowedOrigin:               envOrDefault("CORS_ALLOWED_ORIGIN", "http://localhost:5173"),
+		AllowedOrigins:              strings.Split(envOrDefault("CORS_ALLOWED_ORIGIN", "http://localhost:5173,http://drevi-pc:4173"), ","),
 		MSSQLHost:                   envOrDefault("MSSQL_HOST", "localhost"),
 		MSSQLPort:                   envOrDefault("MSSQL_PORT", "1433"),
 		MSSQLDatabase:               envOrDefault("MSSQL_DATABASE", "master"),

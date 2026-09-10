@@ -39,7 +39,7 @@ func NewHTTPServer(
 		gin.Logger(),
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
-			AllowOrigins: []string{config.AllowedOrigin},
+			AllowOrigins: config.AllowedOrigins,
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 			AllowHeaders: []string{"Content-Type"},
 		}),
