@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
-import { CheckIcon, ChevronDownIcon } from 'lucide-react'
+import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react'
 import {
     InputGroup,
     InputGroupAddon,
@@ -16,6 +16,15 @@ function ComboboxInput({ className, disabled = false, ...props }: ComboboxPrimit
         <InputGroup className={cn('w-auto', className)}>
             <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
             <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label="Clear selection"
+                    render={<ComboboxPrimitive.Clear />}
+                    disabled={disabled}
+                >
+                    <XIcon />
+                </InputGroupButton>
                 <InputGroupButton
                     size="icon-xs"
                     variant="ghost"
