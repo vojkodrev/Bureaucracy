@@ -67,11 +67,11 @@ function CustomerPickerField({
             <InputGroup>
                 <InputGroupInput
                     id={id}
-                    type="search"
+                    type="text"
                     name={name}
                     value={customerId}
                     autoComplete="off"
-                    onChange={(event) => onCustomerIdChange(event.target.value)}
+                    readOnly
                 />
                 <InputGroupAddon align="inline-end">
                     <InputGroupButton

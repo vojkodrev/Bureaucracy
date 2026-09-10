@@ -234,7 +234,7 @@ function BankStatementSearchPage() {
                                 <DatePickerField id="statement-date-to" label="Payment date to" name="to" date={dateTo} onSelect={setDateTo} />
                             </div>
                             <div className="grid gap-6 sm:grid-cols-2">
-                                <CustomerPickerField id="statement-customer-id" label="Customer number" name="customerId" customerId={customerId} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} />
+                                <CustomerPickerField id="statement-customer-id" label="Counterparty number" name="customerId" customerId={customerId} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} />
                                 <Field>
                                     <FieldLabel htmlFor="statement-customer-name">Counterparty</FieldLabel>
                                     <Input id="statement-customer-name" type="search" name="customerName" value={customerName} autoComplete="off" onChange={(event) => setCustomerName(event.target.value)} />

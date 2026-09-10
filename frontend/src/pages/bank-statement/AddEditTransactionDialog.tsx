@@ -93,9 +93,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                         <Input
                             id="transaction-counterparty-name"
                             value={counterparty}
-                            onChange={(event) =>
-                                setCounterparty(event.target.value)
-                            }
+                            disabled
                         />
                     </Field>
                     <InvoicePickerField
