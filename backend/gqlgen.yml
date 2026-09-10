@@ -18,6 +18,12 @@ models:
   BankAccount:
     model:
       - bureaucracy/backend.BankAccount
+  BankStatement:
+    model:
+      - bureaucracy/backend.BankStatement
+  BankTransactionType:
+    model:
+      - bureaucracy/backend.BankTransactionType
   Time:
     model:
       - github.com/99designs/gqlgen/graphql.Time

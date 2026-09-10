@@ -6,6 +6,24 @@ import (
 	"time"
 )
 
+type BankStatementEntryInput struct {
+	ID                *int     `json:"id,omitempty"`
+	CustomerID        *string  `json:"customerId,omitempty"`
+	CustomerName      *string  `json:"customerName,omitempty"`
+	TransactionTypeID *int     `json:"transactionTypeId,omitempty"`
+	Outflow           *float64 `json:"outflow,omitempty"`
+	Inflow            *float64 `json:"inflow,omitempty"`
+	DocumentNumber    *string  `json:"documentNumber,omitempty"`
+}
+
+type BankStatementInput struct {
+	ID              *int                       `json:"id,omitempty"`
+	StatementNumber int                        `json:"statementNumber"`
+	StatementDate   time.Time                  `json:"statementDate"`
+	BankAccount     string                     `json:"bankAccount"`
+	Entries         []*BankStatementEntryInput `json:"entries"`
+}
+
 type CustomerInput struct {
 	ID                 *int     `json:"id,omitempty"`
 	CustomerID         string   `json:"customerId"`

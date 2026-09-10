@@ -6,9 +6,10 @@ export type BankStatementEntry = {
     customerId: string | null
     customerName: string | null
     transactionType: string | null
+    transactionTypeId: number | null
     outflow: number | null
     inflow: number | null
-    invoiceNumber: string | null
+    documentNumber: string | null
 }
 
 export type BankStatementPage = {
@@ -17,4 +18,12 @@ export type BankStatementPage = {
     page: number
     pageSize: number
     totalPages: number
+}
+
+export type BankStatement = {
+    id: number
+    statementNumber: number | null
+    statementDate: string | null
+    bankAccount: string | null
+    entries: BankStatementEntry[]
 }

@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// SaveBankStatement is the resolver for the saveBankStatement field.
+func (r *mutationResolver) SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error) {
+	return r.BankStatements.Save(ctx, businessYear, statement)
+}
+
 // SaveCustomer is the resolver for the saveCustomer field.
 func (r *mutationResolver) SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error) {
 	return r.Customers.Save(ctx, businessYear, customer)
@@ -42,6 +47,21 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 // BankAccounts is the resolver for the bankAccounts field.
 func (r *queryResolver) BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error) {
 	return r.BankStatements.ListAccounts(ctx, businessYear)
+}
+
+// BankTransactionTypes is the resolver for the bankTransactionTypes field.
+func (r *queryResolver) BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error) {
+	return r.BankStatements.ListTransactionTypes(ctx, businessYear)
+}
+
+// BankStatement is the resolver for the bankStatement field.
+func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, id int) (*BankStatement, error) {
+	return r.BankStatements.GetByID(ctx, businessYear, id)
+}
+
+// LatestBankStatementNumber is the resolver for the latestBankStatementNumber field.
+func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error) {
+	return r.BankStatements.LatestNumber(ctx, businessYear, bankAccount)
 }
 
 // BusinessYear is the resolver for the businessYear field.

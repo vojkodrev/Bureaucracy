@@ -51,7 +51,7 @@ const breadcrumbLabels: Record<string, string> = {
 const searchParameterLabels: Record<string, string> = {
     bankAccount: 'Bank account',
     customerId: 'Customer ID',
-    customerName: 'Customer name',
+    customerName: 'Counterparty',
     statementNumber: 'Statement number',
     from: 'Date from',
     invoiceNumber: 'Invoice number',
@@ -133,6 +133,10 @@ function customerIdFromPathname(pathname: string): string | undefined {
     }
 }
 
+function bankStatementIdFromPathname(pathname: string): string | undefined {
+    return pathname.startsWith('/bank-statement/') ? pathname.slice('/bank-statement/'.length) : undefined
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
     const invoiceNumber = invoiceNumberFromPathname(pathname)
@@ -141,6 +145,8 @@ function LayoutPage() {
     const isProductPage = pathname === '/product' || Boolean(productCode)
     const customerId = customerIdFromPathname(pathname)
     const isCustomerPage = pathname === '/customer' || Boolean(customerId)
+    const bankStatementId = bankStatementIdFromPathname(pathname)
+    const isBankStatementPage = pathname === '/bank-statement' || Boolean(bankStatementId)
     const [openMenu, setOpenMenu] = useState<string | null>(() =>
         pathname === '/customers/search' || isCustomerPage
             ? 'customers'
@@ -162,6 +168,8 @@ function LayoutPage() {
         (isProductPage ? 'Product' : undefined) ??
         (customerId ? `Customer ${customerId}` : undefined) ??
         (isCustomerPage ? 'Customer' : undefined)
+        ?? (bankStatementId ? `Bank statement ${bankStatementId}` : undefined)
+        ?? (isBankStatementPage ? 'Bank statement' : undefined)
 
     useEffect(() => {
         const searchParams = new URLSearchParams(search)
@@ -356,6 +364,16 @@ function LayoutPage() {
                                         >
                                             <Landmark />
                                             <span>Bank statements</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={isBankStatementPage}
+                                            tooltip="Bank statement"
+                                            render={<NavLink to="/bank-statement" />}
+                                        >
+                                            <Plus />
+                                            <span>Bank statement</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>

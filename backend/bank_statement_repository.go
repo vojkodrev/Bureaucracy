@@ -6,10 +6,242 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"bureaucracy/backend/graph/model"
 )
 
 type BankStatementRepository struct {
 	database *sql.DB
+}
+
+func (repository *BankStatementRepository) ListTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT RecNo, NumSifra, IME, VRSTA
+		FROM [%s].[dbo].[BankaZRVD]
+		WHERE NumSifra IS NOT NULL
+		ORDER BY NumSifra, RecNo`, databaseName))
+	if err != nil {
+		return nil, fmt.Errorf("list bank transaction types: %w", err)
+	}
+	defer rows.Close()
+	types := make([]*BankTransactionType, 0)
+	for rows.Next() {
+		transactionType := &BankTransactionType{}
+		if err := rows.Scan(&transactionType.ID, &transactionType.Code, &transactionType.Name, &transactionType.Direction); err != nil {
+			return nil, fmt.Errorf("scan bank transaction type: %w", err)
+		}
+		types = append(types, transactionType)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read bank transaction types: %w", err)
+	}
+	return types, nil
+}
+
+func (repository *BankStatementRepository) LatestNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	account := ""
+	if bankAccount != nil {
+		account = strings.TrimSpace(*bankAccount)
+	}
+	var latest sql.NullInt64
+	if err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT MAX(CAST(Stevilka AS int))
+		FROM [%s].[dbo].[BankaZRSaldo]
+		WHERE ISNULL(Deleted, 0) = 0 AND (@bankAccount = '' OR Racun = @bankAccount)`, databaseName),
+		sql.Named("bankAccount", account)).Scan(&latest); err != nil {
+		return nil, fmt.Errorf("get latest bank statement number: %w", err)
+	}
+	if !latest.Valid {
+		return nil, nil
+	}
+	value := int(latest.Int64)
+	return &value, nil
+}
+
+func (repository *BankStatementRepository) GetByID(ctx context.Context, businessYear string, id int) (*BankStatement, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	if id < 1 {
+		return nil, fmt.Errorf("id must be positive")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	statement := &BankStatement{ID: id}
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT Stevilka, Datum, Racun
+		FROM [%s].[dbo].[BankaZRSaldo]
+		WHERE RecNo = @id AND ISNULL(Deleted, 0) = 0`, databaseName), sql.Named("id", id)).Scan(
+		&statement.StatementNumber, &statement.StatementDate, &statement.BankAccount)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement: %w", err)
+	}
+
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT transactionRow.RecNo, transactionRow.Datum, transactionRow.SifraPartnerja,
+			transactionRow.ImePartnerja, transactionType.IME, transactionRow.VrstaDogodka,
+			transactionRow.VBreme, transactionRow.VDobro, transactionRow.Stevilka
+		FROM [%s].[dbo].[BankaZR] transactionRow
+		LEFT JOIN [%s].[dbo].[BankaZRVD] transactionType
+		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
+		WHERE transactionRow.Banka = @bankAccount
+		  AND CAST(transactionRow.Datum AS date) = CAST(@statementDate AS date)
+		ORDER BY transactionRow.RecNo`, databaseName, databaseName),
+		sql.Named("bankAccount", statement.BankAccount), sql.Named("statementDate", statement.StatementDate))
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement entries: %w", err)
+	}
+	defer rows.Close()
+	statement.Entries = make([]*BankStatementEntry, 0)
+	for rows.Next() {
+		entry := &BankStatementEntry{StatementID: id, StatementNumber: statement.StatementNumber}
+		if err := rows.Scan(&entry.ID, &entry.PaymentDate, &entry.CustomerID, &entry.CustomerName,
+			&entry.TransactionType, &entry.TransactionTypeID, &entry.Outflow, &entry.Inflow,
+			&entry.DocumentNumber); err != nil {
+			return nil, fmt.Errorf("scan bank statement entry: %w", err)
+		}
+		statement.Entries = append(statement.Entries, entry)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read bank statement entries: %w", err)
+	}
+	return statement, nil
+}
+
+func (repository *BankStatementRepository) Save(ctx context.Context, businessYear string, input model.BankStatementInput) (*BankStatement, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	input.BankAccount = strings.TrimSpace(input.BankAccount)
+	if input.StatementNumber < 0 || input.StatementNumber > 32767 {
+		return nil, fmt.Errorf("statementNumber must be between 0 and 32767")
+	}
+	if input.BankAccount == "" {
+		return nil, fmt.Errorf("bankAccount is required")
+	}
+	for index, entry := range input.Entries {
+		if entry == nil {
+			return nil, fmt.Errorf("entry %d is required", index+1)
+		}
+		outflow, inflow := 0.0, 0.0
+		if entry.Outflow != nil {
+			outflow = *entry.Outflow
+		}
+		if entry.Inflow != nil {
+			inflow = *entry.Inflow
+		}
+		if outflow < 0 || inflow < 0 || (outflow > 0 && inflow > 0) {
+			return nil, fmt.Errorf("entry %d must have a non-negative outflow or inflow, not both", index+1)
+		}
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	tx, err := repository.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin saving bank statement: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err = tx.ExecContext(ctx, "SET XACT_ABORT ON"); err != nil {
+		return nil, err
+	}
+
+	statementID := 0
+	var oldDate *time.Time
+	var oldAccount *string
+	if input.ID != nil && *input.ID > 0 {
+		statementID = *input.ID
+		if err = tx.QueryRowContext(ctx, fmt.Sprintf(`SELECT Datum, Racun FROM [%s].[dbo].[BankaZRSaldo] WHERE RecNo=@id`, databaseName), sql.Named("id", statementID)).Scan(&oldDate, &oldAccount); err != nil {
+			return nil, fmt.Errorf("find bank statement for update: %w", err)
+		}
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[BankaZRSaldo]
+			SET Stevilka=@number, Datum=@date, Racun=@account, SaldoBreme=@outflow, SaldoDobro=@inflow, Deleted=0 WHERE RecNo=@id`, databaseName),
+			sql.Named("id", statementID), sql.Named("number", input.StatementNumber), sql.Named("date", input.StatementDate), sql.Named("account", input.BankAccount),
+			sql.Named("outflow", sumEntryAmounts(input.Entries, true)), sql.Named("inflow", sumEntryAmounts(input.Entries, false)))
+	} else {
+		err = tx.QueryRowContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[BankaZRSaldo]
+			(Stevilka, Datum, Racun, SaldoBreme, SaldoDobro, Deleted) OUTPUT INSERTED.RecNo
+			VALUES (@number, @date, @account, @outflow, @inflow, 0)`, databaseName),
+			sql.Named("number", input.StatementNumber), sql.Named("date", input.StatementDate), sql.Named("account", input.BankAccount),
+			sql.Named("outflow", sumEntryAmounts(input.Entries, true)), sql.Named("inflow", sumEntryAmounts(input.Entries, false))).Scan(&statementID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("save bank statement header: %w", err)
+	}
+
+	if _, err = tx.ExecContext(ctx, "CREATE TABLE #SavedBankEntries (RecNo int NOT NULL PRIMARY KEY)"); err != nil {
+		return nil, err
+	}
+	for _, entry := range input.Entries {
+		entryID := 0
+		args := []any{sql.Named("date", input.StatementDate), sql.Named("account", input.BankAccount),
+			sql.Named("customerID", entry.CustomerID), sql.Named("customerName", entry.CustomerName),
+			sql.Named("eventType", entry.TransactionTypeID), sql.Named("outflow", entry.Outflow),
+			sql.Named("inflow", entry.Inflow), sql.Named("documentNumber", entry.DocumentNumber)}
+		if entry.ID != nil && *entry.ID > 0 {
+			entryID = *entry.ID
+			args = append(args, sql.Named("id", entryID))
+			result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[BankaZR]
+				SET Datum=@date, Banka=@account, SifraPartnerja=@customerID, ImePartnerja=@customerName,
+					VrstaDogodka=@eventType, VBreme=@outflow, VDobro=@inflow, Stevilka=@documentNumber
+				WHERE RecNo=@id`, databaseName), args...)
+			if updateErr != nil {
+				return nil, fmt.Errorf("update bank statement entry: %w", updateErr)
+			}
+			if affected, _ := result.RowsAffected(); affected != 1 {
+				return nil, fmt.Errorf("bank statement entry %d was not found", entryID)
+			}
+		} else {
+			err = tx.QueryRowContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[BankaZR]
+				(Datum, Banka, SifraPartnerja, ImePartnerja, VrstaDogodka, VBreme, VDobro, Stevilka, JeZR, SIT, TKDIS)
+				OUTPUT INSERTED.RecNo VALUES (@date, @account, @customerID, @customerName, @eventType, @outflow, @inflow, @documentNumber, -1, -1, 0)`, databaseName), args...).Scan(&entryID)
+			if err != nil {
+				return nil, fmt.Errorf("insert bank statement entry: %w", err)
+			}
+		}
+		if _, err = tx.ExecContext(ctx, "INSERT INTO #SavedBankEntries (RecNo) VALUES (@id)", sql.Named("id", entryID)); err != nil {
+			return nil, err
+		}
+	}
+	if oldDate != nil && oldAccount != nil {
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE transactionRow FROM [%s].[dbo].[BankaZR] transactionRow
+			WHERE transactionRow.Banka=@oldAccount AND CAST(transactionRow.Datum AS date)=CAST(@oldDate AS date)
+			AND NOT EXISTS (SELECT 1 FROM #SavedBankEntries saved WHERE saved.RecNo=transactionRow.RecNo)`, databaseName),
+			sql.Named("oldAccount", oldAccount), sql.Named("oldDate", oldDate))
+		if err != nil {
+			return nil, fmt.Errorf("remove stale bank statement entries: %w", err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit bank statement: %w", err)
+	}
+	return repository.GetByID(ctx, businessYear, statementID)
+}
+
+func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) float64 {
+	total := 0.0
+	for _, entry := range entries {
+		if entry == nil {
+			continue
+		}
+		value := entry.Inflow
+		if outflow {
+			value = entry.Outflow
+		}
+		if value != nil {
+			total += *value
+		}
+	}
+	return total
 }
 
 func NewBankStatementRepository(database *sql.DB) *BankStatementRepository {
@@ -140,6 +372,7 @@ func (repository *BankStatementRepository) Search(
 			transactionRow.SifraPartnerja,
 			transactionRow.ImePartnerja,
 			transactionType.IME,
+			transactionRow.VrstaDogodka,
 			transactionRow.VBreme,
 			transactionRow.VDobro,
 			transactionRow.Stevilka
@@ -169,9 +402,10 @@ func (repository *BankStatementRepository) Search(
 			&entry.CustomerID,
 			&entry.CustomerName,
 			&entry.TransactionType,
+			&entry.TransactionTypeID,
 			&entry.Outflow,
 			&entry.Inflow,
-			&entry.InvoiceNumber,
+			&entry.DocumentNumber,
 		); err != nil {
 			return nil, fmt.Errorf("scan bank statement entry: %w", err)
 		}

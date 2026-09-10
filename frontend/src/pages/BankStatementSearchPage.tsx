@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import BankAccountComboboxField from '@/components/BankAccountComboboxField'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
@@ -65,7 +65,7 @@ const searchBankStatementsQuery = `
         ) {
             entries {
                 id statementId statementNumber paymentDate customerId customerName
-                transactionType outflow inflow invoiceNumber
+                transactionType transactionTypeId outflow inflow documentNumber
             }
             totalCount page pageSize totalPages
         }
@@ -104,6 +104,7 @@ function optionalStatementNumber(value: string): number | null {
 }
 
 function BankStatementSearchPage() {
+    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const search = useMemo(() => searchFormFromParams(searchParams), [searchParams])
     const searchKey = useMemo(() => new URLSearchParams(search).toString(), [search])
@@ -236,7 +237,7 @@ function BankStatementSearchPage() {
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <CustomerPickerField id="statement-customer-id" label="Customer number" name="customerId" customerId={customerId} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} />
                                 <Field>
-                                    <FieldLabel htmlFor="statement-customer-name">Customer name</FieldLabel>
+                                    <FieldLabel htmlFor="statement-customer-name">Counterparty</FieldLabel>
                                     <Input id="statement-customer-name" type="search" name="customerName" value={customerName} autoComplete="off" onChange={(event) => setCustomerName(event.target.value)} />
                                 </Field>
                             </div>
@@ -256,12 +257,12 @@ function BankStatementSearchPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Payment date</TableHead>
-                            <TableHead>Customer name</TableHead>
-                            <TableHead>Transaction type</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Counterparty</TableHead>
                             <TableHead className="text-right">Outflow</TableHead>
                             <TableHead className="text-right">Inflow</TableHead>
-                            <TableHead>Invoice number</TableHead>
+                            <TableHead>Document number</TableHead>
+                            <TableHead>Transaction type</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -273,17 +274,17 @@ function BankStatementSearchPage() {
                             const netMovement = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0), 0)
                             return (
                                 <Fragment key={statement.statementId}>
-                                    <TableRow className="bg-muted/60">
+                                    <TableRow className="cursor-pointer bg-muted/60" onClick={() => navigate(`/bank-statement/${statement.statementId}`)}>
                                         <TableCell colSpan={6} className="font-semibold">Statement {statement.statementNumber ?? '—'}</TableCell>
                                     </TableRow>
                                     {entries.map((entry) => (
                                         <TableRow key={entry.id}>
                                             <TableCell>{formatDate(entry.paymentDate)}</TableCell>
                                             <TableCell>{entry.customerName || '—'}</TableCell>
-                                            <TableCell>{entry.transactionType || '—'}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.outflow == null ? '—' : formatCurrency(entry.outflow)}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.inflow == null ? '—' : formatCurrency(entry.inflow)}</TableCell>
-                                            <TableCell>{entry.invoiceNumber || '—'}</TableCell>
+                                            <TableCell>{entry.documentNumber || '—'}</TableCell>
+                                            <TableCell>{entry.transactionType || '—'}</TableCell>
                                         </TableRow>
                                     ))}
                                     <TableRow className="border-b-2 font-medium">

@@ -10,16 +10,32 @@ type BankAccount struct {
 }
 
 type BankStatementEntry struct {
-	ID              int        `json:"id"`
-	StatementID     int        `json:"statementId"`
-	StatementNumber *int       `json:"statementNumber"`
-	PaymentDate     *time.Time `json:"paymentDate"`
-	CustomerID      *string    `json:"customerId"`
-	CustomerName    *string    `json:"customerName"`
-	TransactionType *string    `json:"transactionType"`
-	Outflow         *float64   `json:"outflow"`
-	Inflow          *float64   `json:"inflow"`
-	InvoiceNumber   *string    `json:"invoiceNumber"`
+	ID                int        `json:"id"`
+	StatementID       int        `json:"statementId"`
+	StatementNumber   *int       `json:"statementNumber"`
+	PaymentDate       *time.Time `json:"paymentDate"`
+	CustomerID        *string    `json:"customerId"`
+	CustomerName      *string    `json:"customerName"`
+	TransactionType   *string    `json:"transactionType"`
+	TransactionTypeID *int       `json:"transactionTypeId"`
+	Outflow           *float64   `json:"outflow"`
+	Inflow            *float64   `json:"inflow"`
+	DocumentNumber    *string    `json:"documentNumber"`
+}
+
+type BankStatement struct {
+	ID              int                   `json:"id"`
+	StatementNumber *int                  `json:"statementNumber"`
+	StatementDate   *time.Time            `json:"statementDate"`
+	BankAccount     *string               `json:"bankAccount"`
+	Entries         []*BankStatementEntry `json:"entries"`
+}
+
+type BankTransactionType struct {
+	ID        int     `json:"id"`
+	Code      *int    `json:"code"`
+	Name      *string `json:"name"`
+	Direction *string `json:"direction"`
 }
 
 type BankStatementPage struct {
