@@ -179,5 +179,8 @@ func businessYearOrderBy(sortBy *string, sortDirection *string) (string, error) 
 	if direction != "ASC" && direction != "DESC" {
 		return "", fmt.Errorf("sortDirection must be asc or desc")
 	}
+	if column == "Oznaka" {
+		return column + " " + direction, nil
+	}
 	return column + " " + direction + ", Oznaka " + direction, nil
 }
