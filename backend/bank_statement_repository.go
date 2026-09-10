@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -15,12 +16,43 @@ func NewBankStatementRepository(database *sql.DB) *BankStatementRepository {
 	return &BankStatementRepository{database: database}
 }
 
+func (repository *BankStatementRepository) ListAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT RecNo, COALESCE(Sifra, ''), Opis, COALESCE(StevilkaRacuna, ZR)
+		FROM [%s].[dbo].[TolarskiRacuni]
+		WHERE NULLIF(LTRIM(RTRIM(Sifra)), '') IS NOT NULL
+		ORDER BY Sifra, RecNo`, databaseName))
+	if err != nil {
+		return nil, fmt.Errorf("list bank accounts: %w", err)
+	}
+	defer rows.Close()
+
+	accounts := make([]*BankAccount, 0)
+	for rows.Next() {
+		account := &BankAccount{}
+		if err := rows.Scan(&account.ID, &account.Code, &account.Name, &account.AccountNumber); err != nil {
+			return nil, fmt.Errorf("scan bank account: %w", err)
+		}
+		accounts = append(accounts, account)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read bank accounts: %w", err)
+	}
+	return accounts, nil
+}
+
 func (repository *BankStatementRepository) Search(
 	ctx context.Context,
 	businessYear string,
 	dateFrom *time.Time,
 	dateTo *time.Time,
 	statementNumber *int,
+	bankAccount *string,
 	customerID *string,
 	customerName *string,
 	page int,
@@ -43,10 +75,15 @@ func (repository *BankStatementRepository) Search(
 	}
 
 	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	bankAccountValue := ""
+	if bankAccount != nil {
+		bankAccountValue = strings.TrimSpace(*bankAccount)
+	}
 	arguments := []any{
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
+		sql.Named("bankAccount", bankAccountValue),
 		sql.Named("customerID", optionalLikePattern(customerID)),
 		sql.Named("customerName", optionalLikePattern(customerName)),
 	}
@@ -62,6 +99,7 @@ func (repository *BankStatementRepository) Search(
 		FROM [%s].[dbo].[BankaZRSaldo] statementRow
 		WHERE ISNULL(statementRow.Deleted, 0) = 0
 		  AND (@statementNumber IS NULL OR statementRow.Stevilka = @statementNumber)
+		  AND (@bankAccount = '' OR statementRow.Racun = @bankAccount)
 		  AND EXISTS (
 			SELECT 1
 			FROM [%s].[dbo].[BankaZR] transactionRow
@@ -83,6 +121,7 @@ func (repository *BankStatementRepository) Search(
 			FROM [%s].[dbo].[BankaZRSaldo] statementRow
 			WHERE ISNULL(statementRow.Deleted, 0) = 0
 			  AND (@statementNumber IS NULL OR statementRow.Stevilka = @statementNumber)
+			  AND (@bankAccount = '' OR statementRow.Racun = @bankAccount)
 			  AND EXISTS (
 				SELECT 1
 				FROM [%s].[dbo].[BankaZR] transactionRow

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import BankAccountComboboxField from '@/components/BankAccountComboboxField'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import Pager from '@/components/Pager'
@@ -27,6 +28,7 @@ type SearchForm = {
     from: string
     to: string
     statementNumber: string
+    bankAccount: string
     customerId: string
     customerName: string
     page: string
@@ -44,6 +46,7 @@ const searchBankStatementsQuery = `
         $dateFrom: Time
         $dateTo: Time
         $statementNumber: Int
+        $bankAccount: String
         $customerId: String
         $customerName: String
         $page: Int
@@ -54,6 +57,7 @@ const searchBankStatementsQuery = `
             dateFrom: $dateFrom
             dateTo: $dateTo
             statementNumber: $statementNumber
+            bankAccount: $bankAccount
             customerId: $customerId
             customerName: $customerName
             page: $page
@@ -75,6 +79,7 @@ function searchFormFromParams(params: URLSearchParams): SearchForm {
         from: params.get('from') ?? '',
         to: params.get('to') ?? '',
         statementNumber: params.get('statementNumber') ?? '',
+        bankAccount: params.get('bankAccount') ?? '',
         customerId: params.get('customerId') ?? '',
         customerName: params.get('customerName') ?? '',
         page: params.get('page') ?? String(defaultPage),
@@ -84,7 +89,7 @@ function searchFormFromParams(params: URLSearchParams): SearchForm {
 
 function searchParamsFromForm(search: SearchForm): URLSearchParams {
     const params = new URLSearchParams()
-    for (const key of ['from', 'to', 'statementNumber', 'customerId', 'customerName'] as const) {
+    for (const key of ['from', 'to', 'statementNumber', 'bankAccount', 'customerId', 'customerName'] as const) {
         if (search[key]) params.set(key, search[key])
     }
     params.set('page', search.page)
@@ -104,6 +109,7 @@ function BankStatementSearchPage() {
     const searchKey = useMemo(() => new URLSearchParams(search).toString(), [search])
     const [customerId, setCustomerId] = useState(search.customerId)
     const [customerName, setCustomerName] = useState(search.customerName)
+    const [bankAccount, setBankAccount] = useState(search.bankAccount)
     const [dateFrom, setDateFrom] = useState(() => dateFromSearchValue(search.from))
     const [dateTo, setDateTo] = useState(() => dateFromSearchValue(search.to))
     const [result, setResult] = useState<{
@@ -128,9 +134,10 @@ function BankStatementSearchPage() {
     useEffect(() => {
         setCustomerId(search.customerId)
         setCustomerName(search.customerName)
+        setBankAccount(search.bankAccount)
         setDateFrom(dateFromSearchValue(search.from))
         setDateTo(dateFromSearchValue(search.to))
-    }, [search.customerId, search.customerName, search.from, search.to])
+    }, [search.bankAccount, search.customerId, search.customerName, search.from, search.to])
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -144,6 +151,7 @@ function BankStatementSearchPage() {
                     dateFrom: optionalDate(search.from),
                     dateTo: optionalDate(search.to),
                     statementNumber: optionalStatementNumber(search.statementNumber),
+                    bankAccount: optionalFilter(search.bankAccount),
                     customerId: optionalFilter(search.customerId),
                     customerName: optionalFilter(search.customerName),
                     page: positiveInteger(search.page, defaultPage),
@@ -176,6 +184,7 @@ function BankStatementSearchPage() {
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
             statementNumber: String(formData.get('statementNumber') ?? '').trim(),
+            bankAccount,
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
             page: String(defaultPage),
@@ -186,6 +195,7 @@ function BankStatementSearchPage() {
     function clearSearch() {
         setCustomerId('')
         setCustomerName('')
+        setBankAccount('')
         setDateFrom(undefined)
         setDateTo(undefined)
         setSearchParams({})
@@ -217,6 +227,7 @@ function BankStatementSearchPage() {
                                     <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
                                     <Input id="statement-number" type="number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
                                 </Field>
+                                <BankAccountComboboxField id="bank-account" label="Bank account" value={bankAccount} onChange={setBankAccount} />
                             </div>
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <DatePickerField id="statement-date-from" label="Payment date from" name="from" date={dateFrom} onSelect={setDateFrom} />

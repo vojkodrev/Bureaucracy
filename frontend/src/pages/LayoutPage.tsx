@@ -49,6 +49,7 @@ const breadcrumbLabels: Record<string, string> = {
 }
 
 const searchParameterLabels: Record<string, string> = {
+    bankAccount: 'Bank account',
     customerId: 'Customer ID',
     customerName: 'Customer name',
     statementNumber: 'Statement number',

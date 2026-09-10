@@ -2,6 +2,13 @@ package main
 
 import "time"
 
+type BankAccount struct {
+	ID            int     `json:"id"`
+	Code          string  `json:"code"`
+	Name          *string `json:"name"`
+	AccountNumber *string `json:"accountNumber"`
+}
+
 type BankStatementEntry struct {
 	ID              int        `json:"id"`
 	StatementID     int        `json:"statementId"`

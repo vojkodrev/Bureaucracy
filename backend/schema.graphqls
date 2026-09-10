@@ -59,6 +59,13 @@ type BankStatementEntry {
   invoiceNumber: String
 }
 
+type BankAccount {
+  id: Int!
+  code: String!
+  name: String
+  accountNumber: String
+}
+
 type BankStatementPage {
   entries: [BankStatementEntry!]!
   totalCount: Int!
@@ -211,11 +218,14 @@ type Query {
     dateFrom: Time
     dateTo: Time
     statementNumber: Int
+    bankAccount: String
     customerId: String
     customerName: String
     page: Int = 1
     pageSize: Int = 20
   ): BankStatementPage!
+
+  bankAccounts(businessYear: String!): [BankAccount!]!
   businessYear(code: String!): BusinessYear
 
   businessYears(

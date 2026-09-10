@@ -38,6 +38,13 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	BankAccount struct {
+		AccountNumber func(childComplexity int) int
+		Code          func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+	}
+
 	BankStatementEntry struct {
 		CustomerID      func(childComplexity int) int
 		CustomerName    func(childComplexity int) int
@@ -186,6 +193,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		BankAccounts         func(childComplexity int, businessYear string) int
 		BusinessYear         func(childComplexity int, code string) int
 		BusinessYears        func(childComplexity int, page *int, pageSize *int) int
 		Countries            func(childComplexity int, businessYear string) int
@@ -193,7 +201,7 @@ type ComplexityRoot struct {
 		Invoice              func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate  func(childComplexity int, businessYear string) int
 		Product              func(childComplexity int, businessYear string, productCode string) int
-		SearchBankStatements func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, customerID *string, customerName *string, page *int, pageSize *int) int
+		SearchBankStatements func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) int
 		SearchCustomers      func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices       func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchProducts       func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -218,7 +226,8 @@ type MutationResolver interface {
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
 }
 type QueryResolver interface {
-	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error)
+	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error)
+	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
@@ -249,6 +258,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
+
+	case "BankAccount.accountNumber":
+		if e.ComplexityRoot.BankAccount.AccountNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankAccount.AccountNumber(childComplexity), true
+	case "BankAccount.code":
+		if e.ComplexityRoot.BankAccount.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankAccount.Code(childComplexity), true
+	case "BankAccount.id":
+		if e.ComplexityRoot.BankAccount.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankAccount.ID(childComplexity), true
+	case "BankAccount.name":
+		if e.ComplexityRoot.BankAccount.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankAccount.Name(childComplexity), true
 
 	case "BankStatementEntry.customerId":
 		if e.ComplexityRoot.BankStatementEntry.CustomerID == nil {
@@ -909,6 +943,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ProductPage.TotalPages(childComplexity), true
 
+	case "Query.bankAccounts":
+		if e.ComplexityRoot.Query.BankAccounts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_bankAccounts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BankAccounts(childComplexity, args["businessYear"].(string)), true
 	case "Query.businessYear":
 		if e.ComplexityRoot.Query.BusinessYear == nil {
 			break
@@ -997,7 +1042,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["customerId"].(*string), args["customerName"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchCustomers":
 		if e.ComplexityRoot.Query.SearchCustomers == nil {
 			break
@@ -1173,6 +1218,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+
+func (ec *executionContext) childFields_BankAccount(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_BankAccount_id(ctx, field)
+	case "code":
+		return ec.fieldContext_BankAccount_code(ctx, field)
+	case "name":
+		return ec.fieldContext_BankAccount_name(ctx, field)
+	case "accountNumber":
+		return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BankAccount", field.Name)
+}
 
 func (ec *executionContext) childFields_BankStatementEntry(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
@@ -1666,6 +1725,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_bankAccounts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_businessYear_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1831,38 +1904,46 @@ func (ec *executionContext) field_Query_searchBankStatements_args(ctx context.Co
 		return nil, err
 	}
 	args["statementNumber"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "bankAccount",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerId"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+	args["bankAccount"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerName"] = arg5
-	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["customerId"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerName"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg6
-	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg7
+	args["pageSize"] = arg8
 	return args, nil
 }
 
@@ -2149,6 +2230,98 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _BankAccount_id(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankAccount_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BankAccount_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankAccount", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _BankAccount_code(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankAccount_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BankAccount_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankAccount", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankAccount_name(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankAccount_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankAccount_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankAccount", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankAccount_accountNumber(ctx context.Context, field graphql.CollectedField, obj *BankAccount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankAccount_accountNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AccountNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankAccount_accountNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankAccount", field, false, false, errors.New("field of type String does not have child fields"))
+}
 
 func (ec *executionContext) _BankStatementEntry_id(ctx context.Context, field graphql.CollectedField, obj *BankStatementEntry) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -4692,7 +4865,7 @@ func (ec *executionContext) _Query_searchBankStatements(ctx context.Context, fie
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["bankAccount"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *BankStatementPage) graphql.Marshaler {
@@ -4720,6 +4893,50 @@ func (ec *executionContext) fieldContext_Query_searchBankStatements(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_searchBankStatements_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_bankAccounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_bankAccounts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BankAccounts(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*BankAccount) graphql.Marshaler {
+			return ec.marshalNBankAccount2ᚕᚖbureaucracyᚋbackendᚐBankAccountᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_bankAccounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BankAccount(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bankAccounts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6845,6 +7062,59 @@ func (ec *executionContext) unmarshalInputProductInput(ctx context.Context, obj 
 
 // region    **************************** object.gotpl ****************************
 
+var bankAccountImplementors = []string{"BankAccount"}
+
+func (ec *executionContext) _BankAccount(ctx context.Context, sel ast.SelectionSet, obj *BankAccount) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bankAccountImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BankAccount")
+		case "id":
+			out.Values[i] = ec._BankAccount_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "code":
+			out.Values[i] = ec._BankAccount_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._BankAccount_name(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "accountNumber":
+			out.Values[i] = ec._BankAccount_accountNumber(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var bankStatementEntryImplementors = []string{"BankStatementEntry"}
 
 func (ec *executionContext) _BankStatementEntry(ctx context.Context, sel ast.SelectionSet, obj *BankStatementEntry) graphql.Marshaler {
@@ -7888,6 +8158,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "bankAccounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bankAccounts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "businessYear":
 			field := field
 
@@ -8609,6 +8901,32 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNBankAccount2ᚕᚖbureaucracyᚋbackendᚐBankAccountᚄ(ctx context.Context, sel ast.SelectionSet, v []*BankAccount) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBankAccount2ᚖbureaucracyᚋbackendᚐBankAccount(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBankAccount2ᚖbureaucracyᚋbackendᚐBankAccount(ctx context.Context, sel ast.SelectionSet, v *BankAccount) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BankAccount(ctx, sel, v)
+}
 
 func (ec *executionContext) marshalNBankStatementEntry2ᚕᚖbureaucracyᚋbackendᚐBankStatementEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*BankStatementEntry) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
