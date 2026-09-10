@@ -259,10 +259,10 @@ function BankStatementSearchPage() {
                         <TableRow>
                             <TableHead>Date</TableHead>
                             <TableHead>Counterparty</TableHead>
+                            <TableHead>Transaction type</TableHead>
                             <TableHead className="text-right">Outflow</TableHead>
                             <TableHead className="text-right">Inflow</TableHead>
                             <TableHead>Document number</TableHead>
-                            <TableHead>Transaction type</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -281,10 +281,10 @@ function BankStatementSearchPage() {
                                         <TableRow key={entry.id}>
                                             <TableCell>{formatDate(entry.paymentDate)}</TableCell>
                                             <TableCell>{entry.customerName || '—'}</TableCell>
+                                            <TableCell>{entry.transactionType || '—'}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.outflow == null ? '—' : formatCurrency(entry.outflow)}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.inflow == null ? '—' : formatCurrency(entry.inflow)}</TableCell>
                                             <TableCell>{entry.documentNumber || '—'}</TableCell>
-                                            <TableCell>{entry.transactionType || '—'}</TableCell>
                                         </TableRow>
                                     ))}
                                     <TableRow className="border-b-2 font-medium">
