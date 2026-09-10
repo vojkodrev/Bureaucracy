@@ -274,7 +274,7 @@ function BankStatementSearchPage() {
                             const netMovement = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0), 0)
                             return (
                                 <Fragment key={statement.statementId}>
-                                    <TableRow className="cursor-pointer bg-muted/60" onClick={() => navigate(`/bank-statement/${statement.statementId}`)}>
+                                    <TableRow className="cursor-pointer bg-muted/60" onClick={() => navigate(`/bank-statement/${statement.statementNumber}`)}>
                                         <TableCell colSpan={6} className="font-semibold">Statement {statement.statementNumber ?? '—'}</TableCell>
                                     </TableRow>
                                     {entries.map((entry) => (

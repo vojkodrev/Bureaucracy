@@ -133,7 +133,7 @@ function customerIdFromPathname(pathname: string): string | undefined {
     }
 }
 
-function bankStatementIdFromPathname(pathname: string): string | undefined {
+function bankStatementNumberFromPathname(pathname: string): string | undefined {
     return pathname.startsWith('/bank-statement/') ? pathname.slice('/bank-statement/'.length) : undefined
 }
 
@@ -145,8 +145,8 @@ function LayoutPage() {
     const isProductPage = pathname === '/product' || Boolean(productCode)
     const customerId = customerIdFromPathname(pathname)
     const isCustomerPage = pathname === '/customer' || Boolean(customerId)
-    const bankStatementId = bankStatementIdFromPathname(pathname)
-    const isBankStatementPage = pathname === '/bank-statement' || Boolean(bankStatementId)
+    const bankStatementNumber = bankStatementNumberFromPathname(pathname)
+    const isBankStatementPage = pathname === '/bank-statement' || Boolean(bankStatementNumber)
     const [openMenu, setOpenMenu] = useState<string | null>(() =>
         pathname === '/customers/search' || isCustomerPage
             ? 'customers'
@@ -170,7 +170,7 @@ function LayoutPage() {
         (isProductPage ? 'Product' : undefined) ??
         (customerId ? `Customer ${customerId}` : undefined) ??
         (isCustomerPage ? 'Customer' : undefined)
-        ?? (bankStatementId ? `Bank statement ${bankStatementId}` : undefined)
+        ?? (bankStatementNumber ? `Bank statement ${bankStatementNumber}` : undefined)
         ?? (isBankStatementPage ? 'Bank statement' : undefined)
 
     useEffect(() => {
@@ -550,7 +550,7 @@ function LayoutPage() {
                                             </BreadcrumbItem>
                                             <BreadcrumbSeparator />
                                             <BreadcrumbItem>
-                                                {bankStatementId ? (
+                                                {bankStatementNumber ? (
                                                     <BreadcrumbLink
                                                         render={<NavLink to="/bank-statement" />}
                                                     >
@@ -562,12 +562,12 @@ function LayoutPage() {
                                                     </BreadcrumbPage>
                                                 )}
                                             </BreadcrumbItem>
-                                            {bankStatementId && (
+                                            {bankStatementNumber && (
                                                 <>
                                                     <BreadcrumbSeparator />
                                                     <BreadcrumbItem>
                                                         <BreadcrumbPage>
-                                                            {bankStatementId}
+                                                            {bankStatementNumber}
                                                         </BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>

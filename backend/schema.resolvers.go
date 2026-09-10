@@ -55,8 +55,8 @@ func (r *queryResolver) BankTransactionTypes(ctx context.Context, businessYear s
 }
 
 // BankStatement is the resolver for the bankStatement field.
-func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, id int) (*BankStatement, error) {
-	return r.BankStatements.GetByID(ctx, businessYear, id)
+func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error) {
+	return r.BankStatements.GetByNumber(ctx, businessYear, statementNumber)
 }
 
 // LatestBankStatementNumber is the resolver for the latestBankStatementNumber field.

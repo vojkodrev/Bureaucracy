@@ -261,7 +261,7 @@ type Query {
 
   bankAccounts(businessYear: String!): [BankAccount!]!
   bankTransactionTypes(businessYear: String!): [BankTransactionType!]!
-  bankStatement(businessYear: String!, id: Int!): BankStatement
+  bankStatement(businessYear: String!, statementNumber: Int!): BankStatement
   latestBankStatementNumber(businessYear: String!, bankAccount: String): Int
   businessYear(code: String!): BusinessYear
 

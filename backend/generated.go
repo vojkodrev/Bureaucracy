@@ -211,7 +211,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		BankAccounts              func(childComplexity int, businessYear string) int
-		BankStatement             func(childComplexity int, businessYear string, id int) int
+		BankStatement             func(childComplexity int, businessYear string, statementNumber int) int
 		BankTransactionTypes      func(childComplexity int, businessYear string) int
 		BusinessYear              func(childComplexity int, code string) int
 		BusinessYears             func(childComplexity int, page *int, pageSize *int) int
@@ -250,7 +250,7 @@ type QueryResolver interface {
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error)
-	BankStatement(ctx context.Context, businessYear string, id int) (*BankStatement, error)
+	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
 	LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
 	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
@@ -1061,7 +1061,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.BankStatement(childComplexity, args["businessYear"].(string), args["id"].(int)), true
+		return e.ComplexityRoot.Query.BankStatement(childComplexity, args["businessYear"].(string), args["statementNumber"].(int)), true
 	case "Query.bankTransactionTypes":
 		if e.ComplexityRoot.Query.BankTransactionTypes == nil {
 			break
@@ -1936,14 +1936,14 @@ func (ec *executionContext) field_Query_bankStatement_args(ctx context.Context, 
 		return nil, err
 	}
 	args["businessYear"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "statementNumber",
 		func(ctx context.Context, v any) (int, error) {
 			return ec.unmarshalNInt2int(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["id"] = arg1
+	args["statementNumber"] = arg1
 	return args, nil
 }
 
@@ -5524,7 +5524,7 @@ func (ec *executionContext) _Query_bankStatement(ctx context.Context, field grap
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().BankStatement(ctx, fc.Args["businessYear"].(string), fc.Args["id"].(int))
+			return ec.Resolvers.Query().BankStatement(ctx, fc.Args["businessYear"].(string), fc.Args["statementNumber"].(int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *BankStatement) graphql.Marshaler {

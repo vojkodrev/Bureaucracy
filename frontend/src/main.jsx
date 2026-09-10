@@ -24,7 +24,7 @@ const router = createBrowserRouter([
         children: [
             { path: '/business-years', element: <BusinessYearsPage /> },
             { path: '/bank-statements/search', element: <BankStatementSearchPage /> },
-            { path: '/bank-statement/:statementId?', element: <BankStatementPage /> },
+            { path: '/bank-statement/:statementNumber?', element: <BankStatementPage /> },
             { path: '/customers/search', element: <CustomerSearchPage /> },
             { path: '/customer/:customerId?', element: <CustomerPage /> },
             { path: '/invoices/search', element: <InvoiceSearchPage /> },

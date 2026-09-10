@@ -43,8 +43,8 @@ import StatementTransactions from "./StatementTransactions";
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL;
 const statementQuery = `
-    query BankStatement($businessYear: String!, $id: Int!) {
-        bankStatement(businessYear: $businessYear, id: $id) {
+    query BankStatement($businessYear: String!, $statementNumber: Int!) {
+        bankStatement(businessYear: $businessYear, statementNumber: $statementNumber) {
             id
             statementNumber
             statementDate
@@ -135,18 +135,20 @@ const serialize = (
     });
 
 function BankStatementPage() {
-    const { statementId } = useParams();
-    const routeID = statementId ? Number(statementId) : null;
+    const { statementNumber: routeStatementNumberParam } = useParams();
+    const routeStatementNumber = routeStatementNumberParam
+        ? Number(routeStatementNumberParam)
+        : null;
     const navigate = useNavigate();
     const allowNavigation = useRef(false);
-    const [id, setID] = useState<number | null>(routeID);
+    const [id, setID] = useState<number | null>(null);
     const [number, setNumber] = useState("");
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [account, setAccount] = useState("");
     const [entries, setEntries] = useState<BankStatementEntry[]>([]);
     const [cleanDraft, setCleanDraft] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(Boolean(routeID));
+    const [loading, setLoading] = useState(Boolean(routeStatementNumber));
     const [saving, setSaving] = useState(false);
     const [confirmRevert, setConfirmRevert] = useState(false);
     const [numberWarning, setNumberWarning] = useState<
@@ -163,7 +165,7 @@ function BankStatementPage() {
     );
 
     const loadStatement = useCallback(async () => {
-        if (!routeID) return;
+        if (!routeStatementNumber) return;
         setLoading(true);
         setError(null);
         try {
@@ -174,7 +176,7 @@ function BankStatementPage() {
                     query: statementQuery,
                     variables: {
                         businessYear: getSelectedBusinessYear(),
-                        id: routeID,
+                        statementNumber: routeStatementNumber,
                     },
                 }),
             });
@@ -189,7 +191,7 @@ function BankStatementPage() {
                 );
             const statement = result.data?.bankStatement;
             if (!statement)
-                throw new Error(`Bank statement ${routeID} was not found`);
+                throw new Error(`Bank statement ${routeStatementNumber} was not found`);
             setID(statement.id);
             setNumber(String(statement.statementNumber ?? ""));
             setDate(fromApiDate(statement.statementDate));
@@ -213,11 +215,11 @@ function BankStatementPage() {
         } finally {
             setLoading(false);
         }
-    }, [routeID]);
+    }, [routeStatementNumber]);
     useEffect(() => {
-        if (routeID) void loadStatement();
+        if (routeStatementNumber) void loadStatement();
         else setCleanDraft(serialize(null, "", initialDate.current, "", []));
-    }, [loadStatement, routeID]);
+    }, [loadStatement, routeStatementNumber]);
     useEffect(() => {
         if (!dirty) return;
         const beforeUnload = (event: BeforeUnloadEvent) =>
@@ -288,9 +290,9 @@ function BankStatementPage() {
                     saved.entries,
                 ),
             );
-            if (routeID !== saved.id) {
+            if (routeStatementNumber !== saved.statementNumber) {
                 allowNavigation.current = true;
-                navigate(`/bank-statement/${saved.id}`);
+                navigate(`/bank-statement/${saved.statementNumber}`);
             }
         } catch (saveError) {
             setError(
@@ -384,7 +386,7 @@ function BankStatementPage() {
                     <MenubarTrigger>Edit</MenubarTrigger>
                     <MenubarContent>
                         <MenubarItem
-                            disabled={!routeID || loading || !dirty}
+                            disabled={!id || loading || !dirty}
                             onClick={() => setConfirmRevert(true)}
                         >
                             <Undo2 />

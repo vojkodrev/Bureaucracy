@@ -66,20 +66,20 @@ func (repository *BankStatementRepository) LatestNumber(ctx context.Context, bus
 	return &value, nil
 }
 
-func (repository *BankStatementRepository) GetByID(ctx context.Context, businessYear string, id int) (*BankStatement, error) {
+func (repository *BankStatementRepository) GetByNumber(ctx context.Context, businessYear string, number int) (*BankStatement, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
-	if id < 1 {
-		return nil, fmt.Errorf("id must be positive")
+	if number < 1 {
+		return nil, fmt.Errorf("statementNumber must be positive")
 	}
 	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
-	statement := &BankStatement{ID: id}
+	statement := &BankStatement{}
 	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT Stevilka, Datum, Racun
+		SELECT RecNo, Stevilka, Datum, Racun
 		FROM [%s].[dbo].[BankaZRSaldo]
-		WHERE RecNo = @id AND ISNULL(Deleted, 0) = 0`, databaseName), sql.Named("id", id)).Scan(
-		&statement.StatementNumber, &statement.StatementDate, &statement.BankAccount)
+		WHERE Stevilka = @number AND ISNULL(Deleted, 0) = 0`, databaseName), sql.Named("number", number)).Scan(
+		&statement.ID, &statement.StatementNumber, &statement.StatementDate, &statement.BankAccount)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -104,7 +104,7 @@ func (repository *BankStatementRepository) GetByID(ctx context.Context, business
 	defer rows.Close()
 	statement.Entries = make([]*BankStatementEntry, 0)
 	for rows.Next() {
-		entry := &BankStatementEntry{StatementID: id, StatementNumber: statement.StatementNumber}
+		entry := &BankStatementEntry{StatementID: statement.ID, StatementNumber: statement.StatementNumber}
 		if err := rows.Scan(&entry.ID, &entry.PaymentDate, &entry.CustomerID, &entry.CustomerName,
 			&entry.TransactionType, &entry.TransactionTypeID, &entry.Outflow, &entry.Inflow,
 			&entry.DocumentNumber); err != nil {
@@ -224,7 +224,7 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit bank statement: %w", err)
 	}
-	return repository.GetByID(ctx, businessYear, statementID)
+	return repository.GetByNumber(ctx, businessYear, input.StatementNumber)
 }
 
 func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) float64 {
