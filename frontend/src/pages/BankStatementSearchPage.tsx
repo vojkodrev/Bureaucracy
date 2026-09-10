@@ -213,13 +213,15 @@ function BankStatementSearchPage() {
                     <CardContent>
                         <FieldGroup>
                             <div className="grid gap-6 sm:grid-cols-2">
+                                <Field>
+                                    <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
+                                    <Input id="statement-number" type="number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
+                                </Field>
+                            </div>
+                            <div className="grid gap-6 sm:grid-cols-2">
                                 <DatePickerField id="statement-date-from" label="Payment date from" name="from" date={dateFrom} onSelect={setDateFrom} />
                                 <DatePickerField id="statement-date-to" label="Payment date to" name="to" date={dateTo} onSelect={setDateTo} />
                             </div>
-                            <Field>
-                                <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
-                                <Input id="statement-number" type="number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
-                            </Field>
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <CustomerPickerField id="statement-customer-id" label="Customer number" name="customerId" customerId={customerId} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} />
                                 <Field>
