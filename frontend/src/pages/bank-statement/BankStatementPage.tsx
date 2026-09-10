@@ -154,7 +154,6 @@ function BankStatementPage() {
     const [numberWarning, setNumberWarning] = useState<
         "historical" | "skipped" | null
     >(null);
-    const initialDate = useRef(date);
     const draft = serialize(id, number, date, account, entries);
     const dirty = cleanDraft !== null && cleanDraft !== draft;
     const blocker = useBlocker(
@@ -217,8 +216,23 @@ function BankStatementPage() {
         }
     }, [routeStatementNumber]);
     useEffect(() => {
-        if (routeStatementNumber) void loadStatement();
-        else setCleanDraft(serialize(null, "", initialDate.current, "", []));
+        if (routeStatementNumber) {
+            void loadStatement();
+            return;
+        }
+
+        allowNavigation.current = false;
+        const today = new Date();
+        setID(null);
+        setNumber("");
+        setDate(today);
+        setAccount("");
+        setEntries([]);
+        setCleanDraft(serialize(null, "", today, "", []));
+        setError(null);
+        setLoading(false);
+        setConfirmRevert(false);
+        setNumberWarning(null);
     }, [loadStatement, routeStatementNumber]);
     useEffect(() => {
         if (!dirty) return;
@@ -480,6 +494,7 @@ function BankStatementPage() {
                 onDiscard={() => {
                     if (blocker.state === "blocked") {
                         allowNavigation.current = true;
+                        setCleanDraft(draft);
                         blocker.proceed();
                     }
                 }}
