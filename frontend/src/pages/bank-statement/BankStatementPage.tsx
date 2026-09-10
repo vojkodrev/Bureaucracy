@@ -117,6 +117,33 @@ type SaveResponse = {
     data?: { saveBankStatement: BankStatement };
     errors?: { message: string }[];
 };
+
+async function fetchLatestStatementNumber(
+    bankAccount: string | null,
+    signal?: AbortSignal,
+): Promise<number | null> {
+    const response = await fetch(graphqlUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            query: latestQuery,
+            variables: {
+                businessYear: getSelectedBusinessYear(),
+                bankAccount,
+            },
+        }),
+        signal,
+    });
+    if (!response.ok)
+        throw new Error(
+            `Checking latest bank statement failed (${response.status})`,
+        );
+    const result = (await response.json()) as LatestResponse;
+    if (result.errors?.length)
+        throw new Error(result.errors.map(({ message }) => message).join(", "));
+    return result.data?.latestBankStatementNumber ?? null;
+}
+
 const fromApiDate = (value?: string | null) =>
     value ? dateFromSearchValue(value.slice(0, 10)) : undefined;
 const serialize = (
@@ -233,6 +260,27 @@ function BankStatementPage() {
         setLoading(false);
         setConfirmRevert(false);
         setNumberWarning(null);
+
+        const abortController = new AbortController();
+        void fetchLatestStatementNumber(null, abortController.signal)
+            .then((latest) => {
+                const nextNumber = String((latest ?? 0) + 1);
+                setNumber(nextNumber);
+                setCleanDraft(serialize(null, nextNumber, today, "", []));
+            })
+            .catch((requestError: unknown) => {
+                if (
+                    requestError instanceof DOMException &&
+                    requestError.name === "AbortError"
+                )
+                    return;
+                setError(
+                    requestError instanceof Error
+                        ? requestError.message
+                        : "Loading next bank statement number failed",
+                );
+            });
+        return () => abortController.abort();
     }, [loadStatement, routeStatementNumber]);
     useEffect(() => {
         if (!dirty) return;
@@ -321,27 +369,7 @@ function BankStatementPage() {
     const requestSave = async () => {
         if (!date || !account || number === "" || saving) return;
         try {
-            const response = await fetch(graphqlUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    query: latestQuery,
-                    variables: {
-                        businessYear: getSelectedBusinessYear(),
-                        bankAccount: account || null,
-                    },
-                }),
-            });
-            if (!response.ok)
-                throw new Error(
-                    `Checking latest bank statement failed (${response.status})`,
-                );
-            const result = (await response.json()) as LatestResponse;
-            if (result.errors?.length)
-                throw new Error(
-                    result.errors.map(({ message }) => message).join(", "),
-                );
-            const latest = result.data?.latestBankStatementNumber;
+            const latest = await fetchLatestStatementNumber(account || null);
             const value = Number(number);
             if (latest != null && value !== latest && value !== latest + 1) {
                 setNumberWarning(value > latest + 1 ? "skipped" : "historical");
