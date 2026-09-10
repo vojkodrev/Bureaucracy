@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -157,7 +157,6 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
 }
 
 function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
-    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
         () => searchFormFromParams(searchParams),
@@ -319,11 +318,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
 
     function selectCustomer(customer: Customer) {
         setSelectedCustomerId(customer.id)
-        if (mode === ComponentMode.Page && customer.customerId) {
-            navigate(`/customer/${encodeURIComponent(customer.customerId)}`)
-        } else {
-            onCustomerSelect?.(customer)
-        }
+        onCustomerSelect?.(customer)
     }
 
     return (
@@ -418,40 +413,55 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                         )}
                         {!isLoading &&
                             !error &&
-                            customers.map((customer) => (
-                                <TableRow
-                                    key={customer.id}
-                                    data-state={
-                                        selectedCustomerId === customer.id
-                                            ? 'selected'
-                                            : undefined
-                                    }
-                                    className="cursor-pointer"
-                                    tabIndex={0}
-                                    onClick={() => selectCustomer(customer)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault()
-                                            selectCustomer(customer)
+                            customers.map((customer) => {
+                                const isPageMode = mode === ComponentMode.Page
+
+                                return (
+                                    <TableRow
+                                        key={customer.id}
+                                        data-state={
+                                            selectedCustomerId === customer.id
+                                                ? 'selected'
+                                                : undefined
                                         }
-                                    }}
-                                >
-                                    <TableCell className="font-medium">
-                                        {customer.customerId ?? '—'}
-                                    </TableCell>
-                                    <TableCell>{customer.name ?? '—'}</TableCell>
-                                    <TableCell>{customer.address ?? '—'}</TableCell>
-                                    <TableCell>
-                                        {[customer.postalCode, customer.city]
-                                            .filter(Boolean)
-                                            .join(' ') || '—'}
-                                    </TableCell>
-                                    <TableCell>{customer.contact ?? '—'}</TableCell>
-                                    <TableCell>{customer.email ?? '—'}</TableCell>
-                                    <TableCell>{customer.phone ?? '—'}</TableCell>
-                                    <TableCell>{customer.taxNumber ?? '—'}</TableCell>
-                                </TableRow>
-                            ))}
+                                        className="relative cursor-pointer"
+                                        tabIndex={isPageMode ? undefined : 0}
+                                        onClick={isPageMode
+                                            ? undefined
+                                            : () => selectCustomer(customer)}
+                                        onKeyDown={isPageMode
+                                            ? undefined
+                                            : (event) => {
+                                                if (event.key === 'Enter' || event.key === ' ') {
+                                                    event.preventDefault()
+                                                    selectCustomer(customer)
+                                                }
+                                            }}
+                                    >
+                                        <TableCell className="font-medium">
+                                            {isPageMode && customer.customerId && (
+                                                <Link
+                                                    to={`/customer/${encodeURIComponent(customer.customerId)}`}
+                                                    aria-label={`Open customer ${customer.customerId}`}
+                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+                                                />
+                                            )}
+                                            {customer.customerId ?? '—'}
+                                        </TableCell>
+                                        <TableCell>{customer.name ?? '—'}</TableCell>
+                                        <TableCell>{customer.address ?? '—'}</TableCell>
+                                        <TableCell>
+                                            {[customer.postalCode, customer.city]
+                                                .filter(Boolean)
+                                                .join(' ') || '—'}
+                                        </TableCell>
+                                        <TableCell>{customer.contact ?? '—'}</TableCell>
+                                        <TableCell>{customer.email ?? '—'}</TableCell>
+                                        <TableCell>{customer.phone ?? '—'}</TableCell>
+                                        <TableCell>{customer.taxNumber ?? '—'}</TableCell>
+                                    </TableRow>
+                                )
+                            })}
                     </TableBody>
                 </Table>
             </div>

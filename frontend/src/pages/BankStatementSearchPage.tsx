@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import BankAccountComboboxField from '@/components/BankAccountComboboxField'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
@@ -104,7 +104,6 @@ function optionalStatementNumber(value: string): number | null {
 }
 
 function BankStatementSearchPage() {
-    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const search = useMemo(() => searchFormFromParams(searchParams), [searchParams])
     const searchKey = useMemo(() => new URLSearchParams(search).toString(), [search])
@@ -274,8 +273,17 @@ function BankStatementSearchPage() {
                             const netMovement = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0), 0)
                             return (
                                 <Fragment key={statement.statementId}>
-                                    <TableRow className="cursor-pointer bg-muted/60" onClick={() => navigate(`/bank-statement/${statement.statementNumber}`)}>
-                                        <TableCell colSpan={6} className="font-semibold">Statement {statement.statementNumber ?? '—'}</TableCell>
+                                    <TableRow className="relative cursor-pointer bg-muted/60">
+                                        <TableCell colSpan={6} className="font-semibold">
+                                            {statement.statementNumber != null && (
+                                                <Link
+                                                    to={`/bank-statement/${statement.statementNumber}`}
+                                                    aria-label={`Open bank statement ${statement.statementNumber}`}
+                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+                                                />
+                                            )}
+                                            Statement {statement.statementNumber ?? '—'}
+                                        </TableCell>
                                     </TableRow>
                                     {entries.map((entry) => (
                                         <TableRow key={entry.id}>
