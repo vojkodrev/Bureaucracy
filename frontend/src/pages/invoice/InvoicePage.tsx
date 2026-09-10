@@ -615,13 +615,13 @@ function InvoicePage() {
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} onCustomerPaymentTermChange={(paymentTerm) => setDueDate(dateAfterDays(invoiceDate, paymentTerm))} />
-                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} dueDate={dueDate} paymentDate={paymentDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onDueDateChange={setDueDate} onPaymentDateChange={setPaymentDate} onServiceDateChange={setServiceDate} />
+                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} dueDate={dueDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onDueDateChange={setDueDate} onServiceDateChange={setServiceDate} />
             </div>
             <div className="mt-8 space-y-6">
                 <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel><Textarea id="introductory-text" name="introductoryText" value={introductoryText} onChange={(event) => setIntroductoryText(event.target.value)} /></Field>
                 <Products items={invoiceItems} isLoading={isLoading} error={error} onItemsChange={setInvoiceItems} />
                 <Field><FieldLabel htmlFor="closing-text">Closing text</FieldLabel><Textarea id="closing-text" name="closingText" value={closingText} onChange={(event) => setClosingText(event.target.value)} /></Field>
-                <InvoiceSummary total={totalIncludingVat} paidAmount={paidAmount} onPaidAmountChange={setPaidAmount} />
+                <InvoiceSummary total={totalIncludingVat} paidAmount={paidAmount} paymentDate={paymentDate} />
             </div>
         </div>
     )
