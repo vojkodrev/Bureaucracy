@@ -1,6 +1,7 @@
 import { useState } from "react";
 import BankTransactionTypeComboboxField from "@/components/BankTransactionTypeComboboxField";
 import CustomerPickerField from "@/components/CustomerPickerField";
+import InvoicePickerField from "@/components/InvoicePickerField";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -41,6 +42,9 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
     const [inflow, setInflow] = useState(
         entry?.inflow == null ? "" : String(entry.inflow),
     );
+    const [documentNumber, setDocumentNumber] = useState(
+        entry?.documentNumber ?? "",
+    );
     const outflowValue = numberOrNull(outflow);
     const inflowValue = numberOrNull(inflow);
     const canSave =
@@ -60,7 +64,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
             transactionTypeId,
             outflow: outflowValue,
             inflow: inflowValue,
-            documentNumber: entry?.documentNumber ?? null,
+            documentNumber: documentNumber.trim() || null,
         });
     return (
         <Dialog open onOpenChange={onOpenChange}>
@@ -94,6 +98,14 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                             }
                         />
                     </Field>
+                    <InvoicePickerField
+                        id="transaction-document-number"
+                        label="Document number"
+                        name="documentNumber"
+                        invoiceNumber={documentNumber}
+                        onInvoiceNumberChange={setDocumentNumber}
+                    />
+                    <div />
                     <BankTransactionTypeComboboxField
                         id="transaction-type"
                         label="Transaction type"

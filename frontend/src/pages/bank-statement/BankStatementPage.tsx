@@ -13,7 +13,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
     Menubar,
@@ -394,6 +399,9 @@ function BankStatementPage() {
                 </p>
             )}
             <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle>General information</CardTitle>
+                </CardHeader>
                 <CardContent>
                     <FieldGroup>
                         <div className="grid gap-6 sm:grid-cols-3">
@@ -434,6 +442,9 @@ function BankStatementPage() {
                 onChange={setEntries}
             />
             <Card className="mt-6 ml-auto w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Summary</CardTitle>
+                </CardHeader>
                 <CardContent>
                     <Table>
                         <TableBody>

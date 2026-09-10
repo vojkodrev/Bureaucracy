@@ -154,6 +154,8 @@ function LayoutPage() {
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
+                : pathname === '/bank-statements/search' || isBankStatementPage
+                    ? 'bank-statements'
                 : null,
     )
     const collapsibleMenuProps = (menu: string) => ({
@@ -203,8 +205,13 @@ function LayoutPage() {
             setOpenMenu('products')
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
+        } else if (
+            pathname === '/bank-statements/search' ||
+            isBankStatementPage
+        ) {
+            setOpenMenu('bank-statements')
         }
-    }, [isCustomerPage, isInvoicePage, isProductPage, pathname])
+    }, [isBankStatementPage, isCustomerPage, isInvoicePage, isProductPage, pathname])
 
     return (
         <TooltipProvider>
@@ -356,26 +363,58 @@ function LayoutPage() {
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
                                     </Collapsible.Root>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            isActive={pathname === '/bank-statements/search'}
-                                            tooltip="Bank statements"
-                                            render={<NavLink to="/bank-statements/search" />}
+                                    <Collapsible.Root
+                                        {...collapsibleMenuProps('bank-statements')}
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
+                                            render={
+                                                <SidebarMenuButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statements/search' ||
+                                                        isBankStatementPage
+                                                    }
+                                                    tooltip="Bank statements"
+                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                />
+                                            }
                                         >
                                             <Landmark />
                                             <span>Bank statements</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton
-                                            isActive={isBankStatementPage}
-                                            tooltip="Bank statement"
-                                            render={<NavLink to="/bank-statement" />}
-                                        >
-                                            <Plus />
-                                            <span>Bank statement</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statements/search'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/bank-statements/search" />
+                                                    }
+                                                >
+                                                    <Search />
+                                                    <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statement'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/bank-statement" />
+                                                    }
+                                                >
+                                                    <Plus />
+                                                    <span>Bank statement</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={
@@ -496,6 +535,40 @@ function LayoutPage() {
                                                     <BreadcrumbSeparator />
                                                     <BreadcrumbItem>
                                                         <BreadcrumbPage>{customerId}</BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isBankStatementPage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink
+                                                    render={<NavLink to="/bank-statements/search" />}
+                                                >
+                                                    Bank statement search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {bankStatementId ? (
+                                                    <BreadcrumbLink
+                                                        render={<NavLink to="/bank-statement" />}
+                                                    >
+                                                        Bank statement
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>
+                                                        Bank statement
+                                                    </BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {bankStatementId && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>
+                                                            {bankStatementId}
+                                                        </BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>
                                             )}
