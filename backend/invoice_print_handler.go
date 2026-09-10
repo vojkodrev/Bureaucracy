@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -64,10 +65,29 @@ func (handler *InvoicePrintHandler) Handle(context *gin.Context) {
 		return
 	}
 
-	filename := strings.NewReplacer("\"", "", "\r", "", "\n", "").Replace(invoiceNumber)
+	customerName := safeFilenamePart(stringValue(invoice.CustomerName), "customer")
+	filename := safeFilenamePart(invoiceNumber, "invoice")
+	downloadFilename := fmt.Sprintf("%s-%s-%d.pdf", customerName, filename, *year.Year)
 	context.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	context.Header("Pragma", "no-cache")
 	context.Header("Expires", "0")
-	context.Header("Content-Disposition", fmt.Sprintf(`inline; filename="racun-%s-%d.pdf"`, filename, *year.Year))
+	context.Header("Content-Disposition", mime.FormatMediaType("inline", map[string]string{"filename": downloadFilename}))
 	context.Data(http.StatusOK, "application/pdf", pdf)
+}
+
+func safeFilenamePart(value string, fallback string) string {
+	value = strings.Map(func(character rune) rune {
+		if character < 32 || character == 127 {
+			return -1
+		}
+		if strings.ContainsRune(`<>:"/\|?*`, character) {
+			return '-'
+		}
+		return character
+	}, value)
+	value = strings.Trim(value, " .")
+	if value == "" {
+		return fallback
+	}
+	return value
 }

@@ -119,7 +119,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
 		InvoiceNumber: displayNumber,
-		Title:         "Drevi d.o.o. račun " + displayNumber,
+		Title:         strings.TrimSpace(stringValue(invoice.CustomerName) + " " + displayNumber),
 		IssueDate:     formatPrintDate(invoice.IssueDate),
 		DueDate:       formatPrintDate(invoice.DueDate),
 		ServiceDate:   formatPrintDate(invoice.ServiceDate),
