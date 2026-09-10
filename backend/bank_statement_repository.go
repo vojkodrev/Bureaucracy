@@ -158,10 +158,17 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	statementID := 0
 	var oldDate *time.Time
 	var oldAccount *string
+	oldInvoiceNumbers := make([]string, 0)
 	if input.ID != nil && *input.ID > 0 {
 		statementID = *input.ID
 		if err = tx.QueryRowContext(ctx, fmt.Sprintf(`SELECT Datum, Racun FROM [%s].[dbo].[BankaZRSaldo] WHERE RecNo=@id`, databaseName), sql.Named("id", statementID)).Scan(&oldDate, &oldAccount); err != nil {
 			return nil, fmt.Errorf("find bank statement for update: %w", err)
+		}
+		if oldDate != nil && oldAccount != nil {
+			oldInvoiceNumbers, err = paidInvoiceNumbers(ctx, tx, databaseName, *oldDate, *oldAccount)
+			if err != nil {
+				return nil, err
+			}
 		}
 		_, err = tx.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[BankaZRSaldo]
 			SET Stevilka=@number, Datum=@date, Racun=@account, SaldoBreme=@outflow, SaldoDobro=@inflow, Deleted=0 WHERE RecNo=@id`, databaseName),
@@ -221,10 +228,81 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 			return nil, fmt.Errorf("remove stale bank statement entries: %w", err)
 		}
 	}
+	if err = clearPaidInvoices(ctx, tx, businessYear, oldInvoiceNumbers); err != nil {
+		return nil, err
+	}
+	if err = updatePaidInvoices(ctx, tx, businessYear, input.StatementDate, input.Entries); err != nil {
+		return nil, err
+	}
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit bank statement: %w", err)
 	}
 	return repository.GetByNumber(ctx, businessYear, input.StatementNumber)
+}
+
+func paidInvoiceNumbers(ctx context.Context, tx *sql.Tx, databaseName string, statementDate time.Time, bankAccount string) ([]string, error) {
+	rows, err := tx.QueryContext(ctx, fmt.Sprintf(`SELECT DISTINCT LTRIM(RTRIM(Stevilka))
+		FROM [%s].[dbo].[BankaZR]
+		WHERE Banka=@bankAccount AND CAST(Datum AS date)=CAST(@statementDate AS date)
+			AND VDobro > 0 AND NULLIF(LTRIM(RTRIM(Stevilka)), '') IS NOT NULL`, databaseName),
+		sql.Named("bankAccount", bankAccount), sql.Named("statementDate", statementDate))
+	if err != nil {
+		return nil, fmt.Errorf("find invoices paid by bank statement: %w", err)
+	}
+	defer rows.Close()
+
+	invoiceNumbers := make([]string, 0)
+	for rows.Next() {
+		var invoiceNumber string
+		if err := rows.Scan(&invoiceNumber); err != nil {
+			return nil, fmt.Errorf("scan invoice paid by bank statement: %w", err)
+		}
+		invoiceNumbers = append(invoiceNumbers, invoiceNumber)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read invoices paid by bank statement: %w", err)
+	}
+	return invoiceNumbers, nil
+}
+
+func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, invoiceNumbers []string) error {
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
+		SET DatumPlacila=NULL, PlacanoSIT=NULL
+		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
+	for _, invoiceNumber := range invoiceNumbers {
+		if _, err := tx.ExecContext(ctx, query, sql.Named("invoiceNumber", invoiceNumber)); err != nil {
+			return fmt.Errorf("clear paid invoice %q: %w", invoiceNumber, err)
+		}
+	}
+	return nil
+}
+
+// updatePaidInvoices synchronizes incoming bank statement entries with issued
+// invoices. An unmatched document number is allowed because bank statements can
+// also contain transactions that do not belong to an invoice.
+func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
+		SET DatumPlacila=@paymentDate, PlacanoSIT=@paidAmount
+		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
+
+	for _, entry := range entries {
+		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
+			continue
+		}
+		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
+		if invoiceNumber == "" {
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, query,
+			sql.Named("paymentDate", paymentDate),
+			sql.Named("paidAmount", *entry.Inflow),
+			sql.Named("invoiceNumber", invoiceNumber)); err != nil {
+			return fmt.Errorf("update paid invoice %q: %w", invoiceNumber, err)
+		}
+	}
+	return nil
 }
 
 func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) float64 {
