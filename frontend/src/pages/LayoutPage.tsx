@@ -11,7 +11,7 @@ import {
     Search,
     Users,
 } from 'lucide-react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -87,6 +87,13 @@ const searchParameterValues: Record<string, Record<string, string>> = {
     },
 }
 
+const menuDefaultRoutes: Record<string, string> = {
+    products: '/products/search',
+    customers: '/customers/search',
+    invoices: '/invoices/search',
+    'bank-statements': '/bank-statements/search',
+}
+
 function searchParameterLabel(name: string): string {
     return (
         searchParameterLabels[name] ??
@@ -139,6 +146,8 @@ function bankStatementNumberFromPathname(pathname: string): string | undefined {
 
 function LayoutPage() {
     const { pathname, search } = useLocation()
+    const navigate = useNavigate()
+    const [sidebarOpen, setSidebarOpen] = useState(true)
     const invoiceNumber = invoiceNumberFromPathname(pathname)
     const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
     const productCode = productCodeFromPathname(pathname)
@@ -160,7 +169,14 @@ function LayoutPage() {
     )
     const collapsibleMenuProps = (menu: string) => ({
         open: openMenu === menu,
-        onOpenChange: (open: boolean) => setOpenMenu(open ? menu : null),
+        onOpenChange: (open: boolean) => {
+            if (!sidebarOpen) {
+                navigate(menuDefaultRoutes[menu])
+                return
+            }
+
+            setOpenMenu(open ? menu : null)
+        },
     })
     const breadcrumbLabel =
         breadcrumbLabels[pathname] ??
@@ -215,7 +231,7 @@ function LayoutPage() {
 
     return (
         <TooltipProvider>
-            <SidebarProvider>
+            <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <Sidebar collapsible="icon">
                     <SidebarHeader>
                         <SidebarMenu>
@@ -252,6 +268,11 @@ function LayoutPage() {
                                                     isActive={pathname === '/products/search' || isProductPage}
                                                     tooltip="Products"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/products/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -290,6 +311,11 @@ function LayoutPage() {
                                                     isActive={pathname === '/customers/search' || isCustomerPage}
                                                     tooltip="Customers"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/customers/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -326,6 +352,11 @@ function LayoutPage() {
                                                     }
                                                     tooltip="Invoices"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/invoices/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -377,6 +408,11 @@ function LayoutPage() {
                                                     }
                                                     tooltip="Bank statements"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/bank-statements/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
