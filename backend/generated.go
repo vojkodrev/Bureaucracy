@@ -214,7 +214,7 @@ type ComplexityRoot struct {
 		BankStatement             func(childComplexity int, businessYear string, statementNumber int) int
 		BankTransactionTypes      func(childComplexity int, businessYear string) int
 		BusinessYear              func(childComplexity int, code string) int
-		BusinessYears             func(childComplexity int, page *int, pageSize *int) int
+		BusinessYears             func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		Countries                 func(childComplexity int, businessYear string) int
 		Customer                  func(childComplexity int, businessYear string, customerID string) int
 		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
@@ -253,7 +253,7 @@ type QueryResolver interface {
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
 	LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
-	BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error)
+	BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
 	InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error)
@@ -1094,7 +1094,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.BusinessYears(childComplexity, args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.BusinessYears(childComplexity, args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.countries":
 		if e.ComplexityRoot.Query.Countries == nil {
 			break
@@ -1978,22 +1978,38 @@ func (ec *executionContext) field_Query_businessYear_args(ctx context.Context, r
 func (ec *executionContext) field_Query_businessYears_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg1
+	args["pageSize"] = arg3
 	return args, nil
 }
 
@@ -5656,7 +5672,7 @@ func (ec *executionContext) _Query_businessYears(ctx context.Context, field grap
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().BusinessYears(ctx, fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().BusinessYears(ctx, fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *BusinessYearPage) graphql.Marshaler {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
+import SortableTableHead from '@/components/SortableTableHead'
 import {
     getSelectedBusinessYear,
     setSelectedBusinessYear,
@@ -40,9 +41,32 @@ type BusinessYearsResult = {
     error: string | null
 }
 
+type BusinessYearSortColumn = 'code' | 'description' | 'year' | 'derivedFrom'
+type SortDirection = 'asc' | 'desc'
+
+const businessYearSortColumns: {
+    key: BusinessYearSortColumn
+    label: string
+}[] = [
+    { key: 'code', label: 'Code' },
+    { key: 'description', label: 'Description' },
+    { key: 'year', label: 'Business year' },
+    { key: 'derivedFrom', label: 'Derived from' },
+]
+
 const businessYearsQuery = `
-    query BusinessYears($page: Int, $pageSize: Int) {
-        businessYears(page: $page, pageSize: $pageSize) {
+    query BusinessYears(
+        $sortBy: String
+        $sortDirection: String
+        $page: Int
+        $pageSize: Int
+    ) {
+        businessYears(
+            sortBy: $sortBy
+            sortDirection: $sortDirection
+            page: $page
+            pageSize: $pageSize
+        ) {
             businessYears {
                 code
                 description
@@ -70,6 +94,17 @@ function BusinessYearsPage() {
         positiveInteger(searchParams.get('pageSize'), defaultPageSize),
         maximumPageSize,
     )
+    const sortByValue = searchParams.get('sortBy')
+    const sortDirectionValue = searchParams.get('sortDirection')
+    const sortBy = businessYearSortColumns.some(({ key }) => key === sortByValue)
+        ? sortByValue as BusinessYearSortColumn
+        : ''
+    const sortDirection: SortDirection | '' =
+        sortDirectionValue === 'asc' || sortDirectionValue === 'desc'
+            ? sortDirectionValue
+            : ''
+    const activeSortBy = sortDirection ? sortBy : ''
+    const activeSortDirection = sortBy ? sortDirection : ''
     const [result, setResult] = useState<BusinessYearsResult>({
         requestKey: '__initial__',
         businessYearPage: null,
@@ -101,6 +136,8 @@ function BusinessYearsPage() {
             body: JSON.stringify({
                 query: businessYearsQuery,
                 variables: {
+                    sortBy: activeSortBy || null,
+                    sortDirection: activeSortDirection || null,
                     page: requestedPage,
                     pageSize: requestedPageSize,
                 },
@@ -150,13 +187,37 @@ function BusinessYearsPage() {
             })
 
         return () => abortController.abort()
-    }, [requestKey, requestedPage, requestedPageSize])
+    }, [activeSortBy, activeSortDirection, requestKey, requestedPage, requestedPageSize])
 
     function changePage(page: number) {
-        setSearchParams({
-            page: String(page),
+        const nextSearchParams = new URLSearchParams()
+        nextSearchParams.set('page', String(page))
+        nextSearchParams.set(
+            'pageSize',
+            String(businessYearPage?.pageSize ?? defaultPageSize),
+        )
+        if (activeSortBy && activeSortDirection) {
+            nextSearchParams.set('sortBy', activeSortBy)
+            nextSearchParams.set('sortDirection', activeSortDirection)
+        }
+        setSearchParams(nextSearchParams)
+    }
+
+    function changeSort(nextSortBy: BusinessYearSortColumn) {
+        const nextSortDirection = activeSortBy !== nextSortBy
+            ? 'asc'
+            : activeSortDirection === 'asc'
+                ? 'desc'
+                : ''
+        const nextSearchParams = new URLSearchParams({
+            page: String(defaultPage),
             pageSize: String(businessYearPage?.pageSize ?? defaultPageSize),
         })
+        if (nextSortDirection) {
+            nextSearchParams.set('sortBy', nextSortBy)
+            nextSearchParams.set('sortDirection', nextSortDirection)
+        }
+        setSearchParams(nextSearchParams)
     }
 
     function selectBusinessYear(businessYear: BusinessYear) {
@@ -202,10 +263,16 @@ function BusinessYearsPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Business year</TableHead>
-                        <TableHead>Derived from</TableHead>
+                        {businessYearSortColumns.map(({ key, label }) => (
+                            <SortableTableHead
+                                key={key}
+                                label={label}
+                                direction={activeSortBy === key
+                                    ? activeSortDirection
+                                    : ''}
+                                onSort={() => changeSort(key)}
+                            />
+                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>

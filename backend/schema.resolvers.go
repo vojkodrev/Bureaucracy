@@ -70,7 +70,7 @@ func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*Busines
 }
 
 // BusinessYears is the resolver for the businessYears field.
-func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error) {
+func (r *queryResolver) BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -79,7 +79,7 @@ func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BusinessYearRepository.List(ctx, resultPage, resultPageSize)
+	return r.BusinessYearRepository.List(ctx, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // Countries is the resolver for the countries field.
