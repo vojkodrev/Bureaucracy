@@ -24,6 +24,12 @@ models:
   BusinessYearPage:
     model:
       - bureaucracy/backend.BusinessYearPage
+  BankStatementEntry:
+    model:
+      - bureaucracy/backend.BankStatementEntry
+  BankStatementPage:
+    model:
+      - bureaucracy/backend.BankStatementPage
   Customer:
     model:
       - bureaucracy/backend.Customer

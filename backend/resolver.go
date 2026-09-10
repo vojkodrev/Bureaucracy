@@ -4,6 +4,7 @@ package main
 
 type Resolver struct {
 	BusinessYearRepository *BusinessYearRepository
+	BankStatements         *BankStatementRepository
 	CountryRepository      *CountryRepository
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
@@ -11,9 +12,10 @@ type Resolver struct {
 	TaxCodeRepository      *TaxCodeRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
+func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
+		BankStatements:         bankStatements,
 		CountryRepository:      countries,
 		Customers:              customers,
 		Invoices:               invoices,

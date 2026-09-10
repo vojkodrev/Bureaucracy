@@ -26,6 +26,19 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 	return r.Products.Save(ctx, businessYear, product)
 }
 
+// SearchBankStatements is the resolver for the searchBankStatements field.
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, customerID, customerName, resultPage, resultPageSize)
+}
+
 // BusinessYear is the resolver for the businessYear field.
 func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
 	return r.BusinessYearRepository.GetByCode(ctx, code)

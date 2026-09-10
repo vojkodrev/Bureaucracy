@@ -46,6 +46,27 @@ type Country {
   name: String!
 }
 
+type BankStatementEntry {
+  id: Int!
+  statementId: Int!
+  statementNumber: Int
+  paymentDate: Time
+  customerId: String
+  customerName: String
+  transactionType: String
+  outflow: Float
+  inflow: Float
+  invoiceNumber: String
+}
+
+type BankStatementPage {
+  entries: [BankStatementEntry!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 input CustomerInput {
   id: Int
   customerId: String!
@@ -184,6 +205,17 @@ input ProductInput {
 }
 
 type Query {
+
+  searchBankStatements(
+    businessYear: String!
+    dateFrom: Time
+    dateTo: Time
+    statementNumber: Int
+    customerId: String
+    customerName: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): BankStatementPage!
   businessYear(code: String!): BusinessYear
 
   businessYears(

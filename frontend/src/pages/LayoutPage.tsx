@@ -5,6 +5,7 @@ import {
     ChevronRight,
     FileText,
     FileDown,
+    Landmark,
     PackageSearch,
     Plus,
     Search,
@@ -39,6 +40,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 const breadcrumbLabels: Record<string, string> = {
+    '/bank-statements/search': 'Bank statement search',
     '/business-years': 'Business years',
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
@@ -49,13 +51,14 @@ const breadcrumbLabels: Record<string, string> = {
 const searchParameterLabels: Record<string, string> = {
     customerId: 'Customer ID',
     customerName: 'Customer name',
-    from: 'Invoice date from',
+    statementNumber: 'Statement number',
+    from: 'Date from',
     invoiceNumber: 'Invoice number',
     page: 'Page',
     pageSize: 'Page size',
     productCode: 'Product code',
     productName: 'Product name',
-    to: 'Invoice date to',
+    to: 'Date to',
 }
 
 const searchParameterValues: Record<string, Record<string, string>> = {
@@ -344,6 +347,16 @@ function LayoutPage() {
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
                                     </Collapsible.Root>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={pathname === '/bank-statements/search'}
+                                            tooltip="Bank statements"
+                                            render={<NavLink to="/bank-statements/search" />}
+                                        >
+                                            <Landmark />
+                                            <span>Bank statements</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={
