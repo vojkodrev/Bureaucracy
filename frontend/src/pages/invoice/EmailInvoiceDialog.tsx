@@ -51,6 +51,7 @@ function EmailInvoiceDialog({
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
+    const [bcc, setBcc] = useState('drevi.napkins@gmail.com')
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState<File[]>([])
@@ -66,9 +67,12 @@ function EmailInvoiceDialog({
             : invoiceNumber
         setStoredRecipient('')
         setRecipient('')
+        setBcc('drevi.napkins@gmail.com')
         setSubject(`Drevi d.o.o. - Račun ${displayNumber}`)
         setMessage(
-            `Pozdravljeni,\n\nv priponki vam pošiljamo račun ${displayNumber}.\n\nLep pozdrav, Drevi d.o.o. 041 693 605`,
+            'Pozdravljeni,\n\n' +
+            `v priponki vam pošiljamo račun ${displayNumber}.\n\n` +
+            'Lep pozdrav, Drevi d.o.o. 041 693 605',
         )
         setError(null); setAttachments([])
         if (!customerId.trim()) { setLoading(false); return }
@@ -124,6 +128,7 @@ function EmailInvoiceDialog({
         try {
             const form = new FormData()
             form.set('recipient', recipient.trim())
+            form.set('bcc', bcc.trim())
             form.set('subject', subject.trim())
             form.set('message', message.trim())
             attachments.forEach((file) => form.append('attachments', file, file.name))
@@ -175,6 +180,17 @@ function EmailInvoiceDialog({
                             Consider updating the customer record.
                         </p>
                     )}
+                    <Field>
+                        <FieldLabel htmlFor="invoice-email-bcc">BCC copy</FieldLabel>
+                        <Input
+                            id="invoice-email-bcc"
+                            type="email"
+                            value={bcc}
+                            disabled={loading || sending}
+                            onChange={(event) => setBcc(event.target.value)}
+                            placeholder="copy@example.com"
+                        />
+                    </Field>
                     <Field>
                         <FieldLabel htmlFor="invoice-email-subject">Subject</FieldLabel>
                         <Input

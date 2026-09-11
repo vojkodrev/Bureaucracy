@@ -26,6 +26,7 @@ type EmailAttachment struct {
 
 type EmailMessage struct {
 	To          string
+	BCC         string
 	Subject     string
 	Body        string
 	Attachments []EmailAttachment
@@ -78,11 +79,20 @@ func (service *SMTPEmailService) Send(ctx context.Context, message EmailMessage)
 	}
 	from, _ := mail.ParseAddress(service.config.SMTPFromAddress)
 	to, _ := mail.ParseAddress(message.To)
+	var bcc *mail.Address
+	if message.BCC != "" {
+		bcc, _ = mail.ParseAddress(message.BCC)
+	}
 	if err := client.Mail(from.Address); err != nil {
 		return fmt.Errorf("set email sender: %w", err)
 	}
 	if err := client.Rcpt(to.Address); err != nil {
 		return fmt.Errorf("set email recipient: %w", err)
+	}
+	if bcc != nil {
+		if err := client.Rcpt(bcc.Address); err != nil {
+			return fmt.Errorf("set blind-copy recipient: %w", err)
+		}
 	}
 	w, err := client.Data()
 	if err != nil {

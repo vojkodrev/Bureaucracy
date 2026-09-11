@@ -43,9 +43,14 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 		return
 	}
 	recipient := strings.TrimSpace(context.PostForm("recipient"))
+	bcc := strings.TrimSpace(context.PostForm("bcc"))
 	subject := strings.TrimSpace(context.PostForm("subject"))
 	message := strings.TrimSpace(context.PostForm("message"))
 	if err := validateEmailFields(recipient, subject, message); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := validateOptionalEmailAddress(bcc, "BCC"); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -88,7 +93,9 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 		}
 		attachments = append(attachments, EmailAttachment{Filename: filename, ContentType: contentType, Data: data})
 	}
-	if err := handler.sender.Send(context.Request.Context(), EmailMessage{To: recipient, Subject: subject, Body: message, Attachments: attachments}); err != nil {
+	if err := handler.sender.Send(context.Request.Context(), EmailMessage{
+		To: recipient, BCC: bcc, Subject: subject, Body: message, Attachments: attachments,
+	}); err != nil {
 		context.JSON(http.StatusBadGateway, gin.H{"error": "the email could not be delivered; check the mail configuration and try again"})
 		return
 	}
@@ -153,6 +160,20 @@ func validateEmailFields(recipient, subject, message string) error {
 	}
 	if len([]rune(message)) > 10000 {
 		return fmt.Errorf("message must be at most 10000 characters")
+	}
+	return nil
+}
+
+func validateOptionalEmailAddress(value, field string) error {
+	if value == "" {
+		return nil
+	}
+	if hasHeaderInjection(value) {
+		return fmt.Errorf("%s contains invalid characters", field)
+	}
+	address, err := mail.ParseAddress(value)
+	if err != nil || !strings.EqualFold(address.Address, value) {
+		return fmt.Errorf("%s must be a valid email address", field)
 	}
 	return nil
 }
