@@ -23,6 +23,7 @@ type Props = {
     customerId: string
     businessYear: number | null
     onOpenChange: (open: boolean) => void
+    onOfferSaveCustomerEmail: (email: string) => void
 }
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
@@ -47,6 +48,7 @@ function EmailInvoiceDialog({
     customerId,
     businessYear,
     onOpenChange,
+    onOfferSaveCustomerEmail,
 }: Props) {
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
@@ -141,6 +143,10 @@ function EmailInvoiceDialog({
                 type: 'success',
             })
             onOpenChange(false)
+            if (customerId.trim() &&
+                recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()) {
+                onOfferSaveCustomerEmail(recipient.trim())
+            }
         } catch (requestError: unknown) {
             setError(requestError instanceof Error ? requestError.message : 'Sending email failed')
         } finally { setSending(false) }

@@ -330,6 +330,7 @@ type Query {
 type Mutation {
   saveBankStatement(businessYear: String!, statement: BankStatementInput!): BankStatement!
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
+  updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
 }

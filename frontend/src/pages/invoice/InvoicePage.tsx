@@ -17,6 +17,7 @@ import type { InvoiceNumberWarning } from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
+import SaveCustomerEmailAlert from './SaveCustomerEmailAlert'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
@@ -191,6 +192,7 @@ function InvoicePage() {
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const [confirmingPrint, setConfirmingPrint] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const [invoiceNumberWarning, setInvoiceNumberWarning] =
         useState<InvoiceNumberWarning | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -625,6 +627,15 @@ function InvoicePage() {
                 customerId={customerId}
                 businessYear={businessYear}
                 onOpenChange={setEmailDialogOpen}
+                onOfferSaveCustomerEmail={setCustomerEmailToSave}
+            />
+            <SaveCustomerEmailAlert
+                email={customerEmailToSave}
+                customerId={customerId}
+                customerName={customerName}
+                onOpenChange={(open) => {
+                    if (!open) setCustomerEmailToSave(null)
+                }}
             />
             <InvoiceNumberAlert
                 invoiceNumber={invoiceNumber.trim()}
