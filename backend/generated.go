@@ -217,6 +217,7 @@ type ComplexityRoot struct {
 		BusinessYear              func(childComplexity int, code string) int
 		BusinessYears             func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		Countries                 func(childComplexity int, businessYear string) int
+		CurrentBusinessYear       func(childComplexity int) int
 		Customer                  func(childComplexity int, businessYear string, customerID string) int
 		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate       func(childComplexity int, businessYear string) int
@@ -255,6 +256,7 @@ type QueryResolver interface {
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
 	LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
+	CurrentBusinessYear(ctx context.Context) (*BusinessYear, error)
 	BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
@@ -1119,6 +1121,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Countries(childComplexity, args["businessYear"].(string)), true
+	case "Query.currentBusinessYear":
+		if e.ComplexityRoot.Query.CurrentBusinessYear == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.CurrentBusinessYear(childComplexity), true
 	case "Query.customer":
 		if e.ComplexityRoot.Query.Customer == nil {
 			break
@@ -5749,6 +5757,38 @@ func (ec *executionContext) fieldContext_Query_businessYear(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_currentBusinessYear(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_currentBusinessYear(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().CurrentBusinessYear(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *BusinessYear) graphql.Marshaler {
+			return ec.marshalOBusinessYear2ᚖbureaucracyᚋbackendᚐBusinessYear(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_currentBusinessYear(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessYear(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_businessYears(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -9278,6 +9318,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_businessYear(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "currentBusinessYear":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_currentBusinessYear(ctx, field)
 				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

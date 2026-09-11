@@ -264,6 +264,7 @@ type Query {
   bankStatement(businessYear: String!, statementNumber: Int!): BankStatement
   latestBankStatementNumber(businessYear: String!, bankAccount: String): Int
   businessYear(code: String!): BusinessYear
+  currentBusinessYear: BusinessYear
 
   businessYears(
     sortBy: String

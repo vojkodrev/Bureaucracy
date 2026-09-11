@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
-import { getSelectedBusinessYear } from '@/lib/business-year'
+import { getSelectedBusinessYear, setSelectedBusinessYear } from '@/lib/business-year'
 import type { BusinessYearResponse } from '@/lib/business-year-types'
 import { dateAfterDays, dateForApi, dateFromSearchValue } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
@@ -97,6 +97,11 @@ const businessYearQuery = `
         businessYear(code: $code) { year }
     }
 `
+const currentBusinessYearQuery = `
+    query CurrentBusinessYear {
+        currentBusinessYear { code year }
+    }
+`
 const customerPaymentTermQuery = `
     query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
         customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
@@ -117,17 +122,23 @@ type SaveInvoiceResponse = {
     errors?: { message: string }[]
 }
 
-async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
-    return nextPaddedNumber(await fetchLatestInvoiceNumber(signal), 5)
+async function fetchNextInvoiceNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string> {
+    return nextPaddedNumber(await fetchLatestInvoiceNumber(signal, businessYear), 5)
 }
 
-async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | undefined> {
+async function fetchLatestInvoiceNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string | undefined> {
     const response = await fetch(graphqlUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             query: latestInvoiceQuery,
-            variables: { businessYear: getSelectedBusinessYear() },
+            variables: { businessYear },
         }),
         signal,
     })
@@ -136,6 +147,28 @@ async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | 
     const result = (await response.json()) as LatestInvoiceResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result.data?.searchInvoices.invoices[0]?.invoiceNumber
+}
+
+async function fetchCurrentBusinessYear(): Promise<{ code: string; year: number }> {
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: currentBusinessYearQuery,
+        }),
+    })
+    if (!response.ok) throw new Error(`Loading current business year failed (${response.status})`)
+
+    const result = await response.json() as {
+        data?: { currentBusinessYear: { code: string | null; year: number | null } | null }
+        errors?: { message: string }[]
+    }
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    const currentBusinessYear = result.data?.currentBusinessYear
+    if (!currentBusinessYear?.code || currentBusinessYear.year == null) {
+        throw new Error('No current business year exists')
+    }
+    return { code: currentBusinessYear.code, year: currentBusinessYear.year }
 }
 
 async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTextTemplate> {
@@ -155,7 +188,10 @@ async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTe
     return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
 }
 
-async function fetchCustomerPaymentTerm(customerId: string): Promise<number | null> {
+async function fetchCustomerPaymentTerm(
+    customerId: string,
+    businessYear = getSelectedBusinessYear(),
+): Promise<number | null> {
     if (!customerId) return null
 
     const response = await fetch(graphqlUrl, {
@@ -163,7 +199,7 @@ async function fetchCustomerPaymentTerm(customerId: string): Promise<number | nu
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             query: customerPaymentTermQuery,
-            variables: { businessYear: getSelectedBusinessYear(), customerId },
+            variables: { businessYear, customerId },
         }),
     })
     if (!response.ok) throw new Error(`Loading customer payment term failed (${response.status})`)
@@ -555,11 +591,20 @@ function InvoicePage() {
         setIsDuplicating(true)
         setSaveError(null)
         try {
+            const currentBusinessYear = await fetchCurrentBusinessYear()
+            const duplicateBusinessYearCode = currentBusinessYear.code
             const [nextInvoiceNumber, paymentTerm] = await Promise.all([
-                fetchNextInvoiceNumber(),
-                fetchCustomerPaymentTerm(customerId),
+                fetchNextInvoiceNumber(undefined, duplicateBusinessYearCode),
+                fetchCustomerPaymentTerm(customerId, duplicateBusinessYearCode),
             ])
             const duplicateInvoiceDate = new Date()
+            if (
+                businessYear !== currentBusinessYear.year ||
+                duplicateBusinessYearCode !== getSelectedBusinessYear()
+            ) {
+                setSelectedBusinessYear(duplicateBusinessYearCode)
+                setBusinessYear(currentBusinessYear.year)
+            }
             setInvoiceId(null)
             setInvoiceNumber(nextInvoiceNumber)
             setInvoiceDate(duplicateInvoiceDate)

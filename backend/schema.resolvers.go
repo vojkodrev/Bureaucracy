@@ -74,6 +74,11 @@ func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*Busines
 	return r.BusinessYearRepository.GetByCode(ctx, code)
 }
 
+// CurrentBusinessYear is the resolver for the currentBusinessYear field.
+func (r *queryResolver) CurrentBusinessYear(ctx context.Context) (*BusinessYear, error) {
+	return r.BusinessYearRepository.GetByCalendarYear(ctx, time.Now().Year())
+}
+
 // BusinessYears is the resolver for the businessYears field.
 func (r *queryResolver) BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error) {
 	resultPage := 1
