@@ -60,14 +60,23 @@ const invoiceQuery = `
             id invoiceNumber issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
             paidAmount introductoryText closingText
-            items { id sequence productCode productName unit taxCode taxRate unitPrice unitTaxAmount quantity discount netAmount grossAmount }
+            items {
+                id sequence productCode productName unit taxCode taxRate unitPrice
+                unitTaxAmount quantity discount netAmount grossAmount
+            }
         }
     }
 `
 
 const latestInvoiceQuery = `
     query LatestInvoice($businessYear: String!) {
-        searchInvoices(businessYear: $businessYear, sortBy: "invoiceNumber", sortDirection: "desc", page: 1, pageSize: 1) {
+        searchInvoices(
+            businessYear: $businessYear
+            sortBy: "invoiceNumber"
+            sortDirection: "desc"
+            page: 1
+            pageSize: 1
+        ) {
             invoices { invoiceNumber }
         }
     }
@@ -219,7 +228,13 @@ function InvoicePage() {
         const abortController = new AbortController()
         void fetch(graphqlUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: invoiceQuery, variables: { businessYear: getSelectedBusinessYear(), invoiceNumber: routeInvoiceNumber } }),
+            body: JSON.stringify({
+                query: invoiceQuery,
+                variables: {
+                    businessYear: getSelectedBusinessYear(),
+                    invoiceNumber: routeInvoiceNumber,
+                },
+            }),
             signal: abortController.signal,
         }).then(async (response) => {
             if (!response.ok) throw new Error(`Loading invoice failed (${response.status})`)
@@ -273,7 +288,12 @@ function InvoicePage() {
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return
             pendingRevertRef.current = false
-            setLoadResult({ requestKey, error: requestError instanceof Error ? requestError.message : 'Loading invoice failed' })
+            setLoadResult({
+                requestKey,
+                error: requestError instanceof Error
+                    ? requestError.message
+                    : 'Loading invoice failed',
+            })
         })
         return () => abortController.abort()
     }, [requestKey, routeInvoiceNumber])
@@ -311,7 +331,9 @@ function InvoicePage() {
 
         const abortController = new AbortController()
         const templatePromise = fetchInvoiceTextTemplate(abortController.signal).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
             return { introductoryText: null, closingText: null }
         })
         void Promise.all([
@@ -333,7 +355,9 @@ function InvoicePage() {
                 invoiceItems: [],
             }))
         }).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
         })
         return () => abortController.abort()
     }, [routeInvoiceNumber])
@@ -350,7 +374,9 @@ function InvoicePage() {
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
             setBusinessYearDescription(result.data?.businessYear?.description ?? '')
         }).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
         })
         return () => abortController.abort()
     }, [])
@@ -450,7 +476,9 @@ function InvoicePage() {
             if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
             toast.add({
                 title: 'Invoice saved',
-                description: `Invoice ${savedInvoice.invoiceNumber} was ${isCreating ? 'created' : 'updated'} successfully.`,
+                description: `Invoice ${savedInvoice.invoiceNumber} was ${
+                    isCreating ? 'created' : 'updated'
+                } successfully.`,
                 type: 'success',
             })
             setCleanDraft(draft)
@@ -509,7 +537,8 @@ function InvoicePage() {
             navigate('/invoice')
             toast.add({
                 title: 'Invoice duplicated',
-                description: `Invoice number ${nextInvoiceNumber} has been assigned to the new unsaved copy. You can review and edit it before saving.`,
+                description: `Invoice number ${nextInvoiceNumber} has been assigned to the ` +
+                    'new unsaved copy. You can review and edit it before saving.',
                 type: 'info',
             })
         } catch (requestError: unknown) {
@@ -586,7 +615,12 @@ function InvoicePage() {
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
             />
-            <EmailInvoiceDialog open={emailDialogOpen} invoiceNumber={invoiceNumber.trim()} customerId={customerId} onOpenChange={setEmailDialogOpen} />
+            <EmailInvoiceDialog
+                open={emailDialogOpen}
+                invoiceNumber={invoiceNumber.trim()}
+                customerId={customerId}
+                onOpenChange={setEmailDialogOpen}
+            />
             <InvoiceNumberAlert
                 invoiceNumber={invoiceNumber.trim()}
                 warning={invoiceNumberWarning}
@@ -619,13 +653,54 @@ function InvoicePage() {
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
-                <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} onCustomerPaymentTermChange={(paymentTerm) => setDueDate(dateAfterDays(invoiceDate, paymentTerm))} />
-                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} dueDate={dueDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onDueDateChange={setDueDate} onServiceDateChange={setServiceDate} />
+                <CustomerInputFields
+                    customerId={customerId}
+                    customerName={customerName}
+                    customerAddress={customerAddress}
+                    customerPostalCode={customerPostalCode}
+                    customerCity={customerCity}
+                    customerCountry={customerCountry}
+                    onCustomerIdChange={setCustomerId}
+                    onCustomerNameChange={setCustomerName}
+                    onCustomerAddressChange={setCustomerAddress}
+                    onCustomerPostalCodeChange={setCustomerPostalCode}
+                    onCustomerCityChange={setCustomerCity}
+                    onCustomerCountryChange={setCustomerCountry}
+                    onCustomerPaymentTermChange={(paymentTerm) =>
+                        setDueDate(dateAfterDays(invoiceDate, paymentTerm))}
+                />
+                <GeneralInformationInput
+                    invoiceNumber={invoiceNumber}
+                    businessYearDescription={businessYearDescription}
+                    invoiceDate={invoiceDate}
+                    dueDate={dueDate}
+                    serviceDate={serviceDate}
+                    onInvoiceNumberChange={setInvoiceNumber}
+                    onInvoiceDateChange={setInvoiceDate}
+                    onDueDateChange={setDueDate}
+                    onServiceDateChange={setServiceDate}
+                />
             </div>
             <div className="mt-8 space-y-6">
-                <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel><Textarea id="introductory-text" name="introductoryText" value={introductoryText} onChange={(event) => setIntroductoryText(event.target.value)} /></Field>
+                <Field>
+                    <FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
+                    <Textarea
+                        id="introductory-text"
+                        name="introductoryText"
+                        value={introductoryText}
+                        onChange={(event) => setIntroductoryText(event.target.value)}
+                    />
+                </Field>
                 <Products items={invoiceItems} isLoading={isLoading} error={error} onItemsChange={setInvoiceItems} />
-                <Field><FieldLabel htmlFor="closing-text">Closing text</FieldLabel><Textarea id="closing-text" name="closingText" value={closingText} onChange={(event) => setClosingText(event.target.value)} /></Field>
+                <Field>
+                    <FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
+                    <Textarea
+                        id="closing-text"
+                        name="closingText"
+                        value={closingText}
+                        onChange={(event) => setClosingText(event.target.value)}
+                    />
+                </Field>
                 <InvoiceSummary total={totalIncludingVat} paidAmount={paidAmount} paymentDate={paymentDate} />
             </div>
         </div>
