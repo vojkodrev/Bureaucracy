@@ -26,6 +26,10 @@ type InvoiceTextTemplateResponse = {
     data?: { invoiceTextTemplate: InvoiceTextTemplate }
     errors?: { message: string }[]
 }
+type CustomerPaymentTermResponse = {
+    data?: { customer: { paymentTerm: number | null } | null }
+    errors?: { message: string }[]
+}
 
 type InvoiceDraft = {
     invoiceNumber: string
@@ -93,6 +97,11 @@ const businessYearQuery = `
         businessYear(code: $code) { year }
     }
 `
+const customerPaymentTermQuery = `
+    query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
+        customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
+    }
+`
 const saveInvoiceMutation = `
     mutation SaveInvoice($businessYear: String!, $invoice: InvoiceInput!) {
         saveInvoice(businessYear: $businessYear, invoice: $invoice) {
@@ -144,6 +153,24 @@ async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTe
     const result = await response.json() as InvoiceTextTemplateResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
+}
+
+async function fetchCustomerPaymentTerm(customerId: string): Promise<number | null> {
+    if (!customerId) return null
+
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: customerPaymentTermQuery,
+            variables: { businessYear: getSelectedBusinessYear(), customerId },
+        }),
+    })
+    if (!response.ok) throw new Error(`Loading customer payment term failed (${response.status})`)
+
+    const result = (await response.json()) as CustomerPaymentTermResponse
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    return result.data?.customer?.paymentTerm ?? null
 }
 
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
@@ -528,11 +555,15 @@ function InvoicePage() {
         setIsDuplicating(true)
         setSaveError(null)
         try {
-            const nextInvoiceNumber = await fetchNextInvoiceNumber()
+            const [nextInvoiceNumber, paymentTerm] = await Promise.all([
+                fetchNextInvoiceNumber(),
+                fetchCustomerPaymentTerm(customerId),
+            ])
+            const duplicateInvoiceDate = new Date()
             setInvoiceId(null)
             setInvoiceNumber(nextInvoiceNumber)
-            setInvoiceDate(new Date())
-            setDueDate(undefined)
+            setInvoiceDate(duplicateInvoiceDate)
+            setDueDate(dateAfterDays(duplicateInvoiceDate, paymentTerm))
             setInvoiceItems((items) => items.map((item, index) => ({
                 ...item,
                 id: -index - 1,
