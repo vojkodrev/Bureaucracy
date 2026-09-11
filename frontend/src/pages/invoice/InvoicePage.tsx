@@ -564,6 +564,8 @@ function InvoicePage() {
             setInvoiceNumber(nextInvoiceNumber)
             setInvoiceDate(duplicateInvoiceDate)
             setDueDate(dateAfterDays(duplicateInvoiceDate, paymentTerm))
+            setPaymentDate(undefined)
+            setPaidAmount('')
             setInvoiceItems((items) => items.map((item, index) => ({
                 ...item,
                 id: -index - 1,
