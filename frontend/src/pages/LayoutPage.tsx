@@ -5,12 +5,13 @@ import {
     ChevronRight,
     FileText,
     FileDown,
+    Landmark,
     PackageSearch,
     Plus,
     Search,
     Users,
 } from 'lucide-react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -39,6 +40,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 const breadcrumbLabels: Record<string, string> = {
+    '/bank-statements/search': 'Bank statement search',
     '/business-years': 'Business years',
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
@@ -47,15 +49,17 @@ const breadcrumbLabels: Record<string, string> = {
 }
 
 const searchParameterLabels: Record<string, string> = {
+    bankAccount: 'Bank account',
     customerId: 'Customer ID',
-    customerName: 'Customer name',
-    from: 'Invoice date from',
+    customerName: 'Counterparty',
+    statementNumber: 'Statement number',
+    from: 'Date from',
     invoiceNumber: 'Invoice number',
     page: 'Page',
     pageSize: 'Page size',
     productCode: 'Product code',
     productName: 'Product name',
-    to: 'Invoice date to',
+    to: 'Date to',
 }
 
 const searchParameterValues: Record<string, Record<string, string>> = {
@@ -81,6 +85,13 @@ const searchParameterValues: Record<string, Record<string, string>> = {
         phone: 'Phone',
         taxNumber: 'Tax number',
     },
+}
+
+const menuDefaultRoutes: Record<string, string> = {
+    products: '/products/search',
+    customers: '/customers/search',
+    invoices: '/invoices/search',
+    'bank-statements': '/bank-statements/search',
 }
 
 function searchParameterLabel(name: string): string {
@@ -129,14 +140,22 @@ function customerIdFromPathname(pathname: string): string | undefined {
     }
 }
 
+function bankStatementNumberFromPathname(pathname: string): string | undefined {
+    return pathname.startsWith('/bank-statement/') ? pathname.slice('/bank-statement/'.length) : undefined
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
+    const navigate = useNavigate()
+    const [sidebarOpen, setSidebarOpen] = useState(true)
     const invoiceNumber = invoiceNumberFromPathname(pathname)
     const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
     const productCode = productCodeFromPathname(pathname)
     const isProductPage = pathname === '/product' || Boolean(productCode)
     const customerId = customerIdFromPathname(pathname)
     const isCustomerPage = pathname === '/customer' || Boolean(customerId)
+    const bankStatementNumber = bankStatementNumberFromPathname(pathname)
+    const isBankStatementPage = pathname === '/bank-statement' || Boolean(bankStatementNumber)
     const [openMenu, setOpenMenu] = useState<string | null>(() =>
         pathname === '/customers/search' || isCustomerPage
             ? 'customers'
@@ -144,11 +163,20 @@ function LayoutPage() {
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
+                : pathname === '/bank-statements/search' || isBankStatementPage
+                    ? 'bank-statements'
                 : null,
     )
     const collapsibleMenuProps = (menu: string) => ({
         open: openMenu === menu,
-        onOpenChange: (open: boolean) => setOpenMenu(open ? menu : null),
+        onOpenChange: (open: boolean) => {
+            if (!sidebarOpen) {
+                navigate(menuDefaultRoutes[menu])
+                return
+            }
+
+            setOpenMenu(open ? menu : null)
+        },
     })
     const breadcrumbLabel =
         breadcrumbLabels[pathname] ??
@@ -158,6 +186,8 @@ function LayoutPage() {
         (isProductPage ? 'Product' : undefined) ??
         (customerId ? `Customer ${customerId}` : undefined) ??
         (isCustomerPage ? 'Customer' : undefined)
+        ?? (bankStatementNumber ? `Bank statement ${bankStatementNumber}` : undefined)
+        ?? (isBankStatementPage ? 'Bank statement' : undefined)
 
     useEffect(() => {
         const searchParams = new URLSearchParams(search)
@@ -191,12 +221,17 @@ function LayoutPage() {
             setOpenMenu('products')
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
+        } else if (
+            pathname === '/bank-statements/search' ||
+            isBankStatementPage
+        ) {
+            setOpenMenu('bank-statements')
         }
-    }, [isCustomerPage, isInvoicePage, isProductPage, pathname])
+    }, [isBankStatementPage, isCustomerPage, isInvoicePage, isProductPage, pathname])
 
     return (
         <TooltipProvider>
-            <SidebarProvider>
+            <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <Sidebar collapsible="icon">
                     <SidebarHeader>
                         <SidebarMenu>
@@ -233,6 +268,11 @@ function LayoutPage() {
                                                     isActive={pathname === '/products/search' || isProductPage}
                                                     tooltip="Products"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/products/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -271,6 +311,11 @@ function LayoutPage() {
                                                     isActive={pathname === '/customers/search' || isCustomerPage}
                                                     tooltip="Customers"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/customers/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -307,6 +352,11 @@ function LayoutPage() {
                                                     }
                                                     tooltip="Invoices"
                                                     className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/invoices/search" />
+                                                            : undefined
+                                                    }
                                                 />
                                             }
                                         >
@@ -340,6 +390,63 @@ function LayoutPage() {
                                                 >
                                                     <Plus />
                                                     <span>Invoice</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
+                                    <Collapsible.Root
+                                        {...collapsibleMenuProps('bank-statements')}
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
+                                            render={
+                                                <SidebarMenuButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statements/search' ||
+                                                        isBankStatementPage
+                                                    }
+                                                    tooltip="Bank statements"
+                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/bank-statements/search" />
+                                                            : undefined
+                                                    }
+                                                />
+                                            }
+                                        >
+                                            <Landmark />
+                                            <span>Bank statements</span>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statements/search'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/bank-statements/search" />
+                                                    }
+                                                >
+                                                    <Search />
+                                                    <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/bank-statement'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/bank-statement" />
+                                                    }
+                                                >
+                                                    <Plus />
+                                                    <span>Bank statement</span>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
@@ -464,6 +571,40 @@ function LayoutPage() {
                                                     <BreadcrumbSeparator />
                                                     <BreadcrumbItem>
                                                         <BreadcrumbPage>{customerId}</BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isBankStatementPage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink
+                                                    render={<NavLink to="/bank-statements/search" />}
+                                                >
+                                                    Bank statement search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {bankStatementNumber ? (
+                                                    <BreadcrumbLink
+                                                        render={<NavLink to="/bank-statement" />}
+                                                    >
+                                                        Bank statement
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>
+                                                        Bank statement
+                                                    </BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {bankStatementNumber && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>
+                                                            {bankStatementNumber}
+                                                        </BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>
                                             )}

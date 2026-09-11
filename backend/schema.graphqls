@@ -46,6 +46,68 @@ type Country {
   name: String!
 }
 
+type BankStatementEntry {
+  id: Int!
+  statementId: Int!
+  statementNumber: Int
+  paymentDate: Time
+  customerId: String
+  customerName: String
+  transactionType: String
+  transactionTypeId: Int
+  outflow: Float
+  inflow: Float
+  documentNumber: String
+}
+
+type BankStatement {
+  id: Int!
+  statementNumber: Int
+  statementDate: Time
+  bankAccount: String
+  entries: [BankStatementEntry!]!
+}
+
+type BankTransactionType {
+  id: Int!
+  code: Int
+  name: String
+  direction: String
+}
+
+input BankStatementEntryInput {
+  id: Int
+  customerId: String
+  customerName: String
+  transactionTypeId: Int
+  outflow: Float
+  inflow: Float
+  documentNumber: String
+}
+
+input BankStatementInput {
+  id: Int
+  statementNumber: Int!
+  statementDate: Time!
+  bankAccount: String!
+  entries: [BankStatementEntryInput!]!
+}
+
+type BankAccount {
+  id: Int!
+  code: String!
+  name: String
+  accountNumber: String
+}
+
+type BankStatementPage {
+  entries: [BankStatementEntry!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 input CustomerInput {
   id: Int
   customerId: String!
@@ -110,6 +172,11 @@ type InvoicePage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
+}
+
+type InvoiceTextTemplate {
+  introductoryText: String
+  closingText: String
 }
 
 input InvoiceItemInput {
@@ -179,9 +246,28 @@ input ProductInput {
 }
 
 type Query {
+
+  searchBankStatements(
+    businessYear: String!
+    dateFrom: Time
+    dateTo: Time
+    statementNumber: Int
+    bankAccount: String
+    customerId: String
+    customerName: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): BankStatementPage!
+
+  bankAccounts(businessYear: String!): [BankAccount!]!
+  bankTransactionTypes(businessYear: String!): [BankTransactionType!]!
+  bankStatement(businessYear: String!, statementNumber: Int!): BankStatement
+  latestBankStatementNumber(businessYear: String!, bankAccount: String): Int
   businessYear(code: String!): BusinessYear
 
   businessYears(
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): BusinessYearPage!
@@ -192,6 +278,8 @@ type Query {
     businessYear: String!
     invoiceNumber: String!
   ): Invoice
+
+  invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
 
   product(
     businessYear: String!
@@ -240,6 +328,7 @@ type Query {
 }
 
 type Mutation {
+  saveBankStatement(businessYear: String!, statement: BankStatementInput!): BankStatement!
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
   saveProduct(businessYear: String!, product: ProductInput!): Product!

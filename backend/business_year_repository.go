@@ -85,6 +85,8 @@ func (repository *BusinessYearRepository) GetByCalendarYear(
 
 func (repository *BusinessYearRepository) List(
 	ctx context.Context,
+	sortBy *string,
+	sortDirection *string,
 	page int,
 	pageSize int,
 ) (*BusinessYearPage, error) {
@@ -93,6 +95,10 @@ func (repository *BusinessYearRepository) List(
 	}
 	if pageSize < 1 || pageSize > 100 {
 		return nil, fmt.Errorf("pageSize must be between 1 and 100")
+	}
+	orderBy, err := businessYearOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
 	}
 
 	var totalCount int
@@ -109,7 +115,7 @@ func (repository *BusinessYearRepository) List(
 			LetoPoslovanja,
 			IzhajaIz
 		FROM [Birokrat].[dbo].[PoslovnaLeta]
-		ORDER BY Oznaka
+		ORDER BY `+orderBy+`
 		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
 		sql.Named("offset", (page-1)*pageSize),
 		sql.Named("pageSize", pageSize),
@@ -149,4 +155,32 @@ func (repository *BusinessYearRepository) List(
 		PageSize:      pageSize,
 		TotalPages:    totalPages,
 	}, nil
+}
+
+func businessYearOrderBy(sortBy *string, sortDirection *string) (string, error) {
+	if sortBy == nil && sortDirection == nil {
+		return "Oznaka", nil
+	}
+	if sortBy == nil || sortDirection == nil {
+		return "", fmt.Errorf("sortBy and sortDirection must be provided together")
+	}
+
+	columns := map[string]string{
+		"code":        "Oznaka",
+		"description": "Opis",
+		"year":        "LetoPoslovanja",
+		"derivedFrom": "IzhajaIz",
+	}
+	column, ok := columns[*sortBy]
+	if !ok {
+		return "", fmt.Errorf("invalid business year sort column %q", *sortBy)
+	}
+	direction := strings.ToUpper(*sortDirection)
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sortDirection must be asc or desc")
+	}
+	if column == "Oznaka" {
+		return column + " " + direction, nil
+	}
+	return column + " " + direction + ", Oznaka " + direction, nil
 }

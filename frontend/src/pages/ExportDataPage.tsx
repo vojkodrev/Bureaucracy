@@ -40,17 +40,22 @@ function downloadFilename(response: Response, year: string, month: string): stri
 function ExportDataPage() {
     const today = new Date()
     const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1)
-    const [month, setMonth] = useState(months[previousMonth.getMonth()])
+    const [month, setMonth] = useState<(typeof months)[number] | null>(months[previousMonth.getMonth()])
     const [year, setYear] = useState(String(previousMonth.getFullYear()))
     const [isExporting, setIsExporting] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     async function exportData(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
+        const selectedMonth = month
+        if (!selectedMonth) {
+            setError('Month is required')
+            return
+        }
         setIsExporting(true)
         setError(null)
         try {
-            const response = await fetch(exportUrl(month.value, year))
+            const response = await fetch(exportUrl(selectedMonth.value, year))
             if (!response.ok) {
                 const body = await response.json().catch(() => null) as { error?: string } | null
                 throw new Error(body?.error ?? `Export failed (${response.status})`)
@@ -59,7 +64,7 @@ function ExportDataPage() {
             const objectUrl = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = objectUrl
-            link.download = downloadFilename(response, year, month.value)
+            link.download = downloadFilename(response, year, selectedMonth.value)
             document.body.appendChild(link)
             link.click()
             link.remove()
@@ -83,9 +88,7 @@ function ExportDataPage() {
                                     <Combobox
                                         items={months}
                                         value={month}
-                                        onValueChange={(selectedMonth) => {
-                                            if (selectedMonth) setMonth(selectedMonth)
-                                        }}
+                                        onValueChange={setMonth}
                                         itemToStringLabel={(item) => item.label}
                                         itemToStringValue={(item) => item.value}
                                         isItemEqualToValue={(item, selected) =>

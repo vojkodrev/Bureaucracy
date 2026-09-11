@@ -9,6 +9,11 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react(), tailwindcss()],
+    preview: {
+        allowedHosts: ['drevi-pc'],
+        port: 4173,
+        strictPort: true,
+    },
     resolve: {
         alias: {
             '@': path.resolve(dirname, './src'),

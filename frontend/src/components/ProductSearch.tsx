@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -150,7 +150,6 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
 }
 
 function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
-    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
         () => searchFormFromParams(searchParams),
@@ -309,11 +308,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
 
     function selectProduct(product: Product) {
         setSelectedProductId(product.id)
-        if (mode === ComponentMode.Page && product.productCode) {
-            navigate(`/product/${encodeURIComponent(product.productCode)}`)
-        } else {
-            onProductSelect?.(product)
-        }
+        onProductSelect?.(product)
     }
 
     return (
@@ -409,47 +404,62 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                         )}
                         {!isLoading &&
                             !error &&
-                            products.map((product) => (
-                                <TableRow
-                                    key={product.id}
-                                    data-state={
-                                        selectedProductId === product.id
-                                            ? 'selected'
-                                            : undefined
-                                    }
-                                    className="cursor-pointer"
-                                    tabIndex={0}
-                                    onClick={() => selectProduct(product)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault()
-                                            selectProduct(product)
+                            products.map((product) => {
+                                const isPageMode = mode === ComponentMode.Page
+
+                                return (
+                                    <TableRow
+                                        key={product.id}
+                                        data-state={
+                                            selectedProductId === product.id
+                                                ? 'selected'
+                                                : undefined
                                         }
-                                    }}
-                                >
-                                    <TableCell className="font-medium">
-                                        {product.productCode ?? '—'}
-                                    </TableCell>
-                                    <TableCell>{product.name ?? '—'}</TableCell>
-                                    <TableCell>{product.unit ?? '—'}</TableCell>
-                                    <TableCell className="text-right">
-                                        {product.netPrice == null
-                                            ? '—'
-                                            : formatCurrency(product.netPrice)}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {product.grossPrice == null
-                                            ? '—'
-                                            : formatCurrency(product.grossPrice)}
-                                    </TableCell>
-                                    <TableCell>{product.taxCode ?? '—'}</TableCell>
-                                    <TableCell className="text-right">
-                                        {product.taxRate == null
-                                            ? '—'
-                                            : `${product.taxRate}%`}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                                        className="relative cursor-pointer"
+                                        tabIndex={isPageMode ? undefined : 0}
+                                        onClick={isPageMode
+                                            ? undefined
+                                            : () => selectProduct(product)}
+                                        onKeyDown={isPageMode
+                                            ? undefined
+                                            : (event) => {
+                                                if (event.key === 'Enter' || event.key === ' ') {
+                                                    event.preventDefault()
+                                                    selectProduct(product)
+                                                }
+                                            }}
+                                    >
+                                        <TableCell className="font-medium">
+                                            {isPageMode && product.productCode && (
+                                                <Link
+                                                    to={`/product/${encodeURIComponent(product.productCode)}`}
+                                                    aria-label={`Open product ${product.productCode}`}
+                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+                                                />
+                                            )}
+                                            {product.productCode ?? '—'}
+                                        </TableCell>
+                                        <TableCell>{product.name ?? '—'}</TableCell>
+                                        <TableCell>{product.unit ?? '—'}</TableCell>
+                                        <TableCell className="text-right">
+                                            {product.netPrice == null
+                                                ? '—'
+                                                : formatCurrency(product.netPrice)}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {product.grossPrice == null
+                                                ? '—'
+                                                : formatCurrency(product.grossPrice)}
+                                        </TableCell>
+                                        <TableCell>{product.taxCode ?? '—'}</TableCell>
+                                        <TableCell className="text-right">
+                                            {product.taxRate == null
+                                                ? '—'
+                                                : `${product.taxRate}%`}
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
                     </TableBody>
                 </Table>
             </div>

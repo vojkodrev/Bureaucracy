@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// SaveBankStatement is the resolver for the saveBankStatement field.
+func (r *mutationResolver) SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error) {
+	return r.BankStatements.Save(ctx, businessYear, statement)
+}
+
 // SaveCustomer is the resolver for the saveCustomer field.
 func (r *mutationResolver) SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error) {
 	return r.Customers.Save(ctx, businessYear, customer)
@@ -26,13 +31,8 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 	return r.Products.Save(ctx, businessYear, product)
 }
 
-// BusinessYear is the resolver for the businessYear field.
-func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
-	return r.BusinessYearRepository.GetByCode(ctx, code)
-}
-
-// BusinessYears is the resolver for the businessYears field.
-func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *int) (*BusinessYearPage, error) {
+// SearchBankStatements is the resolver for the searchBankStatements field.
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -41,7 +41,45 @@ func (r *queryResolver) BusinessYears(ctx context.Context, page *int, pageSize *
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BusinessYearRepository.List(ctx, resultPage, resultPageSize)
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, bankAccount, customerID, customerName, resultPage, resultPageSize)
+}
+
+// BankAccounts is the resolver for the bankAccounts field.
+func (r *queryResolver) BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error) {
+	return r.BankStatements.ListAccounts(ctx, businessYear)
+}
+
+// BankTransactionTypes is the resolver for the bankTransactionTypes field.
+func (r *queryResolver) BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error) {
+	return r.BankStatements.ListTransactionTypes(ctx, businessYear)
+}
+
+// BankStatement is the resolver for the bankStatement field.
+func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error) {
+	return r.BankStatements.GetByNumber(ctx, businessYear, statementNumber)
+}
+
+// LatestBankStatementNumber is the resolver for the latestBankStatementNumber field.
+func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error) {
+	return r.BankStatements.LatestNumber(ctx, businessYear, bankAccount)
+}
+
+// BusinessYear is the resolver for the businessYear field.
+func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
+	return r.BusinessYearRepository.GetByCode(ctx, code)
+}
+
+// BusinessYears is the resolver for the businessYears field.
+func (r *queryResolver) BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.BusinessYearRepository.List(ctx, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // Countries is the resolver for the countries field.
@@ -52,6 +90,11 @@ func (r *queryResolver) Countries(ctx context.Context, businessYear string) ([]*
 // Invoice is the resolver for the invoice field.
 func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error) {
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
+}
+
+// InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
+func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
+	return r.Invoices.GetTextTemplate(ctx, businessYear)
 }
 
 // Product is the resolver for the product field.

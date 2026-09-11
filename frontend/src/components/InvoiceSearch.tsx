@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import Pager from '@/components/Pager'
@@ -497,38 +497,53 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                         )}
                         {!isLoading &&
                             !error &&
-                            invoices.map((invoice) => (
-                                <TableRow
-                                    key={invoice.invoiceNumber}
-                                    data-state={
-                                        selectedInvoiceNumber === invoice.invoiceNumber
-                                            ? 'selected'
-                                            : undefined
-                                    }
-                                    className="cursor-pointer"
-                                    tabIndex={0}
-                                    onClick={() => selectInvoice(invoice)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === 'Enter' || event.key === ' ') {
-                                            event.preventDefault()
-                                            selectInvoice(invoice)
+                            invoices.map((invoice) => {
+                                const isPageMode = mode === ComponentMode.Page
+
+                                return (
+                                    <TableRow
+                                        key={invoice.invoiceNumber}
+                                        data-state={
+                                            selectedInvoiceNumber === invoice.invoiceNumber
+                                                ? 'selected'
+                                                : undefined
                                         }
-                                    }}
-                                >
-                                    <TableCell className="font-medium">
-                                        {invoice.invoiceNumber}
-                                    </TableCell>
-                                    <TableCell>
-                                        {invoice.customerName ?? invoice.customerCode ?? '—'}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {formatCurrency(invoice.amount ?? 0)}
-                                    </TableCell>
-                                    <TableCell>{formatDate(invoice.issueDate)}</TableCell>
-                                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                                    <TableCell>{formatDate(invoice.paymentDate)}</TableCell>
-                                </TableRow>
-                            ))}
+                                        className="relative cursor-pointer"
+                                        tabIndex={isPageMode ? undefined : 0}
+                                        onClick={isPageMode
+                                            ? undefined
+                                            : () => selectInvoice(invoice)}
+                                        onKeyDown={isPageMode
+                                            ? undefined
+                                            : (event) => {
+                                                if (event.key === 'Enter' || event.key === ' ') {
+                                                    event.preventDefault()
+                                                    selectInvoice(invoice)
+                                                }
+                                            }}
+                                    >
+                                        <TableCell className="font-medium">
+                                            {isPageMode && (
+                                                <Link
+                                                    to={`/invoice/${encodeURIComponent(invoice.invoiceNumber)}`}
+                                                    aria-label={`Open invoice ${invoice.invoiceNumber}`}
+                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+                                                />
+                                            )}
+                                            {invoice.invoiceNumber}
+                                        </TableCell>
+                                        <TableCell>
+                                            {invoice.customerName ?? invoice.customerCode ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {formatCurrency(invoice.amount ?? 0)}
+                                        </TableCell>
+                                        <TableCell>{formatDate(invoice.issueDate)}</TableCell>
+                                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                                        <TableCell>{formatDate(invoice.paymentDate)}</TableCell>
+                                    </TableRow>
+                                )
+                            })}
                     </TableBody>
                 </Table>
             </div>
