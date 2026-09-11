@@ -25,6 +25,7 @@ func NewHTTPServer(
 	config *AppConfig,
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
+	invoiceEmailHandler *InvoiceEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
@@ -51,6 +52,7 @@ func NewHTTPServer(
 		context.Status(http.StatusNoContent)
 	})
 	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
 
 	return &HTTPServer{

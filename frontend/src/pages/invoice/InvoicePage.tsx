@@ -10,6 +10,7 @@ import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/
 import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
+import EmailInvoiceDialog from './EmailInvoiceDialog'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import type { InvoiceNumberWarning } from './InvoiceNumberAlert'
@@ -176,6 +177,7 @@ function InvoicePage() {
     const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const [confirmingPrint, setConfirmingPrint] = useState(false)
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [invoiceNumberWarning, setInvoiceNumberWarning] =
         useState<InvoiceNumberWarning | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -573,15 +575,18 @@ function InvoicePage() {
             <InvoiceMenu
                 canSave={canSaveInvoice}
                 canPrint={canRequestPrintInvoice}
+                canEmail={canPrintInvoice}
                 canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
                 canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
                 isDuplicating={isDuplicating}
                 onSave={() => void requestSaveInvoice()}
                 onPrint={printInvoice}
+                onEmail={() => setEmailDialogOpen(true)}
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
             />
+            <EmailInvoiceDialog open={emailDialogOpen} invoiceNumber={invoiceNumber.trim()} customerId={customerId} onOpenChange={setEmailDialogOpen} />
             <InvoiceNumberAlert
                 invoiceNumber={invoiceNumber.trim()}
                 warning={invoiceNumberWarning}

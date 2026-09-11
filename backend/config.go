@@ -21,6 +21,12 @@ type AppConfig struct {
 	MSSQLPassword               string
 	MSSQLEncrypt                string
 	MSSQLTrustServerCertificate string
+	SMTPHost                    string
+	SMTPPort                    string
+	SMTPUsername                string
+	SMTPPassword                string
+	SMTPFromAddress             string
+	SMTPSecurity                string
 }
 
 func NewAppConfig() *AppConfig {
@@ -38,6 +44,12 @@ func NewAppConfig() *AppConfig {
 		MSSQLPassword:               os.Getenv("MSSQL_PASSWORD"),
 		MSSQLEncrypt:                envOrDefault("MSSQL_ENCRYPT", "true"),
 		MSSQLTrustServerCertificate: envOrDefault("MSSQL_TRUST_SERVER_CERTIFICATE", "false"),
+		SMTPHost:                    os.Getenv("SMTP_HOST"),
+		SMTPPort:                    envOrDefault("SMTP_PORT", "587"),
+		SMTPUsername:                os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:                os.Getenv("SMTP_PASSWORD"),
+		SMTPFromAddress:             os.Getenv("SMTP_FROM_ADDRESS"),
+		SMTPSecurity:                strings.ToLower(envOrDefault("SMTP_SECURITY", "starttls")),
 	}
 }
 
