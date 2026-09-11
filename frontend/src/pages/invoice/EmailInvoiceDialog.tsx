@@ -17,7 +17,13 @@ import { toast } from '@/lib/toast'
 
 type ErrorResponse = { error?: string }
 type CustomerEmailResponse = { data?: { customer: { email: string | null } | null }; errors?: { message: string }[] }
-type Props = { open: boolean; invoiceNumber: string; customerId: string; onOpenChange: (open: boolean) => void }
+type Props = {
+    open: boolean
+    invoiceNumber: string
+    customerId: string
+    businessYear: number | null
+    onOpenChange: (open: boolean) => void
+}
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const acceptedTypes = '.pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx'
@@ -35,7 +41,13 @@ function emailUrl(invoiceNumber: string): string {
     return url.toString()
 }
 
-function EmailInvoiceDialog({ open, invoiceNumber, customerId, onOpenChange }: Props) {
+function EmailInvoiceDialog({
+    open,
+    invoiceNumber,
+    customerId,
+    businessYear,
+    onOpenChange,
+}: Props) {
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
@@ -49,9 +61,15 @@ function EmailInvoiceDialog({ open, invoiceNumber, customerId, onOpenChange }: P
     useEffect(() => {
         if (!open) return
         const controller = new AbortController()
-        const displayNumber = invoiceNumber
-        setStoredRecipient(''); setRecipient(''); setSubject(`Invoice ${displayNumber}`)
-        setMessage(`Hello,\n\nPlease find invoice ${displayNumber} attached.\n\nKind regards`)
+        const displayNumber = businessYear
+            ? `${invoiceNumber}/${businessYear}`
+            : invoiceNumber
+        setStoredRecipient('')
+        setRecipient('')
+        setSubject(`Drevi d.o.o. - Račun ${displayNumber}`)
+        setMessage(
+            `Pozdravljeni,\n\nv priponki vam pošiljamo račun ${displayNumber}.\n\nLep pozdrav, Drevi d.o.o. 041 693 605`,
+        )
         setError(null); setAttachments([])
         if (!customerId.trim()) { setLoading(false); return }
         setLoading(true)
@@ -84,7 +102,7 @@ function EmailInvoiceDialog({ open, invoiceNumber, customerId, onOpenChange }: P
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false) })
         return () => controller.abort()
-    }, [customerId, invoiceNumber, open])
+    }, [businessYear, customerId, invoiceNumber, open])
 
     const addAttachments = (files: FileList | null) => {
         if (!files) return

@@ -87,7 +87,11 @@ const invoiceTextTemplateQuery = `
     }
 `
 
-const businessYearQuery = `query BusinessYear($code: String!) { businessYear(code: $code) { description } }`
+const businessYearQuery = `
+    query BusinessYear($code: String!) {
+        businessYear(code: $code) { year }
+    }
+`
 const saveInvoiceMutation = `
     mutation SaveInvoice($businessYear: String!, $invoice: InvoiceInput!) {
         saveInvoice(businessYear: $businessYear, invoice: $invoice) {
@@ -162,7 +166,7 @@ function InvoicePage() {
     const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
-    const [businessYearDescription, setBusinessYearDescription] = useState('')
+    const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [customerId, setCustomerId] = useState('')
     const [customerName, setCustomerName] = useState('')
     const [customerAddress, setCustomerAddress] = useState('')
@@ -372,7 +376,7 @@ function InvoicePage() {
             if (!response.ok) throw new Error(`Loading business year failed (${response.status})`)
             const result = (await response.json()) as BusinessYearResponse
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-            setBusinessYearDescription(result.data?.businessYear?.description ?? '')
+            setBusinessYear(result.data?.businessYear?.year ?? null)
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
                 console.error(requestError)
@@ -619,6 +623,7 @@ function InvoicePage() {
                 open={emailDialogOpen}
                 invoiceNumber={invoiceNumber.trim()}
                 customerId={customerId}
+                businessYear={businessYear}
                 onOpenChange={setEmailDialogOpen}
             />
             <InvoiceNumberAlert
@@ -671,7 +676,7 @@ function InvoicePage() {
                 />
                 <GeneralInformationInput
                     invoiceNumber={invoiceNumber}
-                    businessYearDescription={businessYearDescription}
+                    businessYear={businessYear}
                     invoiceDate={invoiceDate}
                     dueDate={dueDate}
                     serviceDate={serviceDate}

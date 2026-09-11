@@ -6,6 +6,6 @@ export type BusinessYear = {
 }
 
 export type BusinessYearResponse = {
-    data?: { businessYear: Pick<BusinessYear, 'description'> | null }
+    data?: { businessYear: Pick<BusinessYear, 'year'> | null }
     errors?: { message: string }[]
 }
