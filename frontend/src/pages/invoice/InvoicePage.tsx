@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import ErrorAlert from '@/components/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,6 +24,16 @@ import SaveCustomerEmailAlert from './SaveCustomerEmailAlert'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
+type InvoiceRequestErrors = Partial<Record<
+    | 'latestInvoiceNumber'
+    | 'nextInvoiceNumber'
+    | 'invoiceTextTemplate'
+    | 'businessYear'
+    | 'currentBusinessYear'
+    | 'duplicateInvoiceNumber'
+    | 'customerPaymentTerm',
+    string
+>>
 type InvoiceTextTemplate = { introductoryText: string | null; closingText: string | null }
 type InvoiceTextTemplateResponse = {
     data?: { invoiceTextTemplate: InvoiceTextTemplate }
@@ -250,6 +261,7 @@ function InvoicePage() {
     const [reloadVersion, setReloadVersion] = useState(0)
     const [printError, setPrintError] = useState<string | null>(null)
     const [saveError, setSaveError] = useState<string | null>(null)
+    const [requestErrors, setRequestErrors] = useState<InvoiceRequestErrors>({})
     const [isSaving, setIsSaving] = useState(false)
     const [isDuplicating, setIsDuplicating] = useState(false)
     const [cleanDraft, setCleanDraft] = useState<string | null>(null)
@@ -300,11 +312,17 @@ function InvoicePage() {
 
     useEffect(() => {
         const abortController = new AbortController()
+        setRequestErrors((current) => ({ ...current, latestInvoiceNumber: undefined }))
         void fetchLatestInvoiceNumber(abortController.signal).then((value) => {
             setLatestInvoiceResult({ routeInvoiceNumber, value })
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
-                console.error(requestError)
+                setRequestErrors((current) => ({
+                    ...current,
+                    latestInvoiceNumber: requestError instanceof Error
+                        ? requestError.message
+                        : 'Loading latest invoice failed',
+                }))
             }
         })
         return () => abortController.abort()
@@ -415,11 +433,21 @@ function InvoicePage() {
         setCleanDraft(null)
         setSaveError(null)
         setPrintError(null)
+        setRequestErrors((current) => ({
+            ...current,
+            nextInvoiceNumber: undefined,
+            invoiceTextTemplate: undefined,
+        }))
 
         const abortController = new AbortController()
         const templatePromise = fetchInvoiceTextTemplate(abortController.signal).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
-                console.error(requestError)
+                setRequestErrors((current) => ({
+                    ...current,
+                    invoiceTextTemplate: requestError instanceof Error
+                        ? requestError.message
+                        : 'Loading invoice text template failed',
+                }))
             }
             return { introductoryText: null, closingText: null }
         })
@@ -427,6 +455,7 @@ function InvoicePage() {
             fetchNextInvoiceNumber(abortController.signal),
             templatePromise,
         ]).then(([nextInvoiceNumber, template]) => {
+            setRequestErrors((current) => ({ ...current, nextInvoiceNumber: undefined }))
             const templateIntroductoryText = template.introductoryText ?? ''
             const templateClosingText = template.closingText ?? ''
             setInvoiceNumber(nextInvoiceNumber)
@@ -443,7 +472,12 @@ function InvoicePage() {
             }))
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
-                console.error(requestError)
+                setRequestErrors((current) => ({
+                    ...current,
+                    nextInvoiceNumber: requestError instanceof Error
+                        ? requestError.message
+                        : 'Loading next invoice number failed',
+                }))
             }
         })
         return () => abortController.abort()
@@ -451,6 +485,7 @@ function InvoicePage() {
 
     useEffect(() => {
         const abortController = new AbortController()
+        setRequestErrors((current) => ({ ...current, businessYear: undefined }))
         void fetch(graphqlUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: businessYearQuery, variables: { code: getSelectedBusinessYear() } }),
@@ -462,7 +497,12 @@ function InvoicePage() {
             setBusinessYear(result.data?.businessYear?.year ?? null)
         }).catch((requestError: unknown) => {
             if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
-                console.error(requestError)
+                setRequestErrors((current) => ({
+                    ...current,
+                    businessYear: requestError instanceof Error
+                        ? requestError.message
+                        : 'Loading business year failed',
+                }))
             }
         })
         return () => abortController.abort()
@@ -608,13 +648,36 @@ function InvoicePage() {
         setConfirmingDuplicate(false)
         setIsDuplicating(true)
         setSaveError(null)
+        setRequestErrors((current) => ({
+            ...current,
+            currentBusinessYear: undefined,
+            duplicateInvoiceNumber: undefined,
+            customerPaymentTerm: undefined,
+        }))
         try {
             const currentBusinessYear = await fetchCurrentBusinessYear()
             const duplicateBusinessYearCode = currentBusinessYear.code
-            const [nextInvoiceNumber, paymentTerm] = await Promise.all([
+            const [numberResult, paymentTermResult] = await Promise.allSettled([
                 fetchNextInvoiceNumber(undefined, duplicateBusinessYearCode),
                 fetchCustomerPaymentTerm(customerId, duplicateBusinessYearCode),
             ])
+            const duplicateRequestErrors: InvoiceRequestErrors = {}
+            if (numberResult.status === 'rejected') {
+                duplicateRequestErrors.duplicateInvoiceNumber = numberResult.reason instanceof Error
+                    ? numberResult.reason.message
+                    : 'Loading duplicate invoice number failed'
+            }
+            if (paymentTermResult.status === 'rejected') {
+                duplicateRequestErrors.customerPaymentTerm = paymentTermResult.reason instanceof Error
+                    ? paymentTermResult.reason.message
+                    : 'Loading customer payment term failed'
+            }
+            if (numberResult.status === 'rejected' || paymentTermResult.status === 'rejected') {
+                setRequestErrors((current) => ({ ...current, ...duplicateRequestErrors }))
+                return
+            }
+            const nextInvoiceNumber = numberResult.value
+            const paymentTerm = paymentTermResult.value
             const duplicateInvoiceDate = new Date()
             if (
                 businessYear !== currentBusinessYear.year ||
@@ -644,7 +707,12 @@ function InvoicePage() {
                 type: 'info',
             })
         } catch (requestError: unknown) {
-            setSaveError(requestError instanceof Error ? requestError.message : 'Duplicating invoice failed')
+            setRequestErrors((current) => ({
+                ...current,
+                currentBusinessYear: requestError instanceof Error
+                    ? requestError.message
+                    : 'Loading current business year failed',
+            }))
         } finally {
             setIsDuplicating(false)
         }
@@ -715,9 +783,34 @@ function InvoicePage() {
         const paddedNumber = String(value).padStart(routeInvoiceNumber.length, '0')
         navigate(`/invoice/${encodeURIComponent(paddedNumber)}`)
     }
+    const topErrors = [
+        { key: 'invoice', title: 'Invoice could not be loaded', description: 'The invoice data could not be retrieved.', error },
+        { key: 'print', title: 'Invoice could not be printed', description: 'The invoice PDF could not be prepared.', error: printError },
+        { key: 'save', title: 'Invoice could not be saved', description: 'Your changes were not saved.', error: saveError },
+        { key: 'latest-number', title: 'Latest invoice number could not be loaded', description: 'Invoice navigation may be unavailable.', error: requestErrors.latestInvoiceNumber },
+        { key: 'next-number', title: 'Next invoice number could not be loaded', description: 'A number could not be assigned to the new invoice.', error: requestErrors.nextInvoiceNumber },
+        { key: 'template', title: 'Invoice text template could not be loaded', description: 'The new invoice was opened without its default text.', error: requestErrors.invoiceTextTemplate },
+        { key: 'business-year', title: 'Business year could not be loaded', description: 'The invoice business-year details are unavailable.', error: requestErrors.businessYear },
+        { key: 'current-business-year', title: 'Current business year could not be loaded', description: 'The invoice could not be duplicated.', error: requestErrors.currentBusinessYear },
+        { key: 'duplicate-number', title: 'Duplicate invoice number could not be loaded', description: 'A number could not be assigned to the duplicate.', error: requestErrors.duplicateInvoiceNumber },
+        { key: 'payment-term', title: 'Customer payment term could not be loaded', description: 'The duplicate invoice due date could not be calculated.', error: requestErrors.customerPaymentTerm },
+    ]
 
     return (
         <div className="max-w-5xl p-4">
+            {topErrors.some(({ error: requestError }) => requestError) && (
+                <div className="mb-6 space-y-2">
+                    {topErrors.map(({ key, title, description, error: requestError }) =>
+                        requestError && (
+                            <ErrorAlert
+                                key={key}
+                                title={title}
+                                description={description}
+                                error={requestError}
+                            />
+                        ))}
+                </div>
+            )}
             <div className="mb-6 flex items-center gap-2">
                 <InvoiceMenu
                     canSave={canSaveInvoice}
@@ -803,8 +896,6 @@ function InvoicePage() {
                 onConfirmingPrintChange={setConfirmingPrint}
                 onSaveBeforePrint={saveBeforePrint}
             />
-            {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
-            {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <CustomerInputFields
                     customerId={customerId}
@@ -844,7 +935,7 @@ function InvoicePage() {
                         onChange={(event) => setIntroductoryText(event.target.value)}
                     />
                 </Field>
-                <Products items={invoiceItems} isLoading={isLoading} error={error} onItemsChange={setInvoiceItems} />
+                <Products items={invoiceItems} isLoading={isLoading} onItemsChange={setInvoiceItems} />
                 <Field>
                     <FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
                     <Textarea

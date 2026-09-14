@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -322,6 +323,15 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
 
     return (
         <div className="p-4">
+            {error && (
+                <div className="mb-6 max-w-2xl">
+                    <ErrorAlert
+                        title="Products could not be loaded"
+                        description="The product search could not be completed."
+                        error={error}
+                    />
+                </div>
+            )}
             <form
                 key={searchKey}
                 className="max-w-2xl"
@@ -362,7 +372,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                 </Card>
             </form>
 
-            <div className="mt-8">
+            {!error && <div className="mt-8">
                 {productPage && (
                     <Pager
                         firstItem={firstProduct}
@@ -396,13 +406,6 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                             <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     Loading products…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-destructive">
-                                    {error}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -473,7 +476,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                             })}
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
         </div>
     )
 }

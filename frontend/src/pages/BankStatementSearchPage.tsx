@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import BankAccountComboboxField from '@/components/BankAccountComboboxField'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
+import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
@@ -226,6 +227,15 @@ function BankStatementSearchPage() {
 
     return (
         <div className="p-4">
+            {error && (
+                <div className="mb-6 max-w-4xl">
+                    <ErrorAlert
+                        title="Bank statements could not be loaded"
+                        description="The bank statement search could not be completed."
+                        error={error}
+                    />
+                </div>
+            )}
             <form key={searchKey} className="max-w-4xl" onSubmit={submitSearch} onReset={clearSearch}>
                 <Card>
                     <CardContent>
@@ -257,7 +267,7 @@ function BankStatementSearchPage() {
                 </Card>
             </form>
 
-            <div className="mt-8 w-full overflow-x-auto">
+            {!error && <div className="mt-8 w-full overflow-x-auto">
                 {statementPage && (
                     <Pager firstItem={firstStatement} lastItem={lastStatement} page={statementPage.page} pageSize={statementPage.pageSize} totalItems={statementPage.totalCount} totalPages={statementPage.totalPages} onPageChange={changePage} onPageSizeChange={changePageSize} />
                 )}
@@ -274,7 +284,6 @@ function BankStatementSearchPage() {
                     </TableHeader>
                     <TableBody>
                         {isLoading && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Loading bank statements…</TableCell></TableRow>}
-                        {error && <TableRow><TableCell colSpan={6} className="h-24 text-center text-destructive">{error}</TableCell></TableRow>}
                         {!isLoading && !error && groups.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No bank statements found.</TableCell></TableRow>}
                         {!isLoading && !error && groups.map((entries) => {
                             const statement = entries[0]
@@ -312,7 +321,7 @@ function BankStatementSearchPage() {
                         })}
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
         </div>
     )
 }

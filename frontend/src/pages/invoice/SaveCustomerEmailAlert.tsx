@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ErrorAlert from '@/components/ErrorAlert'
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -105,7 +106,13 @@ function SaveCustomerEmailAlert({
                         {customerName ? ` — ${customerName}` : ''}?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                {error && (
+                    <ErrorAlert
+                        title="Customer email could not be saved"
+                        description="The customer record was not updated."
+                        error={error}
+                    />
+                )}
                 <AlertDialogFooter>
                     <AlertDialogCancel disabled={saving}>No, keep current email</AlertDialogCancel>
                     <Button disabled={saving} onClick={() => void saveEmail()}>

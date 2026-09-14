@@ -1,8 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { CircleAlertIcon } from 'lucide-react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import ErrorAlert from '@/components/ErrorAlert'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -320,6 +319,24 @@ function ProductPage() {
 
     return (
         <div className="max-w-5xl p-4">
+            {(loadError || saveError) && (
+                <div className="mb-6 space-y-2">
+                    {loadError && (
+                        <ErrorAlert
+                            title="Product could not be loaded"
+                            description="The product data could not be retrieved."
+                            error={loadError}
+                        />
+                    )}
+                    {saveError && (
+                        <ErrorAlert
+                            title="Product could not be saved"
+                            description="Your changes were not saved."
+                            error={saveError}
+                        />
+                    )}
+                </div>
+            )}
             <ProductMenu
                 canSave={canSave}
                 canRevert={hasUnsavedChanges && !isDuplicating}
@@ -355,28 +372,6 @@ function ProductPage() {
                 actionLabel="Duplicate anyway"
                 actionVariant="default"
             />
-            {(loadError || saveError) && (
-                <div className="mb-6 space-y-2">
-                    {loadError && (
-                        <Alert variant="destructive">
-                            <CircleAlertIcon />
-                            <AlertTitle>Product could not be loaded</AlertTitle>
-                            <AlertDescription>
-                                The product data could not be retrieved. {loadError}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    {saveError && (
-                        <Alert variant="destructive">
-                            <CircleAlertIcon />
-                            <AlertTitle>Product could not be saved</AlertTitle>
-                            <AlertDescription>
-                                Your changes were not saved. {saveError}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </div>
-            )}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>

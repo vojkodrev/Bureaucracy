@@ -3,6 +3,7 @@ import type { SubmitEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
+import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
@@ -417,10 +418,27 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
 
     return (
         <div className="p-4">
+            {(printError || error) && (
+                <div className="mb-6 max-w-2xl space-y-2">
+                    {printError && (
+                        <ErrorAlert
+                            title="Invoice report could not be printed"
+                            description="The invoice report PDF could not be opened."
+                            error={printError}
+                        />
+                    )}
+                    {error && (
+                        <ErrorAlert
+                            title="Invoices could not be loaded"
+                            description="The invoice search could not be completed."
+                            error={error}
+                        />
+                    )}
+                </div>
+            )}
             {mode === ComponentMode.Page && (
                 <InvoiceSearchMenu disabled={!canPrint} onPrint={printReport} />
             )}
-            {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             <form
                 key={searchKey}
                 className="max-w-2xl"
@@ -488,7 +506,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                 </Card>
             </form>
 
-            <div className="mt-8">
+            {!error && <div className="mt-8">
                 {invoicePage && (
                     <Pager
                         firstItem={firstInvoice}
@@ -529,13 +547,6 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                     Loading invoices…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-destructive">
-                                    {error}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -597,9 +608,9 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                             })}
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
 
-            <div className="mt-8 max-w-sm">
+            {!error && <div className="mt-8 max-w-sm">
                 <h2 className="mb-2 text-sm font-medium">Summary</h2>
                 <Table>
                     <TableHeader>
@@ -635,7 +646,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                         </TableRow>
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
         </div>
     )
 }

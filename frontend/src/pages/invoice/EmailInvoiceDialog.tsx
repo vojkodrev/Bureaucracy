@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileText, Paperclip, Trash2 } from 'lucide-react'
+import ErrorAlert from '@/components/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -260,7 +261,13 @@ function EmailInvoiceDialog({
                             Word, or Excel).
                         </p>
                     </div>
-                    {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                    {error && (
+                        <ErrorAlert
+                            title="Invoice email could not be completed"
+                            description="Review the email details and try again."
+                            error={error}
+                        />
+                    )}
                 </div>
                 <DialogFooter>
                     <Button

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
+import ErrorAlert from '@/components/ErrorAlert'
 import {
     getSelectedBusinessYear,
     setSelectedBusinessYear,
@@ -241,26 +242,38 @@ function BusinessYearsPage() {
 
     return (
         <div className="p-4">
-            <div className="mb-8 max-w-sm">
-                <h2 className="mb-2 text-sm font-medium">Summary</h2>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Value</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>Selected business year</TableCell>
-                            <TableCell className="font-medium">
-                                {selectedBusinessYear}
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
+            {error && (
+                <div className="mb-6">
+                    <ErrorAlert
+                        title="Business years could not be loaded"
+                        description="The business year list could not be retrieved."
+                        error={error}
+                    />
+                </div>
+            )}
+            {selectedBusinessYear && (
+                <div className="mb-8 max-w-sm">
+                    <h2 className="mb-2 text-sm font-medium">Summary</h2>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Value</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell>Selected business year</TableCell>
+                                <TableCell className="font-medium">
+                                    {selectedBusinessYear}
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
 
+            {!error && <>
             {businessYearPage && (
                 <Pager
                     firstItem={firstBusinessYear}
@@ -297,16 +310,6 @@ function BusinessYearsPage() {
                                 className="h-24 text-center text-muted-foreground"
                             >
                                 Loading business years…
-                            </TableCell>
-                        </TableRow>
-                    )}
-                    {error && (
-                        <TableRow>
-                            <TableCell
-                                colSpan={4}
-                                className="h-24 text-center text-destructive"
-                            >
-                                {error}
                             </TableCell>
                         </TableRow>
                     )}
@@ -361,6 +364,7 @@ function BusinessYearsPage() {
                         ))}
                 </TableBody>
             </Table>
+            </>}
         </div>
     )
 }
