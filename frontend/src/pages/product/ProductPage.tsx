@@ -97,14 +97,17 @@ async function fetchNextProductCode(signal?: AbortSignal): Promise<string> {
 function ProductPage() {
     const { productCode: routeProductCode } = useParams()
     const navigate = useNavigate()
+    const preserveDuplicateRef = useRef(false)
     const allowNextNavigationRef = useRef(false)
     const [productId, setProductId] = useState<number | null>(null)
     const [draft, setDraft] = useState<ProductDraft>(() => productDraft())
     const [cleanDraft, setCleanDraft] = useState(JSON.stringify(productDraft()))
     const [reloadVersion, setReloadVersion] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
+    const [isDuplicating, setIsDuplicating] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const requestKey = `${routeProductCode ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<LoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeProductCode) && loadResult.requestKey !== requestKey
@@ -115,6 +118,7 @@ function ProductPage() {
         isOptionalNonNegativeNumber(draft.netPrice) &&
         isOptionalNonNegativeNumber(draft.taxRate) &&
         !isLoading &&
+        !isDuplicating &&
         !loadError
     const blocker = useBlocker(({ currentLocation, nextLocation }) =>
         !allowNextNavigationRef.current && hasUnsavedChanges &&
@@ -125,6 +129,13 @@ function ProductPage() {
 
     useEffect(() => {
         if (!routeProductCode) {
+            if (preserveDuplicateRef.current) {
+                preserveDuplicateRef.current = false
+                allowNextNavigationRef.current = false
+                setLoadResult({ requestKey, error: null })
+                return
+            }
+
             const emptyDraft = productDraft()
             setProductId(null)
             setDraft(emptyDraft)
@@ -250,6 +261,43 @@ function ProductPage() {
         })
     }
 
+    const duplicateProduct = async () => {
+        if (productId == null || isDuplicating) return
+
+        if (hasUnsavedChanges) {
+            setConfirmingDuplicate(true)
+            return
+        }
+
+        await performDuplicateProduct()
+    }
+
+    const performDuplicateProduct = async () => {
+        if (productId == null || isDuplicating) return
+        setConfirmingDuplicate(false)
+        setIsDuplicating(true)
+        setSaveError(null)
+        try {
+            const nextProductCode = await fetchNextProductCode()
+            setProductId(null)
+            setDraft((current) => ({ ...current, productCode: nextProductCode }))
+            setCleanDraft('__unsaved_duplicate__')
+            preserveDuplicateRef.current = true
+            allowNextNavigationRef.current = true
+            navigate('/product')
+            toast.add({
+                title: 'Product duplicated',
+                description: `Product code ${nextProductCode} has been assigned to the new unsaved copy. ` +
+                    'You can review and edit it before saving.',
+                type: 'info',
+            })
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error ? requestError.message : 'Duplicating product failed')
+        } finally {
+            setIsDuplicating(false)
+        }
+    }
+
     const onSaveShortcut = useEffectEvent(() => { void saveProduct() })
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -272,10 +320,13 @@ function ProductPage() {
         <div className="max-w-5xl p-4">
             <ProductMenu
                 canSave={canSave}
-                canRevert={hasUnsavedChanges}
+                canRevert={hasUnsavedChanges && !isDuplicating}
+                canDuplicate={productId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
+                isDuplicating={isDuplicating}
                 onSave={() => void saveProduct()}
                 onRevert={() => setConfirmingRevert(true)}
+                onDuplicate={() => void duplicateProduct()}
             />
             <UnsavedProductAlert
                 open={blocker.state === 'blocked'}
@@ -292,6 +343,15 @@ function ProductPage() {
                 onOpenChange={setConfirmingRevert}
                 onDiscard={performRevert}
                 actionLabel="Discard and revert"
+            />
+            <UnsavedProductAlert
+                open={confirmingDuplicate}
+                onOpenChange={setConfirmingDuplicate}
+                onDiscard={() => void performDuplicateProduct()}
+                title="Duplicate with unsaved changes?"
+                description="Your changes have not been saved to the original product. The new duplicate will be created from the values currently shown."
+                actionLabel="Duplicate anyway"
+                actionVariant="default"
             />
             {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
