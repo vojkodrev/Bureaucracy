@@ -101,7 +101,7 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 	}
 	storedRecipient := ""
 	if customer != nil {
-		storedRecipient = stringValue(customer.Email)
+		storedRecipient = trimmedString(customer.Email)
 	}
 	context.JSON(http.StatusOK, gin.H{"sent": true, "recipientDiffers": emailRecipientsDiffer(storedRecipient, recipient)})
 }
@@ -128,7 +128,7 @@ func (handler *InvoiceEmailHandler) loadInvoice(context *gin.Context) (*Invoice,
 		return nil, nil, 0, false
 	}
 	var customer *Customer
-	if customerCode := stringValue(invoice.CustomerCode); customerCode != "" {
+	if customerCode := trimmedString(invoice.CustomerCode); customerCode != "" {
 		customer, err = handler.customers.GetByID(context.Request.Context(), businessYear, customerCode)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": "could not load invoice customer"})

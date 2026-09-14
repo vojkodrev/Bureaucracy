@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8">
+    <title>{{.Document.Title}}</title>
+    <style>{{.CSS}}</style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>{{.Document.Title}}</h1>
+            <p>Poslovno leto {{.Document.BusinessYear}} · {{.Document.DateRange}} · {{.Document.ResultPage}}</p>
+        </div>
+        <p class="generated">Izdelano {{.Document.GeneratedAt}}</p>
+    </header>
+
+    <table class="invoices">
+        <thead>
+            <tr>
+                <th>Številka<br>računa</th>
+                <th>Kupec</th>
+                <th class="number">Znesek</th>
+                <th>Datum<br>računa</th>
+                <th>Datum<br>valute</th>
+                <th>Datum<br>plačila</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Document.Invoices}}
+            <tr>
+                <td>{{.InvoiceNumber}}</td>
+                <td>{{.Customer}}</td>
+                <td class="number">{{.Amount}}</td>
+                <td>{{.IssueDate}}</td>
+                <td>{{.DueDate}}</td>
+                <td>{{.PaymentDate}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="empty">Za izbrane pogoje ni računov.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <section class="summary">
+        <h2>Skupaj</h2>
+        <dl>
+            <dt>Skupni znesek</dt><dd>{{.Document.Total}}</dd>
+            <dt>Neplačano</dt><dd>{{.Document.Unpaid}}</dd>
+            <dt>Zapadlo</dt><dd>{{.Document.PastDue}}</dd>
+            <dt>Plačano</dt><dd>{{.Document.Paid}}</dd>
+        </dl>
+    </section>
+</body>
+</html>
