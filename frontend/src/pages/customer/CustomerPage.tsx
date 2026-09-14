@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import CountryComboboxField from '@/components/CountryComboboxField'
+import ErrorAlert from '@/components/ErrorAlert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -260,6 +261,24 @@ function CustomerPage() {
 
     return (
         <div className="max-w-5xl p-4">
+            {(loadError || saveError) && (
+                <div className="mb-6 space-y-2">
+                    {loadError && (
+                        <ErrorAlert
+                            title="Customer could not be loaded"
+                            description="The customer data could not be retrieved."
+                            error={loadError}
+                        />
+                    )}
+                    {saveError && (
+                        <ErrorAlert
+                            title="Customer could not be saved"
+                            description="Your changes were not saved."
+                            error={saveError}
+                        />
+                    )}
+                </div>
+            )}
             <CustomerMenu canSave={canSave} canRevert={hasUnsavedChanges} isSaving={isSaving} onSave={() => void saveCustomer()} onRevert={() => setConfirmingRevert(true)} />
             <UnsavedCustomerAlert
                 open={blocker.state === 'blocked'}
@@ -272,8 +291,6 @@ function CustomerPage() {
                 }}
             />
             <UnsavedCustomerAlert open={confirmingRevert} onOpenChange={setConfirmingRevert} onDiscard={performRevert} actionLabel="Discard and revert" />
-            {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
-            {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <div className="space-y-6">
                     <Card>

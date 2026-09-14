@@ -3,6 +3,7 @@ import type { SubmitEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
+import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
@@ -207,6 +208,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const invoicePage = isLoading ? null : searchResult.invoicePage
     const invoices = invoicePage?.invoices ?? emptyInvoices
     const error = isLoading ? null : searchResult.error
+    const canPrint = !isLoading && !error && invoices.length > 0
     const firstInvoice =
         invoicePage && invoicePage.totalCount > 0
             ? (invoicePage.page - 1) * invoicePage.pageSize + 1
@@ -392,6 +394,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     }
 
     const printReport = () => {
+        if (!canPrint) return
         const pdfTab = window.open(invoiceReportPdfUrl(activeSearch), '_blank')
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the invoice report PDF.')
@@ -415,8 +418,27 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
 
     return (
         <div className="p-4">
-            {mode === ComponentMode.Page && <InvoiceSearchMenu onPrint={printReport} />}
-            {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
+            {(printError || error) && (
+                <div className="mb-6 max-w-2xl space-y-2">
+                    {printError && (
+                        <ErrorAlert
+                            title="Invoice report could not be printed"
+                            description="The invoice report PDF could not be opened."
+                            error={printError}
+                        />
+                    )}
+                    {error && (
+                        <ErrorAlert
+                            title="Invoices could not be loaded"
+                            description="The invoice search could not be completed."
+                            error={error}
+                        />
+                    )}
+                </div>
+            )}
+            {mode === ComponentMode.Page && (
+                <InvoiceSearchMenu disabled={!canPrint} onPrint={printReport} />
+            )}
             <form
                 key={searchKey}
                 className="max-w-2xl"
@@ -484,7 +506,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                 </Card>
             </form>
 
-            <div className="mt-8">
+            {!error && <div className="mt-8">
                 {invoicePage && (
                     <Pager
                         firstItem={firstInvoice}
@@ -525,13 +547,6 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                     Loading invoices…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-destructive">
-                                    {error}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -593,9 +608,9 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                             })}
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
 
-            <div className="mt-8 max-w-sm">
+            {!error && <div className="mt-8 max-w-sm">
                 <h2 className="mb-2 text-sm font-medium">Summary</h2>
                 <Table>
                     <TableHeader>
@@ -631,7 +646,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                         </TableRow>
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
         </div>
     )
 }

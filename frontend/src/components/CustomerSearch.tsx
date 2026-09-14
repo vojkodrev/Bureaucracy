@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
@@ -332,6 +333,15 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
 
     return (
         <div className="p-4">
+            {error && (
+                <div className="mb-6 max-w-2xl">
+                    <ErrorAlert
+                        title="Customers could not be loaded"
+                        description="The customer search could not be completed."
+                        error={error}
+                    />
+                </div>
+            )}
             <form
                 key={searchKey}
                 className="max-w-2xl"
@@ -372,7 +382,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                 </Card>
             </form>
 
-            <div className="mt-8">
+            {!error && <div className="mt-8">
                 {customerPage && (
                     <Pager
                         firstItem={firstCustomer}
@@ -405,13 +415,6 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                             <TableRow>
                                 <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                                     Loading customers…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {error && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-24 text-center text-destructive">
-                                    {error}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -475,7 +478,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                             })}
                     </TableBody>
                 </Table>
-            </div>
+            </div>}
         </div>
     )
 }

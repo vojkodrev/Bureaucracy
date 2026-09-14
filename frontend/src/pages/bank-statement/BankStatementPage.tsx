@@ -3,6 +3,7 @@ import { Save, Undo2 } from "lucide-react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import BankAccountComboboxField from "@/components/BankAccountComboboxField";
 import DatePickerField from "@/components/DatePickerField";
+import ErrorAlert from "@/components/ErrorAlert";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -404,6 +405,15 @@ function BankStatementPage() {
     const inflow = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0), 0);
     return (
         <div className="max-w-5xl p-4">
+            {error && (
+                <div className="mb-6">
+                    <ErrorAlert
+                        title="Bank statement operation failed"
+                        description="The bank statement could not be processed."
+                        error={error}
+                    />
+                </div>
+            )}
             <Menubar className="mb-6 w-fit">
                 <MenubarMenu>
                     <MenubarTrigger>File</MenubarTrigger>
@@ -437,11 +447,6 @@ function BankStatementPage() {
                     </MenubarContent>
                 </MenubarMenu>
             </Menubar>
-            {error && (
-                <p className="mb-6 text-sm text-destructive" role="alert">
-                    {error}
-                </p>
-            )}
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>General information</CardTitle>

@@ -11,11 +11,10 @@ import RemoveProductAlert from './RemoveProductAlert'
 type ProductsProps = {
     items: InvoiceItem[]
     isLoading: boolean
-    error: string | null
     onItemsChange: (items: InvoiceItem[]) => void
 }
 
-function Products({ items, isLoading, error, onItemsChange }: ProductsProps) {
+function Products({ items, isLoading, onItemsChange }: ProductsProps) {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingIndex, setEditingIndex] = useState<number | null>(null)
     const openNew = () => { setEditingIndex(null); setDialogOpen(true) }
@@ -38,9 +37,8 @@ function Products({ items, isLoading, error, onItemsChange }: ProductsProps) {
                     <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product code</TableHead><TableHead>Product name</TableHead><TableHead className="text-right">Unit price</TableHead><TableHead className="text-right">Unit tax</TableHead><TableHead className="text-right">Quantity</TableHead><TableHead className="text-right">Discount</TableHead><TableHead className="text-right">Net amount</TableHead><TableHead className="text-right">Gross amount</TableHead><TableHead className="w-16"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading && <MessageRow>Loading invoice items…</MessageRow>}
-                        {error && <MessageRow destructive>{error}</MessageRow>}
-                        {!isLoading && !error && items.length === 0 && <MessageRow>No invoice items found.</MessageRow>}
-                        {!isLoading && !error && items.map((item, index) => {
+                        {!isLoading && items.length === 0 && <MessageRow>No invoice items found.</MessageRow>}
+                        {!isLoading && items.map((item, index) => {
                             const name = item.productName ?? item.productCode ?? 'product'
                             return (
                                 <TableRow key={`${item.id}-${index}`}>
@@ -66,8 +64,8 @@ function Products({ items, isLoading, error, onItemsChange }: ProductsProps) {
     )
 }
 
-function MessageRow({ children, destructive = false }: { children: React.ReactNode; destructive?: boolean }) {
-    return <TableRow><TableCell colSpan={10} className={`h-24 text-center ${destructive ? 'text-destructive' : 'text-muted-foreground'}`}>{children}</TableCell></TableRow>
+function MessageRow({ children }: { children: React.ReactNode }) {
+    return <TableRow><TableCell colSpan={10} className="h-24 text-center text-muted-foreground">{children}</TableCell></TableRow>
 }
 
 function MoneyCell({ value }: { value: number | null }) {

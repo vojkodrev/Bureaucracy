@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import ErrorAlert from '@/components/ErrorAlert'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -97,14 +98,17 @@ async function fetchNextProductCode(signal?: AbortSignal): Promise<string> {
 function ProductPage() {
     const { productCode: routeProductCode } = useParams()
     const navigate = useNavigate()
+    const preserveDuplicateRef = useRef(false)
     const allowNextNavigationRef = useRef(false)
     const [productId, setProductId] = useState<number | null>(null)
     const [draft, setDraft] = useState<ProductDraft>(() => productDraft())
     const [cleanDraft, setCleanDraft] = useState(JSON.stringify(productDraft()))
     const [reloadVersion, setReloadVersion] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
+    const [isDuplicating, setIsDuplicating] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const requestKey = `${routeProductCode ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<LoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeProductCode) && loadResult.requestKey !== requestKey
@@ -115,6 +119,7 @@ function ProductPage() {
         isOptionalNonNegativeNumber(draft.netPrice) &&
         isOptionalNonNegativeNumber(draft.taxRate) &&
         !isLoading &&
+        !isDuplicating &&
         !loadError
     const blocker = useBlocker(({ currentLocation, nextLocation }) =>
         !allowNextNavigationRef.current && hasUnsavedChanges &&
@@ -125,6 +130,13 @@ function ProductPage() {
 
     useEffect(() => {
         if (!routeProductCode) {
+            if (preserveDuplicateRef.current) {
+                preserveDuplicateRef.current = false
+                allowNextNavigationRef.current = false
+                setLoadResult({ requestKey, error: null })
+                return
+            }
+
             const emptyDraft = productDraft()
             setProductId(null)
             setDraft(emptyDraft)
@@ -250,6 +262,43 @@ function ProductPage() {
         })
     }
 
+    const duplicateProduct = async () => {
+        if (productId == null || isDuplicating) return
+
+        if (hasUnsavedChanges) {
+            setConfirmingDuplicate(true)
+            return
+        }
+
+        await performDuplicateProduct()
+    }
+
+    const performDuplicateProduct = async () => {
+        if (productId == null || isDuplicating) return
+        setConfirmingDuplicate(false)
+        setIsDuplicating(true)
+        setSaveError(null)
+        try {
+            const nextProductCode = await fetchNextProductCode()
+            setProductId(null)
+            setDraft((current) => ({ ...current, productCode: nextProductCode }))
+            setCleanDraft('__unsaved_duplicate__')
+            preserveDuplicateRef.current = true
+            allowNextNavigationRef.current = true
+            navigate('/product')
+            toast.add({
+                title: 'Product duplicated',
+                description: `Product code ${nextProductCode} has been assigned to the new unsaved copy. ` +
+                    'You can review and edit it before saving.',
+                type: 'info',
+            })
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error ? requestError.message : 'Duplicating product failed')
+        } finally {
+            setIsDuplicating(false)
+        }
+    }
+
     const onSaveShortcut = useEffectEvent(() => { void saveProduct() })
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -270,12 +319,33 @@ function ProductPage() {
 
     return (
         <div className="max-w-5xl p-4">
+            {(loadError || saveError) && (
+                <div className="mb-6 space-y-2">
+                    {loadError && (
+                        <ErrorAlert
+                            title="Product could not be loaded"
+                            description="The product data could not be retrieved."
+                            error={loadError}
+                        />
+                    )}
+                    {saveError && (
+                        <ErrorAlert
+                            title="Product could not be saved"
+                            description="Your changes were not saved."
+                            error={saveError}
+                        />
+                    )}
+                </div>
+            )}
             <ProductMenu
                 canSave={canSave}
-                canRevert={hasUnsavedChanges}
+                canRevert={hasUnsavedChanges && !isDuplicating}
+                canDuplicate={productId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
+                isDuplicating={isDuplicating}
                 onSave={() => void saveProduct()}
                 onRevert={() => setConfirmingRevert(true)}
+                onDuplicate={() => void duplicateProduct()}
             />
             <UnsavedProductAlert
                 open={blocker.state === 'blocked'}
@@ -293,8 +363,15 @@ function ProductPage() {
                 onDiscard={performRevert}
                 actionLabel="Discard and revert"
             />
-            {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
-            {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
+            <UnsavedProductAlert
+                open={confirmingDuplicate}
+                onOpenChange={setConfirmingDuplicate}
+                onDiscard={() => void performDuplicateProduct()}
+                title="Duplicate with unsaved changes?"
+                description="Your changes have not been saved to the original product. The new duplicate will be created from the values currently shown."
+                actionLabel="Duplicate anyway"
+                actionVariant="default"
+            />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>

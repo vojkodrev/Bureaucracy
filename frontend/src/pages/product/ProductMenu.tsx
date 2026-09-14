@@ -1,4 +1,4 @@
-import { Save, Undo2 } from 'lucide-react'
+import { Copy, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -11,12 +11,24 @@ import {
 type ProductMenuProps = {
     canSave: boolean
     canRevert: boolean
+    canDuplicate: boolean
     isSaving: boolean
+    isDuplicating: boolean
     onSave: () => void
     onRevert: () => void
+    onDuplicate: () => void
 }
 
-function ProductMenu({ canSave, canRevert, isSaving, onSave, onRevert }: ProductMenuProps) {
+function ProductMenu({
+    canSave,
+    canRevert,
+    canDuplicate,
+    isSaving,
+    isDuplicating,
+    onSave,
+    onRevert,
+    onDuplicate,
+}: ProductMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
@@ -33,6 +45,9 @@ function ProductMenu({ canSave, canRevert, isSaving, onSave, onRevert }: Product
                 <MenubarContent>
                     <MenubarItem disabled={!canRevert || isSaving} onClick={onRevert}>
                         <Undo2 />Revert
+                    </MenubarItem>
+                    <MenubarItem disabled={!canDuplicate || isDuplicating} onClick={onDuplicate}>
+                        <Copy />{isDuplicating ? 'Duplicating…' : 'Duplicate'}
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

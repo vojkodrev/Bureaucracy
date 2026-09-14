@@ -14,21 +14,32 @@ type UnsavedProductAlertProps = {
     onOpenChange: (open: boolean) => void
     onDiscard: () => void
     actionLabel?: string
+    title?: string
+    description?: string
+    actionVariant?: 'default' | 'destructive'
 }
 
-function UnsavedProductAlert({ open, onOpenChange, onDiscard, actionLabel = 'Leave without saving' }: UnsavedProductAlertProps) {
+function UnsavedProductAlert({
+    open,
+    onOpenChange,
+    onDiscard,
+    actionLabel = 'Leave without saving',
+    title = 'Discard unsaved changes?',
+    description = 'This product has changes that have not been saved. If you continue, those changes will be lost.',
+    actionVariant = 'destructive',
+}: UnsavedProductAlertProps) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This product has changes that have not been saved. If you continue, those changes will be lost.
+                        {description}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={onDiscard}>
+                    <AlertDialogAction variant={actionVariant} onClick={onDiscard}>
                         {actionLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
