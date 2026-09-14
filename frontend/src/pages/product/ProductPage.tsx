@@ -1,6 +1,8 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { CircleAlertIcon } from 'lucide-react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -353,8 +355,28 @@ function ProductPage() {
                 actionLabel="Duplicate anyway"
                 actionVariant="default"
             />
-            {loadError && <p className="mb-6 text-sm text-destructive" role="alert">{loadError}</p>}
-            {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
+            {(loadError || saveError) && (
+                <div className="mb-6 space-y-2">
+                    {loadError && (
+                        <Alert variant="destructive">
+                            <CircleAlertIcon />
+                            <AlertTitle>Product could not be loaded</AlertTitle>
+                            <AlertDescription>
+                                The product data could not be retrieved. {loadError}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    {saveError && (
+                        <Alert variant="destructive">
+                            <CircleAlertIcon />
+                            <AlertTitle>Product could not be saved</AlertTitle>
+                            <AlertDescription>
+                                Your changes were not saved. {saveError}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+            )}
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
