@@ -67,6 +67,7 @@ header p {
     font-size: 7pt;
     line-height: 1.1;
     text-align: left;
+    white-space: nowrap;
 }
 
 .invoices th:nth-child(1) { width: 13%; }
