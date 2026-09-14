@@ -10,7 +10,7 @@ type InvoiceSummaryProps = {
 }
 
 function InvoiceSummary({ total, paidAmount, paymentDate }: InvoiceSummaryProps) {
-    const balanceDue = total - (Number(paidAmount) || 0)
+    const balanceDue = Math.round((total - (Number(paidAmount) || 0)) * 100) / 100 || 0
     return (
         <Card className="ml-auto w-full max-w-2xl">
             <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
