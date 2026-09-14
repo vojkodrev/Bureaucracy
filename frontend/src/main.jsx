@@ -1,17 +1,20 @@
+import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
-import BusinessYearsPage from './pages/BusinessYearsPage.tsx'
-import BankStatementSearchPage from './pages/BankStatementSearchPage.tsx'
-import BankStatementPage from './pages/bank-statement/BankStatementPage.tsx'
-import CustomerSearchPage from './pages/CustomerSearchPage.tsx'
-import CustomerPage from './pages/customer/CustomerPage.tsx'
-import LayoutPage from './pages/LayoutPage.tsx'
-import InvoiceSearchPage from './pages/InvoiceSearchPage.tsx'
-import InvoicePage from './pages/invoice/InvoicePage.tsx'
-import ProductSearchPage from './pages/ProductSearchPage.tsx'
-import ProductPage from './pages/product/ProductPage.tsx'
-import ExportDataPage from './pages/ExportDataPage.tsx'
 import { Toaster } from './components/ui/toast.tsx'
+import {
+    BankStatementPage,
+    BankStatementSearchPage,
+    BusinessYearsPage,
+    CustomerPage,
+    CustomerSearchPage,
+    ExportDataPage,
+    InvoicePage,
+    InvoiceSearchPage,
+    LayoutPage,
+    ProductPage,
+    ProductSearchPage,
+} from './pages'
 import './index.css'
 
 const router = createBrowserRouter([
@@ -37,8 +40,8 @@ const router = createBrowserRouter([
 ])
 
 createRoot(document.getElementById('root')).render(
-    <>
+    <Suspense fallback={null}>
         <RouterProvider router={router} />
         <Toaster />
-    </>,
+    </Suspense>,
 )
