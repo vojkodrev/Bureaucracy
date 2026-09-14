@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { getSelectedBusinessYear, setSelectedBusinessYear } from '@/lib/business-year'
+import { fetchCurrentBusinessYear } from '@/lib/business-year-api'
 import { dateAfterDays } from '@/lib/dates'
 import { toast } from '@/lib/toast'
-import {
-    fetchCurrentBusinessYear, fetchCustomerPaymentTerm, fetchNextInvoiceNumber,
-} from '../invoice-api'
+import { fetchCustomerPaymentTerm, fetchNextInvoiceNumber } from '../invoice-api'
 import type { InvoiceRequestErrors } from './useInvoiceLoader'
 import type { InvoiceDraft } from './useInvoiceDraft'
 

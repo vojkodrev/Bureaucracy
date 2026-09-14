@@ -1,5 +1,4 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
-import type { BusinessYearResponse } from '@/lib/business-year-types'
 import type { InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { nextPaddedNumber } from '@/lib/numbers'
 
@@ -37,8 +36,6 @@ const invoiceTextTemplateQuery = `
     }
 `
 
-const businessYearQuery = `query BusinessYear($code: String!) { businessYear(code: $code) { year } }`
-const currentBusinessYearQuery = `query CurrentBusinessYear { currentBusinessYear { code year } }`
 const customerPaymentTermQuery = `
     query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
         customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
@@ -96,23 +93,6 @@ export async function fetchInvoiceTextTemplate(signal?: AbortSignal) {
         errors?: { message: string }[]
     }>(invoiceTextTemplateQuery, { businessYear: getSelectedBusinessYear() }, signal)
     return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
-}
-
-export async function fetchBusinessYear(signal?: AbortSignal) {
-    const result = await postGraphql<BusinessYearResponse>(businessYearQuery, {
-        code: getSelectedBusinessYear(),
-    }, signal)
-    return result.data?.businessYear?.year ?? null
-}
-
-export async function fetchCurrentBusinessYear(): Promise<{ code: string; year: number }> {
-    const result = await postGraphql<{
-        data?: { currentBusinessYear: { code: string | null; year: number | null } | null }
-        errors?: { message: string }[]
-    }>(currentBusinessYearQuery)
-    const current = result.data?.currentBusinessYear
-    if (!current?.code || current.year == null) throw new Error('No current business year exists')
-    return { code: current.code, year: current.year }
 }
 
 export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string) {

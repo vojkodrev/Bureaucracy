@@ -2,8 +2,9 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { toast } from '@/lib/toast'
 import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
+import { fetchBusinessYear } from '@/lib/business-year-api'
 import {
-    fetchBusinessYear, fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
+    fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
 } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
