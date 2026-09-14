@@ -203,6 +203,18 @@ function BusinessYearsPage() {
         setSearchParams(nextSearchParams)
     }
 
+    function changePageSize(pageSize: number) {
+        const nextSearchParams = new URLSearchParams({
+            page: String(defaultPage),
+            pageSize: String(pageSize),
+        })
+        if (activeSortBy && activeSortDirection) {
+            nextSearchParams.set('sortBy', activeSortBy)
+            nextSearchParams.set('sortDirection', activeSortDirection)
+        }
+        setSearchParams(nextSearchParams)
+    }
+
     function changeSort(nextSortBy: BusinessYearSortColumn) {
         const nextSortDirection = activeSortBy !== nextSortBy
             ? 'asc'
@@ -254,9 +266,11 @@ function BusinessYearsPage() {
                     firstItem={firstBusinessYear}
                     lastItem={lastBusinessYear}
                     page={businessYearPage.page}
+                    pageSize={businessYearPage.pageSize}
                     totalItems={businessYearPage.totalCount}
                     totalPages={businessYearPage.totalPages}
                     onPageChange={changePage}
+                    onPageSizeChange={changePageSize}
                 />
             )}
 

@@ -1,6 +1,6 @@
 export const defaultPage = 1
 export const defaultPageSize = 20
-export const maximumPageSize = 100
+export const maximumPageSize = 10_000
 
 export function positiveInteger(
     value: string | null,

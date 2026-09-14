@@ -296,6 +296,15 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
         }
     }
 
+    function changePageSize(pageSize: number) {
+        const nextSearch = { ...activeSearch, page: '1', pageSize: String(pageSize) }
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
+        }
+    }
+
     function changeSort(sortBy: CustomerSortColumn) {
         const sortDirection = activeSearch.sortBy !== sortBy
             ? 'asc'
@@ -369,9 +378,11 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                         firstItem={firstCustomer}
                         lastItem={lastCustomer}
                         page={customerPage.page}
+                        pageSize={customerPage.pageSize}
                         totalItems={customerPage.totalCount}
                         totalPages={customerPage.totalPages}
                         onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
                 <Table>

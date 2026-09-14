@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
+import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -121,6 +122,16 @@ const searchInvoicesQuery = `
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyInvoices: Invoice[] = []
 
+function invoiceReportPdfUrl(search: SearchForm): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = '/api/invoices/report/pdf'
+    url.search = searchParamsFromForm(search).toString()
+    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.searchParams.set('_', String(Date.now()))
+    url.hash = ''
+    return url.toString()
+}
+
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
     const sortByValue = searchParams.get('sortBy')
     const sortDirectionValue = searchParams.get('sortDirection')
@@ -191,6 +202,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         invoicePage: null,
         error: null,
     })
+    const [printError, setPrintError] = useState<string | null>(null)
     const isLoading = searchResult.searchKey !== searchKey
     const invoicePage = isLoading ? null : searchResult.invoicePage
     const invoices = invoicePage?.invoices ?? emptyInvoices
@@ -345,6 +357,15 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         }
     }
 
+    function changePageSize(pageSize: number) {
+        const nextSearch = { ...activeSearch, page: '1', pageSize: String(pageSize) }
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
+        }
+    }
+
     function changeSort(sortBy: InvoiceSortColumn) {
         const sortDirection = activeSearch.sortBy !== sortBy
             ? 'asc'
@@ -370,8 +391,32 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         onInvoiceSelect?.(invoice)
     }
 
+    const printReport = () => {
+        const pdfTab = window.open(invoiceReportPdfUrl(activeSearch), '_blank')
+        if (!pdfTab) {
+            setPrintError('Allow pop-ups to open the invoice report PDF.')
+            return
+        }
+        pdfTab.opener = null
+        setPrintError(null)
+    }
+    const onPrintShortcut = useEffectEvent(printReport)
+
+    useEffect(() => {
+        if (mode !== ComponentMode.Page) return
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'p') return
+            event.preventDefault()
+            onPrintShortcut()
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [mode])
+
     return (
         <div className="p-4">
+            {mode === ComponentMode.Page && <InvoiceSearchMenu onPrint={printReport} />}
+            {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             <form
                 key={searchKey}
                 className="max-w-2xl"
@@ -445,9 +490,11 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                         firstItem={firstInvoice}
                         lastItem={lastInvoice}
                         page={invoicePage.page}
+                        pageSize={invoicePage.pageSize}
                         totalItems={invoicePage.totalCount}
                         totalPages={invoicePage.totalPages}
                         onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
                 <Table>

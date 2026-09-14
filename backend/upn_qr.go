@@ -33,11 +33,11 @@ func generateUPNQRCode(invoice *Invoice, displayNumber string, amount float64) (
 		return "", fmt.Errorf("invoice amount is too large for a UPN QR code")
 	}
 
-	model, reference := upnReference(stringValue(invoice.PaymentReference), displayNumber)
+	model, reference := upnReference(trimmedString(invoice.PaymentReference), displayNumber)
 	fields := []string{
 		"UPNQR", "", "", "", "",
-		upnField(stringValue(invoice.CustomerName), 33),
-		upnField(stringValue(invoice.CustomerAddress), 33),
+		upnField(trimmedString(invoice.CustomerName), 33),
+		upnField(trimmedString(invoice.CustomerAddress), 33),
 		upnField(customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity), 33),
 		fmt.Sprintf("%011d", int64(math.Round(amount*100))),
 		"", "", "OTHR",

@@ -392,8 +392,8 @@ func (repository *InvoiceRepository) Search(
 	if page < 1 {
 		return nil, fmt.Errorf("page must be at least 1")
 	}
-	if pageSize < 1 || pageSize > 100 {
-		return nil, fmt.Errorf("pageSize must be between 1 and 100")
+	if pageSize < 1 || pageSize > 10000 {
+		return nil, fmt.Errorf("pageSize must be between 1 and 10000")
 	}
 	if issuedFrom != nil && issuedTo != nil && issuedFrom.After(*issuedTo) {
 		return nil, fmt.Errorf("issuedFrom must not be after issuedTo")

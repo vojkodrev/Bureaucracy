@@ -267,7 +267,7 @@ function LayoutPage() {
                                                 <SidebarMenuButton
                                                     isActive={pathname === '/products/search' || isProductPage}
                                                     tooltip="Products"
-                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                    className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
                                                     render={
                                                         !sidebarOpen
                                                             ? <NavLink to="/products/search" />
@@ -310,7 +310,7 @@ function LayoutPage() {
                                                 <SidebarMenuButton
                                                     isActive={pathname === '/customers/search' || isCustomerPage}
                                                     tooltip="Customers"
-                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                    className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
                                                     render={
                                                         !sidebarOpen
                                                             ? <NavLink to="/customers/search" />
@@ -351,7 +351,7 @@ function LayoutPage() {
                                                         isInvoicePage
                                                     }
                                                     tooltip="Invoices"
-                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                    className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
                                                     render={
                                                         !sidebarOpen
                                                             ? <NavLink to="/invoices/search" />
@@ -407,7 +407,7 @@ function LayoutPage() {
                                                         isBankStatementPage
                                                     }
                                                     tooltip="Bank statements"
-                                                    className="data-open:[&>svg:last-child]:rotate-90"
+                                                    className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
                                                     render={
                                                         !sidebarOpen
                                                             ? <NavLink to="/bank-statements/search" />

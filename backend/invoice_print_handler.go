@@ -74,5 +74,5 @@ func (handler *InvoicePrintHandler) Handle(context *gin.Context) {
 }
 
 func invoicePDFFilename(invoice *Invoice, year int) string {
-	return fmt.Sprintf("%s-%s-%d.pdf", safeFilenamePart(stringValue(invoice.CustomerName), "customer"), safeFilenamePart(invoice.InvoiceNumber, "invoice"), year)
+	return fmt.Sprintf("%s-%s-%d.pdf", safeFilenamePart(trimmedString(invoice.CustomerName), "customer"), safeFilenamePart(invoice.InvoiceNumber, "invoice"), year)
 }

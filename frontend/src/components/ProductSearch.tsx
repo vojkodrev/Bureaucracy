@@ -286,6 +286,15 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
         }
     }
 
+    function changePageSize(pageSize: number) {
+        const nextSearch = { ...activeSearch, page: '1', pageSize: String(pageSize) }
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
+        }
+    }
+
     function changeSort(sortBy: ProductSortColumn) {
         const sortDirection = activeSearch.sortBy !== sortBy
             ? 'asc'
@@ -359,9 +368,11 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                         firstItem={firstProduct}
                         lastItem={lastProduct}
                         page={productPage.page}
+                        pageSize={productPage.pageSize}
                         totalItems={productPage.totalCount}
                         totalPages={productPage.totalPages}
                         onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
                 <Table>
