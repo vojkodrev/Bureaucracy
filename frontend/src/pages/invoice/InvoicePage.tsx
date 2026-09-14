@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
-import { getSelectedBusinessYear } from '@/lib/business-year'
+import { getSelectedBusinessYear, setSelectedBusinessYear } from '@/lib/business-year'
 import type { BusinessYearResponse } from '@/lib/business-year-types'
 import { dateAfterDays, dateForApi, dateFromSearchValue } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
@@ -10,18 +10,24 @@ import type { InvoiceItem, InvoiceResponse, LatestInvoiceResponse } from '@/lib/
 import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
+import EmailInvoiceDialog from './EmailInvoiceDialog'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import type { InvoiceNumberWarning } from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
+import SaveCustomerEmailAlert from './SaveCustomerEmailAlert'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 
 type InvoiceLoadResult = { requestKey: string; error: string | null }
 type InvoiceTextTemplate = { introductoryText: string | null; closingText: string | null }
 type InvoiceTextTemplateResponse = {
     data?: { invoiceTextTemplate: InvoiceTextTemplate }
+    errors?: { message: string }[]
+}
+type CustomerPaymentTermResponse = {
+    data?: { customer: { paymentTerm: number | null } | null }
     errors?: { message: string }[]
 }
 
@@ -59,14 +65,23 @@ const invoiceQuery = `
             id invoiceNumber issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
             paidAmount introductoryText closingText
-            items { id sequence productCode productName unit taxCode taxRate unitPrice unitTaxAmount quantity discount netAmount grossAmount }
+            items {
+                id sequence productCode productName unit taxCode taxRate unitPrice
+                unitTaxAmount quantity discount netAmount grossAmount
+            }
         }
     }
 `
 
 const latestInvoiceQuery = `
     query LatestInvoice($businessYear: String!) {
-        searchInvoices(businessYear: $businessYear, sortBy: "invoiceNumber", sortDirection: "desc", page: 1, pageSize: 1) {
+        searchInvoices(
+            businessYear: $businessYear
+            sortBy: "invoiceNumber"
+            sortDirection: "desc"
+            page: 1
+            pageSize: 1
+        ) {
             invoices { invoiceNumber }
         }
     }
@@ -77,7 +92,21 @@ const invoiceTextTemplateQuery = `
     }
 `
 
-const businessYearQuery = `query BusinessYear($code: String!) { businessYear(code: $code) { description } }`
+const businessYearQuery = `
+    query BusinessYear($code: String!) {
+        businessYear(code: $code) { year }
+    }
+`
+const currentBusinessYearQuery = `
+    query CurrentBusinessYear {
+        currentBusinessYear { code year }
+    }
+`
+const customerPaymentTermQuery = `
+    query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
+        customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
+    }
+`
 const saveInvoiceMutation = `
     mutation SaveInvoice($businessYear: String!, $invoice: InvoiceInput!) {
         saveInvoice(businessYear: $businessYear, invoice: $invoice) {
@@ -93,17 +122,23 @@ type SaveInvoiceResponse = {
     errors?: { message: string }[]
 }
 
-async function fetchNextInvoiceNumber(signal?: AbortSignal): Promise<string> {
-    return nextPaddedNumber(await fetchLatestInvoiceNumber(signal), 5)
+async function fetchNextInvoiceNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string> {
+    return nextPaddedNumber(await fetchLatestInvoiceNumber(signal, businessYear), 5)
 }
 
-async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | undefined> {
+async function fetchLatestInvoiceNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string | undefined> {
     const response = await fetch(graphqlUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             query: latestInvoiceQuery,
-            variables: { businessYear: getSelectedBusinessYear() },
+            variables: { businessYear },
         }),
         signal,
     })
@@ -112,6 +147,28 @@ async function fetchLatestInvoiceNumber(signal?: AbortSignal): Promise<string | 
     const result = (await response.json()) as LatestInvoiceResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result.data?.searchInvoices.invoices[0]?.invoiceNumber
+}
+
+async function fetchCurrentBusinessYear(): Promise<{ code: string; year: number }> {
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: currentBusinessYearQuery,
+        }),
+    })
+    if (!response.ok) throw new Error(`Loading current business year failed (${response.status})`)
+
+    const result = await response.json() as {
+        data?: { currentBusinessYear: { code: string | null; year: number | null } | null }
+        errors?: { message: string }[]
+    }
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    const currentBusinessYear = result.data?.currentBusinessYear
+    if (!currentBusinessYear?.code || currentBusinessYear.year == null) {
+        throw new Error('No current business year exists')
+    }
+    return { code: currentBusinessYear.code, year: currentBusinessYear.year }
 }
 
 async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTextTemplate> {
@@ -129,6 +186,27 @@ async function fetchInvoiceTextTemplate(signal?: AbortSignal): Promise<InvoiceTe
     const result = await response.json() as InvoiceTextTemplateResponse
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
+}
+
+async function fetchCustomerPaymentTerm(
+    customerId: string,
+    businessYear = getSelectedBusinessYear(),
+): Promise<number | null> {
+    if (!customerId) return null
+
+    const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            query: customerPaymentTermQuery,
+            variables: { businessYear, customerId },
+        }),
+    })
+    if (!response.ok) throw new Error(`Loading customer payment term failed (${response.status})`)
+
+    const result = (await response.json()) as CustomerPaymentTermResponse
+    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    return result.data?.customer?.paymentTerm ?? null
 }
 
 function dateFromInvoiceValue(value: string | null | undefined): Date | undefined {
@@ -152,7 +230,7 @@ function InvoicePage() {
     const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [invoiceNumber, setInvoiceNumber] = useState(routeInvoiceNumber ?? '')
-    const [businessYearDescription, setBusinessYearDescription] = useState('')
+    const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [customerId, setCustomerId] = useState('')
     const [customerName, setCustomerName] = useState('')
     const [customerAddress, setCustomerAddress] = useState('')
@@ -176,6 +254,8 @@ function InvoicePage() {
     const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
     const [confirmingPrint, setConfirmingPrint] = useState(false)
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const [invoiceNumberWarning, setInvoiceNumberWarning] =
         useState<InvoiceNumberWarning | null>(null)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
@@ -217,7 +297,13 @@ function InvoicePage() {
         const abortController = new AbortController()
         void fetch(graphqlUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: invoiceQuery, variables: { businessYear: getSelectedBusinessYear(), invoiceNumber: routeInvoiceNumber } }),
+            body: JSON.stringify({
+                query: invoiceQuery,
+                variables: {
+                    businessYear: getSelectedBusinessYear(),
+                    invoiceNumber: routeInvoiceNumber,
+                },
+            }),
             signal: abortController.signal,
         }).then(async (response) => {
             if (!response.ok) throw new Error(`Loading invoice failed (${response.status})`)
@@ -271,7 +357,12 @@ function InvoicePage() {
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return
             pendingRevertRef.current = false
-            setLoadResult({ requestKey, error: requestError instanceof Error ? requestError.message : 'Loading invoice failed' })
+            setLoadResult({
+                requestKey,
+                error: requestError instanceof Error
+                    ? requestError.message
+                    : 'Loading invoice failed',
+            })
         })
         return () => abortController.abort()
     }, [requestKey, routeInvoiceNumber])
@@ -309,7 +400,9 @@ function InvoicePage() {
 
         const abortController = new AbortController()
         const templatePromise = fetchInvoiceTextTemplate(abortController.signal).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
             return { introductoryText: null, closingText: null }
         })
         void Promise.all([
@@ -331,7 +424,9 @@ function InvoicePage() {
                 invoiceItems: [],
             }))
         }).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
         })
         return () => abortController.abort()
     }, [routeInvoiceNumber])
@@ -346,9 +441,11 @@ function InvoicePage() {
             if (!response.ok) throw new Error(`Loading business year failed (${response.status})`)
             const result = (await response.json()) as BusinessYearResponse
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-            setBusinessYearDescription(result.data?.businessYear?.description ?? '')
+            setBusinessYear(result.data?.businessYear?.year ?? null)
         }).catch((requestError: unknown) => {
-            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) console.error(requestError)
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
         })
         return () => abortController.abort()
     }, [])
@@ -448,7 +545,9 @@ function InvoicePage() {
             if (!savedInvoice) throw new Error('Saving invoice returned no invoice')
             toast.add({
                 title: 'Invoice saved',
-                description: `Invoice ${savedInvoice.invoiceNumber} was ${isCreating ? 'created' : 'updated'} successfully.`,
+                description: `Invoice ${savedInvoice.invoiceNumber} was ${
+                    isCreating ? 'created' : 'updated'
+                } successfully.`,
                 type: 'success',
             })
             setCleanDraft(draft)
@@ -492,11 +591,26 @@ function InvoicePage() {
         setIsDuplicating(true)
         setSaveError(null)
         try {
-            const nextInvoiceNumber = await fetchNextInvoiceNumber()
+            const currentBusinessYear = await fetchCurrentBusinessYear()
+            const duplicateBusinessYearCode = currentBusinessYear.code
+            const [nextInvoiceNumber, paymentTerm] = await Promise.all([
+                fetchNextInvoiceNumber(undefined, duplicateBusinessYearCode),
+                fetchCustomerPaymentTerm(customerId, duplicateBusinessYearCode),
+            ])
+            const duplicateInvoiceDate = new Date()
+            if (
+                businessYear !== currentBusinessYear.year ||
+                duplicateBusinessYearCode !== getSelectedBusinessYear()
+            ) {
+                setSelectedBusinessYear(duplicateBusinessYearCode)
+                setBusinessYear(currentBusinessYear.year)
+            }
             setInvoiceId(null)
             setInvoiceNumber(nextInvoiceNumber)
-            setInvoiceDate(new Date())
-            setDueDate(undefined)
+            setInvoiceDate(duplicateInvoiceDate)
+            setDueDate(dateAfterDays(duplicateInvoiceDate, paymentTerm))
+            setPaymentDate(undefined)
+            setPaidAmount('')
             setInvoiceItems((items) => items.map((item, index) => ({
                 ...item,
                 id: -index - 1,
@@ -507,7 +621,8 @@ function InvoicePage() {
             navigate('/invoice')
             toast.add({
                 title: 'Invoice duplicated',
-                description: `Invoice number ${nextInvoiceNumber} has been assigned to the new unsaved copy. You can review and edit it before saving.`,
+                description: `Invoice number ${nextInvoiceNumber} has been assigned to the ` +
+                    'new unsaved copy. You can review and edit it before saving.',
                 type: 'info',
             })
         } catch (requestError: unknown) {
@@ -573,14 +688,32 @@ function InvoicePage() {
             <InvoiceMenu
                 canSave={canSaveInvoice}
                 canPrint={canRequestPrintInvoice}
+                canEmail={canPrintInvoice}
                 canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
                 canDuplicate={invoiceId != null && !isLoading && !isSaving}
                 isSaving={isSaving}
                 isDuplicating={isDuplicating}
                 onSave={() => void requestSaveInvoice()}
                 onPrint={printInvoice}
+                onEmail={() => setEmailDialogOpen(true)}
                 onRevert={revertInvoice}
                 onDuplicate={() => void duplicateInvoice()}
+            />
+            <EmailInvoiceDialog
+                open={emailDialogOpen}
+                invoiceNumber={invoiceNumber.trim()}
+                customerId={customerId}
+                businessYear={businessYear}
+                onOpenChange={setEmailDialogOpen}
+                onOfferSaveCustomerEmail={setCustomerEmailToSave}
+            />
+            <SaveCustomerEmailAlert
+                email={customerEmailToSave}
+                customerId={customerId}
+                customerName={customerName}
+                onOpenChange={(open) => {
+                    if (!open) setCustomerEmailToSave(null)
+                }}
             />
             <InvoiceNumberAlert
                 invoiceNumber={invoiceNumber.trim()}
@@ -614,13 +747,54 @@ function InvoicePage() {
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             {saveError && <p className="mb-6 text-sm text-destructive" role="alert">{saveError}</p>}
             <div className="grid items-start gap-6 lg:grid-cols-2">
-                <CustomerInputFields customerId={customerId} customerName={customerName} customerAddress={customerAddress} customerPostalCode={customerPostalCode} customerCity={customerCity} customerCountry={customerCountry} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} onCustomerAddressChange={setCustomerAddress} onCustomerPostalCodeChange={setCustomerPostalCode} onCustomerCityChange={setCustomerCity} onCustomerCountryChange={setCustomerCountry} onCustomerPaymentTermChange={(paymentTerm) => setDueDate(dateAfterDays(invoiceDate, paymentTerm))} />
-                <GeneralInformationInput invoiceNumber={invoiceNumber} businessYearDescription={businessYearDescription} invoiceDate={invoiceDate} dueDate={dueDate} serviceDate={serviceDate} onInvoiceNumberChange={setInvoiceNumber} onInvoiceDateChange={setInvoiceDate} onDueDateChange={setDueDate} onServiceDateChange={setServiceDate} />
+                <CustomerInputFields
+                    customerId={customerId}
+                    customerName={customerName}
+                    customerAddress={customerAddress}
+                    customerPostalCode={customerPostalCode}
+                    customerCity={customerCity}
+                    customerCountry={customerCountry}
+                    onCustomerIdChange={setCustomerId}
+                    onCustomerNameChange={setCustomerName}
+                    onCustomerAddressChange={setCustomerAddress}
+                    onCustomerPostalCodeChange={setCustomerPostalCode}
+                    onCustomerCityChange={setCustomerCity}
+                    onCustomerCountryChange={setCustomerCountry}
+                    onCustomerPaymentTermChange={(paymentTerm) =>
+                        setDueDate(dateAfterDays(invoiceDate, paymentTerm))}
+                />
+                <GeneralInformationInput
+                    invoiceNumber={invoiceNumber}
+                    businessYear={businessYear}
+                    invoiceDate={invoiceDate}
+                    dueDate={dueDate}
+                    serviceDate={serviceDate}
+                    onInvoiceNumberChange={setInvoiceNumber}
+                    onInvoiceDateChange={setInvoiceDate}
+                    onDueDateChange={setDueDate}
+                    onServiceDateChange={setServiceDate}
+                />
             </div>
             <div className="mt-8 space-y-6">
-                <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel><Textarea id="introductory-text" name="introductoryText" value={introductoryText} onChange={(event) => setIntroductoryText(event.target.value)} /></Field>
+                <Field>
+                    <FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
+                    <Textarea
+                        id="introductory-text"
+                        name="introductoryText"
+                        value={introductoryText}
+                        onChange={(event) => setIntroductoryText(event.target.value)}
+                    />
+                </Field>
                 <Products items={invoiceItems} isLoading={isLoading} error={error} onItemsChange={setInvoiceItems} />
-                <Field><FieldLabel htmlFor="closing-text">Closing text</FieldLabel><Textarea id="closing-text" name="closingText" value={closingText} onChange={(event) => setClosingText(event.target.value)} /></Field>
+                <Field>
+                    <FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
+                    <Textarea
+                        id="closing-text"
+                        name="closingText"
+                        value={closingText}
+                        onChange={(event) => setClosingText(event.target.value)}
+                    />
+                </Field>
                 <InvoiceSummary total={totalIncludingVat} paidAmount={paidAmount} paymentDate={paymentDate} />
             </div>
         </div>

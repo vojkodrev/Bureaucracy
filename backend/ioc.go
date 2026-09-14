@@ -15,6 +15,8 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewInvoiceRepository),
 		fx.Provide(NewInvoicePrintGenerator),
 		fx.Provide(NewInvoicePrintHandler),
+		fx.Provide(NewEmailSender),
+		fx.Provide(NewInvoiceEmailHandler),
 		fx.Provide(NewAccountingExportRepository),
 		fx.Provide(NewAccountingExportHandler),
 		fx.Provide(NewProductRepository),

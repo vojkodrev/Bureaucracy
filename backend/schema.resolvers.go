@@ -21,6 +21,11 @@ func (r *mutationResolver) SaveCustomer(ctx context.Context, businessYear string
 	return r.Customers.Save(ctx, businessYear, customer)
 }
 
+// UpdateCustomerEmail is the resolver for the updateCustomerEmail field.
+func (r *mutationResolver) UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error) {
+	return r.Customers.UpdateEmail(ctx, businessYear, customerID, email)
+}
+
 // SaveInvoice is the resolver for the saveInvoice field.
 func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error) {
 	return r.Invoices.Save(ctx, businessYear, invoice)
@@ -67,6 +72,11 @@ func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessY
 // BusinessYear is the resolver for the businessYear field.
 func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
 	return r.BusinessYearRepository.GetByCode(ctx, code)
+}
+
+// CurrentBusinessYear is the resolver for the currentBusinessYear field.
+func (r *queryResolver) CurrentBusinessYear(ctx context.Context) (*BusinessYear, error) {
+	return r.BusinessYearRepository.GetByCalendarYear(ctx, time.Now().Year())
 }
 
 // BusinessYears is the resolver for the businessYears field.

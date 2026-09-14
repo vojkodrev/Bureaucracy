@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 
 type GeneralInformationInputProps = {
     invoiceNumber: string
-    businessYearDescription: string
+    businessYear: number | null
     invoiceDate?: Date
     dueDate?: Date
     serviceDate?: Date
@@ -23,7 +23,7 @@ function GeneralInformationInput(props: GeneralInformationInputProps) {
                 <FieldGroup>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Field><FieldLabel htmlFor="invoice-number">Number</FieldLabel><Input id="invoice-number" value={props.invoiceNumber} onChange={(event) => props.onInvoiceNumberChange(event.target.value)} /></Field>
-                        <Field><FieldLabel htmlFor="business-year">Business year</FieldLabel><Input id="business-year" value={props.businessYearDescription} readOnly /></Field>
+                        <Field><FieldLabel htmlFor="business-year">Business year</FieldLabel><Input id="business-year" value={props.businessYear ?? ''} readOnly /></Field>
                     </div>
                     <DatePickerField id="invoice-date" label="Invoice date" name="invoiceDate" date={props.invoiceDate} onSelect={props.onInvoiceDateChange} />
                     <DatePickerField id="due-date" label="Due date" name="dueDate" date={props.dueDate} onSelect={props.onDueDateChange} />

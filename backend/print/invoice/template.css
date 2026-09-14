@@ -169,6 +169,10 @@ main {
     text-overflow: ellipsis;
 }
 
+.items-table td:nth-child(2) {
+    font-weight: 700;
+}
+
 .items-table th:nth-child(3),
 .items-table td:nth-child(3) {
     width: 7%;

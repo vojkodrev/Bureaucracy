@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+	"net/mail"
 	"strings"
 
 	"bureaucracy/backend/graph/model"
@@ -12,6 +13,49 @@ import (
 
 type CustomerRepository struct {
 	database *sql.DB
+}
+
+func (repository *CustomerRepository) UpdateEmail(
+	ctx context.Context,
+	businessYear string,
+	customerID string,
+	email string,
+) (*Customer, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	customerID = strings.TrimSpace(customerID)
+	if customerID == "" {
+		return nil, fmt.Errorf("customerId is required")
+	}
+	email = strings.TrimSpace(email)
+	address, err := mail.ParseAddress(email)
+	if err != nil || !strings.EqualFold(address.Address, email) {
+		return nil, fmt.Errorf("email must be a valid email address")
+	}
+	if len([]rune(email)) > 50 {
+		return nil, fmt.Errorf("email must be at most 50 characters")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	result, err := repository.database.ExecContext(ctx, fmt.Sprintf(`
+		UPDATE [%s].[dbo].[Partner]
+		SET Email = @email
+		WHERE Sifra = @customerID`, databaseName),
+		sql.Named("email", email),
+		sql.Named("customerID", customerID),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update customer email: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("check updated customer email: %w", err)
+	}
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("customer not found")
+	}
+	return repository.GetByID(ctx, businessYear, customerID)
 }
 
 func NewCustomerRepository(database *sql.DB) *CustomerRepository {

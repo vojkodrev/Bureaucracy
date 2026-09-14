@@ -183,10 +183,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		SaveBankStatement func(childComplexity int, businessYear string, statement model.BankStatementInput) int
-		SaveCustomer      func(childComplexity int, businessYear string, customer model.CustomerInput) int
-		SaveInvoice       func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
-		SaveProduct       func(childComplexity int, businessYear string, product model.ProductInput) int
+		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
+		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
+		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
+		SaveProduct         func(childComplexity int, businessYear string, product model.ProductInput) int
+		UpdateCustomerEmail func(childComplexity int, businessYear string, customerID string, email string) int
 	}
 
 	Product struct {
@@ -216,6 +217,7 @@ type ComplexityRoot struct {
 		BusinessYear              func(childComplexity int, code string) int
 		BusinessYears             func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		Countries                 func(childComplexity int, businessYear string) int
+		CurrentBusinessYear       func(childComplexity int) int
 		Customer                  func(childComplexity int, businessYear string, customerID string) int
 		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate       func(childComplexity int, businessYear string) int
@@ -243,6 +245,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error)
 	SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error)
+	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
 }
@@ -253,6 +256,7 @@ type QueryResolver interface {
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
 	LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
+	CurrentBusinessYear(ctx context.Context) (*BusinessYear, error)
 	BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
@@ -953,6 +957,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveProduct(childComplexity, args["businessYear"].(string), args["product"].(model.ProductInput)), true
+	case "Mutation.updateCustomerEmail":
+		if e.ComplexityRoot.Mutation.UpdateCustomerEmail == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCustomerEmail_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateCustomerEmail(childComplexity, args["businessYear"].(string), args["customerId"].(string), args["email"].(string)), true
 
 	case "Product.barcode":
 		if e.ComplexityRoot.Product.Barcode == nil {
@@ -1106,6 +1121,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Countries(childComplexity, args["businessYear"].(string)), true
+	case "Query.currentBusinessYear":
+		if e.ComplexityRoot.Query.CurrentBusinessYear == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.CurrentBusinessYear(childComplexity), true
 	case "Query.customer":
 		if e.ComplexityRoot.Query.Customer == nil {
 			break
@@ -1894,6 +1915,36 @@ func (ec *executionContext) field_Mutation_saveProduct_args(ctx context.Context,
 		return nil, err
 	}
 	args["product"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCustomerEmail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "email",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["email"] = arg2
 	return args, nil
 }
 
@@ -4979,6 +5030,50 @@ func (ec *executionContext) fieldContext_Mutation_saveCustomer(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateCustomerEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateCustomerEmail(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateCustomerEmail(ctx, fc.Args["businessYear"].(string), fc.Args["customerId"].(string), fc.Args["email"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Customer) graphql.Marshaler {
+			return ec.marshalNCustomer2ᚖbureaucracyᚋbackendᚐCustomer(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateCustomerEmail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Customer(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateCustomerEmail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_saveInvoice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5658,6 +5753,38 @@ func (ec *executionContext) fieldContext_Query_businessYear(ctx context.Context,
 	if fc.Args, err = ec.field_Query_businessYear_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_currentBusinessYear(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_currentBusinessYear(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().CurrentBusinessYear(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *BusinessYear) graphql.Marshaler {
+			return ec.marshalOBusinessYear2ᚖbureaucracyᚋbackendᚐBusinessYear(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_currentBusinessYear(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BusinessYear(ctx, field)
+		},
 	}
 	return fc, nil
 }
@@ -8873,6 +9000,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateCustomerEmail":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateCustomerEmail(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "saveInvoice":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveInvoice(ctx, field)
@@ -9184,6 +9318,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_businessYear(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "currentBusinessYear":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_currentBusinessYear(ctx, field)
 				if res == graphql.RequiredNull {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
