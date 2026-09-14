@@ -357,6 +357,15 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         }
     }
 
+    function changePageSize(pageSize: number) {
+        const nextSearch = { ...activeSearch, page: '1', pageSize: String(pageSize) }
+        if (mode === ComponentMode.Page) {
+            setSearchParams(searchParamsFromForm(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
+        }
+    }
+
     function changeSort(sortBy: InvoiceSortColumn) {
         const sortDirection = activeSearch.sortBy !== sortBy
             ? 'asc'
@@ -481,9 +490,11 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                         firstItem={firstInvoice}
                         lastItem={lastInvoice}
                         page={invoicePage.page}
+                        pageSize={invoicePage.pageSize}
                         totalItems={invoicePage.totalCount}
                         totalPages={invoicePage.totalPages}
                         onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
                     />
                 )}
                 <Table>

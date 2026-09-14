@@ -209,6 +209,14 @@ function BankStatementSearchPage() {
         }))
     }
 
+    function changePageSize(pageSize: number) {
+        setSearchParams(searchParamsFromForm({
+            ...search,
+            page: String(defaultPage),
+            pageSize: String(pageSize),
+        }))
+    }
+
     const firstStatement = statementPage && statementPage.totalCount > 0
         ? (statementPage.page - 1) * statementPage.pageSize + 1
         : 0
@@ -251,7 +259,7 @@ function BankStatementSearchPage() {
 
             <div className="mt-8 w-full overflow-x-auto">
                 {statementPage && (
-                    <Pager firstItem={firstStatement} lastItem={lastStatement} page={statementPage.page} totalItems={statementPage.totalCount} totalPages={statementPage.totalPages} onPageChange={changePage} />
+                    <Pager firstItem={firstStatement} lastItem={lastStatement} page={statementPage.page} pageSize={statementPage.pageSize} totalItems={statementPage.totalCount} totalPages={statementPage.totalPages} onPageChange={changePage} onPageSizeChange={changePageSize} />
                 )}
                 <Table>
                     <TableHeader>

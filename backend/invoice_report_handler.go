@@ -46,8 +46,8 @@ func (handler *InvoiceReportHandler) Handle(context *gin.Context) {
 		return
 	}
 	pageSize, err := reportPositiveInteger(context.Query("pageSize"), 20)
-	if err != nil || pageSize > 100 {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "pageSize must be between 1 and 100"})
+	if err != nil || pageSize > 10000 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "pageSize must be between 1 and 10000"})
 		return
 	}
 	year, err := handler.businessYears.GetByCode(context.Request.Context(), businessYear)
