@@ -39,9 +39,7 @@ function Pager({
             <Combobox
                 items={pageSizes}
                 value={selectedPageSize}
-                onValueChange={(value) => {
-                    if (value != null) onPageSizeChange(value)
-                }}
+                onValueChange={(value) => onPageSizeChange(value ?? pageSizes[0])}
                 itemToStringLabel={(value) => value.toLocaleString()}
                 itemToStringValue={(value) => String(value)}
             >
