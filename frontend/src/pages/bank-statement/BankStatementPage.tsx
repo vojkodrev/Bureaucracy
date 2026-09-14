@@ -176,7 +176,12 @@ function BankStatementPage() {
     const [account, setAccount] = useState("");
     const [entries, setEntries] = useState<BankStatementEntry[]>([]);
     const [cleanDraft, setCleanDraft] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [nextNumberError, setNextNumberError] = useState<string | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [latestNumberError, setLatestNumberError] = useState<string | null>(
+        null,
+    );
     const [loading, setLoading] = useState(Boolean(routeStatementNumber));
     const [reloadVersion, setReloadVersion] = useState(0);
     const [saving, setSaving] = useState(false);
@@ -199,7 +204,7 @@ function BankStatementPage() {
         if (!routeStatementNumber) return;
         const abortController = new AbortController();
         setLoading(true);
-        setError(null);
+        setLoadError(null);
         void fetch(graphqlUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -250,7 +255,7 @@ function BankStatementPage() {
                     loadError.name === "AbortError"
                 )
                     return;
-                setError(
+                setLoadError(
                     loadError instanceof Error
                         ? loadError.message
                         : "Loading bank statement failed",
@@ -271,7 +276,8 @@ function BankStatementPage() {
         setAccount("");
         setEntries([]);
         setCleanDraft(serialize(null, "", today, "", []));
-        setError(null);
+        setLoadError(null);
+        setNextNumberError(null);
         setLoading(false);
         setConfirmRevert(false);
         setNumberWarning(null);
@@ -289,7 +295,7 @@ function BankStatementPage() {
                     requestError.name === "AbortError"
                 )
                     return;
-                setError(
+                setNextNumberError(
                     requestError instanceof Error
                         ? requestError.message
                         : "Loading next bank statement number failed",
@@ -307,7 +313,7 @@ function BankStatementPage() {
 
     const performSave = async () => {
         setNumberWarning(null);
-        setError(null);
+        setSaveError(null);
         try {
             const response = await fetch(graphqlUrl, {
                 method: "POST",
@@ -371,7 +377,7 @@ function BankStatementPage() {
                 navigate(`/bank-statement/${saved.statementNumber}`);
             }
         } catch (saveError) {
-            setError(
+            setSaveError(
                 saveError instanceof Error
                     ? saveError.message
                     : "Saving bank statement failed",
@@ -383,7 +389,7 @@ function BankStatementPage() {
             return;
         saveInProgress.current = true;
         setSaving(true);
-        setError(null);
+        setLatestNumberError(null);
         try {
             const latest = await fetchLatestStatementNumber(account || null);
             const value = Number(number);
@@ -393,7 +399,7 @@ function BankStatementPage() {
             }
             await performSave();
         } catch (requestError) {
-            setError(
+            setLatestNumberError(
                 requestError instanceof Error
                     ? requestError.message
                     : "Checking latest bank statement failed",
@@ -436,15 +442,47 @@ function BankStatementPage() {
         0,
     );
     const inflow = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0), 0);
+    const errors = [
+        [
+            "load",
+            "Bank statement could not be loaded",
+            "The bank statement data could not be retrieved.",
+            loadError,
+        ],
+        [
+            "next-number",
+            "Next statement number could not be loaded",
+            "A number could not be assigned to the new bank statement.",
+            nextNumberError,
+        ],
+        [
+            "latest-number",
+            "Latest statement number could not be checked",
+            "The bank statement number could not be validated before saving.",
+            latestNumberError,
+        ],
+        [
+            "save",
+            "Bank statement could not be saved",
+            "Your changes were not saved.",
+            saveError,
+        ],
+    ] as const;
     return (
         <div className="max-w-5xl p-4">
-            {error && (
-                <div className="mb-6">
-                    <ErrorAlert
-                        title="Bank statement operation failed"
-                        description="The bank statement could not be processed."
-                        error={error}
-                    />
+            {errors.some(([, , , error]) => error) && (
+                <div className="mb-6 space-y-2">
+                    {errors.map(
+                        ([key, title, description, error]) =>
+                            error && (
+                                <ErrorAlert
+                                    key={key}
+                                    title={title}
+                                    description={description}
+                                    error={error}
+                                />
+                            ),
+                    )}
                 </div>
             )}
             <Menubar className="mb-6 w-fit">
