@@ -1,5 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { getSelectedBusinessYear, setSelectedBusinessYear } from '@/lib/business-year'
@@ -258,6 +260,10 @@ function InvoicePage() {
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const [invoiceNumberWarning, setInvoiceNumberWarning] =
         useState<InvoiceNumberWarning | null>(null)
+    const [latestInvoiceResult, setLatestInvoiceResult] = useState<{
+        routeInvoiceNumber: string | undefined
+        value: string | undefined
+    }>({ routeInvoiceNumber: undefined, value: undefined })
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<InvoiceLoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
@@ -291,6 +297,18 @@ function InvoicePage() {
             currentLocation.search !== nextLocation.search ||
             currentLocation.hash !== nextLocation.hash),
     )
+
+    useEffect(() => {
+        const abortController = new AbortController()
+        void fetchLatestInvoiceNumber(abortController.signal).then((value) => {
+            setLatestInvoiceResult({ routeInvoiceNumber, value })
+        }).catch((requestError: unknown) => {
+            if (!(requestError instanceof DOMException && requestError.name === 'AbortError')) {
+                console.error(requestError)
+            }
+        })
+        return () => abortController.abort()
+    }, [routeInvoiceNumber])
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
@@ -683,22 +701,63 @@ function InvoicePage() {
     }, [hasUnsavedChanges])
 
     const totalIncludingVat = invoiceItems.reduce((total, item) => total + (item.grossAmount ?? 0), 0)
+    const currentInvoiceNumberValue = routeInvoiceNumber && /^\d+$/.test(routeInvoiceNumber)
+        ? Number.parseInt(routeInvoiceNumber, 10)
+        : null
+    const latestInvoiceNumber = latestInvoiceResult.routeInvoiceNumber === routeInvoiceNumber
+        ? latestInvoiceResult.value
+        : undefined
+    const latestInvoiceNumberValue = latestInvoiceNumber && /^\d+$/.test(latestInvoiceNumber)
+        ? Number.parseInt(latestInvoiceNumber, 10)
+        : null
+    const navigateToInvoiceNumber = (value: number) => {
+        if (!routeInvoiceNumber) return
+        const paddedNumber = String(value).padStart(routeInvoiceNumber.length, '0')
+        navigate(`/invoice/${encodeURIComponent(paddedNumber)}`)
+    }
+
     return (
         <div className="max-w-5xl p-4">
-            <InvoiceMenu
-                canSave={canSaveInvoice}
-                canPrint={canRequestPrintInvoice}
-                canEmail={canPrintInvoice}
-                canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
-                canDuplicate={invoiceId != null && !isLoading && !isSaving}
-                isSaving={isSaving}
-                isDuplicating={isDuplicating}
-                onSave={() => void requestSaveInvoice()}
-                onPrint={printInvoice}
-                onEmail={() => setEmailDialogOpen(true)}
-                onRevert={revertInvoice}
-                onDuplicate={() => void duplicateInvoice()}
-            />
+            <div className="mb-6 flex items-center gap-2">
+                <InvoiceMenu
+                    canSave={canSaveInvoice}
+                    canPrint={canRequestPrintInvoice}
+                    canEmail={canPrintInvoice}
+                    canRevert={Boolean(routeInvoiceNumber) && !isLoading && !isSaving && !isDuplicating}
+                    canDuplicate={invoiceId != null && !isLoading && !isSaving}
+                    isSaving={isSaving}
+                    isDuplicating={isDuplicating}
+                    onSave={() => void requestSaveInvoice()}
+                    onPrint={printInvoice}
+                    onEmail={() => setEmailDialogOpen(true)}
+                    onRevert={revertInvoice}
+                    onDuplicate={() => void duplicateInvoice()}
+                />
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Previous invoice"
+                    disabled={currentInvoiceNumberValue == null || currentInvoiceNumberValue <= 1}
+                    onClick={() => navigateToInvoiceNumber(currentInvoiceNumberValue! - 1)}
+                >
+                    <ChevronLeft />
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Next invoice"
+                    disabled={
+                        currentInvoiceNumberValue == null ||
+                        latestInvoiceNumberValue == null ||
+                        currentInvoiceNumberValue >= latestInvoiceNumberValue
+                    }
+                    onClick={() => navigateToInvoiceNumber(currentInvoiceNumberValue! + 1)}
+                >
+                    <ChevronRight />
+                </Button>
+            </div>
             <EmailInvoiceDialog
                 open={emailDialogOpen}
                 invoiceNumber={invoiceNumber.trim()}

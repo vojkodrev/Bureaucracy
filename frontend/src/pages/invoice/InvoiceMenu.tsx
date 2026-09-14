@@ -25,7 +25,7 @@ type InvoiceMenuProps = {
 
 function InvoiceMenu({ canSave, canPrint, canEmail, canRevert, canDuplicate, isSaving, isDuplicating, onSave, onPrint, onEmail, onRevert, onDuplicate }: InvoiceMenuProps) {
     return (
-        <Menubar className="mb-6 w-fit">
+        <Menubar className="w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
