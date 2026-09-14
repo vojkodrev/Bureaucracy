@@ -307,6 +307,8 @@ type Query {
     invoiceNumber: String
     customerId: String
     customerName: String
+    productCode: String
+    productName: String
     issuedFrom: Time
     issuedTo: Time
     sortBy: String

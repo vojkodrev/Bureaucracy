@@ -379,6 +379,8 @@ func (repository *InvoiceRepository) Search(
 	invoiceNumber *string,
 	customerID *string,
 	customerName *string,
+	productCode *string,
+	productName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
 	sortBy *string,
@@ -406,14 +408,19 @@ func (repository *InvoiceRepository) Search(
 	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
 	customerIDPattern := optionalLikePattern(customerID)
 	customerNamePattern := optionalLikePattern(customerName)
+	productCodePattern := optionalLikePattern(productCode)
+	productNamePattern := optionalLikePattern(productName)
 	queryArguments := []any{
 		sql.Named("invoiceNumber", invoiceNumberPattern),
 		sql.Named("customerID", customerIDPattern),
 		sql.Named("customerName", customerNamePattern),
+		sql.Named("productCode", productCodePattern),
+		sql.Named("productName", productNamePattern),
 		sql.Named("issuedFrom", nullableTime(issuedFrom)),
 		sql.Named("issuedTo", nullableTime(issuedTo)),
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	productDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
 
 	var totalCount int
 	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
@@ -422,8 +429,17 @@ func (repository *InvoiceRepository) Search(
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
+		  AND ((@productCode = '' AND @productName = '') OR EXISTS (
+		      SELECT 1
+		      FROM [%s].[dbo].[RacuniSpecifikacija] rs
+		      LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
+		      WHERE rs.Stevilka = Racuni.Stevilka
+		        AND ISNULL(rs.Deleted, 0) = 0
+		        AND (@productCode = '' OR rs.Artikel LIKE @productCode ESCAPE '\')
+		        AND (@productName = '' OR a.Opis LIKE @productName ESCAPE '\')
+		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
-		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`, databaseName),
+		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`, databaseName, databaseName, productDatabaseName),
 		queryArguments...,
 	).Scan(&totalCount)
 	if err != nil {
@@ -457,10 +473,19 @@ func (repository *InvoiceRepository) Search(
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
+		  AND ((@productCode = '' AND @productName = '') OR EXISTS (
+		      SELECT 1
+		      FROM [%s].[dbo].[RacuniSpecifikacija] rs
+		      LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
+		      WHERE rs.Stevilka = Racuni.Stevilka
+		        AND ISNULL(rs.Deleted, 0) = 0
+		        AND (@productCode = '' OR rs.Artikel LIKE @productCode ESCAPE '\')
+		        AND (@productName = '' OR a.Opis LIKE @productName ESCAPE '\')
+		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, orderBy),
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {

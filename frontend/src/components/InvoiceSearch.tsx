@@ -5,6 +5,7 @@ import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
+import ProductPickerField from '@/components/ProductPickerField'
 import SortableTableHead from '@/components/SortableTableHead'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,8 @@ type SearchForm = {
     invoiceNumber: string
     customerId: string
     customerName: string
+    productCode: string
+    productName: string
     from: string
     to: string
     page: string
@@ -84,6 +87,8 @@ const searchInvoicesQuery = `
         $invoiceNumber: String
         $customerId: String
         $customerName: String
+        $productCode: String
+        $productName: String
         $issuedFrom: Time
         $issuedTo: Time
         $sortBy: String
@@ -96,6 +101,8 @@ const searchInvoicesQuery = `
             invoiceNumber: $invoiceNumber
             customerId: $customerId
             customerName: $customerName
+            productCode: $productCode
+            productName: $productName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
             sortBy: $sortBy
@@ -147,6 +154,8 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         invoiceNumber: searchParams.get('invoiceNumber') ?? '',
         customerId: searchParams.get('customerId') ?? '',
         customerName: searchParams.get('customerName') ?? '',
+        productCode: searchParams.get('productCode') ?? '',
+        productName: searchParams.get('productName') ?? '',
         from: searchParams.get('from') ?? '',
         to: searchParams.get('to') ?? '',
         page: searchParams.get('page') ?? '1',
@@ -160,7 +169,9 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
 function searchParamsFromForm(search: SearchForm): URLSearchParams {
     const searchParams = new URLSearchParams()
 
-    for (const key of ['invoiceNumber', 'customerId', 'customerName', 'from', 'to'] as const) {
+    for (const key of [
+        'invoiceNumber', 'customerId', 'customerName', 'productCode', 'productName', 'from', 'to',
+    ] as const) {
         if (search[key]) {
             searchParams.set(key, search[key])
         }
@@ -192,6 +203,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const [selectedInvoiceNumber, setSelectedInvoiceNumber] = useState<string | null>(null)
     const [customerId, setCustomerId] = useState(activeSearch.customerId)
     const [customerName, setCustomerName] = useState(activeSearch.customerName)
+    const [productCode, setProductCode] = useState(activeSearch.productCode)
+    const [productName, setProductName] = useState(activeSearch.productName)
     const [invoiceDateFrom, setInvoiceDateFrom] = useState(() =>
         dateFromSearchValue(activeSearch.from),
     )
@@ -220,9 +233,15 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     useEffect(() => {
         setCustomerId(activeSearch.customerId)
         setCustomerName(activeSearch.customerName)
+        setProductCode(activeSearch.productCode)
+        setProductName(activeSearch.productName)
         setInvoiceDateFrom(dateFromSearchValue(activeSearch.from))
         setInvoiceDateTo(dateFromSearchValue(activeSearch.to))
-    }, [activeSearch.customerId, activeSearch.customerName, activeSearch.from, activeSearch.to])
+    }, [
+        activeSearch.customerId, activeSearch.customerName,
+        activeSearch.productCode, activeSearch.productName,
+        activeSearch.from, activeSearch.to,
+    ])
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -237,6 +256,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     invoiceNumber: optionalFilter(activeSearch.invoiceNumber),
                     customerId: optionalFilter(activeSearch.customerId),
                     customerName: optionalFilter(activeSearch.customerName),
+                    productCode: optionalFilter(activeSearch.productCode),
+                    productName: optionalFilter(activeSearch.productName),
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
                     sortBy: activeSearch.sortBy || null,
@@ -316,6 +337,8 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
             invoiceNumber: String(formData.get('invoiceNumber') ?? '').trim(),
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
+            productCode: String(formData.get('productCode') ?? '').trim(),
+            productName: String(formData.get('productName') ?? '').trim(),
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
             page: '1',
@@ -477,6 +500,28 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                                         value={customerName}
                                         autoComplete="off"
                                         onChange={(event) => setCustomerName(event.target.value)}
+                                    />
+                                </Field>
+                            </div>
+
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <ProductPickerField
+                                    id="product-code"
+                                    label="Product code"
+                                    name="productCode"
+                                    productCode={productCode}
+                                    onProductCodeChange={setProductCode}
+                                    onProductNameChange={setProductName}
+                                />
+                                <Field>
+                                    <FieldLabel htmlFor="product-name">Product name</FieldLabel>
+                                    <Input
+                                        id="product-name"
+                                        type="search"
+                                        name="productName"
+                                        value={productName}
+                                        autoComplete="off"
+                                        onChange={(event) => setProductName(event.target.value)}
                                     />
                                 </Field>
                             </div>
