@@ -9,16 +9,17 @@ import {
 } from '@/components/ui/menubar'
 
 type InvoiceSearchMenuProps = {
+    disabled?: boolean
     onPrint: () => void
 }
 
-function InvoiceSearchMenu({ onPrint }: InvoiceSearchMenuProps) {
+function InvoiceSearchMenu({ disabled = false, onPrint }: InvoiceSearchMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem onClick={onPrint}>
+                    <MenubarItem disabled={disabled} onClick={onPrint}>
                         <Printer />Print
                         <MenubarShortcut>Ctrl+P</MenubarShortcut>
                     </MenubarItem>

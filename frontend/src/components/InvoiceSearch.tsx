@@ -207,6 +207,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const invoicePage = isLoading ? null : searchResult.invoicePage
     const invoices = invoicePage?.invoices ?? emptyInvoices
     const error = isLoading ? null : searchResult.error
+    const canPrint = !isLoading && !error && invoices.length > 0
     const firstInvoice =
         invoicePage && invoicePage.totalCount > 0
             ? (invoicePage.page - 1) * invoicePage.pageSize + 1
@@ -392,6 +393,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     }
 
     const printReport = () => {
+        if (!canPrint) return
         const pdfTab = window.open(invoiceReportPdfUrl(activeSearch), '_blank')
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the invoice report PDF.')
@@ -415,7 +417,9 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
 
     return (
         <div className="p-4">
-            {mode === ComponentMode.Page && <InvoiceSearchMenu onPrint={printReport} />}
+            {mode === ComponentMode.Page && (
+                <InvoiceSearchMenu disabled={!canPrint} onPrint={printReport} />
+            )}
             {printError && <p className="mb-6 text-sm text-destructive" role="alert">{printError}</p>}
             <form
                 key={searchKey}
