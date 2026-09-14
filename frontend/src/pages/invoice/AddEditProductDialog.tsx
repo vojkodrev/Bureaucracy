@@ -72,8 +72,8 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
                 <DialogHeader><DialogTitle>{item ? 'Edit product' : 'Add product'}</DialogTitle><DialogDescription>Search for a product or change the line details.</DialogDescription></DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_8rem]">
                     <ProductPickerField id="new-product-code" label="Product code" name="newProductCode" productCode={code} onProductCodeChange={setCode} onProductNameChange={setName} onProductUnitChange={setUnit} onProductNetPriceChange={(value) => setNetPrice(value == null ? '' : String(value))} onProductTaxRateChange={(value) => setTaxRate(value == null ? '' : String(value))} onProductTaxCodeChange={setTaxCode} />
-                    <Field><FieldLabel htmlFor="new-product-name">Product name</FieldLabel><Input id="new-product-name" value={name} disabled /></Field>
-                    <Field><FieldLabel htmlFor="new-product-unit">Unit</FieldLabel><Input id="new-product-unit" value={unit} disabled /></Field>
+                    <Field><FieldLabel htmlFor="new-product-name">Product name</FieldLabel><Input id="new-product-name" value={name} onChange={(event) => setName(event.target.value)} /></Field>
+                    <Field><FieldLabel htmlFor="new-product-unit">Unit</FieldLabel><Input id="new-product-unit" value={unit} onChange={(event) => setUnit(event.target.value)} /></Field>
                     <Field className="sm:col-start-1"><FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel><NumberInput id="new-product-quantity" min="0" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field>
                 </div>
                 <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
