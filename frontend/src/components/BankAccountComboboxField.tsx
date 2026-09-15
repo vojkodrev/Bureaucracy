@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import {
     Combobox,
     ComboboxContent,
@@ -27,6 +27,8 @@ type BankAccountComboboxFieldProps = {
     label: string
     value: string
     onChange: (code: string) => void
+    selectFirstByDefault?: boolean
+    onDefaultChange?: (code: string) => void
 }
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
@@ -40,9 +42,16 @@ function accountLabel(account: BankAccount): string {
     return `${account.code} — ${account.name ?? account.accountNumber ?? ''}`
 }
 
-function BankAccountComboboxField({ id, label, value, onChange }: BankAccountComboboxFieldProps) {
+function BankAccountComboboxField({ id, label, value, onChange, selectFirstByDefault = false, onDefaultChange }: BankAccountComboboxFieldProps) {
     const [accounts, setAccounts] = useState<BankAccount[]>([])
     const [error, setError] = useState<string | null>(null)
+    const selectDefaultAccount = useEffectEvent((bankAccounts: BankAccount[]) => {
+        if (selectFirstByDefault && !value && bankAccounts.length > 0) {
+            const code = bankAccounts[0].code
+            const handleDefaultChange = onDefaultChange ?? onChange
+            handleDefaultChange(code)
+        }
+    })
 
     useEffect(() => {
         const abortController = new AbortController()
@@ -55,7 +64,9 @@ function BankAccountComboboxField({ id, label, value, onChange }: BankAccountCom
             if (!response.ok) throw new Error(`Loading bank accounts failed (${response.status})`)
             const result = (await response.json()) as BankAccountsResponse
             if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-            setAccounts(result.data?.bankAccounts ?? [])
+            const bankAccounts = result.data?.bankAccounts ?? []
+            setAccounts(bankAccounts)
+            selectDefaultAccount(bankAccounts)
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return
             setError(requestError instanceof Error ? requestError.message : 'Loading bank accounts failed')

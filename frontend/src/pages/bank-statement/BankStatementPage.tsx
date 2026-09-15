@@ -161,6 +161,10 @@ const serialize = (
         account,
         entries,
     });
+const updateCleanDraft = (
+    draft: string | null,
+    changes: Partial<{ number: string; account: string }>,
+) => (draft ? JSON.stringify({ ...JSON.parse(draft), ...changes }) : draft);
 
 function BankStatementPage() {
     const { statementNumber: routeStatementNumberParam } = useParams();
@@ -287,7 +291,9 @@ function BankStatementPage() {
             .then((latest) => {
                 const nextNumber = String((latest ?? 0) + 1);
                 setNumber(nextNumber);
-                setCleanDraft(serialize(null, nextNumber, today, "", []));
+                setCleanDraft((draft) =>
+                    updateCleanDraft(draft, { number: nextNumber }),
+                );
             })
             .catch((requestError: unknown) => {
                 if (
@@ -442,6 +448,10 @@ function BankStatementPage() {
         0,
     );
     const inflow = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0), 0);
+    const setDefaultAccount = (code: string) => {
+        setAccount(code);
+        setCleanDraft((draft) => updateCleanDraft(draft, { account: code }));
+    };
     const errors = [
         [
             "load",
@@ -551,6 +561,8 @@ function BankStatementPage() {
                                 label="Bank account"
                                 value={account}
                                 onChange={setAccount}
+                                selectFirstByDefault={!routeStatementNumber}
+                                onDefaultChange={setDefaultAccount}
                             />
                         </div>
                     </FieldGroup>
