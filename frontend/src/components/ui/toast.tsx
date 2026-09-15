@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 
+const toastTimeout = 120 * 1000
+
 function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
     return <ToastPrimitive.Viewport className={cn('pointer-events-none fixed inset-x-4 bottom-4 z-50 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full', className)} {...props} />
 }
@@ -34,9 +36,15 @@ function ToastIcon({ type }: { type?: string }) {
     return Icon ? <Icon className={cn('size-4 shrink-0', type === 'loading' && 'animate-spin', type === 'error' && 'text-destructive')} aria-hidden="true" /> : null
 }
 
-function ToastList() {
-    const { toasts } = ToastPrimitive.useToastManager()
-    return toasts.map((toastItem) => (
+function ToastItem({ toastItem }: { toastItem: ToastPrimitive.Root.Props['toast'] }) {
+    React.useEffect(() => {
+        const timeout = toastItem.timeout ?? toastTimeout
+        if (toastItem.type === 'loading' || timeout <= 0) return undefined
+        const timeoutID = window.setTimeout(() => toast.close(toastItem.id), timeout)
+        return () => window.clearTimeout(timeoutID)
+    }, [toastItem.id, toastItem.timeout, toastItem.type])
+
+    return (
         <Toast key={toastItem.id} toast={toastItem}>
             <ToastPrimitive.Content className="flex h-full items-center gap-3 overflow-hidden p-4">
                 <ToastIcon type={toastItem.type} />
@@ -49,12 +57,17 @@ function ToastList() {
                 </ToastPrimitive.Close>
             </ToastPrimitive.Content>
         </Toast>
-    ))
+    )
+}
+
+function ToastList() {
+    const { toasts } = ToastPrimitive.useToastManager()
+    return toasts.map((toastItem) => <ToastItem key={toastItem.id} toastItem={toastItem} />)
 }
 
 function Toaster() {
     return (
-        <ToastPrimitive.Provider toastManager={toast} timeout={120_000}>
+        <ToastPrimitive.Provider toastManager={toast} timeout={toastTimeout}>
             <ToastPrimitive.Portal>
                 <ToastViewport><ToastList /></ToastViewport>
             </ToastPrimitive.Portal>
