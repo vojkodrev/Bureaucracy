@@ -153,8 +153,6 @@ function EmailInvoiceDialog({
         } finally { setSending(false) }
     }
 
-    const recipientDiffers = Boolean(storedRecipient.trim()) &&
-        recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()
     return (
         <Dialog open={open} onOpenChange={(next) => { if (!sending) onOpenChange(next) }}>
             <DialogContent className="sm:max-w-lg">
@@ -179,12 +177,6 @@ function EmailInvoiceDialog({
                     {!loading && !storedRecipient && (
                         <p className="text-sm text-muted-foreground">
                             No email is stored for this customer. Enter a recipient manually.
-                        </p>
-                    )}
-                    {recipientDiffers && (
-                        <p className="text-sm text-amber-700" role="status">
-                            This differs from the customer’s stored email ({storedRecipient}).
-                            Consider updating the customer record.
                         </p>
                     )}
                     <Field>
