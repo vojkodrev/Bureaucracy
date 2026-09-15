@@ -66,6 +66,25 @@ func (repository *BankStatementRepository) LatestNumber(ctx context.Context, bus
 	return &value, nil
 }
 
+func (repository *BankStatementRepository) ExistsOnDate(ctx context.Context, businessYear string, statementDate time.Time) (bool, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return false, fmt.Errorf("businessYear must contain only digits")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	var exists bool
+	if err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT CASE WHEN EXISTS (
+			SELECT 1
+			FROM [%s].[dbo].[BankaZRSaldo]
+			WHERE CAST(Datum AS date) = CAST(@statementDate AS date)
+			  AND ISNULL(Deleted, 0) = 0
+		) THEN 1 ELSE 0 END`, databaseName),
+		sql.Named("statementDate", statementDate)).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check bank statement date: %w", err)
+	}
+	return exists, nil
+}
+
 func (repository *BankStatementRepository) GetByNumber(ctx context.Context, businessYear string, number int) (*BankStatement, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
@@ -128,6 +147,13 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	}
 	if input.BankAccount == "" {
 		return nil, fmt.Errorf("bankAccount is required")
+	}
+	if isIBAN(input.BankAccount) {
+		account, accountErr := repository.EnsureAccount(ctx, businessYear, input.BankAccount)
+		if accountErr != nil {
+			return nil, accountErr
+		}
+		input.BankAccount = account.Code
 	}
 	for index, entry := range input.Entries {
 		if entry == nil {
@@ -324,6 +350,92 @@ func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) flo
 
 func NewBankStatementRepository(database *sql.DB) *BankStatementRepository {
 	return &BankStatementRepository{database: database}
+}
+
+func normalizeBankAccountNumber(value string) string {
+	return strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(value), " ", ""), "-", ""))
+}
+
+func isIBAN(value string) bool {
+	value = normalizeBankAccountNumber(value)
+	if len(value) < 15 || len(value) > 34 {
+		return false
+	}
+	return value[0] >= 'A' && value[0] <= 'Z' && value[1] >= 'A' && value[1] <= 'Z' &&
+		value[2] >= '0' && value[2] <= '9' && value[3] >= '0' && value[3] <= '9'
+}
+
+func (repository *BankStatementRepository) EnsureAccount(ctx context.Context, businessYear string, accountNumber string) (*BankAccount, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	accountNumber = normalizeBankAccountNumber(accountNumber)
+	if accountNumber == "" || len(accountNumber) > 34 {
+		return nil, fmt.Errorf("accountNumber must contain between 1 and 34 characters")
+	}
+	for _, character := range accountNumber {
+		if (character < 'A' || character > 'Z') && (character < '0' || character > '9') {
+			return nil, fmt.Errorf("accountNumber must contain only letters and digits")
+		}
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	tx, err := repository.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin ensuring bank account: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	account := &BankAccount{}
+	findQuery := fmt.Sprintf(`
+		SELECT TOP 1 RecNo, COALESCE(Sifra, ''), Opis, COALESCE(StevilkaRacuna, ZR)
+		FROM [%s].[dbo].[TolarskiRacuni] WITH (UPDLOCK, HOLDLOCK)
+		WHERE UPPER(REPLACE(REPLACE(COALESCE(StevilkaRacuna, ''), ' ', ''), '-', '')) = @accountNumber
+		   OR UPPER(REPLACE(REPLACE(COALESCE(ZR, ''), ' ', ''), '-', '')) = @accountNumber
+		ORDER BY RecNo`, databaseName)
+	err = tx.QueryRowContext(ctx, findQuery, sql.Named("accountNumber", accountNumber)).Scan(
+		&account.ID, &account.Code, &account.Name, &account.AccountNumber)
+	if err == nil {
+		if commitErr := tx.Commit(); commitErr != nil {
+			return nil, fmt.Errorf("commit existing bank account: %w", commitErr)
+		}
+		return account, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, fmt.Errorf("find bank account: %w", err)
+	}
+
+	var latestCode sql.NullInt64
+	if err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT MAX(TRY_CONVERT(int, Sifra))
+		FROM [%s].[dbo].[TolarskiRacuni] WITH (UPDLOCK, HOLDLOCK)`, databaseName)).Scan(&latestCode); err != nil {
+		return nil, fmt.Errorf("find latest bank account code: %w", err)
+	}
+	nextCode := 0
+	if latestCode.Valid {
+		nextCode = int(latestCode.Int64) + 1
+	}
+	account.Code = fmt.Sprintf("%03d", nextCode)
+	accountSuffix := accountNumber
+	if len(accountSuffix) > 4 {
+		accountSuffix = accountSuffix[len(accountSuffix)-4:]
+	}
+	name := fmt.Sprintf("Bank account %s", accountSuffix)
+	err = tx.QueryRowContext(ctx, fmt.Sprintf(`
+		INSERT INTO [%s].[dbo].[TolarskiRacuni]
+			(Sifra, Opis, StevilkaRacuna, ZR, OtvoritvenoStanje, VrstaRacuna)
+		OUTPUT INSERTED.RecNo
+		VALUES (@code, @name, CASE WHEN LEN(@accountNumber) <= 25 THEN @accountNumber END, @accountNumber, 0, 2)`, databaseName),
+		sql.Named("code", account.Code), sql.Named("name", name), sql.Named("accountNumber", accountNumber)).Scan(&account.ID)
+	if err != nil {
+		return nil, fmt.Errorf("create bank account: %w", err)
+	}
+	account.Name = &name
+	account.AccountNumber = &accountNumber
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit bank account: %w", err)
+	}
+	return account, nil
 }
 
 func (repository *BankStatementRepository) ListAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error) {

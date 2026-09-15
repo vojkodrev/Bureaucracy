@@ -9,6 +9,7 @@ import {
     PackageSearch,
     Plus,
     Search,
+    Upload,
     Users,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -41,6 +42,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 
 const breadcrumbLabels: Record<string, string> = {
     '/bank-statements/search': 'Bank statement search',
+    '/bank-statements/import': 'Import bank statements',
     '/business-years': 'Business years',
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
@@ -163,7 +165,7 @@ function LayoutPage() {
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
-                : pathname === '/bank-statements/search' || isBankStatementPage
+                : pathname.startsWith('/bank-statements/') || isBankStatementPage
                     ? 'bank-statements'
                 : null,
     )
@@ -222,7 +224,7 @@ function LayoutPage() {
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
         } else if (
-            pathname === '/bank-statements/search' ||
+            pathname.startsWith('/bank-statements/') ||
             isBankStatementPage
         ) {
             setOpenMenu('bank-statements')
@@ -402,8 +404,7 @@ function LayoutPage() {
                                             render={
                                                 <SidebarMenuButton
                                                     isActive={
-                                                        pathname ===
-                                                        '/bank-statements/search' ||
+                                                        pathname.startsWith('/bank-statements/') ||
                                                         isBankStatementPage
                                                     }
                                                     tooltip="Bank statements"
@@ -447,6 +448,15 @@ function LayoutPage() {
                                                 >
                                                     <Plus />
                                                     <span>Bank statement</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={pathname === '/bank-statements/import'}
+                                                    render={<NavLink to="/bank-statements/import" />}
+                                                >
+                                                    <Upload />
+                                                    <span>Import</span>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
