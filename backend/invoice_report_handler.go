@@ -67,7 +67,8 @@ func (handler *InvoiceReportHandler) Handle(context *gin.Context) {
 	invoicePage, err := handler.invoices.Search(
 		context.Request.Context(), businessYear,
 		optionalQuery(context.Query("invoiceNumber")), optionalQuery(context.Query("customerId")),
-		optionalQuery(context.Query("customerName")), issuedFrom, issuedTo,
+		optionalQuery(context.Query("customerName")), optionalQuery(context.Query("productCode")),
+		optionalQuery(context.Query("productName")), issuedFrom, issuedTo,
 		optionalQuery(context.Query("sortBy")), optionalQuery(context.Query("sortDirection")),
 		page, pageSize,
 	)

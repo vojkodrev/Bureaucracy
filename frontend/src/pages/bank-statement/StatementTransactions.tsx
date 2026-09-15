@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -123,7 +124,20 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                                         : formatCurrency(entry.inflow)}
                                 </TableCell>
                                 <TableCell>
-                                    {entry.documentNumber ?? "—"}
+                                    {entry.documentNumber ? (
+                                        <Button
+                                            variant="link"
+                                            render={
+                                                <Link
+                                                    to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
+                                                />
+                                            }
+                                        >
+                                            {entry.documentNumber}
+                                        </Button>
+                                    ) : (
+                                        "—"
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     {entry.transactionType ?? "—"}

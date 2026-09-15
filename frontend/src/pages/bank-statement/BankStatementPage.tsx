@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Save, Undo2 } from "lucide-react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import BankAccountComboboxField from "@/components/BankAccountComboboxField";
@@ -161,6 +161,10 @@ const serialize = (
         account,
         entries,
     });
+const updateCleanDraft = (
+    draft: string | null,
+    changes: Partial<{ number: string; account: string }>,
+) => (draft ? JSON.stringify({ ...JSON.parse(draft), ...changes }) : draft);
 
 function BankStatementPage() {
     const { statementNumber: routeStatementNumberParam } = useParams();
@@ -169,14 +173,21 @@ function BankStatementPage() {
         : null;
     const navigate = useNavigate();
     const allowNavigation = useRef(false);
+    const saveInProgress = useRef(false);
     const [id, setID] = useState<number | null>(null);
     const [number, setNumber] = useState("");
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [account, setAccount] = useState("");
     const [entries, setEntries] = useState<BankStatementEntry[]>([]);
     const [cleanDraft, setCleanDraft] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [nextNumberError, setNextNumberError] = useState<string | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [latestNumberError, setLatestNumberError] = useState<string | null>(
+        null,
+    );
     const [loading, setLoading] = useState(Boolean(routeStatementNumber));
+    const [reloadVersion, setReloadVersion] = useState(0);
     const [saving, setSaving] = useState(false);
     const [confirmRevert, setConfirmRevert] = useState(false);
     const [numberWarning, setNumberWarning] = useState<
@@ -188,66 +199,78 @@ function BankStatementPage() {
         ({ currentLocation, nextLocation }) =>
             !allowNavigation.current &&
             dirty &&
-            currentLocation.pathname !== nextLocation.pathname,
+            (currentLocation.pathname !== nextLocation.pathname ||
+                currentLocation.search !== nextLocation.search ||
+                currentLocation.hash !== nextLocation.hash),
     );
 
-    const loadStatement = useCallback(async () => {
-        if (!routeStatementNumber) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch(graphqlUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    query: statementQuery,
-                    variables: {
-                        businessYear: getSelectedBusinessYear(),
-                        statementNumber: routeStatementNumber,
-                    },
-                }),
-            });
-            if (!response.ok)
-                throw new Error(
-                    `Loading bank statement failed (${response.status})`,
-                );
-            const result = (await response.json()) as LoadResponse;
-            if (result.errors?.length)
-                throw new Error(
-                    result.errors.map(({ message }) => message).join(", "),
-                );
-            const statement = result.data?.bankStatement;
-            if (!statement)
-                throw new Error(`Bank statement ${routeStatementNumber} was not found`);
-            setID(statement.id);
-            setNumber(String(statement.statementNumber ?? ""));
-            setDate(fromApiDate(statement.statementDate));
-            setAccount(statement.bankAccount ?? "");
-            setEntries(statement.entries);
-            setCleanDraft(
-                serialize(
-                    statement.id,
-                    String(statement.statementNumber ?? ""),
-                    fromApiDate(statement.statementDate),
-                    statement.bankAccount ?? "",
-                    statement.entries,
-                ),
-            );
-        } catch (loadError) {
-            setError(
-                loadError instanceof Error
-                    ? loadError.message
-                    : "Loading bank statement failed",
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [routeStatementNumber]);
     useEffect(() => {
-        if (routeStatementNumber) {
-            void loadStatement();
-            return;
-        }
+        if (!routeStatementNumber) return;
+        const abortController = new AbortController();
+        setLoading(true);
+        setLoadError(null);
+        void fetch(graphqlUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                query: statementQuery,
+                variables: {
+                    businessYear: getSelectedBusinessYear(),
+                    statementNumber: routeStatementNumber,
+                },
+            }),
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok)
+                    throw new Error(
+                        `Loading bank statement failed (${response.status})`,
+                    );
+                const result = (await response.json()) as LoadResponse;
+                if (result.errors?.length)
+                    throw new Error(
+                        result.errors.map(({ message }) => message).join(", "),
+                    );
+                const statement = result.data?.bankStatement;
+                if (!statement)
+                    throw new Error(
+                        `Bank statement ${routeStatementNumber} was not found`,
+                    );
+                const statementDate = fromApiDate(statement.statementDate);
+                setID(statement.id);
+                setNumber(String(statement.statementNumber ?? ""));
+                setDate(statementDate);
+                setAccount(statement.bankAccount ?? "");
+                setEntries(statement.entries);
+                setCleanDraft(
+                    serialize(
+                        statement.id,
+                        String(statement.statementNumber ?? ""),
+                        statementDate,
+                        statement.bankAccount ?? "",
+                        statement.entries,
+                    ),
+                );
+                setLoading(false);
+            })
+            .catch((loadError: unknown) => {
+                if (
+                    loadError instanceof DOMException &&
+                    loadError.name === "AbortError"
+                )
+                    return;
+                setLoadError(
+                    loadError instanceof Error
+                        ? loadError.message
+                        : "Loading bank statement failed",
+                );
+                setLoading(false);
+            });
+        return () => abortController.abort();
+    }, [reloadVersion, routeStatementNumber]);
+
+    useEffect(() => {
+        if (routeStatementNumber) return;
 
         allowNavigation.current = false;
         const today = new Date();
@@ -257,7 +280,8 @@ function BankStatementPage() {
         setAccount("");
         setEntries([]);
         setCleanDraft(serialize(null, "", today, "", []));
-        setError(null);
+        setLoadError(null);
+        setNextNumberError(null);
         setLoading(false);
         setConfirmRevert(false);
         setNumberWarning(null);
@@ -267,7 +291,9 @@ function BankStatementPage() {
             .then((latest) => {
                 const nextNumber = String((latest ?? 0) + 1);
                 setNumber(nextNumber);
-                setCleanDraft(serialize(null, nextNumber, today, "", []));
+                setCleanDraft((draft) =>
+                    updateCleanDraft(draft, { number: nextNumber }),
+                );
             })
             .catch((requestError: unknown) => {
                 if (
@@ -275,14 +301,14 @@ function BankStatementPage() {
                     requestError.name === "AbortError"
                 )
                     return;
-                setError(
+                setNextNumberError(
                     requestError instanceof Error
                         ? requestError.message
                         : "Loading next bank statement number failed",
                 );
             });
         return () => abortController.abort();
-    }, [loadStatement, routeStatementNumber]);
+    }, [routeStatementNumber]);
     useEffect(() => {
         if (!dirty) return;
         const beforeUnload = (event: BeforeUnloadEvent) =>
@@ -293,8 +319,7 @@ function BankStatementPage() {
 
     const performSave = async () => {
         setNumberWarning(null);
-        setSaving(true);
-        setError(null);
+        setSaveError(null);
         try {
             const response = await fetch(graphqlUrl, {
                 method: "POST",
@@ -358,17 +383,19 @@ function BankStatementPage() {
                 navigate(`/bank-statement/${saved.statementNumber}`);
             }
         } catch (saveError) {
-            setError(
+            setSaveError(
                 saveError instanceof Error
                     ? saveError.message
                     : "Saving bank statement failed",
             );
-        } finally {
-            setSaving(false);
         }
     };
     const requestSave = async () => {
-        if (!date || !account || number === "" || saving) return;
+        if (!date || !account || number === "" || saveInProgress.current)
+            return;
+        saveInProgress.current = true;
+        setSaving(true);
+        setLatestNumberError(null);
         try {
             const latest = await fetchLatestStatementNumber(account || null);
             const value = Number(number);
@@ -378,13 +405,31 @@ function BankStatementPage() {
             }
             await performSave();
         } catch (requestError) {
-            setError(
+            setLatestNumberError(
                 requestError instanceof Error
                     ? requestError.message
                     : "Checking latest bank statement failed",
             );
+        } finally {
+            saveInProgress.current = false;
+            setSaving(false);
         }
     };
+    const confirmSave = async () => {
+        if (!date || !account || number === "" || saveInProgress.current)
+            return;
+        saveInProgress.current = true;
+        setSaving(true);
+        try {
+            await performSave();
+        } finally {
+            saveInProgress.current = false;
+            setSaving(false);
+        }
+    };
+    const onSaveShortcut = useEffectEvent(() => {
+        void requestSave();
+    });
     useEffect(() => {
         const keydown = (event: KeyboardEvent) => {
             if (
@@ -392,26 +437,62 @@ function BankStatementPage() {
                 event.key.toLowerCase() === "s"
             ) {
                 event.preventDefault();
-                void requestSave();
+                onSaveShortcut();
             }
         };
         window.addEventListener("keydown", keydown);
         return () => window.removeEventListener("keydown", keydown);
-    });
+    }, []);
     const outflow = entries.reduce(
         (sum, entry) => sum + (entry.outflow ?? 0),
         0,
     );
     const inflow = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0), 0);
+    const setDefaultAccount = (code: string) => {
+        setAccount(code);
+        setCleanDraft((draft) => updateCleanDraft(draft, { account: code }));
+    };
+    const errors = [
+        [
+            "load",
+            "Bank statement could not be loaded",
+            "The bank statement data could not be retrieved.",
+            loadError,
+        ],
+        [
+            "next-number",
+            "Next statement number could not be loaded",
+            "A number could not be assigned to the new bank statement.",
+            nextNumberError,
+        ],
+        [
+            "latest-number",
+            "Latest statement number could not be checked",
+            "The bank statement number could not be validated before saving.",
+            latestNumberError,
+        ],
+        [
+            "save",
+            "Bank statement could not be saved",
+            "Your changes were not saved.",
+            saveError,
+        ],
+    ] as const;
     return (
         <div className="max-w-5xl p-4">
-            {error && (
-                <div className="mb-6">
-                    <ErrorAlert
-                        title="Bank statement operation failed"
-                        description="The bank statement could not be processed."
-                        error={error}
-                    />
+            {errors.some(([, , , error]) => error) && (
+                <div className="mb-6 space-y-2">
+                    {errors.map(
+                        ([key, title, description, error]) =>
+                            error && (
+                                <ErrorAlert
+                                    key={key}
+                                    title={title}
+                                    description={description}
+                                    error={error}
+                                />
+                            ),
+                    )}
                 </div>
             )}
             <Menubar className="mb-6 w-fit">
@@ -480,6 +561,8 @@ function BankStatementPage() {
                                 label="Bank account"
                                 value={account}
                                 onChange={setAccount}
+                                selectFirstByDefault={!routeStatementNumber}
+                                onDefaultChange={setDefaultAccount}
                             />
                         </div>
                     </FieldGroup>
@@ -539,7 +622,7 @@ function BankStatementPage() {
                 onOpenChange={setConfirmRevert}
                 onDiscard={() => {
                     setConfirmRevert(false);
-                    void loadStatement();
+                    setReloadVersion((version) => version + 1);
                 }}
                 title="Revert bank statement changes?"
                 description="Your unsaved changes will be discarded."
@@ -569,7 +652,7 @@ function BankStatementPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => void performSave()}>
+                        <AlertDialogAction onClick={() => void confirmSave()}>
                             {numberWarning === "skipped"
                                 ? "Save and skip numbers"
                                 : "Save historical statement"}
