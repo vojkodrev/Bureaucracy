@@ -116,7 +116,7 @@ main {
 .introductory-text,
 .amount-in-words,
 .closing-text,
-.signature {
+.signature p {
     margin: 0;
 }
 
@@ -269,6 +269,14 @@ main {
 .signature {
     margin-top: 9mm;
     margin-left: 1mm;
+}
+
+.signature img {
+    display: block;
+    width: 42mm;
+    height: auto;
+    margin-top: 1mm;
+    margin-left: 9mm;
 }
 
 .payment-qr {

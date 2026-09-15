@@ -69,6 +69,9 @@ var cssTemplate string
 //go:embed print/invoice/logo.webp
 var logo []byte
 
+//go:embed print/invoice/signature.webp
+var signature []byte
+
 type InvoicePrintGenerator struct {
 	template    *template.Template
 	pdfRenderer *HTMLPDFRenderer
@@ -140,11 +143,13 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		CSS       template.CSS
 		Document  invoicePrintDocument
 		Logo      template.URL
+		Signature template.URL
 		PaymentQR template.URL
 	}{
 		CSS:       template.CSS(cssTemplate),
 		Document:  printDocument,
 		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
 		PaymentQR: template.URL(printDocument.PaymentQRCode),
 	}); err != nil {
 		return nil, fmt.Errorf("render invoice HTML: %w", err)
