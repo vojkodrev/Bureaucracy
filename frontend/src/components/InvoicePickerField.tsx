@@ -27,6 +27,7 @@ type InvoicePickerFieldProps = {
     label: string;
     name: string;
     onInvoiceNumberChange: (invoiceNumber: string) => void;
+    onInvoiceSelect?: (invoice: Invoice) => void;
 };
 
 function InvoicePickerField({
@@ -35,11 +36,13 @@ function InvoicePickerField({
     label,
     name,
     onInvoiceNumberChange,
+    onInvoiceSelect,
 }: InvoicePickerFieldProps) {
     const [open, setOpen] = useState(false);
 
     function selectInvoice(invoice: Invoice) {
         onInvoiceNumberChange(invoice.invoiceNumber);
+        onInvoiceSelect?.(invoice);
         setOpen(false);
     }
 

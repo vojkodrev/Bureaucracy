@@ -93,7 +93,9 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                         <Input
                             id="transaction-counterparty-name"
                             value={counterparty}
-                            disabled
+                            onChange={(event) =>
+                                setCounterparty(event.target.value)
+                            }
                         />
                     </Field>
                     <InvoicePickerField
@@ -102,6 +104,10 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                         name="documentNumber"
                         invoiceNumber={documentNumber}
                         onInvoiceNumberChange={setDocumentNumber}
+                        onInvoiceSelect={(invoice) => {
+                            setCounterpartyId(invoice.customerCode ?? "");
+                            setCounterparty(invoice.customerName ?? "");
+                        }}
                     />
                     <div />
                     <BankTransactionTypeComboboxField
