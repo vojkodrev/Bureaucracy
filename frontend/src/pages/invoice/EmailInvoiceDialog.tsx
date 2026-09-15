@@ -54,7 +54,7 @@ function EmailInvoiceDialog({
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
-    const [bcc, setBcc] = useState('drevi.napkins@gmail.com')
+    const [bcc, setBcc] = useState('')
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState<File[]>([])
@@ -70,7 +70,7 @@ function EmailInvoiceDialog({
             : invoiceNumber
         setStoredRecipient('')
         setRecipient('')
-        setBcc('drevi.napkins@gmail.com')
+        setBcc('')
         setSubject(`Drevi d.o.o. - Račun ${displayNumber}`)
         setMessage(
             'Pozdravljeni,\n\n' +
