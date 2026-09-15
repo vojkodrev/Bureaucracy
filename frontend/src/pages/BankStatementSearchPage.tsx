@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import {
     Table,
     TableBody,
@@ -243,7 +244,7 @@ function BankStatementSearchPage() {
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <Field>
                                     <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
-                                    <Input id="statement-number" type="number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
+                                    <NumberInput id="statement-number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
                                 </Field>
                                 <BankAccountComboboxField id="bank-account" label="Bank account" value={bankAccount} onChange={setBankAccount} />
                             </div>
