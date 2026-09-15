@@ -309,7 +309,22 @@ function BankStatementSearchPage() {
                                             <TableCell>{entry.transactionType || '—'}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.outflow == null ? '—' : formatCurrency(entry.outflow)}</TableCell>
                                             <TableCell className="text-right tabular-nums">{entry.inflow == null ? '—' : formatCurrency(entry.inflow)}</TableCell>
-                                            <TableCell>{entry.documentNumber || '—'}</TableCell>
+                                            <TableCell>
+                                                {entry.documentNumber ? (
+                                                    <Button
+                                                        variant="link"
+                                                        render={
+                                                            <Link
+                                                                to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
+                                                            />
+                                                        }
+                                                    >
+                                                        {entry.documentNumber}
+                                                    </Button>
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                     <TableRow className="border-b-2 font-medium">
