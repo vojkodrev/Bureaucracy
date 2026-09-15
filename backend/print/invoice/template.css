@@ -273,10 +273,9 @@ main {
 
 .signature img {
     display: block;
-    width: 42mm;
+    width: 50mm;
     height: auto;
     margin-top: 1mm;
-    margin-left: 9mm;
 }
 
 .payment-qr {
