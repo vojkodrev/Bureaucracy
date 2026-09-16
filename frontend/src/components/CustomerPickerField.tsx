@@ -1,4 +1,4 @@
-import { SearchIcon } from 'lucide-react'
+import { MinusIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 import CustomerSearch from '@/components/CustomerSearch'
 import { Button } from '@/components/ui/button'
@@ -33,6 +33,7 @@ type CustomerPickerFieldProps = {
     onCustomerCityChange?: (customerCity: string) => void
     onCustomerCountryChange?: (customerCountry: string) => void
     onCustomerPaymentTermChange?: (paymentTerm: number | null) => void
+    minimizable?: boolean
 }
 
 function CustomerPickerField({
@@ -47,6 +48,7 @@ function CustomerPickerField({
     onCustomerCityChange,
     onCustomerCountryChange,
     onCustomerPaymentTermChange,
+    minimizable = false,
 }: CustomerPickerFieldProps) {
     const [open, setOpen] = useState(false)
 
@@ -88,7 +90,23 @@ function CustomerPickerField({
             </InputGroup>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]">
+                <DialogContent
+                    keepMounted={minimizable}
+                    className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]"
+                >
+                    {minimizable && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="absolute top-2 right-10"
+                            aria-label="Minimize customer search"
+                            title="Minimize customer search"
+                            onClick={() => setOpen(false)}
+                        >
+                            <MinusIcon />
+                        </Button>
+                    )}
                     <DialogHeader>
                         <DialogTitle>Select customer</DialogTitle>
                         <DialogDescription>

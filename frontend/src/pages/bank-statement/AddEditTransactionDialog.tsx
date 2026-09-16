@@ -83,6 +83,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                 </DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <CustomerPickerField
+                        minimizable
                         id="transaction-counterparty"
                         label="Counterparty number"
                         name="counterpartyId"
@@ -103,6 +104,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                         />
                     </Field>
                     <InvoicePickerField
+                        minimizable
                         id="transaction-document-number"
                         label="Document number"
                         name="documentNumber"
