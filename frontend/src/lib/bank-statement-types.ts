@@ -10,6 +10,8 @@ export type BankStatementEntry = {
     outflow: number | null
     inflow: number | null
     documentNumber: string | null
+    reference: string | null
+    purpose: string | null
 }
 
 export type BankStatementPage = {

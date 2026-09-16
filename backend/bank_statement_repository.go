@@ -109,7 +109,8 @@ func (repository *BankStatementRepository) GetByNumber(ctx context.Context, busi
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT transactionRow.RecNo, transactionRow.Datum, transactionRow.SifraPartnerja,
 			transactionRow.ImePartnerja, transactionType.IME, transactionRow.VrstaDogodka,
-			transactionRow.VBreme, transactionRow.VDobro, transactionRow.Stevilka
+			transactionRow.VBreme, transactionRow.VDobro, transactionRow.Stevilka,
+			transactionRow.Sklic, transactionRow.Opomba
 		FROM [%s].[dbo].[BankaZR] transactionRow
 		LEFT JOIN [%s].[dbo].[BankaZRVD] transactionType
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
@@ -126,7 +127,7 @@ func (repository *BankStatementRepository) GetByNumber(ctx context.Context, busi
 		entry := &BankStatementEntry{StatementID: statement.ID, StatementNumber: statement.StatementNumber}
 		if err := rows.Scan(&entry.ID, &entry.PaymentDate, &entry.CustomerID, &entry.CustomerName,
 			&entry.TransactionType, &entry.TransactionTypeID, &entry.Outflow, &entry.Inflow,
-			&entry.DocumentNumber); err != nil {
+			&entry.DocumentNumber, &entry.Reference, &entry.Purpose); err != nil {
 			return nil, fmt.Errorf("scan bank statement entry: %w", err)
 		}
 		statement.Entries = append(statement.Entries, entry)
@@ -219,13 +220,15 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 		args := []any{sql.Named("date", input.StatementDate), sql.Named("account", input.BankAccount),
 			sql.Named("customerID", entry.CustomerID), sql.Named("customerName", entry.CustomerName),
 			sql.Named("eventType", entry.TransactionTypeID), sql.Named("outflow", entry.Outflow),
-			sql.Named("inflow", entry.Inflow), sql.Named("documentNumber", entry.DocumentNumber)}
+			sql.Named("inflow", entry.Inflow), sql.Named("documentNumber", entry.DocumentNumber),
+			sql.Named("reference", entry.Reference), sql.Named("purpose", entry.Purpose)}
 		if entry.ID != nil && *entry.ID > 0 {
 			entryID = *entry.ID
 			args = append(args, sql.Named("id", entryID))
 			result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[BankaZR]
 				SET Datum=@date, Banka=@account, SifraPartnerja=@customerID, ImePartnerja=@customerName,
-					VrstaDogodka=@eventType, VBreme=@outflow, VDobro=@inflow, Stevilka=@documentNumber
+					VrstaDogodka=@eventType, VBreme=@outflow, VDobro=@inflow, Stevilka=@documentNumber,
+					Sklic=@reference, Opomba=@purpose
 				WHERE RecNo=@id`, databaseName), args...)
 			if updateErr != nil {
 				return nil, fmt.Errorf("update bank statement entry: %w", updateErr)
@@ -235,8 +238,8 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 			}
 		} else {
 			err = tx.QueryRowContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[BankaZR]
-				(Datum, Banka, SifraPartnerja, ImePartnerja, VrstaDogodka, VBreme, VDobro, Stevilka, JeZR, SIT, TKDIS)
-				OUTPUT INSERTED.RecNo VALUES (@date, @account, @customerID, @customerName, @eventType, @outflow, @inflow, @documentNumber, -1, -1, 0)`, databaseName), args...).Scan(&entryID)
+				(Datum, Banka, SifraPartnerja, ImePartnerja, VrstaDogodka, VBreme, VDobro, Stevilka, Sklic, Opomba, JeZR, SIT, TKDIS)
+				OUTPUT INSERTED.RecNo VALUES (@date, @account, @customerID, @customerName, @eventType, @outflow, @inflow, @documentNumber, @reference, @purpose, -1, -1, 0)`, databaseName), args...).Scan(&entryID)
 			if err != nil {
 				return nil, fmt.Errorf("insert bank statement entry: %w", err)
 			}
@@ -565,7 +568,9 @@ func (repository *BankStatementRepository) Search(
 			transactionRow.VrstaDogodka,
 			transactionRow.VBreme,
 			transactionRow.VDobro,
-			transactionRow.Stevilka
+			transactionRow.Stevilka,
+			transactionRow.Sklic,
+			transactionRow.Opomba
 		FROM PagedStatements statementRow
 		JOIN [%s].[dbo].[BankaZR] transactionRow
 		  ON transactionRow.Banka = statementRow.Racun
@@ -596,6 +601,8 @@ func (repository *BankStatementRepository) Search(
 			&entry.Outflow,
 			&entry.Inflow,
 			&entry.DocumentNumber,
+			&entry.Reference,
+			&entry.Purpose,
 		); err != nil {
 			return nil, fmt.Errorf("scan bank statement entry: %w", err)
 		}

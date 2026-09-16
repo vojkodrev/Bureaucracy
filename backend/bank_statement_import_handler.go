@@ -54,6 +54,13 @@ type camtTransaction struct {
 		Debtor   camtParty `xml:"Dbtr"`
 		Creditor camtParty `xml:"Cdtr"`
 	} `xml:"RltdPties"`
+	RemittanceInformation struct {
+		Unstructured []string `xml:"Ustrd"`
+		Structured   []struct {
+			CreditorReference               string   `xml:"CdtrRefInf>Ref"`
+			AdditionalRemittanceInformation []string `xml:"AddtlRmtInf"`
+		} `xml:"Strd"`
+	} `xml:"RmtInf"`
 }
 
 type camtParty struct {
@@ -282,6 +289,9 @@ func parseCamtEntry(source camtEntry) ([]*model.BankStatementEntryInput, error) 
 		if name != "" {
 			entry.CustomerName = &name
 		}
+		reference, purpose := camtRemittanceDetails(transaction)
+		entry.Reference = reference
+		entry.Purpose = purpose
 		if direction == "CRDT" {
 			entry.Inflow = &amount
 		} else {
@@ -290,6 +300,41 @@ func parseCamtEntry(source camtEntry) ([]*model.BankStatementEntryInput, error) 
 		entries = append(entries, entry)
 	}
 	return entries, nil
+}
+
+func camtRemittanceDetails(transaction camtTransaction) (*string, *string) {
+	var reference string
+	purposeParts := make([]string, 0)
+	for _, value := range transaction.RemittanceInformation.Unstructured {
+		if value = strings.TrimSpace(value); value != "" {
+			purposeParts = append(purposeParts, value)
+		}
+	}
+	for _, structured := range transaction.RemittanceInformation.Structured {
+		if reference == "" {
+			reference = strings.TrimSpace(structured.CreditorReference)
+		}
+		for _, value := range structured.AdditionalRemittanceInformation {
+			if value = strings.TrimSpace(value); value != "" {
+				purposeParts = append(purposeParts, value)
+			}
+		}
+	}
+	// BankaZR.Sklic stores the reference without the Slovenian country/model
+	// prefix and is limited to 13 characters.
+	if len(reference) >= 4 && strings.EqualFold(reference[:2], "SI") {
+		if _, err := strconv.Atoi(reference[2:4]); err == nil {
+			reference = reference[4:]
+		}
+	}
+	var referenceValue, purposeValue *string
+	if reference != "" {
+		referenceValue = &reference
+	}
+	if purpose := strings.Join(purposeParts, " "); purpose != "" {
+		purposeValue = &purpose
+	}
+	return referenceValue, purposeValue
 }
 
 func parseCamtAmount(value string) (float64, error) {

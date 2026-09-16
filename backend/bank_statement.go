@@ -21,6 +21,8 @@ type BankStatementEntry struct {
 	Outflow           *float64   `json:"outflow"`
 	Inflow            *float64   `json:"inflow"`
 	DocumentNumber    *string    `json:"documentNumber"`
+	Reference         *string    `json:"reference"`
+	Purpose           *string    `json:"purpose"`
 }
 
 type BankStatement struct {
