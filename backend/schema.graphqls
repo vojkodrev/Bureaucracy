@@ -315,6 +315,7 @@ type Query {
     productName: String
     issuedFrom: Time
     issuedTo: Time
+    paymentStatus: String
     sortBy: String
     sortDirection: String
     page: Int = 1

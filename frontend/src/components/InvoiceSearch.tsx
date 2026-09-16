@@ -10,8 +10,9 @@ import SortableTableHead from '@/components/SortableTableHead'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue, optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
@@ -41,11 +42,16 @@ type SearchForm = {
     productName: string
     from: string
     to: string
+    paymentStatus: PaymentStatus
     page: string
     pageSize: string
     sortBy: InvoiceSortColumn | ''
     sortDirection: SortDirection | ''
 }
+
+type PaymentStatus = 'all' | 'overdue' | 'paid' | 'unpaid'
+
+const paymentStatuses: PaymentStatus[] = ['all', 'overdue', 'paid', 'unpaid']
 
 type InvoiceSortColumn =
     | 'invoiceNumber'
@@ -91,6 +97,7 @@ const searchInvoicesQuery = `
         $productName: String
         $issuedFrom: Time
         $issuedTo: Time
+        $paymentStatus: String
         $sortBy: String
         $sortDirection: String
         $page: Int
@@ -105,6 +112,7 @@ const searchInvoicesQuery = `
             productName: $productName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
+            paymentStatus: $paymentStatus
             sortBy: $sortBy
             sortDirection: $sortDirection
             page: $page
@@ -143,6 +151,7 @@ function invoiceReportPdfUrl(search: SearchForm): string {
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
     const sortByValue = searchParams.get('sortBy')
     const sortDirectionValue = searchParams.get('sortDirection')
+    const paymentStatusValue = searchParams.get('paymentStatus')
     const sortBy = invoiceSortColumns.includes(sortByValue as InvoiceSortColumn)
         ? sortByValue as InvoiceSortColumn
         : ''
@@ -158,6 +167,9 @@ function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
         productName: searchParams.get('productName') ?? '',
         from: searchParams.get('from') ?? '',
         to: searchParams.get('to') ?? '',
+        paymentStatus: paymentStatuses.includes(paymentStatusValue as PaymentStatus)
+            ? paymentStatusValue as PaymentStatus
+            : 'all',
         page: searchParams.get('page') ?? '1',
         pageSize:
             searchParams.get('pageSize') ?? String(defaultPageSize),
@@ -175,6 +187,10 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
         if (search[key]) {
             searchParams.set(key, search[key])
         }
+    }
+
+    if (search.paymentStatus !== 'all') {
+        searchParams.set('paymentStatus', search.paymentStatus)
     }
 
     searchParams.set('page', search.page)
@@ -260,6 +276,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     productName: optionalFilter(activeSearch.productName),
                     issuedFrom: optionalDate(activeSearch.from),
                     issuedTo: optionalDate(activeSearch.to),
+                    paymentStatus: activeSearch.paymentStatus,
                     sortBy: activeSearch.sortBy || null,
                     sortDirection: activeSearch.sortDirection || null,
                     page: positiveInteger(activeSearch.page, defaultPage),
@@ -341,6 +358,9 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
             productName: String(formData.get('productName') ?? '').trim(),
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
+            paymentStatus: paymentStatuses.includes(formData.get('paymentStatus') as PaymentStatus)
+                ? formData.get('paymentStatus') as PaymentStatus
+                : 'all',
             page: '1',
             pageSize: activeSearch.pageSize,
             sortBy: activeSearch.sortBy,
@@ -542,6 +562,27 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                                     onSelect={setInvoiceDateTo}
                                 />
                             </div>
+
+                            <FieldSet>
+                                <FieldLegend variant="label">Show invoices</FieldLegend>
+                                <RadioGroup
+                                    name="paymentStatus"
+                                    defaultValue={activeSearch.paymentStatus}
+                                    className="flex flex-wrap gap-4"
+                                >
+                                    {([
+                                        ['all', 'All'],
+                                        ['overdue', 'Overdue'],
+                                        ['paid', 'Paid'],
+                                        ['unpaid', 'Unpaid'],
+                                    ] as const).map(([value, label]) => (
+                                        <Field key={value} orientation="horizontal" className="w-auto">
+                                            <RadioGroupItem id={`payment-status-${value}`} value={value} />
+                                            <FieldLabel htmlFor={`payment-status-${value}`}>{label}</FieldLabel>
+                                        </Field>
+                                    ))}
+                                </RadioGroup>
+                            </FieldSet>
                         </FieldGroup>
                     </CardContent>
                     <CardFooter className="gap-2">
