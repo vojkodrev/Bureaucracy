@@ -45,6 +45,8 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
     const [documentNumber, setDocumentNumber] = useState(
         entry?.documentNumber ?? "",
     );
+    const [reference, setReference] = useState(entry?.reference ?? "");
+    const [purpose, setPurpose] = useState(entry?.purpose ?? "");
     const outflowValue = numberOrNull(outflow);
     const inflowValue = numberOrNull(inflow);
     const canSave =
@@ -65,6 +67,8 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
             outflow: outflowValue,
             inflow: inflowValue,
             documentNumber: documentNumber.trim() || null,
+            reference: reference.trim() || null,
+            purpose: purpose.trim() || null,
         });
     return (
         <Dialog open onOpenChange={onOpenChange}>
@@ -79,6 +83,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                 </DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <CustomerPickerField
+                        minimizable
                         id="transaction-counterparty"
                         label="Counterparty number"
                         name="counterpartyId"
@@ -99,6 +104,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                         />
                     </Field>
                     <InvoicePickerField
+                        minimizable
                         id="transaction-document-number"
                         label="Document number"
                         name="documentNumber"
@@ -109,7 +115,27 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                             setCounterparty(invoice.customerName ?? "");
                         }}
                     />
-                    <div />
+                    <Field>
+                        <FieldLabel htmlFor="transaction-reference">
+                            Reference
+                        </FieldLabel>
+                        <Input
+                            id="transaction-reference"
+                            maxLength={13}
+                            value={reference}
+                            onChange={(event) => setReference(event.target.value)}
+                        />
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel htmlFor="transaction-purpose">
+                            Purpose
+                        </FieldLabel>
+                        <Input
+                            id="transaction-purpose"
+                            value={purpose}
+                            onChange={(event) => setPurpose(event.target.value)}
+                        />
+                    </Field>
                     <BankTransactionTypeComboboxField
                         id="transaction-type"
                         label="Transaction type"

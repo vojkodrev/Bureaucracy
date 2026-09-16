@@ -1,6 +1,21 @@
 package main
 
-import "time"
+import (
+	"strings"
+	"time"
+	"unicode"
+)
+
+const maxBankStatementReferenceLength = 13
+
+func normalizeBankStatementReference(value string) string {
+	return strings.Map(func(character rune) rune {
+		if character == '-' || unicode.IsSpace(character) {
+			return -1
+		}
+		return character
+	}, strings.TrimSpace(value))
+}
 
 type BankAccount struct {
 	ID            int     `json:"id"`
@@ -21,6 +36,8 @@ type BankStatementEntry struct {
 	Outflow           *float64   `json:"outflow"`
 	Inflow            *float64   `json:"inflow"`
 	DocumentNumber    *string    `json:"documentNumber"`
+	Reference         *string    `json:"reference"`
+	Purpose           *string    `json:"purpose"`
 }
 
 type BankStatement struct {

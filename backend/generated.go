@@ -61,6 +61,8 @@ type ComplexityRoot struct {
 		Inflow            func(childComplexity int) int
 		Outflow           func(childComplexity int) int
 		PaymentDate       func(childComplexity int) int
+		Purpose           func(childComplexity int) int
+		Reference         func(childComplexity int) int
 		StatementID       func(childComplexity int) int
 		StatementNumber   func(childComplexity int) int
 		TransactionType   func(childComplexity int) int
@@ -385,6 +387,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BankStatementEntry.PaymentDate(childComplexity), true
+	case "BankStatementEntry.purpose":
+		if e.ComplexityRoot.BankStatementEntry.Purpose == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementEntry.Purpose(childComplexity), true
+	case "BankStatementEntry.reference":
+		if e.ComplexityRoot.BankStatementEntry.Reference == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementEntry.Reference(childComplexity), true
 	case "BankStatementEntry.statementId":
 		if e.ComplexityRoot.BankStatementEntry.StatementID == nil {
 			break
@@ -1426,6 +1440,10 @@ func (ec *executionContext) childFields_BankStatementEntry(ctx context.Context, 
 		return ec.fieldContext_BankStatementEntry_inflow(ctx, field)
 	case "documentNumber":
 		return ec.fieldContext_BankStatementEntry_documentNumber(ctx, field)
+	case "reference":
+		return ec.fieldContext_BankStatementEntry_reference(ctx, field)
+	case "purpose":
+		return ec.fieldContext_BankStatementEntry_purpose(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type BankStatementEntry", field.Name)
 }
@@ -3024,6 +3042,52 @@ func (ec *executionContext) _BankStatementEntry_documentNumber(ctx context.Conte
 	)
 }
 func (ec *executionContext) fieldContext_BankStatementEntry_documentNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementEntry_reference(ctx context.Context, field graphql.CollectedField, obj *BankStatementEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementEntry_reference(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Reference, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementEntry_reference(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementEntry_purpose(ctx context.Context, field graphql.CollectedField, obj *BankStatementEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementEntry_purpose(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Purpose, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementEntry_purpose(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -7483,7 +7547,7 @@ func (ec *executionContext) unmarshalInputBankStatementEntryInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "customerId", "customerName", "transactionTypeId", "outflow", "inflow", "documentNumber"}
+	fieldsInOrder := [...]string{"id", "customerId", "customerName", "transactionTypeId", "outflow", "inflow", "documentNumber", "reference", "purpose"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7539,6 +7603,20 @@ func (ec *executionContext) unmarshalInputBankStatementEntryInput(ctx context.Co
 				return it, err
 			}
 			it.DocumentNumber = data
+		case "reference":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reference"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Reference = data
+		case "purpose":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("purpose"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Purpose = data
 		}
 	}
 	return it, nil
@@ -8185,6 +8263,16 @@ func (ec *executionContext) _BankStatementEntry(ctx context.Context, sel ast.Sel
 			}
 		case "documentNumber":
 			out.Values[i] = ec._BankStatementEntry_documentNumber(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "reference":
+			out.Values[i] = ec._BankStatementEntry_reference(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "purpose":
+			out.Values[i] = ec._BankStatementEntry_purpose(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

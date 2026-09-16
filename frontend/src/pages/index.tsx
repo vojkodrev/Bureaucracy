@@ -3,6 +3,7 @@ import { lazy } from 'react'
 export const BusinessYearsPage = lazy(() => import('./BusinessYearsPage'))
 export const BankStatementSearchPage = lazy(() => import('./BankStatementSearchPage'))
 export const BankStatementPage = lazy(() => import('./bank-statement/BankStatementPage'))
+export const ImportBankStatementsPage = lazy(() => import('./bank-statement/ImportBankStatementsPage'))
 export const CustomerSearchPage = lazy(() => import('./CustomerSearchPage'))
 export const CustomerPage = lazy(() => import('./customer/CustomerPage'))
 export const LayoutPage = lazy(() => import('./LayoutPage'))

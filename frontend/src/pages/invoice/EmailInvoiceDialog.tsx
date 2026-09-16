@@ -54,7 +54,7 @@ function EmailInvoiceDialog({
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
-    const [bcc, setBcc] = useState('drevi.napkins@gmail.com')
+    const [bcc, setBcc] = useState('')
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState<File[]>([])
@@ -70,7 +70,7 @@ function EmailInvoiceDialog({
             : invoiceNumber
         setStoredRecipient('')
         setRecipient('')
-        setBcc('drevi.napkins@gmail.com')
+        setBcc('')
         setSubject(`Drevi d.o.o. - Račun ${displayNumber}`)
         setMessage(
             'Pozdravljeni,\n\n' +
@@ -153,8 +153,6 @@ function EmailInvoiceDialog({
         } finally { setSending(false) }
     }
 
-    const recipientDiffers = Boolean(storedRecipient.trim()) &&
-        recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()
     return (
         <Dialog open={open} onOpenChange={(next) => { if (!sending) onOpenChange(next) }}>
             <DialogContent className="sm:max-w-lg">
@@ -179,12 +177,6 @@ function EmailInvoiceDialog({
                     {!loading && !storedRecipient && (
                         <p className="text-sm text-muted-foreground">
                             No email is stored for this customer. Enter a recipient manually.
-                        </p>
-                    )}
-                    {recipientDiffers && (
-                        <p className="text-sm text-amber-700" role="status">
-                            This differs from the customer’s stored email ({storedRecipient}).
-                            Consider updating the customer record.
                         </p>
                     )}
                     <Field>

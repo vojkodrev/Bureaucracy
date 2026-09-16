@@ -10,6 +10,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewDatabase),
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewBankStatementRepository),
+		fx.Provide(NewBankStatementImportHandler),
 		fx.Provide(NewCountryRepository),
 		fx.Provide(NewCustomerRepository),
 		fx.Provide(NewInvoiceRepository),

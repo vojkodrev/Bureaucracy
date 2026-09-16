@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { MinusIcon, SearchIcon } from "lucide-react";
 import { useState } from "react";
 import InvoiceSearch from "@/components/InvoiceSearch";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ type InvoicePickerFieldProps = {
     name: string;
     onInvoiceNumberChange: (invoiceNumber: string) => void;
     onInvoiceSelect?: (invoice: Invoice) => void;
+    minimizable?: boolean;
 };
 
 function InvoicePickerField({
@@ -37,6 +38,7 @@ function InvoicePickerField({
     name,
     onInvoiceNumberChange,
     onInvoiceSelect,
+    minimizable = false,
 }: InvoicePickerFieldProps) {
     const [open, setOpen] = useState(false);
 
@@ -72,7 +74,23 @@ function InvoicePickerField({
             </InputGroup>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]">
+                <DialogContent
+                    keepMounted={minimizable}
+                    className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]"
+                >
+                    {minimizable && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="absolute top-2 right-10"
+                            aria-label="Minimize invoice search"
+                            title="Minimize invoice search"
+                            onClick={() => setOpen(false)}
+                        >
+                            <MinusIcon />
+                        </Button>
+                    )}
                     <DialogHeader>
                         <DialogTitle>Select invoice</DialogTitle>
                         <DialogDescription>

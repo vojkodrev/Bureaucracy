@@ -62,6 +62,8 @@ const statementQuery = `
                 outflow
                 inflow
                 documentNumber
+                reference
+                purpose
             }
         }
     }
@@ -102,6 +104,8 @@ const saveMutation = `
                 outflow
                 inflow
                 documentNumber
+                reference
+                purpose
             }
         }
     }
@@ -341,6 +345,8 @@ function BankStatementPage() {
                                 outflow: entry.outflow,
                                 inflow: entry.inflow,
                                 documentNumber: entry.documentNumber,
+                                reference: entry.reference,
+                                purpose: entry.purpose,
                             })),
                         },
                     },

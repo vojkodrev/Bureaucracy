@@ -11,6 +11,7 @@ import {
     ExportDataPage,
     InvoicePage,
     InvoiceSearchPage,
+    ImportBankStatementsPage,
     LayoutPage,
     ProductPage,
     ProductSearchPage,
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
         children: [
             { path: '/business-years', element: <BusinessYearsPage /> },
             { path: '/bank-statements/search', element: <BankStatementSearchPage /> },
+            { path: '/bank-statements/import', element: <ImportBankStatementsPage /> },
             { path: '/bank-statement/:statementNumber?', element: <BankStatementPage /> },
             { path: '/customers/search', element: <CustomerSearchPage /> },
             { path: '/customer/:customerId?', element: <CustomerPage /> },

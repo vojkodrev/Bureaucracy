@@ -28,6 +28,7 @@ func NewHTTPServer(
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceEmailHandler *InvoiceEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
+	bankStatementImportHandler *BankStatementImportHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -56,6 +57,7 @@ func NewHTTPServer(
 	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 
 	return &HTTPServer{
 		config: config,
