@@ -1,11 +1,17 @@
 import { defaultPageSize } from '@/lib/pagination'
-import type { InvoiceSearchCriteria, InvoiceSortColumn, PaymentStatus } from './types'
-import { invoiceSortColumns, paymentStatuses } from './types'
+import type {
+    InvoiceResultsView,
+    InvoiceSearchCriteria,
+    InvoiceSortColumn,
+    PaymentStatus,
+} from './types'
+import { invoiceResultsViews, invoiceSortColumns, paymentStatuses } from './types'
 
 export function invoiceSearchFromParams(searchParams: URLSearchParams): InvoiceSearchCriteria {
     const sortByValue = searchParams.get('sortBy')
     const sortDirectionValue = searchParams.get('sortDirection')
     const paymentStatusValue = searchParams.get('paymentStatus')
+    const resultsViewValue = searchParams.get('resultsView')
     const sortBy = invoiceSortColumns.includes(sortByValue as InvoiceSortColumn)
         ? sortByValue as InvoiceSortColumn
         : ''
@@ -24,6 +30,9 @@ export function invoiceSearchFromParams(searchParams: URLSearchParams): InvoiceS
         paymentStatus: paymentStatuses.includes(paymentStatusValue as PaymentStatus)
             ? paymentStatusValue as PaymentStatus
             : 'all',
+        resultsView: invoiceResultsViews.includes(resultsViewValue as InvoiceResultsView)
+            ? resultsViewValue as InvoiceResultsView
+            : 'invoiceList',
         page: searchParams.get('page') ?? '1',
         pageSize: searchParams.get('pageSize') ?? String(defaultPageSize),
         sortBy: sortDirection ? sortBy : '',
@@ -41,6 +50,9 @@ export function invoiceSearchToParams(search: InvoiceSearchCriteria): URLSearchP
     }
     if (search.paymentStatus !== 'all') {
         searchParams.set('paymentStatus', search.paymentStatus)
+    }
+    if (search.resultsView !== 'invoiceList') {
+        searchParams.set('resultsView', search.resultsView)
     }
     searchParams.set('page', search.page)
     searchParams.set('pageSize', search.pageSize)

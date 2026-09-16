@@ -8,6 +8,7 @@ import { useInvoiceSearchState } from './hooks/useInvoiceSearchState'
 import InvoiceSearchErrors from './InvoiceSearchErrors'
 import InvoiceSearchForm from './InvoiceSearchForm'
 import InvoiceSearchResults from './InvoiceSearchResults'
+import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
 
 type InvoiceSearchProps = {
@@ -49,10 +50,11 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
             <InvoiceSearchForm
                 key={searchKey}
                 search={search}
+                showResultsView={mode === ComponentMode.Page}
                 onSubmit={searchState.updateSearch}
                 onReset={clearSearchAndSelection}
             />
-            {!error && (
+            {!error && search.resultsView === 'invoiceList' && (
                 <InvoiceSearchResults
                     invoicePage={invoicePage}
                     invoices={invoices}
@@ -64,6 +66,18 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     onPageChange={(page) => searchState.changePage(page, invoicePage?.pageSize)}
                     onPageSizeChange={searchState.changePageSize}
                     onSort={searchState.changeSort}
+                />
+            )}
+            {!error && search.resultsView === 'customer' && (
+                <InvoiceSearchResultsByCustomer
+                    invoicePage={invoicePage}
+                    invoices={invoices}
+                    isLoading={isLoading}
+                    mode={mode}
+                    selectedInvoiceNumber={selectedInvoiceNumber}
+                    onInvoiceSelect={selectInvoice}
+                    onPageChange={(page) => searchState.changePage(page, invoicePage?.pageSize)}
+                    onPageSizeChange={searchState.changePageSize}
                 />
             )}
             {!error && <InvoiceSearchSummary invoices={invoices} />}

@@ -9,16 +9,22 @@ import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/componen
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { dateFromSearchValue } from '@/lib/dates'
-import type { InvoiceSearchCriteria, PaymentStatus } from './types'
-import { paymentStatuses } from './types'
+import type { InvoiceResultsView, InvoiceSearchCriteria, PaymentStatus } from './types'
+import { invoiceResultsViews, paymentStatuses } from './types'
 
 type InvoiceSearchFormProps = {
     search: InvoiceSearchCriteria
+    showResultsView: boolean
     onSubmit: (search: InvoiceSearchCriteria) => void
     onReset: () => void
 }
 
-function InvoiceSearchForm({ search, onSubmit, onReset }: InvoiceSearchFormProps) {
+function InvoiceSearchForm({
+    search,
+    showResultsView,
+    onSubmit,
+    onReset,
+}: InvoiceSearchFormProps) {
     const [customerId, setCustomerId] = useState(search.customerId)
     const [customerName, setCustomerName] = useState(search.customerName)
     const [productCode, setProductCode] = useState(search.productCode)
@@ -34,6 +40,7 @@ function InvoiceSearchForm({ search, onSubmit, onReset }: InvoiceSearchFormProps
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
         const paymentStatus = formData.get('paymentStatus') as PaymentStatus
+        const resultsView = formData.get('resultsView') as InvoiceResultsView
 
         onSubmit({
             invoiceNumber: String(formData.get('invoiceNumber') ?? '').trim(),
@@ -44,6 +51,7 @@ function InvoiceSearchForm({ search, onSubmit, onReset }: InvoiceSearchFormProps
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
             paymentStatus: paymentStatuses.includes(paymentStatus) ? paymentStatus : 'all',
+            resultsView: invoiceResultsViews.includes(resultsView) ? resultsView : 'invoiceList',
             page: '1',
             pageSize: search.pageSize,
             sortBy: search.sortBy,
@@ -152,6 +160,27 @@ function InvoiceSearchForm({ search, onSubmit, onReset }: InvoiceSearchFormProps
                                 ))}
                             </RadioGroup>
                         </FieldSet>
+
+                        {showResultsView && (
+                            <FieldSet>
+                                <FieldLegend variant="label">Results view</FieldLegend>
+                                <RadioGroup
+                                    name="resultsView"
+                                    defaultValue={search.resultsView}
+                                    className="flex flex-wrap gap-4"
+                                >
+                                    {([
+                                        ['invoiceList', 'Invoice list'],
+                                        ['customer', 'By customer'],
+                                    ] as const).map(([value, label]) => (
+                                        <Field key={value} orientation="horizontal" className="w-auto">
+                                            <RadioGroupItem id={`results-view-${value}`} value={value} />
+                                            <FieldLabel htmlFor={`results-view-${value}`}>{label}</FieldLabel>
+                                        </Field>
+                                    ))}
+                                </RadioGroup>
+                            </FieldSet>
+                        )}
                     </FieldGroup>
                 </CardContent>
                 <CardFooter className="gap-2">

@@ -70,6 +70,7 @@ export async function fetchInvoiceSearch(
     search: InvoiceSearchCriteria,
     signal?: AbortSignal,
 ): Promise<InvoicePage | null> {
+    const groupByCustomer = search.resultsView === 'customer'
     const response = await fetch(graphqlUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,8 +86,8 @@ export async function fetchInvoiceSearch(
                 issuedFrom: optionalDate(search.from),
                 issuedTo: optionalDate(search.to),
                 paymentStatus: search.paymentStatus,
-                sortBy: search.sortBy || null,
-                sortDirection: search.sortDirection || null,
+                sortBy: groupByCustomer ? 'customer' : search.sortBy || null,
+                sortDirection: groupByCustomer ? 'asc' : search.sortDirection || null,
                 page: positiveInteger(search.page, defaultPage),
                 pageSize: Math.min(
                     positiveInteger(search.pageSize, defaultPageSize),
@@ -107,8 +108,11 @@ export async function fetchInvoiceSearch(
 
 export function invoiceReportPdfUrl(search: InvoiceSearchCriteria): string {
     const url = new URL(graphqlUrl)
+    const reportSearch = search.resultsView === 'customer'
+        ? { ...search, sortBy: 'customer' as const, sortDirection: 'asc' as const }
+        : search
     url.pathname = '/api/invoices/report/pdf'
-    url.search = invoiceSearchToParams(search).toString()
+    url.search = invoiceSearchToParams(reportSearch).toString()
     url.searchParams.set('businessYear', getSelectedBusinessYear())
     url.searchParams.set('_', String(Date.now()))
     url.hash = ''

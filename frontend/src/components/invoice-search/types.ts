@@ -1,4 +1,5 @@
 export type PaymentStatus = 'all' | 'overdue' | 'paid' | 'unpaid'
+export type InvoiceResultsView = 'invoiceList' | 'customer'
 
 export type InvoiceSortColumn =
     | 'invoiceNumber'
@@ -19,6 +20,7 @@ export type InvoiceSearchCriteria = {
     from: string
     to: string
     paymentStatus: PaymentStatus
+    resultsView: InvoiceResultsView
     page: string
     pageSize: string
     sortBy: InvoiceSortColumn | ''
@@ -26,6 +28,7 @@ export type InvoiceSearchCriteria = {
 }
 
 export const paymentStatuses: PaymentStatus[] = ['all', 'overdue', 'paid', 'unpaid']
+export const invoiceResultsViews: InvoiceResultsView[] = ['invoiceList', 'customer']
 
 export const invoiceSortColumns: InvoiceSortColumn[] = [
     'invoiceNumber',
