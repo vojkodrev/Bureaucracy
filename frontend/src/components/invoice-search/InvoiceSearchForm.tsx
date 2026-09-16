@@ -52,80 +52,84 @@ function InvoiceSearchForm({ search, onSubmit, onReset }: InvoiceSearchFormProps
     }
 
     return (
-        <form className="max-w-2xl" onSubmit={submitSearch} onReset={onReset}>
+        <form className="max-w-6xl" onSubmit={submitSearch} onReset={onReset}>
             <Card>
                 <CardContent>
                     <FieldGroup>
-                        <Field>
-                            <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
-                            <Input
-                                id="invoice-number"
-                                type="search"
-                                name="invoiceNumber"
-                                defaultValue={search.invoiceNumber}
-                                autoComplete="off"
-                            />
-                        </Field>
-
                         <div className="grid gap-6 sm:grid-cols-2">
-                            <CustomerPickerField
-                                id="customer-id"
-                                label="Customer ID"
-                                name="customerId"
-                                customerId={customerId}
-                                onCustomerIdChange={setCustomerId}
-                                onCustomerNameChange={setCustomerName}
-                            />
-                            <Field>
-                                <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
-                                <Input
-                                    id="customer-name"
-                                    type="search"
-                                    name="customerName"
-                                    value={customerName}
-                                    autoComplete="off"
-                                    onChange={(event) => setCustomerName(event.target.value)}
-                                />
-                            </Field>
-                        </div>
+                            <FieldGroup>
+                                <Field>
+                                    <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
+                                    <Input
+                                        id="invoice-number"
+                                        type="search"
+                                        name="invoiceNumber"
+                                        defaultValue={search.invoiceNumber}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <DatePickerField
+                                        id="invoice-date-from"
+                                        label="Invoice date from"
+                                        name="from"
+                                        date={invoiceDateFrom}
+                                        onSelect={setInvoiceDateFrom}
+                                    />
+                                    <DatePickerField
+                                        id="invoice-date-to"
+                                        label="Invoice date to"
+                                        name="to"
+                                        date={invoiceDateTo}
+                                        onSelect={setInvoiceDateTo}
+                                    />
+                                </div>
+                            </FieldGroup>
 
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <ProductPickerField
-                                id="product-code"
-                                label="Product code"
-                                name="productCode"
-                                productCode={productCode}
-                                onProductCodeChange={setProductCode}
-                                onProductNameChange={setProductName}
-                            />
-                            <Field>
-                                <FieldLabel htmlFor="product-name">Product name</FieldLabel>
-                                <Input
-                                    id="product-name"
-                                    type="search"
-                                    name="productName"
-                                    value={productName}
-                                    autoComplete="off"
-                                    onChange={(event) => setProductName(event.target.value)}
-                                />
-                            </Field>
-                        </div>
-
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <DatePickerField
-                                id="invoice-date-from"
-                                label="Invoice date from"
-                                name="from"
-                                date={invoiceDateFrom}
-                                onSelect={setInvoiceDateFrom}
-                            />
-                            <DatePickerField
-                                id="invoice-date-to"
-                                label="Invoice date to"
-                                name="to"
-                                date={invoiceDateTo}
-                                onSelect={setInvoiceDateTo}
-                            />
+                            <FieldGroup>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <CustomerPickerField
+                                        id="customer-id"
+                                        label="Customer ID"
+                                        name="customerId"
+                                        customerId={customerId}
+                                        onCustomerIdChange={setCustomerId}
+                                        onCustomerNameChange={setCustomerName}
+                                    />
+                                    <Field>
+                                        <FieldLabel htmlFor="customer-name">Customer name</FieldLabel>
+                                        <Input
+                                            id="customer-name"
+                                            type="search"
+                                            name="customerName"
+                                            value={customerName}
+                                            autoComplete="off"
+                                            onChange={(event) => setCustomerName(event.target.value)}
+                                        />
+                                    </Field>
+                                </div>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <ProductPickerField
+                                        id="product-code"
+                                        label="Product code"
+                                        name="productCode"
+                                        productCode={productCode}
+                                        onProductCodeChange={setProductCode}
+                                        onProductNameChange={setProductName}
+                                    />
+                                    <Field>
+                                        <FieldLabel htmlFor="product-name">Product name</FieldLabel>
+                                        <Input
+                                            id="product-name"
+                                            type="search"
+                                            name="productName"
+                                            value={productName}
+                                            autoComplete="off"
+                                            onChange={(event) => setProductName(event.target.value)}
+                                        />
+                                    </Field>
+                                </div>
+                            </FieldGroup>
                         </div>
 
                         <FieldSet>
