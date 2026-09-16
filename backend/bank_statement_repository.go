@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"bureaucracy/backend/graph/model"
 )
@@ -159,6 +160,17 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	for index, entry := range input.Entries {
 		if entry == nil {
 			return nil, fmt.Errorf("entry %d is required", index+1)
+		}
+		if entry.Reference != nil {
+			reference := normalizeBankStatementReference(*entry.Reference)
+			if utf8.RuneCountInString(reference) > maxBankStatementReferenceLength {
+				return nil, fmt.Errorf("entry %d reference must be at most %d characters after removing spaces and hyphens", index+1, maxBankStatementReferenceLength)
+			}
+			if reference == "" {
+				entry.Reference = nil
+			} else {
+				entry.Reference = &reference
+			}
 		}
 		outflow, inflow := 0.0, 0.0
 		if entry.Outflow != nil {

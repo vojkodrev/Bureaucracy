@@ -327,6 +327,7 @@ func camtRemittanceDetails(transaction camtTransaction) (*string, *string) {
 			reference = reference[4:]
 		}
 	}
+	reference = normalizeBankStatementReference(reference)
 	var referenceValue, purposeValue *string
 	if reference != "" {
 		referenceValue = &reference
