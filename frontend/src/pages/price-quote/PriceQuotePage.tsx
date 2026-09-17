@@ -56,13 +56,12 @@ export default function PriceQuotePage() {
         preserveDuplicateDraft: loader.preserveDuplicateDraft,
         allowNavigation: guard.allowNavigation,
     })
-    const canPrint = loader.priceQuoteId != null && Boolean(draft.quoteNumber.trim()) &&
-        !draftState.hasUnsavedChanges && !loader.isLoading && !loader.error &&
-        !save.isSaving && !duplicate.isDuplicating
-    const canRequestPrint = Boolean(draft.quoteNumber.trim()) && !loader.isLoading &&
-        !loader.error && !save.isSaving && !duplicate.isDuplicating
     const print = usePriceQuotePrint({
-        quoteNumber: draft.quoteNumber, canPrint, canSave: save.canSave,
+        priceQuoteId: loader.priceQuoteId, quoteNumber: draft.quoteNumber,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, loadError: loader.error,
+        isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
+        canSave: save.canSave,
     })
     usePriceQuoteKeyboardShortcuts(() => { void save.requestSave() }, print.printPriceQuote)
 
@@ -78,7 +77,7 @@ export default function PriceQuotePage() {
         else performRevert()
     }
     const email = () => {
-        if (canPrint) setEmailDialogOpen(true)
+        if (print.canPrint) setEmailDialogOpen(true)
         else if (save.canSave) setConfirmingEmail(true)
     }
     const errors = [
@@ -100,7 +99,8 @@ export default function PriceQuotePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <PriceQuoteMenu canSave={save.canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
+            <PriceQuoteMenu canSave={save.canSave} canPrint={print.canRequestPrint}
+                canEmail={print.canRequestPrint}
                 canRevert={Boolean(routeQuoteNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.priceQuoteId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}

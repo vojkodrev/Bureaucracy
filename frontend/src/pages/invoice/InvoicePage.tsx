@@ -55,12 +55,13 @@ function InvoicePage() {
         setBusinessYear: loader.setBusinessYear, setRequestErrors: loader.setRequestErrors,
         preserveDuplicateDraft: loader.preserveDuplicateDraft, allowNavigation: guard.allowNavigation,
     })
-    const canPrint = loader.invoiceId != null && Boolean(draft.invoiceNumber.trim()) &&
-        !draftState.hasUnsavedChanges && !loader.isLoading && !loader.error &&
-        !save.isSaving && !duplicate.isDuplicating
-    const canRequestPrint = Boolean(draft.invoiceNumber.trim()) && !loader.isLoading &&
-        !loader.error && !save.isSaving && !duplicate.isDuplicating
-    const print = useInvoicePrint({ invoiceNumber: draft.invoiceNumber, canPrint, canSave: save.canSave })
+    const print = useInvoicePrint({
+        invoiceId: loader.invoiceId, invoiceNumber: draft.invoiceNumber,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, loadError: loader.error,
+        isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
+        canSave: save.canSave,
+    })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
 
     const performRevert = () => {
@@ -75,7 +76,7 @@ function InvoicePage() {
         else performRevert()
     }
     const email = () => {
-        if (canPrint) setEmailDialogOpen(true)
+        if (print.canPrint) setEmailDialogOpen(true)
         else if (save.canSave) setConfirmingEmail(true)
     }
     const errors = [
@@ -97,7 +98,7 @@ function InvoicePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <InvoiceMenu canSave={save.canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
+            <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canRevert={Boolean(routeInvoiceNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
