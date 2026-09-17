@@ -14,20 +14,23 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { getSelectedBusinessYear } from '@/lib/business-year'
-import { toast } from '@/lib/toast'
+import type { DocumentEmailFields } from '@/lib/document-email'
 
-type ErrorResponse = { error?: string }
 type CustomerEmailResponse = { data?: { customer: { email: string | null } | null }; errors?: { message: string }[] }
 type Props = {
     open: boolean
-    invoiceNumber: string
+    documentName: string
     customerId: string
     businessYear: number | null
+    defaultSubject: string
+    defaultMessage: string
     onOpenChange: (open: boolean) => void
     onOfferSaveCustomerEmail: (email: string) => void
+    onSend: (fields: DocumentEmailFields) => Promise<void>
 }
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+const defaultBcc = 'drevi.napkins@gmail.com'
 const acceptedTypes = '.pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx'
 const customerEmailQuery = `
     query CustomerEmail($businessYear: String!, $customerId: String!) {
@@ -35,26 +38,21 @@ const customerEmailQuery = `
     }
 `
 
-function emailUrl(invoiceNumber: string): string {
-    const url = new URL(graphqlUrl)
-    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/email`
-    url.searchParams.set('businessYear', getSelectedBusinessYear())
-    url.hash = ''
-    return url.toString()
-}
-
-function EmailInvoiceDialog({
+function EmailDocumentDialog({
     open,
-    invoiceNumber,
+    documentName,
     customerId,
     businessYear,
+    defaultSubject,
+    defaultMessage,
     onOpenChange,
     onOfferSaveCustomerEmail,
+    onSend,
 }: Props) {
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
-    const [bcc, setBcc] = useState('')
+    const [bcc, setBcc] = useState(defaultBcc)
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState<File[]>([])
@@ -65,18 +63,11 @@ function EmailInvoiceDialog({
     useEffect(() => {
         if (!open) return
         const controller = new AbortController()
-        const displayNumber = businessYear
-            ? `${invoiceNumber}/${businessYear}`
-            : invoiceNumber
         setStoredRecipient('')
         setRecipient('')
-        setBcc('')
-        setSubject(`Drevi d.o.o. - Račun ${displayNumber}`)
-        setMessage(
-            'Pozdravljeni,\n\n' +
-            `v priponki vam pošiljamo račun ${displayNumber}.\n\n` +
-            'Lep pozdrav, Drevi d.o.o. 041 693 605',
-        )
+        setBcc(defaultBcc)
+        setSubject(defaultSubject)
+        setMessage(defaultMessage)
         setError(null); setAttachments([])
         if (!customerId.trim()) { setLoading(false); return }
         setLoading(true)
@@ -109,7 +100,7 @@ function EmailInvoiceDialog({
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false) })
         return () => controller.abort()
-    }, [businessYear, customerId, invoiceNumber, open])
+    }, [businessYear, customerId, defaultMessage, defaultSubject, open])
 
     const addAttachments = (files: FileList | null) => {
         if (!files) return
@@ -129,20 +120,8 @@ function EmailInvoiceDialog({
         if (sending || loading) return
         setSending(true); setError(null)
         try {
-            const form = new FormData()
-            form.set('recipient', recipient.trim())
-            form.set('bcc', bcc.trim())
-            form.set('subject', subject.trim())
-            form.set('message', message.trim())
-            attachments.forEach((file) => form.append('attachments', file, file.name))
-            const response = await fetch(emailUrl(invoiceNumber), { method: 'POST', body: form })
-            const result = await response.json() as ErrorResponse
-            if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
-            toast.add({
-                title: 'Invoice emailed',
-                description: `Invoice ${invoiceNumber} was sent to ${recipient.trim()}.`,
-                type: 'success',
-            })
+            await onSend({ recipient: recipient.trim(), bcc: bcc.trim(),
+                subject: subject.trim(), message: message.trim(), attachments })
             onOpenChange(false)
             if (customerId.trim() &&
                 recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()) {
@@ -157,16 +136,16 @@ function EmailInvoiceDialog({
         <Dialog open={open} onOpenChange={(next) => { if (!sending) onOpenChange(next) }}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Email invoice</DialogTitle>
+                    <DialogTitle>Email {documentName}</DialogTitle>
                     <DialogDescription>
-                        The generated invoice PDF is always included.
+                        The generated {documentName} PDF is always included.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                     <Field>
-                        <FieldLabel htmlFor="invoice-email-recipient">Recipient</FieldLabel>
+                        <FieldLabel htmlFor="document-email-recipient">Recipient</FieldLabel>
                         <Input
-                            id="invoice-email-recipient"
+                            id="document-email-recipient"
                             type="email"
                             value={recipient}
                             disabled={loading || sending}
@@ -180,9 +159,9 @@ function EmailInvoiceDialog({
                         </p>
                     )}
                     <Field>
-                        <FieldLabel htmlFor="invoice-email-bcc">BCC copy</FieldLabel>
+                        <FieldLabel htmlFor="document-email-bcc">BCC copy</FieldLabel>
                         <Input
-                            id="invoice-email-bcc"
+                            id="document-email-bcc"
                             type="email"
                             value={bcc}
                             disabled={loading || sending}
@@ -191,9 +170,9 @@ function EmailInvoiceDialog({
                         />
                     </Field>
                     <Field>
-                        <FieldLabel htmlFor="invoice-email-subject">Subject</FieldLabel>
+                        <FieldLabel htmlFor="document-email-subject">Subject</FieldLabel>
                         <Input
-                            id="invoice-email-subject"
+                            id="document-email-subject"
                             value={subject}
                             disabled={loading || sending}
                             maxLength={200}
@@ -201,9 +180,9 @@ function EmailInvoiceDialog({
                         />
                     </Field>
                     <Field>
-                        <FieldLabel htmlFor="invoice-email-message">Message</FieldLabel>
+                        <FieldLabel htmlFor="document-email-message">Message</FieldLabel>
                         <Textarea
-                            id="invoice-email-message"
+                            id="document-email-message"
                             value={message}
                             disabled={loading || sending}
                             maxLength={10000}
@@ -216,7 +195,7 @@ function EmailInvoiceDialog({
                         <div className="flex items-center gap-2 rounded-lg border p-2 text-sm">
                             <FileText className="size-4" />
                             <span className="min-w-0 flex-1 truncate">
-                                Generated invoice PDF
+                                Generated {documentName} PDF
                             </span>
                             <span className="text-xs text-muted-foreground">Required</span>
                         </div>
@@ -255,7 +234,7 @@ function EmailInvoiceDialog({
                     </div>
                     {error && (
                         <ErrorAlert
-                            title="Invoice email could not be completed"
+                            title={`${documentName[0].toUpperCase()}${documentName.slice(1)} email could not be completed`}
                             description="Review the email details and try again."
                             error={error}
                         />
@@ -284,4 +263,4 @@ function EmailInvoiceDialog({
     )
 }
 
-export default EmailInvoiceDialog
+export default EmailDocumentDialog

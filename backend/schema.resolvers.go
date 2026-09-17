@@ -31,6 +31,11 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SavePriceQuote is the resolver for the savePriceQuote field.
+func (r *mutationResolver) SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error) {
+	return r.PriceQuotes.Save(ctx, businessYear, priceQuote)
+}
+
 // SaveProduct is the resolver for the saveProduct field.
 func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error) {
 	return r.Products.Save(ctx, businessYear, product)
@@ -107,6 +112,16 @@ func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear st
 	return r.Invoices.GetTextTemplate(ctx, businessYear)
 }
 
+// PriceQuote is the resolver for the priceQuote field.
+func (r *queryResolver) PriceQuote(ctx context.Context, businessYear string, quoteNumber string) (*PriceQuote, error) {
+	return r.PriceQuotes.GetByNumber(ctx, businessYear, quoteNumber)
+}
+
+// PriceQuoteTextTemplate is the resolver for the priceQuoteTextTemplate field.
+func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error) {
+	return r.PriceQuotes.GetTextTemplate(ctx, businessYear)
+}
+
 // Product is the resolver for the product field.
 func (r *queryResolver) Product(ctx context.Context, businessYear string, productCode string) (*Product, error) {
 	return r.Products.GetByCode(ctx, businessYear, productCode)
@@ -158,6 +173,21 @@ func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYe
 		return nil, err
 	}
 	return summarizeInvoicesByCustomer(invoicePage, time.Now()), nil
+}
+
+// SearchPriceQuotes is the resolver for the searchPriceQuotes field.
+func (r *queryResolver) SearchPriceQuotes(ctx context.Context, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*PriceQuotePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.PriceQuotes.Search(ctx, businessYear, quoteNumber, customerID, customerName,
+		productCode, productName, issuedFrom, issuedTo, sortBy, sortDirection,
+		resultPage, resultPageSize)
 }
 
 // SearchProducts is the resolver for the searchProducts field.

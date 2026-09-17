@@ -26,6 +26,41 @@ const (
 )
 
 func generateUPNQRCode(invoice *Invoice, displayNumber string, amount float64) (string, error) {
+	return generatePaymentQRCode(
+		trimmedString(invoice.CustomerName),
+		trimmedString(invoice.CustomerAddress),
+		customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity),
+		invoice.DueDate,
+		trimmedString(invoice.PaymentReference),
+		displayNumber,
+		"Plačilo računa "+displayNumber,
+		amount,
+	)
+}
+
+func generatePriceQuoteUPNQRCode(quote *PriceQuote, displayNumber string, amount float64) (string, error) {
+	return generatePaymentQRCode(
+		trimmedString(quote.CustomerName),
+		trimmedString(quote.CustomerAddress),
+		customerLocation(quote.CustomerPostalCode, quote.CustomerCity),
+		quote.DueDate,
+		"",
+		displayNumber,
+		"Plačilo predračuna "+displayNumber,
+		amount,
+	)
+}
+
+func generatePaymentQRCode(
+	customerName string,
+	customerAddress string,
+	customerLocation string,
+	dueDate *time.Time,
+	paymentReference string,
+	displayNumber string,
+	purpose string,
+	amount float64,
+) (string, error) {
 	if amount <= 0 {
 		return "", nil
 	}
@@ -33,16 +68,16 @@ func generateUPNQRCode(invoice *Invoice, displayNumber string, amount float64) (
 		return "", fmt.Errorf("invoice amount is too large for a UPN QR code")
 	}
 
-	model, reference := upnReference(trimmedString(invoice.PaymentReference), displayNumber)
+	model, reference := upnReference(paymentReference, displayNumber)
 	fields := []string{
 		"UPNQR", "", "", "", "",
-		upnField(trimmedString(invoice.CustomerName), 33),
-		upnField(trimmedString(invoice.CustomerAddress), 33),
-		upnField(customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity), 33),
+		upnField(customerName, 33),
+		upnField(customerAddress, 33),
+		upnField(customerLocation, 33),
 		fmt.Sprintf("%011d", int64(math.Round(amount*100))),
 		"", "", "OTHR",
-		upnField("Plačilo računa "+displayNumber, 42),
-		upnDueDate(invoice.DueDate),
+		upnField(purpose, 42),
+		upnDueDate(dueDate),
 		upnRecipientIBAN,
 		model + reference,
 		upnRecipientName,

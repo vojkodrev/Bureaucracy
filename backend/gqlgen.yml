@@ -63,6 +63,15 @@ models:
   InvoiceTextTemplate:
     model:
       - bureaucracy/backend.InvoiceTextTemplate
+  PriceQuote:
+    model:
+      - bureaucracy/backend.PriceQuote
+  PriceQuotePage:
+    model:
+      - bureaucracy/backend.PriceQuotePage
+  PriceQuoteTextTemplate:
+    model:
+      - bureaucracy/backend.PriceQuoteTextTemplate
   InvoiceItem:
     model:
       - bureaucracy/backend.InvoiceItem

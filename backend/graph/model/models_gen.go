@@ -74,6 +74,31 @@ type InvoiceItemInput struct {
 type Mutation struct {
 }
 
+type PriceQuoteInput struct {
+	ID               *int                   `json:"id,omitempty"`
+	QuoteNumber      string                 `json:"quoteNumber"`
+	IssueDate        *time.Time             `json:"issueDate,omitempty"`
+	DueDate          *time.Time             `json:"dueDate,omitempty"`
+	CustomerCode     *string                `json:"customerCode,omitempty"`
+	CustomerName     *string                `json:"customerName,omitempty"`
+	CustomerAddress  *string                `json:"customerAddress,omitempty"`
+	CustomerCity     *string                `json:"customerCity,omitempty"`
+	IntroductoryText *string                `json:"introductoryText,omitempty"`
+	ClosingText      *string                `json:"closingText,omitempty"`
+	Items            []*PriceQuoteItemInput `json:"items"`
+}
+
+type PriceQuoteItemInput struct {
+	ID          *int     `json:"id,omitempty"`
+	Sequence    *int     `json:"sequence,omitempty"`
+	ProductCode string   `json:"productCode"`
+	TaxCode     string   `json:"taxCode"`
+	Quantity    *float64 `json:"quantity,omitempty"`
+	Discount    *float64 `json:"discount,omitempty"`
+	NetAmount   *float64 `json:"netAmount,omitempty"`
+	GrossAmount *float64 `json:"grossAmount,omitempty"`
+}
+
 type ProductInput struct {
 	ID          *int     `json:"id,omitempty"`
 	ProductCode string   `json:"productCode"`

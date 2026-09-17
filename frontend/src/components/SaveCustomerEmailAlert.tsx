@@ -41,7 +41,7 @@ const updateCustomerEmailMutation = `
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
-function SaveCustomerEmailAlert({
+export default function SaveCustomerEmailAlert({
     email,
     customerId,
     customerName,
@@ -123,5 +123,3 @@ function SaveCustomerEmailAlert({
         </AlertDialog>
     )
 }
-
-export default SaveCustomerEmailAlert

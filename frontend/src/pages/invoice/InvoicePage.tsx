@@ -2,18 +2,20 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import EmailDocumentDialog from '@/components/EmailDocumentDialog'
+import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
+import { sendDocumentEmail } from '@/lib/document-email'
+import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
-import EmailInvoiceDialog from './EmailInvoiceDialog'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
-import SaveCustomerEmailAlert from './SaveCustomerEmailAlert'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
@@ -21,6 +23,7 @@ import { useInvoiceKeyboardShortcuts } from './hooks/useInvoiceKeyboardShortcuts
 import { useInvoiceLoader } from './hooks/useInvoiceLoader'
 import { useInvoiceNumberNavigation } from './hooks/useInvoiceNumberNavigation'
 import { useInvoicePrint } from './hooks/useInvoicePrint'
+import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
@@ -35,14 +38,13 @@ function InvoicePage() {
         clearCleanDraft: draftState.clearCleanDraft, disallowNavigation: guard.disallowNavigation,
     })
     const navigation = useInvoiceNumberNavigation(routeInvoiceNumber, navigate)
-    const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+    const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
 
-    const canSave = Boolean(draft.invoiceNumber.trim()) && !loader.isLoading && !loader.error &&
-        (!routeInvoiceNumber || loader.invoiceId != null || draft.invoiceNumber !== routeInvoiceNumber)
     const save = useInvoiceSave({
-        invoiceId: loader.invoiceId, draft, routeInvoiceNumber, canSave, navigate,
+        invoiceId: loader.invoiceId, draft, routeInvoiceNumber,
+        isLoading: loader.isLoading, loadError: loader.error, navigate,
         markClean: draftState.markClean, allowNavigation: guard.allowNavigation,
         reloadAfterSave: loader.reloadAfterSave,
     })
@@ -53,24 +55,24 @@ function InvoicePage() {
         setBusinessYear: loader.setBusinessYear, setRequestErrors: loader.setRequestErrors,
         preserveDuplicateDraft: loader.preserveDuplicateDraft, allowNavigation: guard.allowNavigation,
     })
-    const canPrint = loader.invoiceId != null && Boolean(draft.invoiceNumber.trim()) &&
-        !draftState.hasUnsavedChanges && !loader.isLoading && !loader.error &&
-        !save.isSaving && !duplicate.isDuplicating
-    const canRequestPrint = Boolean(draft.invoiceNumber.trim()) && !loader.isLoading &&
-        !loader.error && !save.isSaving && !duplicate.isDuplicating
-    const print = useInvoicePrint({ invoiceNumber: draft.invoiceNumber, canPrint, canSave })
+    const print = useInvoicePrint({
+        invoiceId: loader.invoiceId, invoiceNumber: draft.invoiceNumber,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, loadError: loader.error,
+        isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
+        canSave: save.canSave,
+    })
+    const revert = useInvoiceRevert({
+        routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, isSaving: save.isSaving,
+        isDuplicating: duplicate.isDuplicating,
+        clearSaveError: () => save.setSaveError(null),
+        clearPrintError: () => print.setPrintError(null), reload: loader.reload,
+    })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
-
-    const performRevert = () => {
-        setConfirmingRevert(false)
-        save.setSaveError(null)
-        print.setPrintError(null)
-        loader.reload()
-    }
-    const revert = () => {
-        if (!routeInvoiceNumber || loader.isLoading || save.isSaving || duplicate.isDuplicating) return
-        if (draftState.hasUnsavedChanges) setConfirmingRevert(true)
-        else performRevert()
+    const email = () => {
+        if (print.canPrint) setEmailDialogOpen(true)
+        else if (save.canSave) setConfirmingEmail(true)
     }
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
@@ -91,20 +93,30 @@ function InvoicePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <InvoiceMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canPrint}
-                canRevert={Boolean(routeInvoiceNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
+            <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
+                canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
-                onEmail={() => setEmailDialogOpen(true)} onRevert={revert}
+                onEmail={email} onRevert={revert.requestRevert}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
             <Button type="button" variant="outline" size="icon" aria-label="Next invoice"
                 disabled={!navigation.canNavigateNext} onClick={navigation.navigateNext}><ChevronRight /></Button>
         </div>
-        <EmailInvoiceDialog open={emailDialogOpen} invoiceNumber={draft.invoiceNumber.trim()}
+        <EmailDocumentDialog open={emailDialogOpen} documentName="invoice"
             customerId={draft.customerId} businessYear={loader.businessYear}
+            defaultSubject={`Drevi d.o.o. - Račun ${loader.businessYear
+                ? `${draft.invoiceNumber.trim()}/${loader.businessYear}` : draft.invoiceNumber.trim()}`}
+            defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo račun ${loader.businessYear
+                ? `${draft.invoiceNumber.trim()}/${loader.businessYear}` : draft.invoiceNumber.trim()}.\n\nLep pozdrav, Drevi d.o.o. 041 693 605`}
+            onSend={async (fields) => {
+                await sendDocumentEmail('invoices', draft.invoiceNumber.trim(), fields)
+                toast.add({ title: 'Invoice emailed',
+                    description: `Invoice ${draft.invoiceNumber.trim()} was sent to ${fields.recipient}.`,
+                    type: 'success' })
+            }}
             onOpenChange={setEmailDialogOpen} onOfferSaveCustomerEmail={setCustomerEmailToSave} />
         <SaveCustomerEmailAlert email={customerEmailToSave} customerId={draft.customerId}
             customerName={draft.customerName}
@@ -113,15 +125,18 @@ function InvoicePage() {
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
         <UnsavedInvoiceAlerts isNavigationBlocked={guard.blocker.state === 'blocked'}
-            isConfirmingRevert={confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
+            isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
+            isConfirmingEmail={confirmingEmail}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
-            onConfirmingRevertChange={setConfirmingRevert} onDiscardAndRevert={performRevert}
+            onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
             onConfirmingDuplicateChange={duplicate.setConfirmingDuplicate}
             onDuplicateAnyway={() => { void duplicate.performDuplicate() }}
             onConfirmingPrintChange={print.setConfirmingPrint}
-            onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }} />
+            onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }}
+            onConfirmingEmailChange={setConfirmingEmail}
+            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
                 customerAddress={draft.customerAddress} customerPostalCode={draft.customerPostalCode}

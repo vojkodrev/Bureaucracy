@@ -8,17 +8,19 @@ type Resolver struct {
 	CountryRepository      *CountryRepository
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
+	PriceQuotes            *PriceQuoteRepository
 	Products               *ProductRepository
 	TaxCodeRepository      *TaxCodeRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
+func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
 		BankStatements:         bankStatements,
 		CountryRepository:      countries,
 		Customers:              customers,
 		Invoices:               invoices,
+		PriceQuotes:            priceQuotes,
 		Products:               products,
 		TaxCodeRepository:      taxCodes,
 	}

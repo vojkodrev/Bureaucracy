@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { getSelectedBusinessYear } from '@/lib/business-year'
-import { invoicePdfUrl } from '../invoice-api'
+import { priceQuotePdfUrl } from '@/pages/price-quote-search/price-quote-search-api'
 
 type Options = {
-    invoiceId: number | null
-    invoiceNumber: string
+    priceQuoteId: number | null
+    quoteNumber: string
     hasUnsavedChanges: boolean
     isLoading: boolean
     loadError: string | null
@@ -13,27 +12,25 @@ type Options = {
     canSave: boolean
 }
 
-export function useInvoicePrint({
-    invoiceId, invoiceNumber, hasUnsavedChanges, isLoading, loadError,
+export function usePriceQuotePrint({
+    priceQuoteId, quoteNumber, hasUnsavedChanges, isLoading, loadError,
     isSaving, isDuplicating, canSave,
 }: Options) {
     const [printError, setPrintError] = useState<string | null>(null)
     const [confirmingPrint, setConfirmingPrint] = useState(false)
-    const canPrint = invoiceId != null && Boolean(invoiceNumber.trim()) &&
+    const canPrint = priceQuoteId != null && Boolean(quoteNumber.trim()) &&
         !hasUnsavedChanges && !isLoading && !loadError && !isSaving && !isDuplicating
-    const canRequestPrint = Boolean(invoiceNumber.trim()) && !isLoading &&
+    const canRequestPrint = Boolean(quoteNumber.trim()) && !isLoading &&
         !loadError && !isSaving && !isDuplicating
 
-    const printInvoice = () => {
+    const printPriceQuote = () => {
         if (!canPrint) {
             if (canSave) setConfirmingPrint(true)
             return
         }
-        const pdfTab = window.open(
-            invoicePdfUrl(invoiceNumber.trim(), getSelectedBusinessYear()), '_blank',
-        )
+        const pdfTab = window.open(priceQuotePdfUrl(quoteNumber.trim()), '_blank')
         if (!pdfTab) {
-            setPrintError('Allow pop-ups to open the invoice PDF.')
+            setPrintError('Allow pop-ups to open the price quote PDF.')
             return
         }
         pdfTab.opener = null
@@ -41,7 +38,7 @@ export function useInvoicePrint({
     }
 
     return {
-        canPrint, canRequestPrint, printInvoice, printError, setPrintError,
+        canPrint, canRequestPrint, printPriceQuote, printError, setPrintError,
         confirmingPrint, setConfirmingPrint,
     }
 }

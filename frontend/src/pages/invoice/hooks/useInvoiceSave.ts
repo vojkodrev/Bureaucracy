@@ -13,7 +13,8 @@ type Options = {
     invoiceId: number | null
     draft: InvoiceDraft
     routeInvoiceNumber?: string
-    canSave: boolean
+    isLoading: boolean
+    loadError: string | null
     navigate: NavigateFunction
     markClean: (draft: InvoiceDraft) => void
     allowNavigation: () => void
@@ -21,12 +22,14 @@ type Options = {
 }
 
 export function useInvoiceSave({
-    invoiceId, draft, routeInvoiceNumber, canSave, navigate, markClean,
+    invoiceId, draft, routeInvoiceNumber, isLoading, loadError, navigate, markClean,
     allowNavigation, reloadAfterSave,
 }: Options) {
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [invoiceNumberWarning, setInvoiceNumberWarning] = useState<InvoiceNumberWarning | null>(null)
+    const canSave = Boolean(draft.invoiceNumber.trim()) && !isLoading && !loadError &&
+        (!routeInvoiceNumber || invoiceId != null || draft.invoiceNumber !== routeInvoiceNumber)
 
     const performSave = async () => {
         const isCreating = invoiceId == null
@@ -106,7 +109,7 @@ export function useInvoiceSave({
     }
 
     return {
-        requestSave, confirmSave, isSaving, saveError, setSaveError,
+        canSave, requestSave, confirmSave, isSaving, saveError, setSaveError,
         invoiceNumberWarning, setInvoiceNumberWarning,
     }
 }
