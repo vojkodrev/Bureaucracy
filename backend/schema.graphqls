@@ -185,8 +185,15 @@ type PriceQuote {
   dueDate: Time
   customerCode: String
   customerName: String
+  customerAddress: String
+  customerPostalCode: String
+  customerCity: String
+  customerCountry: String
   currency: String
   amount: Float
+  introductoryText: String
+  closingText: String
+  items: [InvoiceItem!]!
 }
 
 type PriceQuotePage {
@@ -195,6 +202,36 @@ type PriceQuotePage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
+}
+
+type PriceQuoteTextTemplate {
+  introductoryText: String
+  closingText: String
+}
+
+input PriceQuoteItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+}
+
+input PriceQuoteInput {
+  id: Int
+  quoteNumber: String!
+  issueDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  introductoryText: String
+  closingText: String
+  items: [PriceQuoteItemInput!]!
 }
 
 type InvoiceCustomerSummary {
@@ -323,6 +360,10 @@ type Query {
 
   invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
 
+  priceQuote(businessYear: String!, quoteNumber: String!): PriceQuote
+
+  priceQuoteTextTemplate(businessYear: String!): PriceQuoteTextTemplate!
+
   product(
     businessYear: String!
     productCode: String!
@@ -408,5 +449,6 @@ type Mutation {
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
+  savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
 }

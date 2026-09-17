@@ -31,6 +31,11 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SavePriceQuote is the resolver for the savePriceQuote field.
+func (r *mutationResolver) SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error) {
+	return r.PriceQuotes.Save(ctx, businessYear, priceQuote)
+}
+
 // SaveProduct is the resolver for the saveProduct field.
 func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error) {
 	return r.Products.Save(ctx, businessYear, product)
@@ -105,6 +110,16 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 // InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
 func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
 	return r.Invoices.GetTextTemplate(ctx, businessYear)
+}
+
+// PriceQuote is the resolver for the priceQuote field.
+func (r *queryResolver) PriceQuote(ctx context.Context, businessYear string, quoteNumber string) (*PriceQuote, error) {
+	return r.PriceQuotes.GetByNumber(ctx, businessYear, quoteNumber)
+}
+
+// PriceQuoteTextTemplate is the resolver for the priceQuoteTextTemplate field.
+func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error) {
+	return r.PriceQuotes.GetTextTemplate(ctx, businessYear)
 }
 
 // Product is the resolver for the product field.

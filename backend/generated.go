@@ -206,19 +206,27 @@ type ComplexityRoot struct {
 		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
 		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
 		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
+		SavePriceQuote      func(childComplexity int, businessYear string, priceQuote model.PriceQuoteInput) int
 		SaveProduct         func(childComplexity int, businessYear string, product model.ProductInput) int
 		UpdateCustomerEmail func(childComplexity int, businessYear string, customerID string, email string) int
 	}
 
 	PriceQuote struct {
-		Amount       func(childComplexity int) int
-		Currency     func(childComplexity int) int
-		CustomerCode func(childComplexity int) int
-		CustomerName func(childComplexity int) int
-		DueDate      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		IssueDate    func(childComplexity int) int
-		QuoteNumber  func(childComplexity int) int
+		Amount             func(childComplexity int) int
+		ClosingText        func(childComplexity int) int
+		Currency           func(childComplexity int) int
+		CustomerAddress    func(childComplexity int) int
+		CustomerCity       func(childComplexity int) int
+		CustomerCode       func(childComplexity int) int
+		CustomerCountry    func(childComplexity int) int
+		CustomerName       func(childComplexity int) int
+		CustomerPostalCode func(childComplexity int) int
+		DueDate            func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		IntroductoryText   func(childComplexity int) int
+		IssueDate          func(childComplexity int) int
+		Items              func(childComplexity int) int
+		QuoteNumber        func(childComplexity int) int
 	}
 
 	PriceQuotePage struct {
@@ -227,6 +235,11 @@ type ComplexityRoot struct {
 		PriceQuotes func(childComplexity int) int
 		TotalCount  func(childComplexity int) int
 		TotalPages  func(childComplexity int) int
+	}
+
+	PriceQuoteTextTemplate struct {
+		ClosingText      func(childComplexity int) int
+		IntroductoryText func(childComplexity int) int
 	}
 
 	Product struct {
@@ -261,6 +274,8 @@ type ComplexityRoot struct {
 		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate       func(childComplexity int, businessYear string) int
 		LatestBankStatementNumber func(childComplexity int, businessYear string, bankAccount *string) int
+		PriceQuote                func(childComplexity int, businessYear string, quoteNumber string) int
+		PriceQuoteTextTemplate    func(childComplexity int, businessYear string) int
 		Product                   func(childComplexity int, businessYear string, productCode string) int
 		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) int
 		SearchCustomers           func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -288,6 +303,7 @@ type MutationResolver interface {
 	SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error)
 	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
+	SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error)
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
 }
 type QueryResolver interface {
@@ -302,6 +318,8 @@ type QueryResolver interface {
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
 	InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error)
+	PriceQuote(ctx context.Context, businessYear string, quoteNumber string) (*PriceQuote, error)
+	PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error)
 	Product(ctx context.Context, businessYear string, productCode string) (*Product, error)
 	Customer(ctx context.Context, businessYear string, customerID string) (*Customer, error)
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
@@ -1075,6 +1093,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveInvoice(childComplexity, args["businessYear"].(string), args["invoice"].(model.InvoiceInput)), true
+	case "Mutation.savePriceQuote":
+		if e.ComplexityRoot.Mutation.SavePriceQuote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_savePriceQuote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SavePriceQuote(childComplexity, args["businessYear"].(string), args["priceQuote"].(model.PriceQuoteInput)), true
 	case "Mutation.saveProduct":
 		if e.ComplexityRoot.Mutation.SaveProduct == nil {
 			break
@@ -1104,24 +1133,54 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.PriceQuote.Amount(childComplexity), true
+	case "PriceQuote.closingText":
+		if e.ComplexityRoot.PriceQuote.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.ClosingText(childComplexity), true
 	case "PriceQuote.currency":
 		if e.ComplexityRoot.PriceQuote.Currency == nil {
 			break
 		}
 
 		return e.ComplexityRoot.PriceQuote.Currency(childComplexity), true
+	case "PriceQuote.customerAddress":
+		if e.ComplexityRoot.PriceQuote.CustomerAddress == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.CustomerAddress(childComplexity), true
+	case "PriceQuote.customerCity":
+		if e.ComplexityRoot.PriceQuote.CustomerCity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.CustomerCity(childComplexity), true
 	case "PriceQuote.customerCode":
 		if e.ComplexityRoot.PriceQuote.CustomerCode == nil {
 			break
 		}
 
 		return e.ComplexityRoot.PriceQuote.CustomerCode(childComplexity), true
+	case "PriceQuote.customerCountry":
+		if e.ComplexityRoot.PriceQuote.CustomerCountry == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.CustomerCountry(childComplexity), true
 	case "PriceQuote.customerName":
 		if e.ComplexityRoot.PriceQuote.CustomerName == nil {
 			break
 		}
 
 		return e.ComplexityRoot.PriceQuote.CustomerName(childComplexity), true
+	case "PriceQuote.customerPostalCode":
+		if e.ComplexityRoot.PriceQuote.CustomerPostalCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.CustomerPostalCode(childComplexity), true
 	case "PriceQuote.dueDate":
 		if e.ComplexityRoot.PriceQuote.DueDate == nil {
 			break
@@ -1134,12 +1193,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.PriceQuote.ID(childComplexity), true
+	case "PriceQuote.introductoryText":
+		if e.ComplexityRoot.PriceQuote.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.IntroductoryText(childComplexity), true
 	case "PriceQuote.issueDate":
 		if e.ComplexityRoot.PriceQuote.IssueDate == nil {
 			break
 		}
 
 		return e.ComplexityRoot.PriceQuote.IssueDate(childComplexity), true
+	case "PriceQuote.items":
+		if e.ComplexityRoot.PriceQuote.Items == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuote.Items(childComplexity), true
 	case "PriceQuote.quoteNumber":
 		if e.ComplexityRoot.PriceQuote.QuoteNumber == nil {
 			break
@@ -1177,6 +1248,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.PriceQuotePage.TotalPages(childComplexity), true
+
+	case "PriceQuoteTextTemplate.closingText":
+		if e.ComplexityRoot.PriceQuoteTextTemplate.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuoteTextTemplate.ClosingText(childComplexity), true
+	case "PriceQuoteTextTemplate.introductoryText":
+		if e.ComplexityRoot.PriceQuoteTextTemplate.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PriceQuoteTextTemplate.IntroductoryText(childComplexity), true
 
 	case "Product.barcode":
 		if e.ComplexityRoot.Product.Barcode == nil {
@@ -1381,6 +1465,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.LatestBankStatementNumber(childComplexity, args["businessYear"].(string), args["bankAccount"].(*string)), true
+	case "Query.priceQuote":
+		if e.ComplexityRoot.Query.PriceQuote == nil {
+			break
+		}
+
+		args, err := ec.field_Query_priceQuote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.PriceQuote(childComplexity, args["businessYear"].(string), args["quoteNumber"].(string)), true
+	case "Query.priceQuoteTextTemplate":
+		if e.ComplexityRoot.Query.PriceQuoteTextTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Query_priceQuoteTextTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.PriceQuoteTextTemplate(childComplexity, args["businessYear"].(string)), true
 	case "Query.product":
 		if e.ComplexityRoot.Query.Product == nil {
 			break
@@ -1508,6 +1614,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCustomerInput,
 		ec.unmarshalInputInvoiceInput,
 		ec.unmarshalInputInvoiceItemInput,
+		ec.unmarshalInputPriceQuoteInput,
+		ec.unmarshalInputPriceQuoteItemInput,
 		ec.unmarshalInputProductInput,
 	)
 	first := true
@@ -1945,10 +2053,24 @@ func (ec *executionContext) childFields_PriceQuote(ctx context.Context, field gr
 		return ec.fieldContext_PriceQuote_customerCode(ctx, field)
 	case "customerName":
 		return ec.fieldContext_PriceQuote_customerName(ctx, field)
+	case "customerAddress":
+		return ec.fieldContext_PriceQuote_customerAddress(ctx, field)
+	case "customerPostalCode":
+		return ec.fieldContext_PriceQuote_customerPostalCode(ctx, field)
+	case "customerCity":
+		return ec.fieldContext_PriceQuote_customerCity(ctx, field)
+	case "customerCountry":
+		return ec.fieldContext_PriceQuote_customerCountry(ctx, field)
 	case "currency":
 		return ec.fieldContext_PriceQuote_currency(ctx, field)
 	case "amount":
 		return ec.fieldContext_PriceQuote_amount(ctx, field)
+	case "introductoryText":
+		return ec.fieldContext_PriceQuote_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_PriceQuote_closingText(ctx, field)
+	case "items":
+		return ec.fieldContext_PriceQuote_items(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type PriceQuote", field.Name)
 }
@@ -1967,6 +2089,16 @@ func (ec *executionContext) childFields_PriceQuotePage(ctx context.Context, fiel
 		return ec.fieldContext_PriceQuotePage_totalPages(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type PriceQuotePage", field.Name)
+}
+
+func (ec *executionContext) childFields_PriceQuoteTextTemplate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "introductoryText":
+		return ec.fieldContext_PriceQuoteTextTemplate_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_PriceQuoteTextTemplate_closingText(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PriceQuoteTextTemplate", field.Name)
 }
 
 func (ec *executionContext) childFields_Product(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2202,6 +2334,28 @@ func (ec *executionContext) field_Mutation_saveInvoice_args(ctx context.Context,
 		return nil, err
 	}
 	args["invoice"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_savePriceQuote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "priceQuote",
+		func(ctx context.Context, v any) (model.PriceQuoteInput, error) {
+			return ec.unmarshalNPriceQuoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["priceQuote"] = arg1
 	return args, nil
 }
 
@@ -2464,6 +2618,42 @@ func (ec *executionContext) field_Query_latestBankStatementNumber_args(ctx conte
 		return nil, err
 	}
 	args["bankAccount"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_priceQuoteTextTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_priceQuote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "quoteNumber",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["quoteNumber"] = arg1
 	return args, nil
 }
 
@@ -6003,6 +6193,50 @@ func (ec *executionContext) fieldContext_Mutation_saveInvoice(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_savePriceQuote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_savePriceQuote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SavePriceQuote(ctx, fc.Args["businessYear"].(string), fc.Args["priceQuote"].(model.PriceQuoteInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *PriceQuote) graphql.Marshaler {
+			return ec.marshalNPriceQuote2ᚖbureaucracyᚋbackendᚐPriceQuote(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_savePriceQuote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PriceQuote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_savePriceQuote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_saveProduct(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6185,6 +6419,98 @@ func (ec *executionContext) fieldContext_PriceQuote_customerName(_ context.Conte
 	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _PriceQuote_customerAddress(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_customerAddress(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerAddress, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_customerAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_customerPostalCode(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_customerPostalCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerPostalCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_customerPostalCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_customerCity(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_customerCity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_customerCity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_customerCountry(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_customerCountry(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCountry, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_customerCountry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _PriceQuote_currency(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6229,6 +6555,84 @@ func (ec *executionContext) _PriceQuote_amount(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_PriceQuote_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_introductoryText(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_closingText(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuote_items(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuote_items(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*InvoiceItem) graphql.Marshaler {
+			return ec.marshalNInvoiceItem2ᚕᚖbureaucracyᚋbackendᚐInvoiceItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuote_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PriceQuote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceItem(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _PriceQuotePage_priceQuotes(ctx context.Context, field graphql.CollectedField, obj *PriceQuotePage) (ret graphql.Marshaler) {
@@ -6353,6 +6757,52 @@ func (ec *executionContext) _PriceQuotePage_totalPages(ctx context.Context, fiel
 }
 func (ec *executionContext) fieldContext_PriceQuotePage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("PriceQuotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuoteTextTemplate_introductoryText(ctx context.Context, field graphql.CollectedField, obj *PriceQuoteTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuoteTextTemplate_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuoteTextTemplate_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuoteTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _PriceQuoteTextTemplate_closingText(ctx context.Context, field graphql.CollectedField, obj *PriceQuoteTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PriceQuoteTextTemplate_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PriceQuoteTextTemplate_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PriceQuoteTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Product_id(ctx context.Context, field graphql.CollectedField, obj *Product) (ret graphql.Marshaler) {
@@ -7152,6 +7602,94 @@ func (ec *executionContext) fieldContext_Query_invoiceTextTemplate(ctx context.C
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_invoiceTextTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_priceQuote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_priceQuote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().PriceQuote(ctx, fc.Args["businessYear"].(string), fc.Args["quoteNumber"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *PriceQuote) graphql.Marshaler {
+			return ec.marshalOPriceQuote2ᚖbureaucracyᚋbackendᚐPriceQuote(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_priceQuote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PriceQuote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_priceQuote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_priceQuoteTextTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_priceQuoteTextTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().PriceQuoteTextTemplate(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *PriceQuoteTextTemplate) graphql.Marshaler {
+			return ec.marshalNPriceQuoteTextTemplate2ᚖbureaucracyᚋbackendᚐPriceQuoteTextTemplate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_priceQuoteTextTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PriceQuoteTextTemplate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_priceQuoteTextTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9202,6 +9740,185 @@ func (ec *executionContext) unmarshalInputInvoiceItemInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPriceQuoteInput(ctx context.Context, obj any) (model.PriceQuoteInput, error) {
+	var it model.PriceQuoteInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "quoteNumber", "issueDate", "dueDate", "customerCode", "customerName", "customerAddress", "customerCity", "introductoryText", "closingText", "items"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "quoteNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quoteNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.QuoteNumber = data
+		case "issueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("issueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IssueDate = data
+		case "dueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DueDate = data
+		case "customerCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCode"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCode = data
+		case "customerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerName = data
+		case "customerAddress":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerAddress"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerAddress = data
+		case "customerCity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCity"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCity = data
+		case "introductoryText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("introductoryText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IntroductoryText = data
+		case "closingText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("closingText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClosingText = data
+		case "items":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+			data, err := ec.unmarshalNPriceQuoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Items = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPriceQuoteItemInput(ctx context.Context, obj any) (model.PriceQuoteItemInput, error) {
+	var it model.PriceQuoteItemInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "sequence", "productCode", "taxCode", "quantity", "discount", "netAmount", "grossAmount"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "sequence":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sequence"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sequence = data
+		case "productCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductCode = data
+		case "taxCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taxCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaxCode = data
+		case "quantity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quantity = data
+		case "discount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Discount = data
+		case "netAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("netAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetAmount = data
+		case "grossAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grossAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GrossAmount = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputProductInput(ctx context.Context, obj any) (model.ProductInput, error) {
 	var it model.ProductInput
 	if obj == nil {
@@ -10445,6 +11162,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "savePriceQuote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_savePriceQuote(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "saveProduct":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveProduct(ctx, field)
@@ -10515,6 +11239,26 @@ func (ec *executionContext) _PriceQuote(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "customerAddress":
+			out.Values[i] = ec._PriceQuote_customerAddress(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerPostalCode":
+			out.Values[i] = ec._PriceQuote_customerPostalCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCity":
+			out.Values[i] = ec._PriceQuote_customerCity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCountry":
+			out.Values[i] = ec._PriceQuote_customerCountry(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "currency":
 			out.Values[i] = ec._PriceQuote_currency(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -10523,6 +11267,21 @@ func (ec *executionContext) _PriceQuote(ctx context.Context, sel ast.SelectionSe
 		case "amount":
 			out.Values[i] = ec._PriceQuote_amount(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "introductoryText":
+			out.Values[i] = ec._PriceQuote_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._PriceQuote_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "items":
+			out.Values[i] = ec._PriceQuote_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		default:
@@ -10581,6 +11340,49 @@ func (ec *executionContext) _PriceQuotePage(ctx context.Context, sel ast.Selecti
 		case "totalPages":
 			out.Values[i] = ec._PriceQuotePage_totalPages(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var priceQuoteTextTemplateImplementors = []string{"PriceQuoteTextTemplate"}
+
+func (ec *executionContext) _PriceQuoteTextTemplate(ctx context.Context, sel ast.SelectionSet, obj *PriceQuoteTextTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, priceQuoteTextTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PriceQuoteTextTemplate")
+		case "introductoryText":
+			out.Values[i] = ec._PriceQuoteTextTemplate_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._PriceQuoteTextTemplate_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
 		default:
@@ -10990,6 +11792,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_invoiceTextTemplate(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "priceQuote":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_priceQuote(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "priceQuoteTextTemplate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_priceQuoteTextTemplate(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -12099,6 +12945,10 @@ func (ec *executionContext) marshalNInvoiceTextTemplate2ᚖbureaucracyᚋbackend
 	return ec._InvoiceTextTemplate(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPriceQuote2bureaucracyᚋbackendᚐPriceQuote(ctx context.Context, sel ast.SelectionSet, v PriceQuote) graphql.Marshaler {
+	return ec._PriceQuote(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNPriceQuote2ᚕᚖbureaucracyᚋbackendᚐPriceQuoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceQuote) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -12125,6 +12975,30 @@ func (ec *executionContext) marshalNPriceQuote2ᚖbureaucracyᚋbackendᚐPriceQ
 	return ec._PriceQuote(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPriceQuoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteInput(ctx context.Context, v any) (model.PriceQuoteInput, error) {
+	res, err := ec.unmarshalInputPriceQuoteInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNPriceQuoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteItemInputᚄ(ctx context.Context, v any) ([]*model.PriceQuoteItemInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.PriceQuoteItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPriceQuoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNPriceQuoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐPriceQuoteItemInput(ctx context.Context, v any) (*model.PriceQuoteItemInput, error) {
+	res, err := ec.unmarshalInputPriceQuoteItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNPriceQuotePage2bureaucracyᚋbackendᚐPriceQuotePage(ctx context.Context, sel ast.SelectionSet, v PriceQuotePage) graphql.Marshaler {
 	return ec._PriceQuotePage(ctx, sel, &v)
 }
@@ -12137,6 +13011,20 @@ func (ec *executionContext) marshalNPriceQuotePage2ᚖbureaucracyᚋbackendᚐPr
 		return graphql.Null
 	}
 	return ec._PriceQuotePage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPriceQuoteTextTemplate2bureaucracyᚋbackendᚐPriceQuoteTextTemplate(ctx context.Context, sel ast.SelectionSet, v PriceQuoteTextTemplate) graphql.Marshaler {
+	return ec._PriceQuoteTextTemplate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPriceQuoteTextTemplate2ᚖbureaucracyᚋbackendᚐPriceQuoteTextTemplate(ctx context.Context, sel ast.SelectionSet, v *PriceQuoteTextTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PriceQuoteTextTemplate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProduct2bureaucracyᚋbackendᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
@@ -12477,6 +13365,13 @@ func (ec *executionContext) marshalOInvoice2ᚖbureaucracyᚋbackendᚐInvoice(c
 		return graphql.Null
 	}
 	return ec._Invoice(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPriceQuote2ᚖbureaucracyᚋbackendᚐPriceQuote(ctx context.Context, sel ast.SelectionSet, v *PriceQuote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PriceQuote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProduct2ᚖbureaucracyᚋbackendᚐProduct(ctx context.Context, sel ast.SelectionSet, v *Product) graphql.Marshaler {
