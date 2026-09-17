@@ -23,6 +23,7 @@ import { usePriceQuoteKeyboardShortcuts } from './hooks/usePriceQuoteKeyboardSho
 import { usePriceQuoteLoader } from './hooks/usePriceQuoteLoader'
 import { usePriceQuoteNumberNavigation } from './hooks/usePriceQuoteNumberNavigation'
 import { usePriceQuotePrint } from './hooks/usePriceQuotePrint'
+import { usePriceQuoteRevert } from './hooks/usePriceQuoteRevert'
 import { usePriceQuoteSave } from './hooks/usePriceQuoteSave'
 import { useUnsavedPriceQuoteGuard } from './hooks/useUnsavedPriceQuoteGuard'
 
@@ -38,7 +39,6 @@ export default function PriceQuotePage() {
         disallowNavigation: guard.disallowNavigation,
     })
     const navigation = usePriceQuoteNumberNavigation(routeQuoteNumber, navigate)
-    const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
@@ -63,19 +63,14 @@ export default function PriceQuotePage() {
         isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
         canSave: save.canSave,
     })
+    const revert = usePriceQuoteRevert({
+        routeQuoteNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, isSaving: save.isSaving,
+        isDuplicating: duplicate.isDuplicating,
+        clearSaveError: () => save.setSaveError(null),
+        clearPrintError: () => print.setPrintError(null), reload: loader.reload,
+    })
     usePriceQuoteKeyboardShortcuts(() => { void save.requestSave() }, print.printPriceQuote)
-
-    const performRevert = () => {
-        setConfirmingRevert(false)
-        save.setSaveError(null)
-        print.setPrintError(null)
-        loader.reload()
-    }
-    const revert = () => {
-        if (!routeQuoteNumber || loader.isLoading || save.isSaving || duplicate.isDuplicating) return
-        if (draftState.hasUnsavedChanges) setConfirmingRevert(true)
-        else performRevert()
-    }
     const email = () => {
         if (print.canPrint) setEmailDialogOpen(true)
         else if (save.canSave) setConfirmingEmail(true)
@@ -101,12 +96,12 @@ export default function PriceQuotePage() {
         <div className="mb-6 flex items-center gap-2">
             <PriceQuoteMenu canSave={save.canSave} canPrint={print.canRequestPrint}
                 canEmail={print.canRequestPrint}
-                canRevert={Boolean(routeQuoteNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
+                canRevert={revert.canRevert}
                 canDuplicate={loader.priceQuoteId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printPriceQuote}
                 onEmail={email}
-                onRevert={revert} onDuplicate={() => { void duplicate.duplicate() }} />
+                onRevert={revert.requestRevert} onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous price quote"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}>
                 <ChevronLeft />
@@ -136,12 +131,12 @@ export default function PriceQuotePage() {
             onOpenChange={(open) => { if (!open) save.setNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
         <UnsavedPriceQuoteAlerts isNavigationBlocked={guard.blocker.state === 'blocked'}
-            isConfirmingRevert={confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
+            isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
             isConfirmingEmail={confirmingEmail}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
-            onConfirmingRevertChange={setConfirmingRevert} onDiscardAndRevert={performRevert}
+            onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
             onConfirmingDuplicateChange={duplicate.setConfirmingDuplicate}
             onDuplicateAnyway={() => { void duplicate.performDuplicate() }}
             onConfirmingPrintChange={print.setConfirmingPrint}

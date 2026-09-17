@@ -23,6 +23,7 @@ import { useInvoiceKeyboardShortcuts } from './hooks/useInvoiceKeyboardShortcuts
 import { useInvoiceLoader } from './hooks/useInvoiceLoader'
 import { useInvoiceNumberNavigation } from './hooks/useInvoiceNumberNavigation'
 import { useInvoicePrint } from './hooks/useInvoicePrint'
+import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
@@ -37,7 +38,6 @@ function InvoicePage() {
         clearCleanDraft: draftState.clearCleanDraft, disallowNavigation: guard.disallowNavigation,
     })
     const navigation = useInvoiceNumberNavigation(routeInvoiceNumber, navigate)
-    const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
@@ -62,19 +62,14 @@ function InvoicePage() {
         isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
         canSave: save.canSave,
     })
+    const revert = useInvoiceRevert({
+        routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading, isSaving: save.isSaving,
+        isDuplicating: duplicate.isDuplicating,
+        clearSaveError: () => save.setSaveError(null),
+        clearPrintError: () => print.setPrintError(null), reload: loader.reload,
+    })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
-
-    const performRevert = () => {
-        setConfirmingRevert(false)
-        save.setSaveError(null)
-        print.setPrintError(null)
-        loader.reload()
-    }
-    const revert = () => {
-        if (!routeInvoiceNumber || loader.isLoading || save.isSaving || duplicate.isDuplicating) return
-        if (draftState.hasUnsavedChanges) setConfirmingRevert(true)
-        else performRevert()
-    }
     const email = () => {
         if (print.canPrint) setEmailDialogOpen(true)
         else if (save.canSave) setConfirmingEmail(true)
@@ -99,11 +94,11 @@ function InvoicePage() {
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
-                canRevert={Boolean(routeInvoiceNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
+                canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
-                onEmail={email} onRevert={revert}
+                onEmail={email} onRevert={revert.requestRevert}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
@@ -130,12 +125,12 @@ function InvoicePage() {
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
         <UnsavedInvoiceAlerts isNavigationBlocked={guard.blocker.state === 'blocked'}
-            isConfirmingRevert={confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
+            isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
             isConfirmingEmail={confirmingEmail}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
-            onConfirmingRevertChange={setConfirmingRevert} onDiscardAndRevert={performRevert}
+            onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
             onConfirmingDuplicateChange={duplicate.setConfirmingDuplicate}
             onDuplicateAnyway={() => { void duplicate.performDuplicate() }}
             onConfirmingPrintChange={print.setConfirmingPrint}
