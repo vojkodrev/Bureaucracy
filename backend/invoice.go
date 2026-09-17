@@ -2,58 +2,59 @@ package main
 
 import "time"
 
-type Invoice struct {
-	ID                 int            `json:"id"`
-	InvoiceNumber      string         `json:"invoiceNumber"`
-	IssueDate          *time.Time     `json:"issueDate"`
-	ServiceDate        *time.Time     `json:"serviceDate"`
-	DueDate            *time.Time     `json:"dueDate"`
-	PaymentDate        *time.Time     `json:"paymentDate"`
-	CustomerCode       *string        `json:"customerCode"`
-	CustomerName       *string        `json:"customerName"`
-	CustomerAddress    *string        `json:"customerAddress"`
-	CustomerPostalCode *string        `json:"customerPostalCode"`
-	CustomerCity       *string        `json:"customerCity"`
-	CustomerCountry    *string        `json:"customerCountry"`
-	CustomerTaxID      *string        `json:"customerTaxId"`
-	IssuePlace         *string        `json:"issuePlace"`
-	CustomerContact    *string        `json:"customerContact"`
-	Currency           *string        `json:"currency"`
-	Amount             *float64       `json:"amount"`
-	GoodsAmount        *float64       `json:"goodsAmount"`
-	PaidAmount         *float64       `json:"paidAmount"`
-	PaymentReference   *string        `json:"paymentReference"`
-	IntroductoryText   *string        `json:"introductoryText"`
-	ClosingText        *string        `json:"closingText"`
-	Cancelled          *bool          `json:"cancelled"`
-	Items              []*InvoiceItem `json:"items"`
+func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *InvoiceCustomerSummaryPage {
+	summaryPage := &InvoiceCustomerSummaryPage{
+		CustomerSummaries: make([]*InvoiceCustomerSummary, 0),
+		TotalCount:        invoicePage.TotalCount,
+		Page:              invoicePage.Page,
+		PageSize:          invoicePage.PageSize,
+		TotalPages:        invoicePage.TotalPages,
+	}
+
+	for _, invoice := range invoicePage.Invoices {
+		if invoice == nil {
+			continue
+		}
+		var summary *InvoiceCustomerSummary
+		if len(summaryPage.CustomerSummaries) > 0 {
+			candidate := summaryPage.CustomerSummaries[len(summaryPage.CustomerSummaries)-1]
+			if optionalStringEqual(candidate.CustomerCode, invoice.CustomerCode) &&
+				optionalStringEqual(candidate.CustomerName, invoice.CustomerName) {
+				summary = candidate
+			}
+		}
+		if summary == nil {
+			summary = &InvoiceCustomerSummary{
+				CustomerCode: invoice.CustomerCode,
+				CustomerName: invoice.CustomerName,
+				Invoices:     make([]*Invoice, 0),
+			}
+			summaryPage.CustomerSummaries = append(summaryPage.CustomerSummaries, summary)
+		}
+
+		summary.Invoices = append(summary.Invoices, invoice)
+		amount := float64OrZero(invoice.Amount)
+		summary.TotalInvoiced += amount
+		if invoice.PaymentDate != nil {
+			summary.TotalPaid += amount
+		} else {
+			summary.TotalOutstanding += amount
+			if invoice.DueDate != nil && invoice.DueDate.Before(now) {
+				summary.TotalOverdue += amount
+			}
+		}
+	}
+
+	return summaryPage
 }
 
-type InvoiceItem struct {
-	ID            int      `json:"id"`
-	Sequence      *int     `json:"sequence"`
-	ProductCode   *string  `json:"productCode"`
-	ProductName   *string  `json:"productName"`
-	Unit          *string  `json:"unit"`
-	TaxCode       *string  `json:"taxCode"`
-	TaxRate       *float64 `json:"taxRate"`
-	UnitPrice     *float64 `json:"unitPrice"`
-	UnitTaxAmount *float64 `json:"unitTaxAmount"`
-	Quantity      *float64 `json:"quantity"`
-	Discount      *float64 `json:"discount"`
-	NetAmount     *float64 `json:"netAmount"`
-	GrossAmount   *float64 `json:"grossAmount"`
+func optionalStringEqual(left *string, right *string) bool {
+	return stringOrEmpty(left) == stringOrEmpty(right)
 }
 
-type InvoicePage struct {
-	Invoices   []*Invoice `json:"invoices"`
-	TotalCount int        `json:"totalCount"`
-	Page       int        `json:"page"`
-	PageSize   int        `json:"pageSize"`
-	TotalPages int        `json:"totalPages"`
-}
-
-type InvoiceTextTemplate struct {
-	IntroductoryText *string `json:"introductoryText"`
-	ClosingText      *string `json:"closingText"`
+func stringOrEmpty(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }

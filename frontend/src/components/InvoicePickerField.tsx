@@ -1,6 +1,6 @@
 import { MinusIcon, SearchIcon } from "lucide-react";
 import { useState } from "react";
-import InvoiceSearch from "@/components/InvoiceSearch";
+import InvoiceSearch from "@/components/invoice-search/InvoiceSearch";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,

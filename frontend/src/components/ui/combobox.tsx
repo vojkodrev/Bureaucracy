@@ -13,10 +13,11 @@ const Combobox = ComboboxPrimitive.Root
 
 function ComboboxInput({ className, disabled = false, ...props }: ComboboxPrimitive.Input.Props) {
     return (
-        <InputGroup className={cn('w-auto', className)}>
+        <InputGroup className={cn('group/combobox-input w-auto', className)}>
             <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
             <InputGroupAddon align="inline-end">
                 <InputGroupButton
+                    className="opacity-0 transition-opacity group-hover/combobox-input:opacity-100 focus-visible:opacity-100"
                     size="icon-xs"
                     variant="ghost"
                     aria-label="Clear selection"

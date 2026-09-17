@@ -383,6 +383,7 @@ func (repository *InvoiceRepository) Search(
 	productName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	paymentStatus *string,
 	sortBy *string,
 	sortDirection *string,
 	page int,
@@ -399,6 +400,10 @@ func (repository *InvoiceRepository) Search(
 	}
 	if issuedFrom != nil && issuedTo != nil && issuedFrom.After(*issuedTo) {
 		return nil, fmt.Errorf("issuedFrom must not be after issuedTo")
+	}
+	status, err := invoicePaymentStatus(paymentStatus)
+	if err != nil {
+		return nil, err
 	}
 	orderBy, err := invoiceOrderBy(sortBy, sortDirection)
 	if err != nil {
@@ -418,6 +423,7 @@ func (repository *InvoiceRepository) Search(
 		sql.Named("productName", productNamePattern),
 		sql.Named("issuedFrom", nullableTime(issuedFrom)),
 		sql.Named("issuedTo", nullableTime(issuedTo)),
+		sql.Named("paymentStatus", status),
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	productDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
@@ -439,7 +445,11 @@ func (repository *InvoiceRepository) Search(
 		        AND (@productName = '' OR a.Opis LIKE @productName ESCAPE '\')
 		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
-		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))`, databaseName, databaseName, productDatabaseName),
+		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+		  AND (@paymentStatus = 'all'
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
+		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))`, databaseName, databaseName, productDatabaseName),
 		queryArguments...,
 	).Scan(&totalCount)
 	if err != nil {
@@ -484,6 +494,10 @@ func (repository *InvoiceRepository) Search(
 		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+		  AND (@paymentStatus = 'all'
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
+		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
 		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
@@ -539,6 +553,17 @@ func (repository *InvoiceRepository) Search(
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func invoicePaymentStatus(value *string) (string, error) {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return "all", nil
+	}
+	status := strings.ToLower(strings.TrimSpace(*value))
+	if status != "all" && status != "overdue" && status != "paid" && status != "unpaid" {
+		return "", fmt.Errorf("paymentStatus must be all, overdue, paid, or unpaid")
+	}
+	return status, nil
 }
 
 func invoiceOrderBy(sortBy *string, sortDirection *string) (string, error) {

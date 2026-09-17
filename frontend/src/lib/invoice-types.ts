@@ -42,6 +42,24 @@ export type InvoicePage = {
     totalPages: number
 }
 
+export type InvoiceCustomerSummary = {
+    customerCode: string | null
+    customerName: string | null
+    invoices: Invoice[]
+    totalPaid: number
+    totalOutstanding: number
+    totalOverdue: number
+    totalInvoiced: number
+}
+
+export type InvoiceCustomerSummaryPage = {
+    customerSummaries: InvoiceCustomerSummary[]
+    totalCount: number
+    page: number
+    pageSize: number
+    totalPages: number
+}
+
 export type InvoiceResponse = {
     data?: { invoice: Invoice | null }
     errors?: { message: string }[]

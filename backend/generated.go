@@ -155,6 +155,24 @@ type ComplexityRoot struct {
 		ServiceDate        func(childComplexity int) int
 	}
 
+	InvoiceCustomerSummary struct {
+		CustomerCode     func(childComplexity int) int
+		CustomerName     func(childComplexity int) int
+		Invoices         func(childComplexity int) int
+		TotalInvoiced    func(childComplexity int) int
+		TotalOutstanding func(childComplexity int) int
+		TotalOverdue     func(childComplexity int) int
+		TotalPaid        func(childComplexity int) int
+	}
+
+	InvoiceCustomerSummaryPage struct {
+		CustomerSummaries func(childComplexity int) int
+		Page              func(childComplexity int) int
+		PageSize          func(childComplexity int) int
+		TotalCount        func(childComplexity int) int
+		TotalPages        func(childComplexity int) int
+	}
+
 	InvoiceItem struct {
 		Discount      func(childComplexity int) int
 		GrossAmount   func(childComplexity int) int
@@ -227,7 +245,8 @@ type ComplexityRoot struct {
 		Product                   func(childComplexity int, businessYear string, productCode string) int
 		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) int
 		SearchCustomers           func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchInvoices            func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInvoices            func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInvoicesByCustomer  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchProducts            func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		TaxCodes                  func(childComplexity int, businessYear string) int
 	}
@@ -266,7 +285,8 @@ type QueryResolver interface {
 	Product(ctx context.Context, businessYear string, productCode string) (*Product, error)
 	Customer(ctx context.Context, businessYear string, customerID string) (*Customer, error)
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
-	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error)
+	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error)
+	SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
 	TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error)
 }
@@ -804,6 +824,80 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Invoice.ServiceDate(childComplexity), true
 
+	case "InvoiceCustomerSummary.customerCode":
+		if e.ComplexityRoot.InvoiceCustomerSummary.CustomerCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.CustomerCode(childComplexity), true
+	case "InvoiceCustomerSummary.customerName":
+		if e.ComplexityRoot.InvoiceCustomerSummary.CustomerName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.CustomerName(childComplexity), true
+	case "InvoiceCustomerSummary.invoices":
+		if e.ComplexityRoot.InvoiceCustomerSummary.Invoices == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.Invoices(childComplexity), true
+	case "InvoiceCustomerSummary.totalInvoiced":
+		if e.ComplexityRoot.InvoiceCustomerSummary.TotalInvoiced == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.TotalInvoiced(childComplexity), true
+	case "InvoiceCustomerSummary.totalOutstanding":
+		if e.ComplexityRoot.InvoiceCustomerSummary.TotalOutstanding == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.TotalOutstanding(childComplexity), true
+	case "InvoiceCustomerSummary.totalOverdue":
+		if e.ComplexityRoot.InvoiceCustomerSummary.TotalOverdue == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.TotalOverdue(childComplexity), true
+	case "InvoiceCustomerSummary.totalPaid":
+		if e.ComplexityRoot.InvoiceCustomerSummary.TotalPaid == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummary.TotalPaid(childComplexity), true
+
+	case "InvoiceCustomerSummaryPage.customerSummaries":
+		if e.ComplexityRoot.InvoiceCustomerSummaryPage.CustomerSummaries == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummaryPage.CustomerSummaries(childComplexity), true
+	case "InvoiceCustomerSummaryPage.page":
+		if e.ComplexityRoot.InvoiceCustomerSummaryPage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummaryPage.Page(childComplexity), true
+	case "InvoiceCustomerSummaryPage.pageSize":
+		if e.ComplexityRoot.InvoiceCustomerSummaryPage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummaryPage.PageSize(childComplexity), true
+	case "InvoiceCustomerSummaryPage.totalCount":
+		if e.ComplexityRoot.InvoiceCustomerSummaryPage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummaryPage.TotalCount(childComplexity), true
+	case "InvoiceCustomerSummaryPage.totalPages":
+		if e.ComplexityRoot.InvoiceCustomerSummaryPage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceCustomerSummaryPage.TotalPages(childComplexity), true
+
 	case "InvoiceItem.discount":
 		if e.ComplexityRoot.InvoiceItem.Discount == nil {
 			break
@@ -1229,7 +1323,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchInvoices(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["paymentStatus"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.searchInvoicesByCustomer":
+		if e.ComplexityRoot.Query.SearchInvoicesByCustomer == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchInvoicesByCustomer_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SearchInvoicesByCustomer(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["paymentStatus"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchProducts":
 		if e.ComplexityRoot.Query.SearchProducts == nil {
 			break
@@ -1618,6 +1723,42 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_items(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Invoice", field.Name)
+}
+
+func (ec *executionContext) childFields_InvoiceCustomerSummary(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "customerCode":
+		return ec.fieldContext_InvoiceCustomerSummary_customerCode(ctx, field)
+	case "customerName":
+		return ec.fieldContext_InvoiceCustomerSummary_customerName(ctx, field)
+	case "invoices":
+		return ec.fieldContext_InvoiceCustomerSummary_invoices(ctx, field)
+	case "totalPaid":
+		return ec.fieldContext_InvoiceCustomerSummary_totalPaid(ctx, field)
+	case "totalOutstanding":
+		return ec.fieldContext_InvoiceCustomerSummary_totalOutstanding(ctx, field)
+	case "totalOverdue":
+		return ec.fieldContext_InvoiceCustomerSummary_totalOverdue(ctx, field)
+	case "totalInvoiced":
+		return ec.fieldContext_InvoiceCustomerSummary_totalInvoiced(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type InvoiceCustomerSummary", field.Name)
+}
+
+func (ec *executionContext) childFields_InvoiceCustomerSummaryPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "customerSummaries":
+		return ec.fieldContext_InvoiceCustomerSummaryPage_customerSummaries(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_InvoiceCustomerSummaryPage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_InvoiceCustomerSummaryPage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_InvoiceCustomerSummaryPage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_InvoiceCustomerSummaryPage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type InvoiceCustomerSummaryPage", field.Name)
 }
 
 func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2338,6 +2479,116 @@ func (ec *executionContext) field_Query_searchCustomers_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_searchInvoicesByCustomer_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumber",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["invoiceNumber"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerName"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedFrom"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedTo"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["paymentStatus"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg12
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2405,38 +2656,46 @@ func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context,
 		return nil, err
 	}
 	args["issuedTo"] = arg7
-	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortBy"] = arg8
-	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+	args["paymentStatus"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortDirection"] = arg9
-	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["sortBy"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg10
-	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg11
+	args["pageSize"] = arg12
 	return args, nil
 }
 
@@ -4553,6 +4812,300 @@ func (ec *executionContext) fieldContext_Invoice_items(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _InvoiceCustomerSummary_customerCode(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_customerCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_customerCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_customerName(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_customerName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_customerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_invoices(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_invoices(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Invoices, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*Invoice) graphql.Marshaler {
+			return ec.marshalNInvoice2ᚕᚖbureaucracyᚋbackendᚐInvoiceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_invoices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InvoiceCustomerSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Invoice(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_totalPaid(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_totalPaid(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPaid, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_totalPaid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_totalOutstanding(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_totalOutstanding(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalOutstanding, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_totalOutstanding(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_totalOverdue(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_totalOverdue(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalOverdue, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_totalOverdue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummary_totalInvoiced(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummary_totalInvoiced(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalInvoiced, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummary_totalInvoiced(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummary", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage_customerSummaries(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummaryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummaryPage_customerSummaries(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerSummaries, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*InvoiceCustomerSummary) graphql.Marshaler {
+			return ec.marshalNInvoiceCustomerSummary2ᚕᚖbureaucracyᚋbackendᚐInvoiceCustomerSummaryᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummaryPage_customerSummaries(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InvoiceCustomerSummaryPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceCustomerSummary(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummaryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummaryPage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummaryPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummaryPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage_page(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummaryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummaryPage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummaryPage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummaryPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage_pageSize(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummaryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummaryPage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummaryPage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummaryPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage_totalPages(ctx context.Context, field graphql.CollectedField, obj *InvoiceCustomerSummaryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceCustomerSummaryPage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceCustomerSummaryPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceCustomerSummaryPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _InvoiceItem_id(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6187,7 +6740,7 @@ func (ec *executionContext) _Query_searchInvoices(ctx context.Context, field gra
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchInvoices(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["paymentStatus"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *InvoicePage) graphql.Marshaler {
@@ -6215,6 +6768,50 @@ func (ec *executionContext) fieldContext_Query_searchInvoices(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_searchInvoices_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchInvoicesByCustomer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_searchInvoicesByCustomer(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SearchInvoicesByCustomer(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["paymentStatus"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *InvoiceCustomerSummaryPage) graphql.Marshaler {
+			return ec.marshalNInvoiceCustomerSummaryPage2ᚖbureaucracyᚋbackendᚐInvoiceCustomerSummaryPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_searchInvoicesByCustomer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceCustomerSummaryPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchInvoicesByCustomer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8871,6 +9468,132 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var invoiceCustomerSummaryImplementors = []string{"InvoiceCustomerSummary"}
+
+func (ec *executionContext) _InvoiceCustomerSummary(ctx context.Context, sel ast.SelectionSet, obj *InvoiceCustomerSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invoiceCustomerSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvoiceCustomerSummary")
+		case "customerCode":
+			out.Values[i] = ec._InvoiceCustomerSummary_customerCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerName":
+			out.Values[i] = ec._InvoiceCustomerSummary_customerName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "invoices":
+			out.Values[i] = ec._InvoiceCustomerSummary_invoices(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPaid":
+			out.Values[i] = ec._InvoiceCustomerSummary_totalPaid(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalOutstanding":
+			out.Values[i] = ec._InvoiceCustomerSummary_totalOutstanding(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalOverdue":
+			out.Values[i] = ec._InvoiceCustomerSummary_totalOverdue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalInvoiced":
+			out.Values[i] = ec._InvoiceCustomerSummary_totalInvoiced(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var invoiceCustomerSummaryPageImplementors = []string{"InvoiceCustomerSummaryPage"}
+
+func (ec *executionContext) _InvoiceCustomerSummaryPage(ctx context.Context, sel ast.SelectionSet, obj *InvoiceCustomerSummaryPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invoiceCustomerSummaryPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvoiceCustomerSummaryPage")
+		case "customerSummaries":
+			out.Values[i] = ec._InvoiceCustomerSummaryPage_customerSummaries(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._InvoiceCustomerSummaryPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._InvoiceCustomerSummaryPage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._InvoiceCustomerSummaryPage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._InvoiceCustomerSummaryPage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var invoiceItemImplementors = []string{"InvoiceItem"}
 
 func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionSet, obj *InvoiceItem) graphql.Marshaler {
@@ -9620,6 +10343,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchInvoices(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchInvoicesByCustomer":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchInvoicesByCustomer(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -10417,6 +11162,22 @@ func (ec *executionContext) marshalNCustomerPage2ᚖbureaucracyᚋbackendᚐCust
 	return ec._CustomerPage(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -10461,6 +11222,46 @@ func (ec *executionContext) marshalNInvoice2ᚖbureaucracyᚋbackendᚐInvoice(c
 		return graphql.Null
 	}
 	return ec._Invoice(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInvoiceCustomerSummary2ᚕᚖbureaucracyᚋbackendᚐInvoiceCustomerSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*InvoiceCustomerSummary) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNInvoiceCustomerSummary2ᚖbureaucracyᚋbackendᚐInvoiceCustomerSummary(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInvoiceCustomerSummary2ᚖbureaucracyᚋbackendᚐInvoiceCustomerSummary(ctx context.Context, sel ast.SelectionSet, v *InvoiceCustomerSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InvoiceCustomerSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInvoiceCustomerSummaryPage2bureaucracyᚋbackendᚐInvoiceCustomerSummaryPage(ctx context.Context, sel ast.SelectionSet, v InvoiceCustomerSummaryPage) graphql.Marshaler {
+	return ec._InvoiceCustomerSummaryPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInvoiceCustomerSummaryPage2ᚖbureaucracyᚋbackendᚐInvoiceCustomerSummaryPage(ctx context.Context, sel ast.SelectionSet, v *InvoiceCustomerSummaryPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InvoiceCustomerSummaryPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInvoiceInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐInvoiceInput(ctx context.Context, v any) (model.InvoiceInput, error) {
