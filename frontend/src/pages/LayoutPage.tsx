@@ -412,7 +412,7 @@ function LayoutPage() {
                                             </SidebarMenuSubItem>
                                             <SidebarMenuSubItem>
                                                 <SidebarMenuSubButton
-                                                    isActive={isPriceQuotePage}
+                                                    isActive={pathname === '/price-quote'}
                                                     render={<NavLink to="/price-quote" />}
                                                 >
                                                     <Plus />
@@ -609,6 +609,40 @@ function LayoutPage() {
                                                     <BreadcrumbItem>
                                                         <BreadcrumbPage>
                                                             {invoiceNumber}
+                                                        </BreadcrumbPage>
+                                                    </BreadcrumbItem>
+                                                </>
+                                            )}
+                                        </>
+                                    ) : isPriceQuotePage ? (
+                                        <>
+                                            <BreadcrumbItem>
+                                                <BreadcrumbLink
+                                                    render={<NavLink to="/price-quotes/search" />}
+                                                >
+                                                    Price quote search
+                                                </BreadcrumbLink>
+                                            </BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                            <BreadcrumbItem>
+                                                {priceQuoteNumber ? (
+                                                    <BreadcrumbLink
+                                                        render={<NavLink to="/price-quote" />}
+                                                    >
+                                                        Price quote
+                                                    </BreadcrumbLink>
+                                                ) : (
+                                                    <BreadcrumbPage>
+                                                        Price quote
+                                                    </BreadcrumbPage>
+                                                )}
+                                            </BreadcrumbItem>
+                                            {priceQuoteNumber && (
+                                                <>
+                                                    <BreadcrumbSeparator />
+                                                    <BreadcrumbItem>
+                                                        <BreadcrumbPage>
+                                                            {priceQuoteNumber}
                                                         </BreadcrumbPage>
                                                     </BreadcrumbItem>
                                                 </>
