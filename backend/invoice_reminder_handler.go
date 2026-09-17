@@ -36,10 +36,29 @@ func (handler *InvoiceReminderHandler) Handle(context *gin.Context) {
 	if !ok {
 		return
 	}
+	if invoiceReminderCustomerCount(invoicePage.Invoices) != 1 {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "reminders require exactly one matching customer"})
+		return
+	}
 	pdf, err := handler.generator.Generate(context.Request.Context(), invoicePage, businessYear)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	writeInvoiceReportPDF(context, pdf, invoiceReminderFilename())
+}
+
+func invoiceReminderCustomerCount(invoices []*Invoice) int {
+	customers := make(map[string]struct{})
+	for _, invoice := range invoices {
+		if invoice == nil {
+			continue
+		}
+		key := strings.TrimSpace(trimmedString(invoice.CustomerCode))
+		if key == "" {
+			key = strings.TrimSpace(trimmedString(invoice.CustomerName))
+		}
+		customers[key] = struct{}{}
+	}
+	return len(customers)
 }

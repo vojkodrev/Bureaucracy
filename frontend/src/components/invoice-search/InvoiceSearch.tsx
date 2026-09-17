@@ -28,6 +28,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const canPrintReminders = canPrint
         && search.resultsView === 'customer'
         && Boolean(search.customerId.trim() || search.customerName.trim())
+        && customerSummaryPage?.customerSummaries.length === 1
     const { printReport, printReminders, printError } = useInvoiceSearchPrint({
         search,
         canPrint,
