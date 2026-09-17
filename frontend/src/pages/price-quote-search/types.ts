@@ -1,3 +1,5 @@
+import type { InvoiceItem } from '@/lib/invoice-types'
+
 export type PriceQuote = {
     id: number
     quoteNumber: string
@@ -5,8 +7,15 @@ export type PriceQuote = {
     dueDate: string | null
     customerCode: string | null
     customerName: string | null
+    customerAddress?: string | null
+    customerPostalCode?: string | null
+    customerCity?: string | null
+    customerCountry?: string | null
     currency: string | null
     amount: number | null
+    introductoryText?: string | null
+    closingText?: string | null
+    items?: InvoiceItem[]
 }
 
 export type PriceQuotePage = {

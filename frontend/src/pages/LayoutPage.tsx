@@ -150,12 +150,25 @@ function bankStatementNumberFromPathname(pathname: string): string | undefined {
     return pathname.startsWith('/bank-statement/') ? pathname.slice('/bank-statement/'.length) : undefined
 }
 
+function priceQuoteNumberFromPathname(pathname: string): string | undefined {
+    if (!pathname.startsWith('/price-quote/')) return undefined
+    const quoteNumber = pathname.slice('/price-quote/'.length)
+    try {
+        return decodeURIComponent(quoteNumber)
+    } catch {
+        return quoteNumber
+    }
+}
+
 function LayoutPage() {
     const { pathname, search } = useLocation()
     const navigate = useNavigate()
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const invoiceNumber = invoiceNumberFromPathname(pathname)
     const isInvoicePage = pathname === '/invoice' || Boolean(invoiceNumber)
+    const priceQuoteNumber = priceQuoteNumberFromPathname(pathname)
+    const isPriceQuotePage = pathname === '/price-quote'
+        || Boolean(priceQuoteNumber)
     const productCode = productCodeFromPathname(pathname)
     const isProductPage = pathname === '/product' || Boolean(productCode)
     const customerId = customerIdFromPathname(pathname)
@@ -169,7 +182,7 @@ function LayoutPage() {
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
-                : pathname === '/price-quotes/search'
+                : pathname === '/price-quotes/search' || isPriceQuotePage
                     ? 'price-quotes'
                 : pathname.startsWith('/bank-statements/') || isBankStatementPage
                     ? 'bank-statements'
@@ -190,6 +203,8 @@ function LayoutPage() {
         breadcrumbLabels[pathname] ??
         (invoiceNumber ? `Invoice ${invoiceNumber}` : undefined) ??
         (isInvoicePage ? 'Invoice' : undefined) ??
+        (priceQuoteNumber ? `Price quote ${priceQuoteNumber}` : undefined) ??
+        (isPriceQuotePage ? 'Price quote' : undefined) ??
         (productCode ? `Product ${productCode}` : undefined) ??
         (isProductPage ? 'Product' : undefined) ??
         (customerId ? `Customer ${customerId}` : undefined) ??
@@ -229,7 +244,7 @@ function LayoutPage() {
             setOpenMenu('products')
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
-        } else if (pathname === '/price-quotes/search') {
+        } else if (pathname === '/price-quotes/search' || isPriceQuotePage) {
             setOpenMenu('price-quotes')
         } else if (
             pathname.startsWith('/bank-statements/') ||
@@ -237,7 +252,14 @@ function LayoutPage() {
         ) {
             setOpenMenu('bank-statements')
         }
-    }, [isBankStatementPage, isCustomerPage, isInvoicePage, isProductPage, pathname])
+    }, [
+        isBankStatementPage,
+        isCustomerPage,
+        isInvoicePage,
+        isPriceQuotePage,
+        isProductPage,
+        pathname,
+    ])
 
     return (
         <TooltipProvider>
@@ -356,8 +378,8 @@ function LayoutPage() {
                                             render={
                                                 <SidebarMenuButton
                                                     isActive={
-                                                        pathname ===
-                                                        '/price-quotes/search'
+                                                        pathname === '/price-quotes/search'
+                                                        || isPriceQuotePage
                                                     }
                                                     tooltip="Price quotes"
                                                     className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
@@ -386,6 +408,15 @@ function LayoutPage() {
                                                 >
                                                     <Search />
                                                     <span>Search</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={isPriceQuotePage}
+                                                    render={<NavLink to="/price-quote" />}
+                                                >
+                                                    <Plus />
+                                                    <span>Price quote</span>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>

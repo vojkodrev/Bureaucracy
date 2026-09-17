@@ -8,6 +8,7 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { formatCurrency, formatDate } from '@/lib/formatters'
+import { Link } from 'react-router-dom'
 import type {
     PriceQuotePage,
     PriceQuoteSearchCriteria,
@@ -101,8 +102,14 @@ export default function PriceQuoteSearchResults({
                         </TableRow>
                     )}
                     {!loading && result?.priceQuotes.map((quote) => (
-                        <TableRow key={quote.id}>
+                        <TableRow key={quote.id} className="relative">
                             <TableCell className="font-medium">
+                                <Link to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                    className="absolute inset-0 rounded focus-visible:outline-2
+                                        focus-visible:outline-offset-[-2px]
+                                        focus-visible:outline-ring"
+                                    aria-label={`Open price quote ${quote.quoteNumber}`}
+                                />
                                 {quote.quoteNumber}
                             </TableCell>
                             <TableCell>

@@ -12,9 +12,15 @@ type ProductsProps = {
     items: InvoiceItem[]
     isLoading: boolean
     onItemsChange: (items: InvoiceItem[]) => void
+    documentName?: string
 }
 
-function Products({ items, isLoading, onItemsChange }: ProductsProps) {
+function Products({
+    items,
+    isLoading,
+    onItemsChange,
+    documentName = 'invoice',
+}: ProductsProps) {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingIndex, setEditingIndex] = useState<number | null>(null)
     const openNew = () => { setEditingIndex(null); setDialogOpen(true) }
@@ -36,8 +42,12 @@ function Products({ items, isLoading, onItemsChange }: ProductsProps) {
                 <Table>
                     <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product code</TableHead><TableHead>Product name</TableHead><TableHead className="text-right">Unit price</TableHead><TableHead className="text-right">Unit tax</TableHead><TableHead className="text-right">Quantity</TableHead><TableHead className="text-right">Discount</TableHead><TableHead className="text-right">Net amount</TableHead><TableHead className="text-right">Gross amount</TableHead><TableHead className="w-16"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
                     <TableBody>
-                        {isLoading && <MessageRow>Loading invoice items…</MessageRow>}
-                        {!isLoading && items.length === 0 && <MessageRow>No invoice items found.</MessageRow>}
+                        {isLoading && (
+                            <MessageRow>Loading {documentName} items…</MessageRow>
+                        )}
+                        {!isLoading && items.length === 0 && (
+                            <MessageRow>No {documentName} items found.</MessageRow>
+                        )}
                         {!isLoading && items.map((item, index) => {
                             const name = item.productName ?? item.productCode ?? 'product'
                             return (
