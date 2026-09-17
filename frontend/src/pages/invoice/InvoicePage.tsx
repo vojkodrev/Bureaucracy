@@ -42,10 +42,9 @@ function InvoicePage() {
     const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
 
-    const canSave = Boolean(draft.invoiceNumber.trim()) && !loader.isLoading && !loader.error &&
-        (!routeInvoiceNumber || loader.invoiceId != null || draft.invoiceNumber !== routeInvoiceNumber)
     const save = useInvoiceSave({
-        invoiceId: loader.invoiceId, draft, routeInvoiceNumber, canSave, navigate,
+        invoiceId: loader.invoiceId, draft, routeInvoiceNumber,
+        isLoading: loader.isLoading, loadError: loader.error, navigate,
         markClean: draftState.markClean, allowNavigation: guard.allowNavigation,
         reloadAfterSave: loader.reloadAfterSave,
     })
@@ -61,7 +60,7 @@ function InvoicePage() {
         !save.isSaving && !duplicate.isDuplicating
     const canRequestPrint = Boolean(draft.invoiceNumber.trim()) && !loader.isLoading &&
         !loader.error && !save.isSaving && !duplicate.isDuplicating
-    const print = useInvoicePrint({ invoiceNumber: draft.invoiceNumber, canPrint, canSave })
+    const print = useInvoicePrint({ invoiceNumber: draft.invoiceNumber, canPrint, canSave: save.canSave })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
 
     const performRevert = () => {
@@ -77,7 +76,7 @@ function InvoicePage() {
     }
     const email = () => {
         if (canPrint) setEmailDialogOpen(true)
-        else if (canSave) setConfirmingEmail(true)
+        else if (save.canSave) setConfirmingEmail(true)
     }
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
@@ -98,7 +97,7 @@ function InvoicePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <InvoiceMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
+            <InvoiceMenu canSave={save.canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
                 canRevert={Boolean(routeInvoiceNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}

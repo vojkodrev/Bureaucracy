@@ -14,7 +14,8 @@ type Options = {
     priceQuoteId: number | null
     draft: PriceQuoteDraft
     routeQuoteNumber?: string
-    canSave: boolean
+    isLoading: boolean
+    loadError: string | null
     navigate: NavigateFunction
     markClean: (draft: PriceQuoteDraft) => void
     allowNavigation: () => void
@@ -22,12 +23,14 @@ type Options = {
 }
 
 export function usePriceQuoteSave({
-    priceQuoteId, draft, routeQuoteNumber, canSave, navigate, markClean,
+    priceQuoteId, draft, routeQuoteNumber, isLoading, loadError, navigate, markClean,
     allowNavigation, reloadAfterSave,
 }: Options) {
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [numberWarning, setNumberWarning] = useState<PriceQuoteNumberWarning | null>(null)
+    const canSave = Boolean(draft.quoteNumber.trim()) && !isLoading && !loadError &&
+        (!routeQuoteNumber || priceQuoteId != null || draft.quoteNumber !== routeQuoteNumber)
 
     const performSave = async () => {
         const isCreating = priceQuoteId == null
@@ -101,7 +104,7 @@ export function usePriceQuoteSave({
     }
 
     return {
-        requestSave, confirmSave, isSaving, saveError, setSaveError,
+        canSave, requestSave, confirmSave, isSaving, saveError, setSaveError,
         numberWarning, setNumberWarning,
     }
 }

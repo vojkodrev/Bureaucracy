@@ -42,10 +42,9 @@ export default function PriceQuotePage() {
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
-    const canSave = Boolean(draft.quoteNumber.trim()) && !loader.isLoading && !loader.error &&
-        (!routeQuoteNumber || loader.priceQuoteId != null || draft.quoteNumber !== routeQuoteNumber)
     const save = usePriceQuoteSave({
-        priceQuoteId: loader.priceQuoteId, draft, routeQuoteNumber, canSave, navigate,
+        priceQuoteId: loader.priceQuoteId, draft, routeQuoteNumber,
+        isLoading: loader.isLoading, loadError: loader.error, navigate,
         markClean: draftState.markClean, allowNavigation: guard.allowNavigation,
         reloadAfterSave: loader.reloadAfterSave,
     })
@@ -63,7 +62,7 @@ export default function PriceQuotePage() {
     const canRequestPrint = Boolean(draft.quoteNumber.trim()) && !loader.isLoading &&
         !loader.error && !save.isSaving && !duplicate.isDuplicating
     const print = usePriceQuotePrint({
-        quoteNumber: draft.quoteNumber, canPrint, canSave,
+        quoteNumber: draft.quoteNumber, canPrint, canSave: save.canSave,
     })
     usePriceQuoteKeyboardShortcuts(() => { void save.requestSave() }, print.printPriceQuote)
 
@@ -80,7 +79,7 @@ export default function PriceQuotePage() {
     }
     const email = () => {
         if (canPrint) setEmailDialogOpen(true)
-        else if (canSave) setConfirmingEmail(true)
+        else if (save.canSave) setConfirmingEmail(true)
     }
     const errors = [
         ['price-quote', 'Price quote could not be loaded', 'The price quote data could not be retrieved.', loader.error],
@@ -101,7 +100,7 @@ export default function PriceQuotePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <PriceQuoteMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
+            <PriceQuoteMenu canSave={save.canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
                 canRevert={Boolean(routeQuoteNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.priceQuoteId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
