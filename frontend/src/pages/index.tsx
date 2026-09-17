@@ -6,7 +6,7 @@ export const BankStatementPage = lazy(() => import('./bank-statement/BankStateme
 export const ImportBankStatementsPage = lazy(() => import('./bank-statement/ImportBankStatementsPage'))
 export const CustomerSearchPage = lazy(() => import('./CustomerSearchPage'))
 export const CustomerPage = lazy(() => import('./customer/CustomerPage'))
-export const LayoutPage = lazy(() => import('./LayoutPage'))
+export const LayoutPage = lazy(() => import('./layout/LayoutPage'))
 export const InvoiceSearchPage = lazy(() => import('@/components/invoice-search/InvoiceSearchPage'))
 export const InvoicePage = lazy(() => import('./invoice/InvoicePage'))
 export const PriceQuoteSearchPage = lazy(() => import('./price-quote-search/PriceQuoteSearchPage'))
