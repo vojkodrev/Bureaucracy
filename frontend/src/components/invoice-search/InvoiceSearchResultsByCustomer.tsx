@@ -11,11 +11,10 @@ import {
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import type { Invoice, InvoicePage } from '@/lib/invoice-types'
+import type { Invoice, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 
 type InvoiceSearchResultsByCustomerProps = {
-    invoicePage: InvoicePage | null
-    invoices: Invoice[]
+    summaryPage: InvoiceCustomerSummaryPage | null
     isLoading: boolean
     mode: ComponentMode
     selectedInvoiceNumber: string | null
@@ -24,24 +23,8 @@ type InvoiceSearchResultsByCustomerProps = {
     onPageSizeChange: (pageSize: number) => void
 }
 
-function groupInvoicesByCustomer(invoices: Invoice[]): Invoice[][] {
-    const groups: Invoice[][] = []
-    for (const invoice of invoices) {
-        const key = `${invoice.customerCode ?? ''}\0${invoice.customerName ?? ''}`
-        const currentGroup = groups.at(-1)
-        const currentInvoice = currentGroup?.[0]
-        const currentKey = currentInvoice
-            ? `${currentInvoice.customerCode ?? ''}\0${currentInvoice.customerName ?? ''}`
-            : null
-        if (!currentGroup || currentKey !== key) groups.push([invoice])
-        else currentGroup.push(invoice)
-    }
-    return groups
-}
-
 function InvoiceSearchResultsByCustomer({
-    invoicePage,
-    invoices,
+    summaryPage,
     isLoading,
     mode,
     selectedInvoiceNumber,
@@ -49,25 +32,25 @@ function InvoiceSearchResultsByCustomer({
     onPageChange,
     onPageSizeChange,
 }: InvoiceSearchResultsByCustomerProps) {
-    const firstInvoice = invoicePage && invoicePage.totalCount > 0
-        ? (invoicePage.page - 1) * invoicePage.pageSize + 1
+    const firstInvoice = summaryPage && summaryPage.totalCount > 0
+        ? (summaryPage.page - 1) * summaryPage.pageSize + 1
         : 0
-    const lastInvoice = invoicePage
-        ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
+    const lastInvoice = summaryPage
+        ? Math.min(summaryPage.page * summaryPage.pageSize, summaryPage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
-    const customerGroups = groupInvoicesByCustomer(invoices)
+    const customerSummaries = summaryPage?.customerSummaries ?? []
 
     return (
         <div className="mt-8">
-            {invoicePage && (
+            {summaryPage && (
                 <Pager
                     firstItem={firstInvoice}
                     lastItem={lastInvoice}
-                    page={invoicePage.page}
-                    pageSize={invoicePage.pageSize}
-                    totalItems={invoicePage.totalCount}
-                    totalPages={invoicePage.totalPages}
+                    page={summaryPage.page}
+                    pageSize={summaryPage.pageSize}
+                    totalItems={summaryPage.totalCount}
+                    totalPages={summaryPage.totalPages}
                     onPageChange={onPageChange}
                     onPageSizeChange={onPageSizeChange}
                 />
@@ -91,50 +74,25 @@ function InvoiceSearchResultsByCustomer({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && customerGroups.length === 0 && (
+                    {!isLoading && customerSummaries.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                 No invoices found.
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && customerGroups.map((customerInvoices) => {
-                        const customer = customerInvoices[0]
-                        const customerKey = `${customer.customerCode ?? ''}:${customer.customerName ?? ''}`
-                        const totalInvoiced = customerInvoices.reduce(
-                            (sum, invoice) => sum + (invoice.amount ?? 0),
-                            0,
-                        )
-                        const totalPaid = customerInvoices.reduce(
-                            (sum, invoice) => invoice.paymentDate
-                                ? sum + (invoice.amount ?? 0)
-                                : sum,
-                            0,
-                        )
-                        const totalOutstanding = customerInvoices.reduce(
-                            (sum, invoice) => !invoice.paymentDate
-                                ? sum + (invoice.amount ?? 0)
-                                : sum,
-                            0,
-                        )
-                        const totalOverdue = customerInvoices.reduce(
-                            (sum, invoice) => !invoice.paymentDate
-                                && invoice.dueDate
-                                && new Date(invoice.dueDate) < new Date()
-                                ? sum + (invoice.amount ?? 0)
-                                : sum,
-                            0,
-                        )
+                    {!isLoading && customerSummaries.map((summary) => {
+                        const customerKey = `${summary.customerCode ?? ''}:${summary.customerName ?? ''}`
                         const totals = [
-                            ['Total paid', totalPaid],
-                            ['Total outstanding', totalOutstanding],
-                            ['Of which overdue', totalOverdue],
-                            ['Total invoiced', totalInvoiced],
+                            ['Total paid', summary.totalPaid],
+                            ['Total outstanding', summary.totalOutstanding],
+                            ['Of which overdue', summary.totalOverdue],
+                            ['Total invoiced', summary.totalInvoiced],
                         ] as const
 
                         return (
                             <Fragment key={customerKey}>
-                                {customerInvoices.map((invoice) => (
+                                {summary.invoices.map((invoice) => (
                                     <TableRow
                                         key={invoice.invoiceNumber}
                                         data-state={selectedInvoiceNumber === invoice.invoiceNumber

@@ -143,6 +143,23 @@ func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string,
 	return r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// SearchInvoicesByCustomer is the resolver for the searchInvoicesByCustomer field.
+func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	invoicePage, err := r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
+	if err != nil {
+		return nil, err
+	}
+	return summarizeInvoicesByCustomer(invoicePage, time.Now()), nil
+}
+
 // SearchProducts is the resolver for the searchProducts field.
 func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error) {
 	resultPage := 1

@@ -54,6 +54,12 @@ models:
   InvoicePage:
     model:
       - bureaucracy/backend.InvoicePage
+  InvoiceCustomerSummary:
+    model:
+      - bureaucracy/backend.InvoiceCustomerSummary
+  InvoiceCustomerSummaryPage:
+    model:
+      - bureaucracy/backend.InvoiceCustomerSummaryPage
   InvoiceTextTemplate:
     model:
       - bureaucracy/backend.InvoiceTextTemplate

@@ -19,7 +19,7 @@ type InvoiceSearchProps = {
 function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     const searchState = useInvoiceSearchState(mode)
     const { search, searchKey } = searchState
-    const { invoicePage, invoices, isLoading, error } = useInvoiceSearchResults(
+    const { invoicePage, customerSummaryPage, invoices, isLoading, error } = useInvoiceSearchResults(
         search,
         searchKey,
     )
@@ -70,13 +70,15 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
             )}
             {!error && search.resultsView === 'customer' && (
                 <InvoiceSearchResultsByCustomer
-                    invoicePage={invoicePage}
-                    invoices={invoices}
+                    summaryPage={customerSummaryPage}
                     isLoading={isLoading}
                     mode={mode}
                     selectedInvoiceNumber={selectedInvoiceNumber}
                     onInvoiceSelect={selectInvoice}
-                    onPageChange={(page) => searchState.changePage(page, invoicePage?.pageSize)}
+                    onPageChange={(page) => searchState.changePage(
+                        page,
+                        customerSummaryPage?.pageSize,
+                    )}
                     onPageSizeChange={searchState.changePageSize}
                 />
             )}

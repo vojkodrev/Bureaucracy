@@ -178,6 +178,24 @@ type InvoicePage {
   totalPages: Int!
 }
 
+type InvoiceCustomerSummary {
+  customerCode: String
+  customerName: String
+  invoices: [Invoice!]!
+  totalPaid: Float!
+  totalOutstanding: Float!
+  totalOverdue: Float!
+  totalInvoiced: Float!
+}
+
+type InvoiceCustomerSummaryPage {
+  customerSummaries: [InvoiceCustomerSummary!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type InvoiceTextTemplate {
   introductoryText: String
   closingText: String
@@ -321,6 +339,22 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): InvoicePage!
+
+  searchInvoicesByCustomer(
+    businessYear: String!
+    invoiceNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    issuedFrom: Time
+    issuedTo: Time
+    paymentStatus: String
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): InvoiceCustomerSummaryPage!
 
   searchProducts(
     businessYear: String!
