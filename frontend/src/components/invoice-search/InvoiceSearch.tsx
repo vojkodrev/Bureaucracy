@@ -25,7 +25,10 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
     )
     const [selectedInvoiceNumber, setSelectedInvoiceNumber] = useState<string | null>(null)
     const canPrint = !isLoading && !error && invoices.length > 0
-    const { printReport, printError } = useInvoiceSearchPrint({
+    const canPrintReminders = canPrint
+        && search.resultsView === 'customer'
+        && Boolean(search.customerId.trim() || search.customerName.trim())
+    const { printReport, printReminders, printError } = useInvoiceSearchPrint({
         search,
         canPrint,
         keyboardShortcutEnabled: mode === ComponentMode.Page,
@@ -45,7 +48,12 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         <div className="p-4">
             <InvoiceSearchErrors printError={printError} searchError={error} />
             {mode === ComponentMode.Page && (
-                <InvoiceSearchMenu disabled={!canPrint} onPrint={printReport} />
+                <InvoiceSearchMenu
+                    reportDisabled={!canPrint}
+                    remindersDisabled={!canPrintReminders}
+                    onPrintReport={printReport}
+                    onPrintReminders={printReminders}
+                />
             )}
             <InvoiceSearchForm
                 key={searchKey}

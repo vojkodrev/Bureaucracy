@@ -218,3 +218,22 @@ export function invoiceReportPdfUrl(search: InvoiceSearchCriteria): string {
     url.hash = ''
     return url.toString()
 }
+
+export function invoiceRemindersPdfUrl(search: InvoiceSearchCriteria): string {
+    const url = new URL(graphqlUrl)
+    const reminderSearch = {
+        ...search,
+        paymentStatus: 'overdue' as const,
+        resultsView: 'customer' as const,
+        sortBy: 'customer' as const,
+        sortDirection: 'asc' as const,
+        page: '1',
+        pageSize: '10000',
+    }
+    url.pathname = '/api/invoices/reminders/pdf'
+    url.search = invoiceSearchToParams(reminderSearch).toString()
+    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.searchParams.set('_', String(Date.now()))
+    url.hash = ''
+    return url.toString()
+}

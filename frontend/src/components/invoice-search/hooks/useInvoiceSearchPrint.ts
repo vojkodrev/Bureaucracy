@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useState } from 'react'
-import { invoiceReportPdfUrl } from '../invoice-search-api'
+import { invoiceRemindersPdfUrl, invoiceReportPdfUrl } from '../invoice-search-api'
 import type { InvoiceSearchCriteria } from '../types'
 
 type Options = {
@@ -25,6 +25,17 @@ export function useInvoiceSearchPrint({
         pdfTab.opener = null
         setPrintError(null)
     }
+    const printReminders = () => {
+        if (!canPrint || search.resultsView !== 'customer'
+            || (!search.customerId.trim() && !search.customerName.trim())) return
+        const pdfTab = window.open(invoiceRemindersPdfUrl(search), '_blank')
+        if (!pdfTab) {
+            setPrintError('Allow pop-ups to open the reminders PDF.')
+            return
+        }
+        pdfTab.opener = null
+        setPrintError(null)
+    }
     const onPrintShortcut = useEffectEvent(printReport)
 
     useEffect(() => {
@@ -38,5 +49,5 @@ export function useInvoiceSearchPrint({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [keyboardShortcutEnabled])
 
-    return { printReport, printError }
+    return { printReport, printReminders, printError }
 }
