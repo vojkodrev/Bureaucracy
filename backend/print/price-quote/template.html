@@ -86,26 +86,25 @@
                 <strong>{{.Document.TaxTotal}}</strong>
                 <strong>Znesek z DDV skupaj</strong>
                 <strong>{{.Document.GrossTotal}}</strong>
-                <span></span>
-                <strong>{{.Document.GrossTotal}}</strong>
             </div>
             <p class="payable">
                 ZA PLAČILO EUR:
                 <strong>{{.Document.GrossTotal}}</strong>
             </p>
+            {{if .Document.PaymentQRCode}}
+            <img class="payment-qr" src="{{.PaymentQR}}" alt="UPN QR koda za plačilo predračuna">
+            {{end}}
             <p class="closing">{{.Document.ClosingText}}</p>
             <div class="signature">
-                Direktor<br>
-                Vojko Drev,dipl.inž.rač.in inf.
+                <p>Direktor:<br>Vojko Drev,dipl.inž.rač.in inf.</p>
+                <img src="{{.Signature}}" alt="Podpis direktorja Vojka Dreva">
             </div>
         </section>
 
-        <footer>
-            DREVI d.o.o., Ob železnici 16, 1000 Ljubljana,
-            Matična št.: 5314518, IBAN: SI56 0400 0027 8805 004<br>
-            Telefon: 01 542 75 50, fax: 01 542 75 54,
-            E-pošta: DREVI@SIOL.NET, http://www.drevi.si,
-            Ident. št. za DDV: SI35954086
+        <footer class="document-footer">
+            <span>DREVI d.o.o., Ob železnici 16, 1000 Ljubljana, Matična št.: 5314518, TRR:SI56 0400 0027 8805 004 OTP banka d.d.,</span>
+            <span>Telefon: 01 542 75 50, fax: 01 542 75 54, E-pošta: DREV@SIOL.NET, http://www.drevi.si, Ident. št. za DDV: SI35954086</span>
+            <span>Os.kap.50.075,00 EUR, SWIFT KBMASI2X, IBAN: SI56 0400 0027 8805 004</span>
         </footer>
     </main>
 </body>

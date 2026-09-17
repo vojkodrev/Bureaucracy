@@ -45,6 +45,10 @@ func (generator *PriceQuotePrintGenerator) Generate(
 	if quote.Amount == nil {
 		grossTotal = sumInvoiceGross(quote.Items)
 	}
+	paymentQRCode, err := generatePriceQuoteUPNQRCode(quote, displayNumber, grossTotal)
+	if err != nil {
+		return nil, err
+	}
 	document := invoicePrintDocument{
 		InvoiceNumber: displayNumber,
 		Title:         strings.TrimSpace(trimmedString(quote.CustomerName) + " " + displayNumber),
@@ -58,14 +62,16 @@ func (generator *PriceQuotePrintGenerator) Generate(
 		IntroText: trimmedString(quote.IntroductoryText), Items: items,
 		NetTotal: formatMoneyAmount(netTotal), TaxTotal: formatMoneyAmount(grossTotal - netTotal),
 		GrossTotal: formatMoneyAmount(grossTotal), AmountInWords: amountInWords(grossTotal),
-		TaxSummaries: taxes,
-		ClosingText:  strings.ReplaceAll(trimmedString(quote.ClosingText), "#ŠTEVILKA#", displayNumber),
+		TaxSummaries:  taxes,
+		ClosingText:   strings.ReplaceAll(trimmedString(quote.ClosingText), "#ŠTEVILKA#", displayNumber),
+		PaymentQRCode: paymentQRCode,
 	}
 	serialized, err := xml.Marshal(document)
 	if err != nil {
 		return nil, fmt.Errorf("create price quote XML: %w", err)
 	}
-	if err = xml.Unmarshal(serialized, &document); err != nil {
+	var printDocument invoicePrintDocument
+	if err = xml.Unmarshal(serialized, &printDocument); err != nil {
 		return nil, fmt.Errorf("read price quote XML: %w", err)
 	}
 	var rendered bytes.Buffer
@@ -74,10 +80,12 @@ func (generator *PriceQuotePrintGenerator) Generate(
 		Document  invoicePrintDocument
 		Logo      template.URL
 		Signature template.URL
+		PaymentQR template.URL
 	}{
-		CSS: template.CSS(priceQuoteCSSTemplate), Document: document,
+		CSS: template.CSS(priceQuoteCSSTemplate), Document: printDocument,
 		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
+		PaymentQR: template.URL(printDocument.PaymentQRCode),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("render price quote HTML: %w", err)
