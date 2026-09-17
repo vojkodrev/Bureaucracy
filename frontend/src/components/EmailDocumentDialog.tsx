@@ -30,6 +30,7 @@ type Props = {
 }
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+const defaultBcc = 'drevi.napkins@gmail.com'
 const acceptedTypes = '.pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx'
 const customerEmailQuery = `
     query CustomerEmail($businessYear: String!, $customerId: String!) {
@@ -51,7 +52,7 @@ function EmailDocumentDialog({
     const pickerRef = useRef<HTMLInputElement>(null)
     const [storedRecipient, setStoredRecipient] = useState('')
     const [recipient, setRecipient] = useState('')
-    const [bcc, setBcc] = useState('')
+    const [bcc, setBcc] = useState(defaultBcc)
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState<File[]>([])
@@ -64,7 +65,7 @@ function EmailDocumentDialog({
         const controller = new AbortController()
         setStoredRecipient('')
         setRecipient('')
-        setBcc('')
+        setBcc(defaultBcc)
         setSubject(defaultSubject)
         setMessage(defaultMessage)
         setError(null); setAttachments([])
