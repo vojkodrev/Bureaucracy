@@ -85,3 +85,35 @@ header p { margin: 0; }
     color: #666;
     text-align: center;
 }
+
+.summary {
+    width: 72mm;
+    margin: 5mm 0 0 auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.summary h2 {
+    margin: 0;
+    padding: 1.5mm 2mm;
+    border-bottom: 0.3mm solid #111;
+    font-size: 9pt;
+}
+
+.summary dl {
+    display: grid;
+    grid-template-columns: 1fr 30mm;
+    margin: 0;
+}
+
+.summary dt,
+.summary dd {
+    margin: 0;
+    padding: 1.2mm 2mm;
+    border-bottom: 0.2mm solid #bbb;
+}
+
+.summary dd {
+    font-weight: 700;
+    text-align: right;
+}

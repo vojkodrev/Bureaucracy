@@ -17,6 +17,10 @@ type invoiceCustomerReportDocument struct {
 	GeneratedAt  string
 	ResultPage   string
 	Customers    []invoiceCustomerReportSection
+	Total        string
+	Unpaid       string
+	PastDue      string
+	Paid         string
 }
 
 type invoiceCustomerReportSection struct {
@@ -59,6 +63,7 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 	}
 
 	customers := make([]invoiceCustomerReportSection, 0, len(summaryPage.CustomerSummaries))
+	invoices := make([]*Invoice, 0, summaryPage.PageSize)
 	for _, summary := range summaryPage.CustomerSummaries {
 		if summary == nil {
 			continue
@@ -68,6 +73,7 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 			if invoice == nil {
 				continue
 			}
+			invoices = append(invoices, invoice)
 			rows = append(rows, invoiceReportRow{
 				InvoiceNumber: invoice.InvoiceNumber,
 				Amount:        formatMoneyAmount(float64OrZero(invoice.Amount)),
@@ -85,6 +91,7 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 			TotalInvoiced:    formatMoneyAmount(summary.TotalInvoiced),
 		})
 	}
+	totals := calculateInvoiceReportTotals(invoices, time.Now())
 
 	document := invoiceCustomerReportDocument{
 		Title:        "Računi po kupcih",
@@ -93,6 +100,10 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 		GeneratedAt:  time.Now().Format("2.1.2006 15:04"),
 		ResultPage:   fmt.Sprintf("Stran rezultatov %d od %d", summaryPage.Page, summaryPage.TotalPages),
 		Customers:    customers,
+		Total:        formatMoneyAmount(totals.Total),
+		Unpaid:       formatMoneyAmount(totals.Unpaid),
+		PastDue:      formatMoneyAmount(totals.PastDue),
+		Paid:         formatMoneyAmount(totals.Paid),
 	}
 	var renderedHTML bytes.Buffer
 	if err := generator.template.Execute(&renderedHTML, struct {

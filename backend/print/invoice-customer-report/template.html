@@ -65,5 +65,15 @@
         </tbody>
         {{end}}
     </table>
+
+    <section class="summary">
+        <h2>Skupaj</h2>
+        <dl>
+            <dt>Skupni znesek</dt><dd>{{.Document.Total}}</dd>
+            <dt>Neplačano</dt><dd>{{.Document.Unpaid}}</dd>
+            <dt>Zapadlo</dt><dd>{{.Document.PastDue}}</dd>
+            <dt>Plačano</dt><dd>{{.Document.Paid}}</dd>
+        </dl>
+    </section>
 </body>
 </html>
