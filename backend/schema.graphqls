@@ -178,6 +178,25 @@ type InvoicePage {
   totalPages: Int!
 }
 
+type PriceQuote {
+  id: Int!
+  quoteNumber: String!
+  issueDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  currency: String
+  amount: Float
+}
+
+type PriceQuotePage {
+  priceQuotes: [PriceQuote!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type InvoiceCustomerSummary {
   customerCode: String
   customerName: String
@@ -355,6 +374,21 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): InvoiceCustomerSummaryPage!
+
+  searchPriceQuotes(
+    businessYear: String!
+    quoteNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    issuedFrom: Time
+    issuedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): PriceQuotePage!
 
   searchProducts(
     businessYear: String!

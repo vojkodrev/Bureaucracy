@@ -4,6 +4,7 @@ import {
     CalendarRange,
     ChevronRight,
     FileText,
+    ReceiptText,
     FileDown,
     Landmark,
     PackageSearch,
@@ -46,6 +47,7 @@ const breadcrumbLabels: Record<string, string> = {
     '/business-years': 'Business years',
     '/customers/search': 'Customer search',
     '/invoices/search': 'Invoice search',
+    '/price-quotes/search': 'Price quote search',
     '/products/search': 'Product search',
     '/export': 'Export data',
 }
@@ -57,6 +59,7 @@ const searchParameterLabels: Record<string, string> = {
     statementNumber: 'Statement number',
     from: 'Date from',
     invoiceNumber: 'Invoice number',
+    quoteNumber: 'Quote number',
     page: 'Page',
     pageSize: 'Page size',
     productCode: 'Product code',
@@ -93,6 +96,7 @@ const menuDefaultRoutes: Record<string, string> = {
     products: '/products/search',
     customers: '/customers/search',
     invoices: '/invoices/search',
+    'price-quotes': '/price-quotes/search',
     'bank-statements': '/bank-statements/search',
 }
 
@@ -165,6 +169,8 @@ function LayoutPage() {
             ? 'products'
             : pathname === '/invoices/search' || isInvoicePage
                 ? 'invoices'
+                : pathname === '/price-quotes/search'
+                    ? 'price-quotes'
                 : pathname.startsWith('/bank-statements/') || isBankStatementPage
                     ? 'bank-statements'
                 : null,
@@ -223,6 +229,8 @@ function LayoutPage() {
             setOpenMenu('products')
         } else if (pathname === '/invoices/search' || isInvoicePage) {
             setOpenMenu('invoices')
+        } else if (pathname === '/price-quotes/search') {
+            setOpenMenu('price-quotes')
         } else if (
             pathname.startsWith('/bank-statements/') ||
             isBankStatementPage
@@ -336,6 +344,48 @@ function LayoutPage() {
                                                 <SidebarMenuSubButton isActive={pathname === '/customer'} render={<NavLink to="/customer" />}>
                                                     <Plus />
                                                     <span>Customer</span>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </Collapsible.Panel>
+                                    </Collapsible.Root>
+                                    <Collapsible.Root
+                                        {...collapsibleMenuProps('price-quotes')}
+                                        render={<SidebarMenuItem />}
+                                    >
+                                        <Collapsible.Trigger
+                                            render={
+                                                <SidebarMenuButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/price-quotes/search'
+                                                    }
+                                                    tooltip="Price quotes"
+                                                    className="cursor-pointer data-open:[&>svg:last-child]:rotate-90"
+                                                    render={
+                                                        !sidebarOpen
+                                                            ? <NavLink to="/price-quotes/search" />
+                                                            : undefined
+                                                    }
+                                                />
+                                            }
+                                        >
+                                            <ReceiptText />
+                                            <span>Price quotes</span>
+                                            <ChevronRight className="ml-auto transition-transform" />
+                                        </Collapsible.Trigger>
+                                        <Collapsible.Panel render={<SidebarMenuSub />}>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    isActive={
+                                                        pathname ===
+                                                        '/price-quotes/search'
+                                                    }
+                                                    render={
+                                                        <NavLink to="/price-quotes/search" />
+                                                    }
+                                                >
+                                                    <Search />
+                                                    <span>Search</span>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                         </Collapsible.Panel>
