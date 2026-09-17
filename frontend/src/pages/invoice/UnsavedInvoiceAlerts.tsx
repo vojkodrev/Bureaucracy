@@ -5,6 +5,7 @@ type UnsavedInvoiceAlertsProps = {
     isConfirmingRevert: boolean
     isConfirmingDuplicate: boolean
     isConfirmingPrint: boolean
+    isConfirmingEmail: boolean
     onCancelNavigation: () => void
     onDiscardAndNavigate: () => void
     onConfirmingRevertChange: (open: boolean) => void
@@ -13,6 +14,8 @@ type UnsavedInvoiceAlertsProps = {
     onDuplicateAnyway: () => void
     onConfirmingPrintChange: (open: boolean) => void
     onSaveBeforePrint: () => void
+    onConfirmingEmailChange: (open: boolean) => void
+    onSaveBeforeEmail: () => void
 }
 
 function UnsavedInvoiceAlerts({
@@ -20,6 +23,7 @@ function UnsavedInvoiceAlerts({
     isConfirmingRevert,
     isConfirmingDuplicate,
     isConfirmingPrint,
+    isConfirmingEmail,
     onCancelNavigation,
     onDiscardAndNavigate,
     onConfirmingRevertChange,
@@ -28,6 +32,8 @@ function UnsavedInvoiceAlerts({
     onDuplicateAnyway,
     onConfirmingPrintChange,
     onSaveBeforePrint,
+    onConfirmingEmailChange,
+    onSaveBeforeEmail,
 }: UnsavedInvoiceAlertsProps) {
     return (
         <>
@@ -56,6 +62,15 @@ function UnsavedInvoiceAlerts({
                 onDiscard={onSaveBeforePrint}
                 title="Save before printing?"
                 description="This invoice has not been saved with its current values. Save it first so the printed PDF matches the invoice shown here."
+                actionLabel="Save invoice"
+                actionVariant="default"
+            />
+            <UnsavedInvoiceAlert
+                open={isConfirmingEmail}
+                onOpenChange={onConfirmingEmailChange}
+                onDiscard={onSaveBeforeEmail}
+                title="Save before emailing?"
+                description="This invoice has not been saved with its current values. Save it first so the emailed PDF matches the invoice shown here."
                 actionLabel="Save invoice"
                 actionVariant="default"
             />

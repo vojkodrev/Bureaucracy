@@ -40,6 +40,7 @@ export default function PriceQuotePage() {
     const navigation = usePriceQuoteNumberNavigation(routeQuoteNumber, navigate)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+    const [confirmingEmail, setConfirmingEmail] = useState(false)
     const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const canSave = Boolean(draft.quoteNumber.trim()) && !loader.isLoading && !loader.error &&
         (!routeQuoteNumber || loader.priceQuoteId != null || draft.quoteNumber !== routeQuoteNumber)
@@ -77,6 +78,10 @@ export default function PriceQuotePage() {
         if (draftState.hasUnsavedChanges) setConfirmingRevert(true)
         else performRevert()
     }
+    const email = () => {
+        if (canPrint) setEmailDialogOpen(true)
+        else if (canSave) setConfirmingEmail(true)
+    }
     const errors = [
         ['price-quote', 'Price quote could not be loaded', 'The price quote data could not be retrieved.', loader.error],
         ['print', 'Price quote could not be printed', 'The price quote PDF could not be prepared.', print.printError],
@@ -96,12 +101,12 @@ export default function PriceQuotePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <PriceQuoteMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canPrint}
+            <PriceQuoteMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canRequestPrint}
                 canRevert={Boolean(routeQuoteNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.priceQuoteId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printPriceQuote}
-                onEmail={() => setEmailDialogOpen(true)}
+                onEmail={email}
                 onRevert={revert} onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous price quote"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}>
@@ -134,13 +139,16 @@ export default function PriceQuotePage() {
         <UnsavedPriceQuoteAlerts isNavigationBlocked={guard.blocker.state === 'blocked'}
             isConfirmingRevert={confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
+            isConfirmingEmail={confirmingEmail}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={setConfirmingRevert} onDiscardAndRevert={performRevert}
             onConfirmingDuplicateChange={duplicate.setConfirmingDuplicate}
             onDuplicateAnyway={() => { void duplicate.performDuplicate() }}
             onConfirmingPrintChange={print.setConfirmingPrint}
-            onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }} />
+            onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }}
+            onConfirmingEmailChange={setConfirmingEmail}
+            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
                 customerAddress={draft.customerAddress} customerPostalCode={draft.customerPostalCode}

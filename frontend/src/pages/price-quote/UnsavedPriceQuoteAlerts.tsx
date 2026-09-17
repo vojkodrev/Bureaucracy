@@ -5,6 +5,7 @@ type Props = {
     isConfirmingRevert: boolean
     isConfirmingDuplicate: boolean
     isConfirmingPrint: boolean
+    isConfirmingEmail: boolean
     onCancelNavigation: () => void
     onDiscardAndNavigate: () => void
     onConfirmingRevertChange: (open: boolean) => void
@@ -13,6 +14,8 @@ type Props = {
     onDuplicateAnyway: () => void
     onConfirmingPrintChange: (open: boolean) => void
     onSaveBeforePrint: () => void
+    onConfirmingEmailChange: (open: boolean) => void
+    onSaveBeforeEmail: () => void
 }
 
 export default function UnsavedPriceQuoteAlerts(props: Props) {
@@ -32,6 +35,11 @@ export default function UnsavedPriceQuoteAlerts(props: Props) {
             onOpenChange={props.onConfirmingPrintChange} onDiscard={props.onSaveBeforePrint}
             title="Save before printing?"
             description="This price quote has not been saved with its current values. Save it first so the printed PDF matches the price quote shown here."
+            actionLabel="Save price quote" actionVariant="default" />
+        <UnsavedPriceQuoteAlert open={props.isConfirmingEmail}
+            onOpenChange={props.onConfirmingEmailChange} onDiscard={props.onSaveBeforeEmail}
+            title="Save before emailing?"
+            description="This price quote has not been saved with its current values. Save it first so the emailed PDF matches the price quote shown here."
             actionLabel="Save price quote" actionVariant="default" />
     </>
 }
