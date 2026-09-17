@@ -1,4 +1,4 @@
-import { Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -12,10 +12,13 @@ type Props = {
     canSave: boolean
     canPrint: boolean
     canRevert: boolean
+    canDuplicate: boolean
     isSaving: boolean
+    isDuplicating: boolean
     onSave: () => void
     onPrint: () => void
     onRevert: () => void
+    onDuplicate: () => void
 }
 
 export default function PriceQuoteMenu(props: Props) {
@@ -51,6 +54,13 @@ export default function PriceQuoteMenu(props: Props) {
                     >
                         <Undo2 />
                         Revert
+                    </MenubarItem>
+                    <MenubarItem
+                        disabled={!props.canDuplicate || props.isDuplicating}
+                        onClick={props.onDuplicate}
+                    >
+                        <Copy />
+                        {props.isDuplicating ? 'Duplicating…' : 'Duplicate'}
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

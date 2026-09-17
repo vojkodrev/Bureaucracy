@@ -59,6 +59,24 @@ const priceQuoteQuery = `
     }
 `
 
+const latestPriceQuoteQuery = `
+    query LatestPriceQuote($businessYear: String!) {
+        searchPriceQuotes(
+            businessYear: $businessYear
+            sortBy: "quoteNumber"
+            sortDirection: "desc"
+            page: 1
+            pageSize: 1
+        ) { priceQuotes { quoteNumber } }
+    }
+`
+
+const customerPaymentTermQuery = `
+    query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
+        customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
+    }
+`
+
 const templateQuery = `query PriceQuoteTextTemplate($businessYear: String!) {
     priceQuoteTextTemplate(businessYear: $businessYear) { introductoryText closingText }
 }`
@@ -97,12 +115,29 @@ export async function fetchPriceQuote(
     return result.data.priceQuote
 }
 
-export async function fetchNextPriceQuoteNumber(signal?: AbortSignal): Promise<string> {
-    const result = await fetchPriceQuotes({
-        quoteNumber: '', customerId: '', customerName: '', productCode: '', productName: '',
-        from: '', to: '', page: '1', pageSize: '1', sortBy: 'quoteNumber', sortDirection: 'desc',
-    }, signal)
-    return nextPaddedNumber(result.priceQuotes[0]?.quoteNumber, 5)
+export async function fetchLatestPriceQuoteNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string | undefined> {
+    const result = await postGraphql<{
+        data?: { searchPriceQuotes: { priceQuotes: { quoteNumber: string }[] } }
+    }>(latestPriceQuoteQuery, { businessYear }, signal)
+    return result.data?.searchPriceQuotes.priceQuotes[0]?.quoteNumber
+}
+
+export async function fetchNextPriceQuoteNumber(
+    signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
+): Promise<string> {
+    return nextPaddedNumber(await fetchLatestPriceQuoteNumber(signal, businessYear), 5)
+}
+
+export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string) {
+    if (!customerId) return null
+    const result = await postGraphql<{
+        data?: { customer: { paymentTerm: number | null } | null }
+    }>(customerPaymentTermQuery, { businessYear, customerId })
+    return result.data?.customer?.paymentTerm ?? null
 }
 
 export async function fetchPriceQuoteTextTemplate(signal?: AbortSignal) {
@@ -132,5 +167,6 @@ export function priceQuotePdfUrl(quoteNumber: string): string {
     url.pathname = `/api/price-quotes/${encodeURIComponent(quoteNumber)}/pdf`
     url.searchParams.set('businessYear', getSelectedBusinessYear())
     url.searchParams.set('_', String(Date.now()))
+    url.hash = ''
     return url.toString()
 }
