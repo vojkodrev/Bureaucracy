@@ -59,13 +59,12 @@ func (handler *PriceQuotePrintHandler) Handle(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	filename := fmt.Sprintf(
-		"%s-%s-%d.pdf",
-		safeFilenamePart(trimmedString(quote.CustomerName), "customer"),
-		safeFilenamePart(quote.QuoteNumber, "price-quote"),
-		*year.Year,
-	)
+	filename := priceQuotePDFFilename(quote, *year.Year)
 	context.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	context.Header("Content-Disposition", mime.FormatMediaType("inline", map[string]string{"filename": filename}))
 	context.Data(http.StatusOK, "application/pdf", pdf)
+}
+
+func priceQuotePDFFilename(quote *PriceQuote, year int) string {
+	return fmt.Sprintf("%s-%s-%d.pdf", safeFilenamePart(trimmedString(quote.CustomerName), "customer"), safeFilenamePart(quote.QuoteNumber, "price-quote"), year)
 }

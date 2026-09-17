@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import EmailDocumentDialog from '@/components/EmailDocumentDialog'
+import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
+import { sendDocumentEmail } from '@/lib/document-email'
+import { toast } from '@/lib/toast'
 import CustomerInputFields from '../invoice/CustomerInputFields'
 import Products from '../invoice/Products'
 import PriceQuoteGeneralInformation from './PriceQuoteGeneralInformation'
@@ -35,6 +39,8 @@ export default function PriceQuotePage() {
     })
     const navigation = usePriceQuoteNumberNavigation(routeQuoteNumber, navigate)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const canSave = Boolean(draft.quoteNumber.trim()) && !loader.isLoading && !loader.error &&
         (!routeQuoteNumber || loader.priceQuoteId != null || draft.quoteNumber !== routeQuoteNumber)
     const save = usePriceQuoteSave({
@@ -90,11 +96,12 @@ export default function PriceQuotePage() {
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <PriceQuoteMenu canSave={canSave} canPrint={canRequestPrint}
+            <PriceQuoteMenu canSave={canSave} canPrint={canRequestPrint} canEmail={canPrint}
                 canRevert={Boolean(routeQuoteNumber) && !loader.isLoading && !save.isSaving && !duplicate.isDuplicating}
                 canDuplicate={loader.priceQuoteId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printPriceQuote}
+                onEmail={() => setEmailDialogOpen(true)}
                 onRevert={revert} onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous price quote"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}>
@@ -105,6 +112,22 @@ export default function PriceQuotePage() {
                 <ChevronRight />
             </Button>
         </div>
+        <EmailDocumentDialog open={emailDialogOpen} documentName="price quote"
+            customerId={draft.customerId} businessYear={loader.businessYear}
+            defaultSubject={`Drevi d.o.o. - Predračun ${loader.businessYear
+                ? `${draft.quoteNumber.trim()}/${loader.businessYear}` : draft.quoteNumber.trim()}`}
+            defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo predračun ${loader.businessYear
+                ? `${draft.quoteNumber.trim()}/${loader.businessYear}` : draft.quoteNumber.trim()}.\n\nLep pozdrav, Drevi d.o.o. 041 693 605`}
+            onSend={async (fields) => {
+                await sendDocumentEmail('price-quotes', draft.quoteNumber.trim(), fields)
+                toast.add({ title: 'Price quote emailed',
+                    description: `Price quote ${draft.quoteNumber.trim()} was sent to ${fields.recipient}.`,
+                    type: 'success' })
+            }}
+            onOpenChange={setEmailDialogOpen} onOfferSaveCustomerEmail={setCustomerEmailToSave} />
+        <SaveCustomerEmailAlert email={customerEmailToSave} customerId={draft.customerId}
+            customerName={draft.customerName}
+            onOpenChange={(open) => { if (!open) setCustomerEmailToSave(null) }} />
         <PriceQuoteNumberAlert quoteNumber={draft.quoteNumber.trim()} warning={save.numberWarning}
             onOpenChange={(open) => { if (!open) save.setNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />

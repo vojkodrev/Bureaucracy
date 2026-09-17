@@ -1,4 +1,4 @@
-import { Copy, Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, Mail, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -11,12 +11,14 @@ import {
 type Props = {
     canSave: boolean
     canPrint: boolean
+    canEmail: boolean
     canRevert: boolean
     canDuplicate: boolean
     isSaving: boolean
     isDuplicating: boolean
     onSave: () => void
     onPrint: () => void
+    onEmail: () => void
     onRevert: () => void
     onDuplicate: () => void
 }
@@ -42,6 +44,10 @@ export default function PriceQuoteMenu(props: Props) {
                         <Printer />
                         Print
                         <MenubarShortcut>Ctrl+P</MenubarShortcut>
+                    </MenubarItem>
+                    <MenubarItem disabled={!props.canEmail} onClick={props.onEmail}>
+                        <Mail />
+                        Send email
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

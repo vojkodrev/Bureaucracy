@@ -2,18 +2,20 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import EmailDocumentDialog from '@/components/EmailDocumentDialog'
+import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
+import { sendDocumentEmail } from '@/lib/document-email'
+import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
-import EmailInvoiceDialog from './EmailInvoiceDialog'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
 import Products from './Products'
-import SaveCustomerEmailAlert from './SaveCustomerEmailAlert'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
@@ -103,8 +105,18 @@ function InvoicePage() {
             <Button type="button" variant="outline" size="icon" aria-label="Next invoice"
                 disabled={!navigation.canNavigateNext} onClick={navigation.navigateNext}><ChevronRight /></Button>
         </div>
-        <EmailInvoiceDialog open={emailDialogOpen} invoiceNumber={draft.invoiceNumber.trim()}
+        <EmailDocumentDialog open={emailDialogOpen} documentName="invoice"
             customerId={draft.customerId} businessYear={loader.businessYear}
+            defaultSubject={`Drevi d.o.o. - Račun ${loader.businessYear
+                ? `${draft.invoiceNumber.trim()}/${loader.businessYear}` : draft.invoiceNumber.trim()}`}
+            defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo račun ${loader.businessYear
+                ? `${draft.invoiceNumber.trim()}/${loader.businessYear}` : draft.invoiceNumber.trim()}.\n\nLep pozdrav, Drevi d.o.o. 041 693 605`}
+            onSend={async (fields) => {
+                await sendDocumentEmail('invoices', draft.invoiceNumber.trim(), fields)
+                toast.add({ title: 'Invoice emailed',
+                    description: `Invoice ${draft.invoiceNumber.trim()} was sent to ${fields.recipient}.`,
+                    type: 'success' })
+            }}
             onOpenChange={setEmailDialogOpen} onOfferSaveCustomerEmail={setCustomerEmailToSave} />
         <SaveCustomerEmailAlert email={customerEmailToSave} customerId={draft.customerId}
             customerName={draft.customerName}

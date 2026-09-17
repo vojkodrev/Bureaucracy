@@ -28,6 +28,7 @@ func NewHTTPServer(
 	priceQuotePrintHandler *PriceQuotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceEmailHandler *InvoiceEmailHandler,
+	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
 ) *HTTPServer {
@@ -58,6 +59,7 @@ func NewHTTPServer(
 	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
 	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
+	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
 	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 
