@@ -333,6 +333,8 @@ type Query {
     bankAccount: String
     customerId: String
     customerName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): BankStatementPage!

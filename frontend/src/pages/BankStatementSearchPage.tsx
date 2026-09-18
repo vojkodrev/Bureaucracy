@@ -6,6 +6,7 @@ import CustomerPickerField from '@/components/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
 import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
+import SortableTableHead from '@/components/SortableTableHead'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -35,6 +36,8 @@ type SearchForm = {
     customerName: string
     page: string
     pageSize: string
+    sortBy: 'date' | ''
+    sortDirection: 'asc' | 'desc' | ''
 }
 
 type SearchBankStatementsResponse = {
@@ -51,6 +54,8 @@ const searchBankStatementsQuery = `
         $bankAccount: String
         $customerId: String
         $customerName: String
+        $sortBy: String
+        $sortDirection: String
         $page: Int
         $pageSize: Int
     ) {
@@ -62,6 +67,8 @@ const searchBankStatementsQuery = `
             bankAccount: $bankAccount
             customerId: $customerId
             customerName: $customerName
+            sortBy: $sortBy
+            sortDirection: $sortDirection
             page: $page
             pageSize: $pageSize
         ) {
@@ -86,6 +93,11 @@ function searchFormFromParams(params: URLSearchParams): SearchForm {
         customerName: params.get('customerName') ?? '',
         page: params.get('page') ?? String(defaultPage),
         pageSize: params.get('pageSize') ?? String(defaultPageSize),
+        sortBy: params.get('sortBy') === 'date' ? 'date' : '',
+        sortDirection: params.get('sortBy') === 'date'
+            && (params.get('sortDirection') === 'asc' || params.get('sortDirection') === 'desc')
+            ? params.get('sortDirection') as 'asc' | 'desc'
+            : '',
     }
 }
 
@@ -96,6 +108,10 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
     }
     params.set('page', search.page)
     params.set('pageSize', search.pageSize)
+    if (search.sortBy && search.sortDirection) {
+        params.set('sortBy', search.sortBy)
+        params.set('sortDirection', search.sortDirection)
+    }
     return params
 }
 
@@ -156,6 +172,8 @@ function BankStatementSearchPage() {
                     bankAccount: optionalFilter(search.bankAccount),
                     customerId: optionalFilter(search.customerId),
                     customerName: optionalFilter(search.customerName),
+                    sortBy: search.sortBy || null,
+                    sortDirection: search.sortDirection || null,
                     page: positiveInteger(search.page, defaultPage),
                     pageSize: Math.min(positiveInteger(search.pageSize, defaultPageSize), maximumPageSize),
                 },
@@ -191,6 +209,8 @@ function BankStatementSearchPage() {
             customerName: String(formData.get('customerName') ?? '').trim(),
             page: String(defaultPage),
             pageSize: search.pageSize,
+            sortBy: search.sortBy,
+            sortDirection: search.sortDirection,
         }))
     }
 
@@ -216,6 +236,20 @@ function BankStatementSearchPage() {
             ...search,
             page: String(defaultPage),
             pageSize: String(pageSize),
+        }))
+    }
+
+    function changeSort() {
+        const sortDirection = search.sortBy !== 'date'
+            ? 'asc'
+            : search.sortDirection === 'asc'
+                ? 'desc'
+                : ''
+        setSearchParams(searchParamsFromForm({
+            ...search,
+            page: String(defaultPage),
+            sortBy: sortDirection ? 'date' : '',
+            sortDirection,
         }))
     }
 
@@ -275,7 +309,11 @@ function BankStatementSearchPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
+                            <SortableTableHead
+                                label="Date"
+                                direction={search.sortBy === 'date' ? search.sortDirection : ''}
+                                onSort={changeSort}
+                            />
                             <TableHead>Counterparty</TableHead>
                             <TableHead>Transaction type</TableHead>
                             <TableHead className="text-right">Outflow</TableHead>

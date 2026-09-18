@@ -277,7 +277,7 @@ type ComplexityRoot struct {
 		PriceQuote                func(childComplexity int, businessYear string, quoteNumber string) int
 		PriceQuoteTextTemplate    func(childComplexity int, businessYear string) int
 		Product                   func(childComplexity int, businessYear string, productCode string) int
-		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) int
+		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers           func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices            func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoicesByCustomer  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -307,7 +307,7 @@ type MutationResolver interface {
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
 }
 type QueryResolver interface {
-	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error)
+	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error)
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
@@ -1508,7 +1508,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchCustomers":
 		if e.ComplexityRoot.Query.SearchCustomers == nil {
 			break
@@ -2738,22 +2738,38 @@ func (ec *executionContext) field_Query_searchBankStatements_args(ctx context.Co
 		return nil, err
 	}
 	args["customerName"] = arg6
-	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg7
-	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg8
+	args["pageSize"] = arg10
 	return args, nil
 }
 
@@ -7146,7 +7162,7 @@ func (ec *executionContext) _Query_searchBankStatements(ctx context.Context, fie
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["bankAccount"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["bankAccount"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *BankStatementPage) graphql.Marshaler {
