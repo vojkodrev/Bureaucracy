@@ -28,9 +28,12 @@ async function request<T>(query: string, variables?: Record<string, unknown>, si
     return result
 }
 
-export async function fetchBusinessYear(signal?: AbortSignal): Promise<number | null> {
+export async function fetchBusinessYear(
+    signal?: AbortSignal,
+    code = getSelectedBusinessYear(),
+): Promise<number | null> {
     const result = await request<BusinessYearResponse>(businessYearQuery, {
-        code: getSelectedBusinessYear(),
+        code,
     }, signal)
     return result.data?.businessYear?.year ?? null
 }

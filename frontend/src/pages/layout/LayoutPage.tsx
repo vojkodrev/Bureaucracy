@@ -2,8 +2,22 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { fetchBusinessYear } from '@/lib/business-year-api'
+import {
+    businessYearChangedEvent,
+    getSelectedBusinessYear,
+} from '@/lib/business-year'
 import LayoutBreadcrumbs from './LayoutBreadcrumbs'
 import LayoutSidebar from './LayoutSidebar'
+
+const businessYearCheckInterval = 1_000
 
 const parameterLabels: Record<string, string> = {
     bankAccount: 'Bank account', customerId: 'Customer ID', customerName: 'Counterparty',
@@ -47,7 +61,49 @@ function breadcrumbLabel(pathname: string) {
 export default function LayoutPage() {
     const { pathname, search } = useLocation()
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [openedBusinessYear, setOpenedBusinessYear] = useState(getSelectedBusinessYear)
+    const [selectedBusinessYear, setSelectedBusinessYear] = useState(getSelectedBusinessYear)
+    const [businessYear, setBusinessYear] = useState<number | null>(null)
     const titleLabel = breadcrumbLabel(pathname)
+    const businessYearChanged = selectedBusinessYear !== openedBusinessYear
+
+    useEffect(() => {
+        const selected = getSelectedBusinessYear()
+        setOpenedBusinessYear(selected)
+        setSelectedBusinessYear(selected)
+    }, [pathname])
+
+    useEffect(() => {
+        const controller = new AbortController()
+        setBusinessYear(null)
+        void fetchBusinessYear(controller.signal, openedBusinessYear)
+            .then(setBusinessYear)
+            .catch((error: unknown) => {
+                if (error instanceof DOMException && error.name === 'AbortError') return
+                setBusinessYear(null)
+            })
+        return () => controller.abort()
+    }, [openedBusinessYear])
+
+    useEffect(() => {
+        const checkBusinessYear = () => setSelectedBusinessYear(getSelectedBusinessYear())
+        const acceptBusinessYearChange = (event: Event) => {
+            const businessYear = (event as CustomEvent<unknown>).detail
+            if (typeof businessYear !== 'string') return
+            setOpenedBusinessYear(businessYear)
+            setSelectedBusinessYear(businessYear)
+        }
+        const interval = window.setInterval(checkBusinessYear, businessYearCheckInterval)
+        window.addEventListener('storage', checkBusinessYear)
+        window.addEventListener('focus', checkBusinessYear)
+        window.addEventListener(businessYearChangedEvent, acceptBusinessYearChange)
+        return () => {
+            window.clearInterval(interval)
+            window.removeEventListener('storage', checkBusinessYear)
+            window.removeEventListener('focus', checkBusinessYear)
+            window.removeEventListener(businessYearChangedEvent, acceptBusinessYearChange)
+        }
+    }, [])
 
     useEffect(() => {
         const params = new URLSearchParams(search)
@@ -59,8 +115,8 @@ export default function LayoutPage() {
         if (sortBy && (direction === 'asc' || direction === 'desc')) {
             details.push(`Sort: ${sortLabels[sortBy] ?? sortBy} ${direction === 'asc' ? 'A' : 'D'}`)
         }
-        document.title = ['Bureaucracy', titleLabel, ...details].filter(Boolean).join(' - ')
-    }, [titleLabel, search])
+        document.title = ['Bureaucracy', businessYear, titleLabel, ...details].filter(Boolean).join(' - ')
+    }, [businessYear, titleLabel, search])
 
     return (
         <TooltipProvider>
@@ -74,6 +130,17 @@ export default function LayoutPage() {
                     <div className="flex flex-1 flex-col"><Outlet /></div>
                 </SidebarInset>
             </SidebarProvider>
+            <AlertDialog open={businessYearChanged} onOpenChange={() => undefined}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Business year changed</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This page was opened for business year {businessYear ?? openedBusinessYear}.
+                            Restore the selected business year to {businessYear ?? openedBusinessYear} to continue.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                </AlertDialogContent>
+            </AlertDialog>
         </TooltipProvider>
     )
 }
