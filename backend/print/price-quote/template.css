@@ -36,7 +36,7 @@ main { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; 
     font-size: 2.2mm;
 }
 .items th { padding: 1.5mm .6mm; border-bottom: .2mm solid #333; line-height: 1.05; }
-.items td { padding: 1mm .6mm; text-align: right; white-space: nowrap; overflow: hidden; }
+.items td { padding: 1mm .6mm; font-size: calc(2.2mm + 1px); text-align: right; white-space: nowrap; overflow: hidden; }
 .items th:nth-child(1), .items td:nth-child(1) { width: 4%; text-align: center; }
 .items th:nth-child(2), .items td:nth-child(2) { width: 31%; text-align: left; text-overflow: ellipsis; }
 .items td:nth-child(2) { font-weight: 700; }

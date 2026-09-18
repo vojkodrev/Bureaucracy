@@ -151,6 +151,7 @@ main {
 
 .items-table td {
     padding: 1mm 0.7mm;
+    font-size: calc(2.25mm + 1px);
     text-align: right;
     white-space: nowrap;
 }
