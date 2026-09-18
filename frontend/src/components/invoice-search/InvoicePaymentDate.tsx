@@ -10,7 +10,7 @@ function InvoicePaymentDate({ paidAmount, paymentDate }: InvoicePaymentDateProps
         return formatDate(paymentDate)
     }
 
-    if (paidAmount == null) {
+    if (paidAmount == null || paidAmount === 0) {
         return formatDate(paymentDate)
     }
 
