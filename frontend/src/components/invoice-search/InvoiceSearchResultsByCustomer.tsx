@@ -12,6 +12,7 @@ import {
 import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
+import InvoicePaymentDate from './InvoicePaymentDate'
 
 type InvoiceSearchResultsByCustomerProps = {
     summaryPage: InvoiceCustomerSummaryPage | null
@@ -130,7 +131,12 @@ function InvoiceSearchResultsByCustomer({
                                         </TableCell>
                                         <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                                         <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                                        <TableCell>{formatDate(invoice.paymentDate)}</TableCell>
+                                        <TableCell>
+                                            <InvoicePaymentDate
+                                                paidAmount={invoice.paidAmount}
+                                                paymentDate={invoice.paymentDate}
+                                            />
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                                 {totals.map(([label, amount], index) => (
