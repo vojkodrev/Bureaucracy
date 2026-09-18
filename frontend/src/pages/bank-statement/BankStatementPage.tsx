@@ -1,47 +1,21 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Save, Undo2 } from "lucide-react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
-import BankAccountComboboxField from "@/components/BankAccountComboboxField";
-import DatePickerField from "@/components/DatePickerField";
-import ErrorAlert from "@/components/ErrorAlert";
-import { Button } from "@/components/ui/button";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarShortcut,
-    MenubarTrigger,
-} from "@/components/ui/menubar";
-import { NumberInput } from "@/components/ui/number-input";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getSelectedBusinessYear } from "@/lib/business-year";
 import type {
     BankStatement,
     BankStatementEntry,
 } from "@/lib/bank-statement-types";
 import { dateForApi, dateFromSearchValue } from "@/lib/dates";
-import { formatCurrency } from "@/lib/formatters";
 import { toast } from "@/lib/toast";
-import UnsavedInvoiceAlert from "@/pages/invoice/UnsavedInvoiceAlert";
+import BankStatementErrors from "./BankStatementErrors";
+import BankStatementGeneralInformation from "./BankStatementGeneralInformation";
+import BankStatementMenu from "./BankStatementMenu";
+import BankStatementNumberAlert, {
+    type BankStatementNumberWarning,
+} from "./BankStatementNumberAlert";
+import BankStatementSummary from "./BankStatementSummary";
 import StatementTransactions from "./StatementTransactions";
+import UnsavedBankStatementAlerts from "./UnsavedBankStatementAlerts";
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL;
 const statementQuery = `
@@ -200,9 +174,8 @@ function BankStatementPage() {
     const [reloadVersion, setReloadVersion] = useState(0);
     const [saving, setSaving] = useState(false);
     const [confirmRevert, setConfirmRevert] = useState(false);
-    const [numberWarning, setNumberWarning] = useState<
-        "historical" | "skipped" | null
-    >(null);
+    const [numberWarning, setNumberWarning] =
+        useState<BankStatementNumberWarning | null>(null);
     const draft = serialize(id, number, date, account, entries);
     const dirty = cleanDraft !== null && cleanDraft !== draft;
     const blocker = useBlocker(
@@ -492,259 +465,89 @@ function BankStatementPage() {
         window.addEventListener("keydown", keydown);
         return () => window.removeEventListener("keydown", keydown);
     }, []);
-    const outflow = entries.reduce(
-        (sum, entry) => sum + (entry.outflow ?? 0),
-        0,
-    );
-    const inflow = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0), 0);
     const setDefaultAccount = (code: string) => {
         setAccount(code);
         setCleanDraft((draft) => updateCleanDraft(draft, { account: code }));
     };
-    const errors = [
-        [
-            "load",
-            "Bank statement could not be loaded",
-            "The bank statement data could not be retrieved.",
-            loadError,
-        ],
-        [
-            "navigation",
-            "Latest statement number could not be loaded",
-            "Bank statement navigation may be unavailable.",
-            navigationResult.routeStatementNumber === routeStatementNumber
-                ? navigationResult.error
-                : undefined,
-        ],
-        [
-            "next-number",
-            "Next statement number could not be loaded",
-            "A number could not be assigned to the new bank statement.",
-            nextNumberError,
-        ],
-        [
-            "latest-number",
-            "Latest statement number could not be checked",
-            "The bank statement number could not be validated before saving.",
-            latestNumberError,
-        ],
-        [
-            "save",
-            "Bank statement could not be saved",
-            "Your changes were not saved.",
-            saveError,
-        ],
-    ] as const;
     return (
         <div className="max-w-5xl p-4">
-            {errors.some(([, , , error]) => error) && (
-                <div className="mb-6 space-y-2">
-                    {errors.map(
-                        ([key, title, description, error]) =>
-                            error && (
-                                <ErrorAlert
-                                    key={key}
-                                    title={title}
-                                    description={description}
-                                    error={error}
-                                />
-                            ),
-                    )}
-                </div>
-            )}
-            <div className="mb-6 flex items-center gap-2">
-                <Menubar className="w-fit">
-                    <MenubarMenu>
-                        <MenubarTrigger>File</MenubarTrigger>
-                        <MenubarContent>
-                            <MenubarItem
-                                disabled={
-                                    !date ||
-                                    !account ||
-                                    number === "" ||
-                                    loading ||
-                                    saving
-                                }
-                                onClick={() => void requestSave()}
-                            >
-                                <Save />
-                                {saving ? "Saving…" : "Save"}
-                                <MenubarShortcut>Ctrl+S</MenubarShortcut>
-                            </MenubarItem>
-                        </MenubarContent>
-                    </MenubarMenu>
-                    <MenubarMenu>
-                        <MenubarTrigger>Edit</MenubarTrigger>
-                        <MenubarContent>
-                            <MenubarItem
-                                disabled={!id || loading || !dirty}
-                                onClick={() => setConfirmRevert(true)}
-                            >
-                                <Undo2 />
-                                Revert
-                            </MenubarItem>
-                        </MenubarContent>
-                    </MenubarMenu>
-                </Menubar>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label="Previous bank statement"
-                    disabled={!canNavigatePrevious}
-                    onClick={() => {
-                        if (routeStatementNumber !== null)
-                            navigateToStatement(routeStatementNumber - 1);
-                    }}
-                >
-                    <ChevronLeft />
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label="Next bank statement"
-                    disabled={!canNavigateNext}
-                    onClick={() => {
-                        if (routeStatementNumber !== null)
-                            navigateToStatement(routeStatementNumber + 1);
-                    }}
-                >
-                    <ChevronRight />
-                </Button>
-            </div>
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle>General information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <FieldGroup>
-                        <div className="grid gap-6 sm:grid-cols-3">
-                            <Field>
-                                <FieldLabel htmlFor="statement-number">
-                                    Statement number
-                                </FieldLabel>
-                                <NumberInput
-                                    id="statement-number"
-                                    min="0"
-                                    step="1"
-                                    value={number}
-                                    onChange={(event) =>
-                                        setNumber(event.target.value)
-                                    }
-                                />
-                            </Field>
-                            <DatePickerField
-                                id="statement-date"
-                                label="Statement date"
-                                name="statementDate"
-                                date={date}
-                                onSelect={setDate}
-                            />
-                            <BankAccountComboboxField
-                                id="statement-account"
-                                label="Bank account"
-                                value={account}
-                                onChange={setAccount}
-                                selectFirstByDefault={!routeStatementNumber}
-                                onDefaultChange={setDefaultAccount}
-                            />
-                        </div>
-                    </FieldGroup>
-                </CardContent>
-            </Card>
+            <BankStatementErrors
+                loadError={loadError}
+                navigationError={
+                    navigationResult.routeStatementNumber ===
+                    routeStatementNumber
+                        ? navigationResult.error
+                        : undefined
+                }
+                nextNumberError={nextNumberError}
+                latestNumberError={latestNumberError}
+                saveError={saveError}
+            />
+            <BankStatementMenu
+                canSave={
+                    Boolean(date) &&
+                    Boolean(account) &&
+                    number !== "" &&
+                    !loading &&
+                    !saving
+                }
+                canRevert={Boolean(id) && !loading && dirty}
+                canNavigatePrevious={canNavigatePrevious}
+                canNavigateNext={canNavigateNext}
+                isSaving={saving}
+                onSave={() => void requestSave()}
+                onRevert={() => setConfirmRevert(true)}
+                onNavigatePrevious={() => {
+                    if (routeStatementNumber !== null)
+                        navigateToStatement(routeStatementNumber - 1);
+                }}
+                onNavigateNext={() => {
+                    if (routeStatementNumber !== null)
+                        navigateToStatement(routeStatementNumber + 1);
+                }}
+            />
+            <BankStatementGeneralInformation
+                statementNumber={number}
+                statementDate={date}
+                bankAccount={account}
+                selectDefaultAccount={!routeStatementNumber}
+                onStatementNumberChange={setNumber}
+                onStatementDateChange={setDate}
+                onBankAccountChange={setAccount}
+                onDefaultBankAccountChange={setDefaultAccount}
+            />
             <StatementTransactions
                 entries={entries}
                 statementDate={date}
                 onChange={setEntries}
             />
-            <Card className="mt-6 ml-auto w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell>Total outflow</TableCell>
-                                <TableCell className="text-right font-medium">
-                                    {formatCurrency(outflow)}
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Total inflow</TableCell>
-                                <TableCell className="text-right font-medium">
-                                    {formatCurrency(inflow)}
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>Net movement</TableCell>
-                                <TableCell className="text-right font-medium">
-                                    {formatCurrency(inflow - outflow)}
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-            <UnsavedInvoiceAlert
-                open={blocker.state === "blocked"}
-                onOpenChange={(open) => {
-                    if (!open && blocker.state === "blocked") blocker.reset();
+            <BankStatementSummary entries={entries} />
+            <UnsavedBankStatementAlerts
+                isNavigationBlocked={blocker.state === "blocked"}
+                isConfirmingRevert={confirmRevert}
+                onCancelNavigation={() => {
+                    if (blocker.state === "blocked") blocker.reset();
                 }}
-                onDiscard={() => {
+                onDiscardAndNavigate={() => {
                     if (blocker.state === "blocked") {
                         allowNavigation.current = true;
                         setCleanDraft(draft);
                         blocker.proceed();
                     }
                 }}
-                title="Discard bank statement changes?"
-                description="You have unsaved changes to this bank statement."
-            />
-            <UnsavedInvoiceAlert
-                open={confirmRevert}
-                onOpenChange={setConfirmRevert}
-                onDiscard={() => {
+                onConfirmingRevertChange={setConfirmRevert}
+                onDiscardAndRevert={() => {
                     setConfirmRevert(false);
                     setReloadVersion((version) => version + 1);
                 }}
-                title="Revert bank statement changes?"
-                description="Your unsaved changes will be discarded."
-                actionLabel="Discard and revert"
             />
-            <AlertDialog
-                open={numberWarning !== null}
+            <BankStatementNumberAlert
+                warning={numberWarning}
                 onOpenChange={(open) => {
                     if (!open) setNumberWarning(null);
                 }}
-            >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            {numberWarning === "skipped"
-                                ? "Skip statement numbers?"
-                                : "Save an earlier bank statement?"}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {numberWarning === "skipped"
-                                ? "This statement number leaves a gap in the " +
-                                  "sequence for the selected bank account."
-                                : "This is not the latest statement for the " +
-                                  "selected bank account. Saving it will update " +
-                                  "a historical accounting record."}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => void confirmSave()}>
-                            {numberWarning === "skipped"
-                                ? "Save and skip numbers"
-                                : "Save historical statement"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                onConfirm={() => void confirmSave()}
+            />
         </div>
     );
 }
