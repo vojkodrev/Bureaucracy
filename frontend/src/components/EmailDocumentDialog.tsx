@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileText, Paperclip, Trash2 } from 'lucide-react'
 import ErrorAlert from '@/components/ErrorAlert'
+import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -21,11 +22,11 @@ type Props = {
     open: boolean
     documentName: string
     customerId: string
+    customerName: string
     businessYear: number | null
     defaultSubject: string
     defaultMessage: string
     onOpenChange: (open: boolean) => void
-    onOfferSaveCustomerEmail: (email: string) => void
     onSend: (fields: DocumentEmailFields) => Promise<void>
 }
 
@@ -42,11 +43,11 @@ function EmailDocumentDialog({
     open,
     documentName,
     customerId,
+    customerName,
     businessYear,
     defaultSubject,
     defaultMessage,
     onOpenChange,
-    onOfferSaveCustomerEmail,
     onSend,
 }: Props) {
     const pickerRef = useRef<HTMLInputElement>(null)
@@ -59,6 +60,7 @@ function EmailDocumentDialog({
     const [loading, setLoading] = useState(false)
     const [sending, setSending] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
 
     useEffect(() => {
         if (!open) return
@@ -125,7 +127,7 @@ function EmailDocumentDialog({
             onOpenChange(false)
             if (customerId.trim() &&
                 recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()) {
-                onOfferSaveCustomerEmail(recipient.trim())
+                setCustomerEmailToSave(recipient.trim())
             }
         } catch (requestError: unknown) {
             setError(requestError instanceof Error ? requestError.message : 'Sending email failed')
@@ -133,6 +135,7 @@ function EmailDocumentDialog({
     }
 
     return (
+        <>
         <Dialog open={open} onOpenChange={(next) => { if (!sending) onOpenChange(next) }}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
@@ -142,6 +145,13 @@ function EmailDocumentDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
+                    {error && (
+                        <ErrorAlert
+                            title={`${documentName[0].toUpperCase()}${documentName.slice(1)} email could not be completed`}
+                            description="Review the email details and try again."
+                            error={error}
+                        />
+                    )}
                     <Field>
                         <FieldLabel htmlFor="document-email-recipient">Recipient</FieldLabel>
                         <Input
@@ -232,13 +242,6 @@ function EmailDocumentDialog({
                             Word, or Excel).
                         </p>
                     </div>
-                    {error && (
-                        <ErrorAlert
-                            title={`${documentName[0].toUpperCase()}${documentName.slice(1)} email could not be completed`}
-                            description="Review the email details and try again."
-                            error={error}
-                        />
-                    )}
                 </div>
                 <DialogFooter>
                     <Button
@@ -260,6 +263,13 @@ function EmailDocumentDialog({
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        <SaveCustomerEmailAlert
+            email={customerEmailToSave}
+            customerId={customerId}
+            customerName={customerName}
+            onOpenChange={(next) => { if (!next) setCustomerEmailToSave(null) }}
+        />
+        </>
     )
 }
 

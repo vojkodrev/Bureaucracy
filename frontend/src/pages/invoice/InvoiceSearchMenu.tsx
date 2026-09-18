@@ -5,9 +5,6 @@ import {
     MenubarItem,
     MenubarMenu,
     MenubarShortcut,
-    MenubarSub,
-    MenubarSubContent,
-    MenubarSubTrigger,
     MenubarTrigger,
 } from '@/components/ui/menubar'
 
@@ -16,6 +13,7 @@ type InvoiceSearchMenuProps = {
     remindersDisabled?: boolean
     onPrintReport: () => void
     onPrintReminders: () => void
+    onEmailReminders: () => void
 }
 
 function InvoiceSearchMenu({
@@ -23,24 +21,29 @@ function InvoiceSearchMenu({
     remindersDisabled = false,
     onPrintReport,
     onPrintReminders,
+    onEmailReminders,
 }: InvoiceSearchMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarSub>
-                        <MenubarSubTrigger><Printer />Print</MenubarSubTrigger>
-                        <MenubarSubContent>
-                            <MenubarItem disabled={reportDisabled} onClick={onPrintReport}>
-                                Report
-                                <MenubarShortcut>Ctrl+P</MenubarShortcut>
-                            </MenubarItem>
-                            <MenubarItem disabled={remindersDisabled} onClick={onPrintReminders}>
-                                Reminders
-                            </MenubarItem>
-                        </MenubarSubContent>
-                    </MenubarSub>
+                    <MenubarItem disabled={reportDisabled} onClick={onPrintReport}>
+                        <Printer />
+                        Print
+                        <MenubarShortcut>Ctrl+P</MenubarShortcut>
+                    </MenubarItem>
+                </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+                <MenubarTrigger>Reminders</MenubarTrigger>
+                <MenubarContent>
+                    <MenubarItem disabled={remindersDisabled} onClick={onPrintReminders}>
+                        Print
+                    </MenubarItem>
+                    <MenubarItem disabled={remindersDisabled} onClick={onEmailReminders}>
+                        Email
+                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
         </Menubar>

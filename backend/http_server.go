@@ -28,6 +28,7 @@ func NewHTTPServer(
 	priceQuotePrintHandler *PriceQuotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceReminderHandler *InvoiceReminderHandler,
+	invoiceReminderEmailHandler *InvoiceReminderEmailHandler,
 	invoiceEmailHandler *InvoiceEmailHandler,
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
@@ -60,6 +61,7 @@ func NewHTTPServer(
 	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
 	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	router.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
+	router.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
 	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
 	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)

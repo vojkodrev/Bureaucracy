@@ -18,10 +18,23 @@ func NewInvoiceReminderHandler(invoices *InvoiceRepository, businessYears *Busin
 }
 
 func (handler *InvoiceReminderHandler) Handle(context *gin.Context) {
+	invoicePage, businessYear, ok := loadInvoiceReminderPage(context, handler.invoices, handler.businessYears)
+	if !ok {
+		return
+	}
+	pdf, err := handler.generator.Generate(context.Request.Context(), invoicePage, businessYear)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	writeInvoiceReportPDF(context, pdf, invoiceReminderFilename())
+}
+
+func loadInvoiceReminderPage(context *gin.Context, invoices *InvoiceRepository, businessYears *BusinessYearRepository) (*InvoicePage, int, bool) {
 	if context.Query("resultsView") != "customer" ||
 		(strings.TrimSpace(context.Query("customerId")) == "" && strings.TrimSpace(context.Query("customerName")) == "") {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "customer results view and customerId or customerName are required"})
-		return
+		return nil, 0, false
 	}
 
 	query := context.Request.URL.Query()
@@ -32,20 +45,15 @@ func (handler *InvoiceReminderHandler) Handle(context *gin.Context) {
 	query.Set("pageSize", "10000")
 	context.Request.URL.RawQuery = query.Encode()
 
-	invoicePage, businessYear, _, _, ok := loadInvoiceReportPage(context, handler.invoices, handler.businessYears)
+	invoicePage, businessYear, _, _, ok := loadInvoiceReportPage(context, invoices, businessYears)
 	if !ok {
-		return
+		return nil, 0, false
 	}
 	if invoiceReminderCustomerCount(invoicePage.Invoices) != 1 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "reminders require exactly one matching customer"})
-		return
+		return nil, 0, false
 	}
-	pdf, err := handler.generator.Generate(context.Request.Context(), invoicePage, businessYear)
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	writeInvoiceReportPDF(context, pdf, invoiceReminderFilename())
+	return invoicePage, businessYear, true
 }
 
 func invoiceReminderCustomerCount(invoices []*Invoice) int {

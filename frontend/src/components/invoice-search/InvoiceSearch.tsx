@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { ComponentMode } from '@/lib/component-mode'
+import { getSelectedBusinessYear } from '@/lib/business-year'
 import type { Invoice } from '@/lib/invoice-types'
 import { useInvoiceSearchPrint } from './hooks/useInvoiceSearchPrint'
 import { useInvoiceSearchResults } from './hooks/useInvoiceSearchResults'
@@ -10,6 +12,8 @@ import InvoiceSearchForm from './InvoiceSearchForm'
 import InvoiceSearchResults from './InvoiceSearchResults'
 import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
+import { sendInvoiceRemindersEmail } from './invoice-search-api'
+import { toast } from '@/lib/toast'
 
 type InvoiceSearchProps = {
     mode: ComponentMode
@@ -24,6 +28,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
         searchKey,
     )
     const [selectedInvoiceNumber, setSelectedInvoiceNumber] = useState<string | null>(null)
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const canPrint = !isLoading && !error && invoices.length > 0
     const canPrintReminders = canPrint
         && search.resultsView === 'customer'
@@ -54,8 +59,24 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     remindersDisabled={!canPrintReminders}
                     onPrintReport={printReport}
                     onPrintReminders={printReminders}
+                    onEmailReminders={() => setEmailDialogOpen(true)}
                 />
             )}
+            <EmailDocumentDialog
+                open={emailDialogOpen}
+                documentName="reminders"
+                customerId={customerSummaryPage?.customerSummaries[0]?.customerCode ?? search.customerId}
+                customerName={customerSummaryPage?.customerSummaries[0]?.customerName ?? search.customerName}
+                businessYear={Number(getSelectedBusinessYear()) || null}
+                defaultSubject="Drevi d.o.o. - Opomin"
+                defaultMessage={'Pozdravljeni,\n\nv priponki vam pošiljamo opomin za zapadle neporavnane račune.\n\nLep pozdrav, Drevi d.o.o. 041 693 605'}
+                onSend={async (fields) => {
+                    await sendInvoiceRemindersEmail(search, fields)
+                    toast.add({ title: 'Reminders emailed',
+                        description: `Reminders were sent to ${fields.recipient}.`, type: 'success' })
+                }}
+                onOpenChange={setEmailDialogOpen}
+            />
             <InvoiceSearchForm
                 key={searchKey}
                 search={search}

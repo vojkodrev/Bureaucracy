@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
-import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -41,7 +40,6 @@ export default function PriceQuotePage() {
     const navigation = usePriceQuoteNumberNavigation(routeQuoteNumber, navigate)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
-    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
     const save = usePriceQuoteSave({
         priceQuoteId: loader.priceQuoteId, draft, routeQuoteNumber,
         isLoading: loader.isLoading, loadError: loader.error, navigate,
@@ -112,7 +110,8 @@ export default function PriceQuotePage() {
             </Button>
         </div>
         <EmailDocumentDialog open={emailDialogOpen} documentName="price quote"
-            customerId={draft.customerId} businessYear={loader.businessYear}
+            customerId={draft.customerId} customerName={draft.customerName}
+            businessYear={loader.businessYear}
             defaultSubject={`Drevi d.o.o. - Predračun ${loader.businessYear
                 ? `${draft.quoteNumber.trim()}/${loader.businessYear}` : draft.quoteNumber.trim()}`}
             defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo predračun ${loader.businessYear
@@ -123,10 +122,7 @@ export default function PriceQuotePage() {
                     description: `Price quote ${draft.quoteNumber.trim()} was sent to ${fields.recipient}.`,
                     type: 'success' })
             }}
-            onOpenChange={setEmailDialogOpen} onOfferSaveCustomerEmail={setCustomerEmailToSave} />
-        <SaveCustomerEmailAlert email={customerEmailToSave} customerId={draft.customerId}
-            customerName={draft.customerName}
-            onOpenChange={(open) => { if (!open) setCustomerEmailToSave(null) }} />
+            onOpenChange={setEmailDialogOpen} />
         <PriceQuoteNumberAlert quoteNumber={draft.quoteNumber.trim()} warning={save.numberWarning}
             onOpenChange={(open) => { if (!open) save.setNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
