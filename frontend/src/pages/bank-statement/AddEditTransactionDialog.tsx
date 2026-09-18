@@ -20,13 +20,21 @@ import type { BankStatementEntry } from "@/lib/bank-statement-types";
 
 type Props = {
     entry: BankStatementEntry | null;
+    open: boolean;
+    onCancel: () => void;
     onOpenChange: (open: boolean) => void;
     onSave: (entry: BankStatementEntry) => void;
 };
 const numberOrNull = (value: string) =>
     value.trim() === "" ? null : Number(value);
 
-function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
+function AddEditTransactionDialog({
+    entry,
+    open,
+    onCancel,
+    onOpenChange,
+    onSave,
+}: Props) {
     const [counterpartyId, setCounterpartyId] = useState(
         entry?.customerId ?? "",
     );
@@ -72,7 +80,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
             purpose: purpose.trim() || null,
         });
     return (
-        <Dialog open onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 keepMounted
                 showCloseButton={false}
@@ -190,6 +198,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                 <DialogFooter>
                     <DialogClose
                         render={<Button type="button" variant="outline" />}
+                        onClick={onCancel}
                     >
                         Cancel
                     </DialogClose>

@@ -33,6 +33,7 @@ type Props = {
 };
 function StatementTransactions({ entries, statementDate, onChange }: Props) {
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogMounted, setDialogMounted] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const editing =
         editingIndex == null ? null : (entries[editingIndex] ?? null);
@@ -57,6 +58,7 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                   ),
         );
         setDialogOpen(false);
+        setDialogMounted(false);
     };
     return (
         <Card>
@@ -67,6 +69,7 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                     size="sm"
                     onClick={() => {
                         setEditingIndex(null);
+                        setDialogMounted(true);
                         setDialogOpen(true);
                     }}
                 >
@@ -151,6 +154,7 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                                             aria-label="Edit transaction"
                                             onClick={() => {
                                                 setEditingIndex(index);
+                                                setDialogMounted(true);
                                                 setDialogOpen(true);
                                             }}
                                         >
@@ -207,10 +211,15 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                         ))}
                     </TableBody>
                 </Table>
-                {dialogOpen && (
+                {dialogMounted && (
                     <AddEditTransactionDialog
                         key={editingIndex ?? "new"}
                         entry={editing}
+                        open={dialogOpen}
+                        onCancel={() => {
+                            setDialogOpen(false);
+                            setDialogMounted(false);
+                        }}
                         onOpenChange={setDialogOpen}
                         onSave={save}
                     />
