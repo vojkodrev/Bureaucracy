@@ -32,6 +32,13 @@ type invoiceReportRow struct {
 	PaymentDate   string
 }
 
+type invoiceReportTotals struct {
+	Total   float64
+	Unpaid  float64
+	PastDue float64
+	Paid    float64
+}
+
 //go:embed print/invoice-report/template.html
 var invoiceReportHTMLTemplate string
 
@@ -62,22 +69,11 @@ func (generator *InvoiceReportGenerator) Generate(
 		return nil, fmt.Errorf("invoice page is required")
 	}
 	rows := make([]invoiceReportRow, 0, len(invoicePage.Invoices))
-	var total, unpaid, pastDue, paid float64
-	now := time.Now()
 	for _, invoice := range invoicePage.Invoices {
 		if invoice == nil {
 			continue
 		}
 		amount := float64OrZero(invoice.Amount)
-		total += amount
-		if invoice.PaymentDate != nil {
-			paid += amount
-		} else {
-			unpaid += amount
-			if invoice.DueDate != nil && invoice.DueDate.Before(now) {
-				pastDue += amount
-			}
-		}
 		customer := trimmedString(invoice.CustomerName)
 		if customer == "" {
 			customer = trimmedString(invoice.CustomerCode)
@@ -91,6 +87,7 @@ func (generator *InvoiceReportGenerator) Generate(
 			PaymentDate:   formatDocumentDate(invoice.PaymentDate),
 		})
 	}
+	totals := calculateInvoiceReportTotals(invoicePage.Invoices, time.Now())
 
 	document := invoiceReportDocument{
 		Title:        "Računi",
@@ -99,10 +96,10 @@ func (generator *InvoiceReportGenerator) Generate(
 		GeneratedAt:  time.Now().Format("2.1.2006 15:04"),
 		ResultPage:   fmt.Sprintf("Stran rezultatov %d od %d", invoicePage.Page, invoicePage.TotalPages),
 		Invoices:     rows,
-		Total:        formatMoneyAmount(total),
-		Unpaid:       formatMoneyAmount(unpaid),
-		PastDue:      formatMoneyAmount(pastDue),
-		Paid:         formatMoneyAmount(paid),
+		Total:        formatMoneyAmount(totals.Total),
+		Unpaid:       formatMoneyAmount(totals.Unpaid),
+		PastDue:      formatMoneyAmount(totals.PastDue),
+		Paid:         formatMoneyAmount(totals.Paid),
 	}
 	var renderedHTML bytes.Buffer
 	if err := generator.template.Execute(&renderedHTML, struct {
@@ -112,6 +109,26 @@ func (generator *InvoiceReportGenerator) Generate(
 		return nil, fmt.Errorf("render invoice report HTML: %w", err)
 	}
 	return generator.pdfRenderer.Render(ctx, renderedHTML.Bytes())
+}
+
+func calculateInvoiceReportTotals(invoices []*Invoice, now time.Time) invoiceReportTotals {
+	var totals invoiceReportTotals
+	for _, invoice := range invoices {
+		if invoice == nil {
+			continue
+		}
+		amount := float64OrZero(invoice.Amount)
+		totals.Total += amount
+		if invoice.PaymentDate != nil {
+			totals.Paid += amount
+			continue
+		}
+		totals.Unpaid += amount
+		if invoice.DueDate != nil && invoice.DueDate.Before(now) {
+			totals.PastDue += amount
+		}
+	}
+	return totals
 }
 
 func invoiceReportDateRange(from *time.Time, to *time.Time) string {

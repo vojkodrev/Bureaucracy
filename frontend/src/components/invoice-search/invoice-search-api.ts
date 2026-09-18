@@ -10,6 +10,7 @@ import {
 } from '@/lib/pagination'
 import { invoiceSearchToParams } from './invoice-search-params'
 import type { InvoiceSearchCriteria } from './types'
+import type { DocumentEmailFields } from '@/lib/document-email'
 
 type SearchInvoicesResponse = {
     data?: { searchInvoices: InvoicePage }
@@ -217,4 +218,41 @@ export function invoiceReportPdfUrl(search: InvoiceSearchCriteria): string {
     url.searchParams.set('_', String(Date.now()))
     url.hash = ''
     return url.toString()
+}
+
+export function invoiceRemindersPdfUrl(search: InvoiceSearchCriteria): string {
+    const url = new URL(graphqlUrl)
+    const reminderSearch = {
+        ...search,
+        paymentStatus: 'overdue' as const,
+        resultsView: 'customer' as const,
+        sortBy: 'customer' as const,
+        sortDirection: 'asc' as const,
+        page: '1',
+        pageSize: '10000',
+    }
+    url.pathname = '/api/invoices/reminders/pdf'
+    url.search = invoiceSearchToParams(reminderSearch).toString()
+    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.searchParams.set('_', String(Date.now()))
+    url.hash = ''
+    return url.toString()
+}
+
+export async function sendInvoiceRemindersEmail(
+    search: InvoiceSearchCriteria,
+    fields: DocumentEmailFields,
+): Promise<void> {
+    const url = new URL(invoiceRemindersPdfUrl(search))
+    url.pathname = '/api/invoices/reminders/email'
+    url.searchParams.delete('_')
+    const form = new FormData()
+    form.set('recipient', fields.recipient)
+    form.set('bcc', fields.bcc)
+    form.set('subject', fields.subject)
+    form.set('message', fields.message)
+    fields.attachments.forEach((file) => form.append('attachments', file, file.name))
+    const response = await fetch(url, { method: 'POST', body: form })
+    const result = await response.json() as { error?: string }
+    if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
 }

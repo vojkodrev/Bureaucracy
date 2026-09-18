@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8">
+    <title>{{.Title}}</title>
+    <style>{{.CSS}}</style>
+</head>
+<body>
+    {{range .Documents}}
+    <main class="reminder">
+        <header class="document-header">
+            <div class="company-details">
+                <div class="company-address">
+                    <strong>DREVI d.o.o.</strong>
+                    <span>Ob železnici 16</span>
+                    <span>1000&nbsp;&nbsp;LJUBLJANA</span>
+                </div>
+                <div class="company-contact">
+                    <span>email: drevi@siol.net&nbsp;&nbsp;&nbsp;&nbsp; www.drevi.si</span>
+                    <span>MATIČNA ŠT: 5314518&nbsp;&nbsp;&nbsp;&nbsp; ID.ŠT.: SI35954086</span>
+                    <span>VLOŽNA ŠT: 1/3514/00</span>
+                    <strong>TRR: SI56 0400 0027 8805 004</strong>
+                </div>
+            </div>
+            <img class="company-logo" src="{{$.Logo}}" alt="DREVI logo">
+        </header>
+
+        <address class="customer-address">
+            <span>{{.CustomerName}}</span>
+            <span>{{.Address}}</span>
+            <span class="customer-location">
+                {{.Location}}
+            </span>
+        </address>
+
+        <section class="content">
+            <h1>Opomin</h1>
+            <p class="subtitle">Izpis zapadlih odprtih postavk na dan {{.GeneratedAt}}</p>
+            <p>Po naših evidencah vaš račun na dan {{.GeneratedAt}} sestavljajo naslednje zapadle odprte postavke:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Dokument</th><th>Datum dokumenta</th><th>Datum zapadlosti</th><th class="number">Znesek</th></tr>
+                </thead>
+                <tbody>
+                    {{range .Invoices}}
+                    <tr><td>Račun številka {{.InvoiceNumber}}</td><td>{{.IssueDate}}</td><td>{{.DueDate}}</td><td class="number">{{.Amount}}</td></tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div class="total"><strong>SKUPNI ZAPADLI SALDO:</strong><strong>{{.Total}} EUR</strong></div>
+        </section>
+
+        <section class="signoff">
+            <p>Lep pozdrav!</p>
+            <img src="{{$.Signature}}" alt="Podpis direktorja Vojka Dreva">
+        </section>
+
+        <footer>
+            <span>DREVI d.o.o., Ob železnici 16, 1000 Ljubljana, Matična št.: 5314518, TRR:SI56 0400 0027 8805 004 OTP banka d.d.,</span>
+            <span>Telefon: 01 542 75 50, fax: 01 542 75 54, E-pošta: DREV@SIOL.NET, http://www.drevi.si, Ident. št. za DDV: SI35954086</span>
+            <span>Os.kap. 50.075,00 EUR, SWIFT KBMASI2X, IBAN: SI56 0400 0027 8805 004</span>
+        </footer>
+    </main>
+    {{else}}
+    <main class="reminder empty"><h1>Ni zapadlih odprtih računov.</h1></main>
+    {{end}}
+</body>
+</html>

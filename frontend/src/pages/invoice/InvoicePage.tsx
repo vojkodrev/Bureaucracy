@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
-import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -40,7 +39,6 @@ function InvoicePage() {
     const navigation = useInvoiceNumberNavigation(routeInvoiceNumber, navigate)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
-    const [customerEmailToSave, setCustomerEmailToSave] = useState<string | null>(null)
 
     const save = useInvoiceSave({
         invoiceId: loader.invoiceId, draft, routeInvoiceNumber,
@@ -106,7 +104,8 @@ function InvoicePage() {
                 disabled={!navigation.canNavigateNext} onClick={navigation.navigateNext}><ChevronRight /></Button>
         </div>
         <EmailDocumentDialog open={emailDialogOpen} documentName="invoice"
-            customerId={draft.customerId} businessYear={loader.businessYear}
+            customerId={draft.customerId} customerName={draft.customerName}
+            businessYear={loader.businessYear}
             defaultSubject={`Drevi d.o.o. - Račun ${loader.businessYear
                 ? `${draft.invoiceNumber.trim()}/${loader.businessYear}` : draft.invoiceNumber.trim()}`}
             defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo račun ${loader.businessYear
@@ -117,10 +116,7 @@ function InvoicePage() {
                     description: `Invoice ${draft.invoiceNumber.trim()} was sent to ${fields.recipient}.`,
                     type: 'success' })
             }}
-            onOpenChange={setEmailDialogOpen} onOfferSaveCustomerEmail={setCustomerEmailToSave} />
-        <SaveCustomerEmailAlert email={customerEmailToSave} customerId={draft.customerId}
-            customerName={draft.customerName}
-            onOpenChange={(open) => { if (!open) setCustomerEmailToSave(null) }} />
+            onOpenChange={setEmailDialogOpen} />
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />

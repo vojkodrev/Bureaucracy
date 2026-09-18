@@ -1,0 +1,26 @@
+@page { size: A4; margin: 0; }
+html, body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+.reminder { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; padding: 7.92mm 21.78mm 7.92mm 17.82mm; break-after: page; font-size: 10pt; }
+.reminder:last-child { break-after: auto; }
+.document-header { box-sizing: border-box; display: flex; align-items: stretch; justify-content: space-between; width: 100%; height: 26.46mm; }
+.company-details { display: flex; flex-direction: column; justify-content: flex-start; gap: 6mm; font-size: 2.7mm; line-height: 1.08; text-align: left; }
+.company-address, .company-contact { display: flex; flex-direction: column; }
+.company-address strong { font-weight: 400; }
+.company-contact strong { margin-top: 0.5mm; font-size: 3mm; }
+.company-logo { display: block; width: auto; height: 26.46mm; object-fit: contain; }
+.customer-address { display: flex; flex-direction: column; width: 70mm; min-height: 35mm; margin: 15.88mm 0 0; font-size: 4mm; font-style: normal; line-height: 1.25; }
+.customer-location { position: absolute; top: 66.675mm; left: 17.82mm; }
+.content { margin-top: 13mm; }
+h1 { margin: 0 0 3mm; font-size: 14pt; }
+.subtitle { margin: 0 0 15mm; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { padding: 2mm; border: 0.25mm solid #111; vertical-align: bottom; }
+th { font-weight: 400; text-align: left; }
+th:first-child { width: 39%; }
+.number { text-align: right; }
+.total { display: flex; justify-content: space-between; width: 115mm; margin-top: 9mm; font-size: 12pt; }
+.signoff { display: flex; align-items: flex-start; justify-content: space-between; margin: 34mm 18mm 0 15mm; }
+.signoff p { margin: 0; }
+.signoff img { width: 50mm; height: auto; order: -1; }
+footer { position: absolute; right: 21.78mm; bottom: 7.92mm; left: 17.82mm; display: flex; flex-direction: column; align-items: center; font-size: 2.6mm; line-height: 1.05; text-align: center; }
+.empty { display: flex; align-items: center; justify-content: center; }
