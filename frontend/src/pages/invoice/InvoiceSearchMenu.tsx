@@ -1,4 +1,4 @@
-import { Printer } from 'lucide-react'
+import { Mail, Printer } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -39,9 +39,11 @@ function InvoiceSearchMenu({
                 <MenubarTrigger>Reminders</MenubarTrigger>
                 <MenubarContent>
                     <MenubarItem disabled={remindersDisabled} onClick={onPrintReminders}>
+                        <Printer />
                         Print
                     </MenubarItem>
                     <MenubarItem disabled={remindersDisabled} onClick={onEmailReminders}>
+                        <Mail />
                         Email
                     </MenubarItem>
                 </MenubarContent>
