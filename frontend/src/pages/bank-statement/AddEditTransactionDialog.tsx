@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MinusIcon } from "lucide-react";
 import BankTransactionTypeComboboxField from "@/components/BankTransactionTypeComboboxField";
 import CustomerPickerField from "@/components/CustomerPickerField";
 import InvoicePickerField from "@/components/InvoicePickerField";
@@ -72,7 +73,22 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
         });
     return (
         <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="sm:max-w-2xl">
+            <DialogContent
+                keepMounted
+                showCloseButton={false}
+                className="sm:max-w-2xl"
+            >
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="absolute top-2 right-2"
+                    aria-label="Minimize transaction"
+                    title="Minimize transaction"
+                    onClick={() => onOpenChange(false)}
+                >
+                    <MinusIcon />
+                </Button>
                 <DialogHeader>
                     <DialogTitle>
                         {entry ? "Edit transaction" : "Add transaction"}
