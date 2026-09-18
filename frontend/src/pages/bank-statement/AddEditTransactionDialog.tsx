@@ -129,6 +129,7 @@ function AddEditTransactionDialog({
                     </Field>
                     <InvoicePickerField
                         minimizable
+                        defaultPaymentStatus="unpaid"
                         id="transaction-document-number"
                         label="Document number"
                         name="documentNumber"

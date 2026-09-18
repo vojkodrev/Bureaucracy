@@ -14,14 +14,16 @@ import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
 import { sendInvoiceRemindersEmail } from './invoice-search-api'
 import { toast } from '@/lib/toast'
+import type { PaymentStatus } from './types'
 
 type InvoiceSearchProps = {
     mode: ComponentMode
     onInvoiceSelect?: (invoice: Invoice) => void
+    defaultPaymentStatus?: PaymentStatus
 }
 
-function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
-    const searchState = useInvoiceSearchState(mode)
+function InvoiceSearch({ mode, onInvoiceSelect, defaultPaymentStatus }: InvoiceSearchProps) {
+    const searchState = useInvoiceSearchState(mode, defaultPaymentStatus)
     const { search, searchKey } = searchState
     const { invoicePage, customerSummaryPage, invoices, isLoading, error } = useInvoiceSearchResults(
         search,

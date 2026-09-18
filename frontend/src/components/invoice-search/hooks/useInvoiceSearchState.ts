@@ -3,14 +3,16 @@ import { useSearchParams } from 'react-router-dom'
 import { ComponentMode } from '@/lib/component-mode'
 import { defaultPageSize } from '@/lib/pagination'
 import { invoiceSearchFromParams, invoiceSearchToParams } from '../invoice-search-params'
-import type { InvoiceSearchCriteria, InvoiceSortColumn } from '../types'
+import type { InvoiceSearchCriteria, InvoiceSortColumn, PaymentStatus } from '../types'
 
-export function useInvoiceSearchState(mode: ComponentMode) {
+export function useInvoiceSearchState(mode: ComponentMode, defaultPaymentStatus: PaymentStatus = 'all') {
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(() => invoiceSearchFromParams(searchParams), [searchParams])
-    const [dialogSearch, setDialogSearch] = useState<InvoiceSearchCriteria>(() =>
-        invoiceSearchFromParams(new URLSearchParams()),
-    )
+    const defaultDialogSearch = () => ({
+        ...invoiceSearchFromParams(new URLSearchParams()),
+        paymentStatus: defaultPaymentStatus,
+    })
+    const [dialogSearch, setDialogSearch] = useState<InvoiceSearchCriteria>(defaultDialogSearch)
     const search = mode === ComponentMode.Page ? pageSearch : dialogSearch
     const searchKey = useMemo(() => new URLSearchParams(search).toString(), [search])
 
@@ -26,7 +28,7 @@ export function useInvoiceSearchState(mode: ComponentMode) {
         if (mode === ComponentMode.Page) {
             setSearchParams({})
         } else {
-            setDialogSearch(invoiceSearchFromParams(new URLSearchParams()))
+            setDialogSearch(defaultDialogSearch())
         }
     }
 
