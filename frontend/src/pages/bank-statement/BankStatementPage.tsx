@@ -1,9 +1,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { Save, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Undo2 } from "lucide-react";
 import { useBlocker, useNavigate, useParams } from "react-router-dom";
 import BankAccountComboboxField from "@/components/BankAccountComboboxField";
 import DatePickerField from "@/components/DatePickerField";
 import ErrorAlert from "@/components/ErrorAlert";
+import { Button } from "@/components/ui/button";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -190,6 +191,11 @@ function BankStatementPage() {
     const [latestNumberError, setLatestNumberError] = useState<string | null>(
         null,
     );
+    const [navigationResult, setNavigationResult] = useState<{
+        routeStatementNumber: number | null;
+        value?: number | null;
+        error?: string;
+    }>({ routeStatementNumber: null });
     const [loading, setLoading] = useState(Boolean(routeStatementNumber));
     const [reloadVersion, setReloadVersion] = useState(0);
     const [saving, setSaving] = useState(false);
@@ -207,6 +213,43 @@ function BankStatementPage() {
                 currentLocation.search !== nextLocation.search ||
                 currentLocation.hash !== nextLocation.hash),
     );
+
+    useEffect(() => {
+        const abortController = new AbortController();
+        void fetchLatestStatementNumber(null, abortController.signal)
+            .then((value) => {
+                setNavigationResult({ routeStatementNumber, value });
+            })
+            .catch((navigationError: unknown) => {
+                if (
+                    navigationError instanceof DOMException &&
+                    navigationError.name === "AbortError"
+                )
+                    return;
+                setNavigationResult({
+                    routeStatementNumber,
+                    error:
+                        navigationError instanceof Error
+                            ? navigationError.message
+                            : "Loading latest bank statement failed",
+                });
+            });
+        return () => abortController.abort();
+    }, [routeStatementNumber]);
+
+    const latestStatementNumber =
+        navigationResult.routeStatementNumber === routeStatementNumber
+            ? navigationResult.value
+            : undefined;
+    const canNavigatePrevious =
+        routeStatementNumber !== null && routeStatementNumber > 1;
+    const canNavigateNext =
+        routeStatementNumber !== null &&
+        latestStatementNumber != null &&
+        routeStatementNumber < latestStatementNumber;
+    const navigateToStatement = (statementNumber: number) => {
+        navigate(`/bank-statement/${statementNumber}`);
+    };
 
     useEffect(() => {
         if (!routeStatementNumber) return;
@@ -466,6 +509,14 @@ function BankStatementPage() {
             loadError,
         ],
         [
+            "navigation",
+            "Latest statement number could not be loaded",
+            "Bank statement navigation may be unavailable.",
+            navigationResult.routeStatementNumber === routeStatementNumber
+                ? navigationResult.error
+                : undefined,
+        ],
+        [
             "next-number",
             "Next statement number could not be loaded",
             "A number could not be assigned to the new bank statement.",
@@ -501,39 +552,67 @@ function BankStatementPage() {
                     )}
                 </div>
             )}
-            <Menubar className="mb-6 w-fit">
-                <MenubarMenu>
-                    <MenubarTrigger>File</MenubarTrigger>
-                    <MenubarContent>
-                        <MenubarItem
-                            disabled={
-                                !date ||
-                                !account ||
-                                number === "" ||
-                                loading ||
-                                saving
-                            }
-                            onClick={() => void requestSave()}
-                        >
-                            <Save />
-                            {saving ? "Saving…" : "Save"}
-                            <MenubarShortcut>Ctrl+S</MenubarShortcut>
-                        </MenubarItem>
-                    </MenubarContent>
-                </MenubarMenu>
-                <MenubarMenu>
-                    <MenubarTrigger>Edit</MenubarTrigger>
-                    <MenubarContent>
-                        <MenubarItem
-                            disabled={!id || loading || !dirty}
-                            onClick={() => setConfirmRevert(true)}
-                        >
-                            <Undo2 />
-                            Revert
-                        </MenubarItem>
-                    </MenubarContent>
-                </MenubarMenu>
-            </Menubar>
+            <div className="mb-6 flex items-center gap-2">
+                <Menubar className="w-fit">
+                    <MenubarMenu>
+                        <MenubarTrigger>File</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarItem
+                                disabled={
+                                    !date ||
+                                    !account ||
+                                    number === "" ||
+                                    loading ||
+                                    saving
+                                }
+                                onClick={() => void requestSave()}
+                            >
+                                <Save />
+                                {saving ? "Saving…" : "Save"}
+                                <MenubarShortcut>Ctrl+S</MenubarShortcut>
+                            </MenubarItem>
+                        </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger>Edit</MenubarTrigger>
+                        <MenubarContent>
+                            <MenubarItem
+                                disabled={!id || loading || !dirty}
+                                onClick={() => setConfirmRevert(true)}
+                            >
+                                <Undo2 />
+                                Revert
+                            </MenubarItem>
+                        </MenubarContent>
+                    </MenubarMenu>
+                </Menubar>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Previous bank statement"
+                    disabled={!canNavigatePrevious}
+                    onClick={() => {
+                        if (routeStatementNumber !== null)
+                            navigateToStatement(routeStatementNumber - 1);
+                    }}
+                >
+                    <ChevronLeft />
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Next bank statement"
+                    disabled={!canNavigateNext}
+                    onClick={() => {
+                        if (routeStatementNumber !== null)
+                            navigateToStatement(routeStatementNumber + 1);
+                    }}
+                >
+                    <ChevronRight />
+                </Button>
+            </div>
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>General information</CardTitle>
