@@ -1,7 +1,6 @@
 import { getSelectedBusinessYear } from "@/lib/business-year";
 import type { BankStatement } from "@/lib/bank-statement-types";
-
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL;
+import { postGraphql } from "@/lib/graphql";
 
 const bankStatementQuery = `
     query BankStatement($businessYear: String!, $statementNumber: Int!) {
@@ -32,26 +31,6 @@ const saveBankStatementMutation = `
         }
     }
 `;
-
-type GraphqlResponse = { errors?: { message: string }[] };
-
-async function postGraphql<T extends GraphqlResponse>(
-    query: string,
-    variables: Record<string, unknown>,
-    signal?: AbortSignal,
-): Promise<T> {
-    const response = await fetch(graphqlUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, variables }),
-        signal,
-    });
-    if (!response.ok) throw new Error(`Request failed (${response.status})`);
-    const result = (await response.json()) as T;
-    if (result.errors?.length)
-        throw new Error(result.errors.map(({ message }) => message).join(", "));
-    return result;
-}
 
 export async function fetchBankStatement(
     statementNumber: number,

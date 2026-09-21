@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { postGraphql } from '@/lib/graphql'
 import { defaultPage, defaultPageSize, maximumPageSize, positiveInteger } from '@/lib/pagination'
 import type { PriceQuotePage, PriceQuoteSearchCriteria } from './types'
 import type { PriceQuote } from './types'
@@ -84,21 +85,6 @@ const templateQuery = `query PriceQuoteTextTemplate($businessYear: String!) {
 const saveMutation = `mutation SavePriceQuote($businessYear: String!, $priceQuote: PriceQuoteInput!) {
     savePriceQuote(businessYear: $businessYear, priceQuote: $priceQuote) { id quoteNumber }
 }`
-
-async function postGraphql<T>(
-    query: string,
-    variables: Record<string, unknown>,
-    signal?: AbortSignal,
-): Promise<T> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
-        body: JSON.stringify({ query, variables }),
-    })
-    if (!response.ok) throw new Error(`Request failed (${response.status})`)
-    const result = await response.json() as T & { errors?: { message: string }[] }
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-    return result
-}
 
 export async function fetchPriceQuote(
     quoteNumber: string,

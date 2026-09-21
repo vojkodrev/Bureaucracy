@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { postGraphql } from '@/lib/graphql'
 import type { InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { nextPaddedNumber } from '@/lib/numbers'
 
@@ -47,25 +48,6 @@ export const saveInvoiceMutation = `
         saveInvoice(businessYear: $businessYear, invoice: $invoice) { id invoiceNumber }
     }
 `
-
-type GraphqlErrors = { errors?: { message: string }[] }
-
-async function postGraphql<T extends GraphqlErrors>(
-    query: string,
-    variables?: Record<string, unknown>,
-    signal?: AbortSignal,
-): Promise<T> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Request failed (${response.status})`)
-    const result = await response.json() as T
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-    return result
-}
 
 export async function fetchInvoice(invoiceNumber: string, signal?: AbortSignal) {
     const result = await postGraphql<InvoiceResponse>(invoiceQuery, {
