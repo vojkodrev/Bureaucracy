@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import ProductSearch from '@/components/ProductSearch'
+import InvoiceSearch from '@/components/invoice-search/InvoiceSearch'
 import {
     Accordion,
     AccordionContent,
@@ -107,6 +108,21 @@ function ProductPage() {
                                     if (product.productCode) {
                                         void navigate(`/product/${encodeURIComponent(product.productCode)}`)
                                     }
+                                }}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="invoices">
+                        <AccordionTrigger>Invoices</AccordionTrigger>
+                        <AccordionContent keepMounted>
+                            <InvoiceSearch
+                                key={draft.productCode}
+                                mode={ComponentMode.Dialog}
+                                defaultProductCode={draft.productCode}
+                                showSearchFields={false}
+                                showSummary={false}
+                                onInvoiceSelect={(invoice) => {
+                                    void navigate(`/invoice/${encodeURIComponent(invoice.invoiceNumber)}`)
                                 }}
                             />
                         </AccordionContent>

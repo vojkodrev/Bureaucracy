@@ -5,12 +5,17 @@ import { defaultPageSize } from '@/lib/pagination'
 import { invoiceSearchFromParams, invoiceSearchToParams } from '../invoice-search-params'
 import type { InvoiceSearchCriteria, InvoiceSortColumn, PaymentStatus } from '../types'
 
-export function useInvoiceSearchState(mode: ComponentMode, defaultPaymentStatus: PaymentStatus = 'all') {
+export function useInvoiceSearchState(
+    mode: ComponentMode,
+    defaultPaymentStatus: PaymentStatus = 'all',
+    defaultProductCode = '',
+) {
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(() => invoiceSearchFromParams(searchParams), [searchParams])
     const defaultDialogSearch = () => ({
         ...invoiceSearchFromParams(new URLSearchParams()),
         paymentStatus: defaultPaymentStatus,
+        productCode: defaultProductCode,
     })
     const [dialogSearch, setDialogSearch] = useState<InvoiceSearchCriteria>(defaultDialogSearch)
     const search = mode === ComponentMode.Page ? pageSearch : dialogSearch

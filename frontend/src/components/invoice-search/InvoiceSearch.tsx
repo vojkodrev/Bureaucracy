@@ -20,10 +20,20 @@ type InvoiceSearchProps = {
     mode: ComponentMode
     onInvoiceSelect?: (invoice: Invoice) => void
     defaultPaymentStatus?: PaymentStatus
+    defaultProductCode?: string
+    showSearchFields?: boolean
+    showSummary?: boolean
 }
 
-function InvoiceSearch({ mode, onInvoiceSelect, defaultPaymentStatus }: InvoiceSearchProps) {
-    const searchState = useInvoiceSearchState(mode, defaultPaymentStatus)
+function InvoiceSearch({
+    mode,
+    onInvoiceSelect,
+    defaultPaymentStatus,
+    defaultProductCode,
+    showSearchFields = true,
+    showSummary = true,
+}: InvoiceSearchProps) {
+    const searchState = useInvoiceSearchState(mode, defaultPaymentStatus, defaultProductCode)
     const { search, searchKey } = searchState
     const { invoicePage, customerSummaryPage, invoices, isLoading, error } = useInvoiceSearchResults(
         search,
@@ -79,13 +89,15 @@ function InvoiceSearch({ mode, onInvoiceSelect, defaultPaymentStatus }: InvoiceS
                 }}
                 onOpenChange={setEmailDialogOpen}
             />
-            <InvoiceSearchForm
-                key={searchKey}
-                search={search}
-                showResultsView={mode === ComponentMode.Page}
-                onSubmit={searchState.updateSearch}
-                onReset={clearSearchAndSelection}
-            />
+            {showSearchFields && (
+                <InvoiceSearchForm
+                    key={searchKey}
+                    search={search}
+                    showResultsView={mode === ComponentMode.Page}
+                    onSubmit={searchState.updateSearch}
+                    onReset={clearSearchAndSelection}
+                />
+            )}
             {!error && search.resultsView === 'invoiceList' && (
                 <InvoiceSearchResults
                     invoicePage={invoicePage}
@@ -93,6 +105,7 @@ function InvoiceSearch({ mode, onInvoiceSelect, defaultPaymentStatus }: InvoiceS
                     isLoading={isLoading}
                     mode={mode}
                     search={search}
+                    showSearchFields={showSearchFields}
                     selectedInvoiceNumber={selectedInvoiceNumber}
                     onInvoiceSelect={selectInvoice}
                     onPageChange={(page) => searchState.changePage(page, invoicePage?.pageSize)}
@@ -114,7 +127,7 @@ function InvoiceSearch({ mode, onInvoiceSelect, defaultPaymentStatus }: InvoiceS
                     onPageSizeChange={searchState.changePageSize}
                 />
             )}
-            {!error && <InvoiceSearchSummary invoices={invoices} />}
+            {!error && showSummary && <InvoiceSearchSummary invoices={invoices} />}
         </div>
     )
 }
