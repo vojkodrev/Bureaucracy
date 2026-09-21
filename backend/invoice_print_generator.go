@@ -103,6 +103,13 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if invoice.Amount == nil {
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
+	introText := trimmedString(invoice.IntroductoryText)
+	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" {
+		if introText != "" {
+			introText += ", "
+		}
+		introText += "dob: " + deliveryNoteNumber
+	}
 	paymentQRCode, err := generateUPNQRCode(invoice, displayNumber, grossTotal)
 	if err != nil {
 		return nil, err
@@ -122,7 +129,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 			Location: customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity),
 			TaxID:    trimmedString(invoice.CustomerTaxID),
 		},
-		IntroText:     trimmedString(invoice.IntroductoryText),
+		IntroText:     introText,
 		Items:         printItems,
 		NetTotal:      formatMoneyAmount(netTotal),
 		TaxTotal:      formatMoneyAmount(grossTotal - netTotal),
