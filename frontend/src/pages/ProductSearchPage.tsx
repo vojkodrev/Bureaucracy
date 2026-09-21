@@ -1,4 +1,4 @@
-import ProductSearch from '@/components/ProductSearch'
+import ProductSearch from '@/components/product-search/ProductSearch'
 import { ComponentMode } from '@/lib/component-mode'
 
 function ProductSearchPage() {

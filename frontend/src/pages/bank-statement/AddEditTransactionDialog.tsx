@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { MinusIcon } from "lucide-react";
 import BankTransactionTypeComboboxField from "@/components/BankTransactionTypeComboboxField";
-import CustomerPickerField from "@/components/CustomerPickerField";
-import InvoicePickerField from "@/components/InvoicePickerField";
+import CustomerPickerField from "@/components/customer-search/CustomerPickerField";
+import InvoicePickerField from "@/components/invoice-search/InvoicePickerField";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -19,13 +20,21 @@ import type { BankStatementEntry } from "@/lib/bank-statement-types";
 
 type Props = {
     entry: BankStatementEntry | null;
+    open: boolean;
+    onCancel: () => void;
     onOpenChange: (open: boolean) => void;
     onSave: (entry: BankStatementEntry) => void;
 };
 const numberOrNull = (value: string) =>
     value.trim() === "" ? null : Number(value);
 
-function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
+function AddEditTransactionDialog({
+    entry,
+    open,
+    onCancel,
+    onOpenChange,
+    onSave,
+}: Props) {
     const [counterpartyId, setCounterpartyId] = useState(
         entry?.customerId ?? "",
     );
@@ -71,8 +80,23 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
             purpose: purpose.trim() || null,
         });
     return (
-        <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="sm:max-w-2xl">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent
+                keepMounted
+                showCloseButton={false}
+                className="sm:max-w-2xl"
+            >
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="absolute top-2 right-2"
+                    aria-label="Minimize transaction"
+                    title="Minimize transaction"
+                    onClick={() => onOpenChange(false)}
+                >
+                    <MinusIcon />
+                </Button>
                 <DialogHeader>
                     <DialogTitle>
                         {entry ? "Edit transaction" : "Add transaction"}
@@ -105,6 +129,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                     </Field>
                     <InvoicePickerField
                         minimizable
+                        defaultPaymentStatus="unpaid"
                         id="transaction-document-number"
                         label="Document number"
                         name="documentNumber"
@@ -174,6 +199,7 @@ function AddEditTransactionDialog({ entry, onOpenChange, onSave }: Props) {
                 <DialogFooter>
                     <DialogClose
                         render={<Button type="button" variant="outline" />}
+                        onClick={onCancel}
                     >
                         Cancel
                     </DialogClose>

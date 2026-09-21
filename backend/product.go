@@ -12,6 +12,11 @@ type Product struct {
 	TaxCode     *string  `json:"taxCode"`
 }
 
+type ProductInvoiceCount struct {
+	ProductCode  string `json:"productCode"`
+	InvoiceCount int    `json:"invoiceCount"`
+}
+
 type ProductPage struct {
 	Products   []*Product `json:"products"`
 	TotalCount int        `json:"totalCount"`

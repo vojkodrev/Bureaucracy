@@ -42,7 +42,7 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 }
 
 // SearchBankStatements is the resolver for the searchBankStatements field.
-func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, page *int, pageSize *int) (*BankStatementPage, error) {
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -51,7 +51,7 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, bankAccount, customerID, customerName, resultPage, resultPageSize)
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // BankAccounts is the resolver for the bankAccounts field.
@@ -191,7 +191,7 @@ func (r *queryResolver) SearchPriceQuotes(ctx context.Context, businessYear stri
 }
 
 // SearchProducts is the resolver for the searchProducts field.
-func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error) {
+func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -200,7 +200,12 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.Products.Search(ctx, businessYear, productCode, productName, sortBy, sortDirection, resultPage, resultPageSize)
+	return r.Products.Search(ctx, businessYear, productCode, productName, similarName, sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// ProductInvoiceCounts is the resolver for the productInvoiceCounts field.
+func (r *queryResolver) ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error) {
+	return r.Products.InvoiceCounts(ctx, businessYear, productCodes)
 }
 
 // TaxCodes is the resolver for the taxCodes field.

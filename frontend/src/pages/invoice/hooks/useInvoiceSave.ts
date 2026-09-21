@@ -4,6 +4,7 @@ import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateForApi } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
 import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
+import { postalCodeAndCity } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import type { InvoiceNumberWarning } from '../InvoiceNumberAlert'
 import { fetchLatestInvoiceNumber, postSaveInvoice } from '../invoice-api'
@@ -42,7 +43,9 @@ export function useInvoiceSave({
                     dueDate: dateForApi(draft.dueDate), paymentDate: dateForApi(draft.paymentDate),
                     customerCode: emptyToNull(draft.customerId), customerName: emptyToNull(draft.customerName),
                     customerAddress: emptyToNull(draft.customerAddress),
-                    customerCity: emptyToNull(draft.customerCity),
+                    customerCity: emptyToNull(postalCodeAndCity(
+                        draft.customerPostalCode, draft.customerCity,
+                    )),
                     paidAmount: numberOrNull(draft.paidAmount),
                     introductoryText: emptyToNull(draft.introductoryText),
                     closingText: emptyToNull(draft.closingText),

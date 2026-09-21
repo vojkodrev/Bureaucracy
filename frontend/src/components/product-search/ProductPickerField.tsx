@@ -1,6 +1,6 @@
 import { SearchIcon } from 'lucide-react'
 import { useState } from 'react'
-import ProductSearch from '@/components/ProductSearch'
+import ProductSearch from '@/components/product-search/ProductSearch'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,

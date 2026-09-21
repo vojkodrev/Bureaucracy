@@ -1,6 +1,6 @@
 import { MinusIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
-import CustomerSearch from '@/components/CustomerSearch'
+import CustomerSearch from './CustomerSearch'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/input-group'
 import { ComponentMode } from '@/lib/component-mode'
 import type { Customer } from '@/lib/customer-types'
+import { cityWithoutPostalCode } from '@/lib/postal-address'
 
 type CustomerPickerFieldProps = {
     customerId: string
@@ -58,7 +59,7 @@ function CustomerPickerField({
         onCustomerNameChange(customer.name ?? '')
         onCustomerAddressChange?.(customer.address ?? '')
         onCustomerPostalCodeChange?.(customer.postalCode ?? '')
-        onCustomerCityChange?.(customer.city ?? '')
+        onCustomerCityChange?.(cityWithoutPostalCode(customer.city, customer.postalCode))
         onCustomerCountryChange?.(customer.country ?? '')
         onCustomerPaymentTermChange?.(customer.paymentTerm)
     }

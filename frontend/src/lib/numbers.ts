@@ -5,6 +5,12 @@ export function numberOrNull(value: string): number | null {
     return Number.isFinite(number) ? number : null
 }
 
+export function isOptionalNonNegativeNumber(value: string): boolean {
+    if (!value.trim()) return true
+    const number = Number(value)
+    return Number.isFinite(number) && number >= 0
+}
+
 export function nextPaddedNumber(value: string | null | undefined, minimumLength: number): string {
     const trimmedValue = value?.trim() ?? ''
     const currentNumber = /^\d+$/.test(trimmedValue)

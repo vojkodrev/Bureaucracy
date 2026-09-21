@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
+import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import {
     fetchNextPriceQuoteNumber, fetchPriceQuote, fetchPriceQuoteTextTemplate,
@@ -25,7 +26,10 @@ function draftFromPriceQuote(priceQuote: PriceQuote): PriceQuoteDraft {
         customerId: priceQuote.customerCode ?? '', customerName: priceQuote.customerName ?? '',
         customerAddress: priceQuote.customerAddress ?? '',
         customerPostalCode: priceQuote.customerPostalCode ?? '',
-        customerCity: priceQuote.customerCity ?? '', customerCountry: priceQuote.customerCountry ?? '',
+        customerCity: cityWithoutPostalCode(
+            priceQuote.customerCity, priceQuote.customerPostalCode,
+        ),
+        customerCountry: priceQuote.customerCountry ?? '',
         issueDate: dateFromValue(priceQuote.issueDate), dueDate: dateFromValue(priceQuote.dueDate),
         introductoryText: priceQuote.introductoryText ?? '',
         closingText: priceQuote.closingText ?? '', items: priceQuote.items ?? [],

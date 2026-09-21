@@ -1,4 +1,4 @@
-import CustomerPickerField from '@/components/CustomerPickerField'
+import CustomerPickerField from '@/components/customer-search/CustomerPickerField'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'

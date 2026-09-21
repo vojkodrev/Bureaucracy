@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/input-group";
 import { ComponentMode } from "@/lib/component-mode";
 import type { Invoice } from "@/lib/invoice-types";
+import type { PaymentStatus } from "@/components/invoice-search/types";
 
 type InvoicePickerFieldProps = {
     invoiceNumber: string;
@@ -29,6 +30,7 @@ type InvoicePickerFieldProps = {
     onInvoiceNumberChange: (invoiceNumber: string) => void;
     onInvoiceSelect?: (invoice: Invoice) => void;
     minimizable?: boolean;
+    defaultPaymentStatus?: PaymentStatus;
 };
 
 function InvoicePickerField({
@@ -39,6 +41,7 @@ function InvoicePickerField({
     onInvoiceNumberChange,
     onInvoiceSelect,
     minimizable = false,
+    defaultPaymentStatus,
 }: InvoicePickerFieldProps) {
     const [open, setOpen] = useState(false);
 
@@ -100,6 +103,7 @@ function InvoicePickerField({
                     <InvoiceSearch
                         mode={ComponentMode.Dialog}
                         onInvoiceSelect={selectInvoice}
+                        defaultPaymentStatus={defaultPaymentStatus}
                     />
                     <DialogFooter>
                         <DialogClose

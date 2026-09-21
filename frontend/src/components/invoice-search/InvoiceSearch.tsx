@@ -1,53 +1,58 @@
-import { useState } from 'react'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { ComponentMode } from '@/lib/component-mode'
-import { getSelectedBusinessYear } from '@/lib/business-year'
 import type { Invoice } from '@/lib/invoice-types'
 import { useInvoiceSearchPrint } from './hooks/useInvoiceSearchPrint'
+import { useInvoiceRemindersEmail } from './hooks/useInvoiceRemindersEmail'
 import { useInvoiceSearchResults } from './hooks/useInvoiceSearchResults'
+import { useInvoiceSearchSelection } from './hooks/useInvoiceSearchSelection'
 import { useInvoiceSearchState } from './hooks/useInvoiceSearchState'
 import InvoiceSearchErrors from './InvoiceSearchErrors'
 import InvoiceSearchForm from './InvoiceSearchForm'
 import InvoiceSearchResults from './InvoiceSearchResults'
 import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
-import { sendInvoiceRemindersEmail } from './invoice-search-api'
-import { toast } from '@/lib/toast'
+import type { PaymentStatus } from './types'
 
 type InvoiceSearchProps = {
     mode: ComponentMode
     onInvoiceSelect?: (invoice: Invoice) => void
+    defaultPaymentStatus?: PaymentStatus
+    defaultProductCode?: string
+    showSearchFields?: boolean
+    showSummary?: boolean
 }
 
-function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
-    const searchState = useInvoiceSearchState(mode)
+function InvoiceSearch({
+    mode,
+    onInvoiceSelect,
+    defaultPaymentStatus,
+    defaultProductCode,
+    showSearchFields = true,
+    showSummary = true,
+}: InvoiceSearchProps) {
+    const searchState = useInvoiceSearchState(mode, defaultPaymentStatus, defaultProductCode)
     const { search, searchKey } = searchState
     const { invoicePage, customerSummaryPage, invoices, isLoading, error } = useInvoiceSearchResults(
         search,
         searchKey,
     )
-    const [selectedInvoiceNumber, setSelectedInvoiceNumber] = useState<string | null>(null)
-    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
-    const canPrint = !isLoading && !error && invoices.length > 0
-    const canPrintReminders = canPrint
-        && search.resultsView === 'customer'
-        && Boolean(search.customerId.trim() || search.customerName.trim())
-        && customerSummaryPage?.customerSummaries.length === 1
-    const { printReport, printReminders, printError } = useInvoiceSearchPrint({
-        search,
-        canPrint,
-        keyboardShortcutEnabled: mode === ComponentMode.Page,
-    })
+    const { selectedInvoiceNumber, selectInvoice, clearSelection } =
+        useInvoiceSearchSelection(onInvoiceSelect)
+    const { canPrint, canPrintReminders, printReport, printReminders, printError } =
+        useInvoiceSearchPrint({
+            search,
+            hasResults: invoices.length > 0,
+            isLoading,
+            hasError: Boolean(error),
+            customerSummaryCount: customerSummaryPage?.customerSummaries.length ?? 0,
+            keyboardShortcutEnabled: mode === ComponentMode.Page,
+        })
+    const remindersEmail = useInvoiceRemindersEmail(search, customerSummaryPage)
 
     function clearSearchAndSelection() {
-        setSelectedInvoiceNumber(null)
+        clearSelection()
         searchState.clearSearch()
-    }
-
-    function selectInvoice(invoice: Invoice) {
-        setSelectedInvoiceNumber(invoice.invoiceNumber)
-        onInvoiceSelect?.(invoice)
     }
 
     return (
@@ -59,31 +64,29 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     remindersDisabled={!canPrintReminders}
                     onPrintReport={printReport}
                     onPrintReminders={printReminders}
-                    onEmailReminders={() => setEmailDialogOpen(true)}
+                    onEmailReminders={remindersEmail.openDialog}
                 />
             )}
             <EmailDocumentDialog
-                open={emailDialogOpen}
+                open={remindersEmail.dialogOpen}
                 documentName="reminders"
-                customerId={customerSummaryPage?.customerSummaries[0]?.customerCode ?? search.customerId}
-                customerName={customerSummaryPage?.customerSummaries[0]?.customerName ?? search.customerName}
-                businessYear={Number(getSelectedBusinessYear()) || null}
+                customerId={remindersEmail.customerId}
+                customerName={remindersEmail.customerName}
+                businessYear={remindersEmail.businessYear}
                 defaultSubject="Drevi d.o.o. - Opomin"
                 defaultMessage={'Pozdravljeni,\n\nv priponki vam pošiljamo opomin za zapadle neporavnane račune.\n\nLep pozdrav, Drevi d.o.o. 041 693 605'}
-                onSend={async (fields) => {
-                    await sendInvoiceRemindersEmail(search, fields)
-                    toast.add({ title: 'Reminders emailed',
-                        description: `Reminders were sent to ${fields.recipient}.`, type: 'success' })
-                }}
-                onOpenChange={setEmailDialogOpen}
+                onSend={remindersEmail.sendReminders}
+                onOpenChange={remindersEmail.setDialogOpen}
             />
-            <InvoiceSearchForm
-                key={searchKey}
-                search={search}
-                showResultsView={mode === ComponentMode.Page}
-                onSubmit={searchState.updateSearch}
-                onReset={clearSearchAndSelection}
-            />
+            {showSearchFields && (
+                <InvoiceSearchForm
+                    key={searchKey}
+                    search={search}
+                    showResultsView={mode === ComponentMode.Page}
+                    onSubmit={searchState.updateSearch}
+                    onReset={clearSearchAndSelection}
+                />
+            )}
             {!error && search.resultsView === 'invoiceList' && (
                 <InvoiceSearchResults
                     invoicePage={invoicePage}
@@ -91,6 +94,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     isLoading={isLoading}
                     mode={mode}
                     search={search}
+                    showSearchFields={showSearchFields}
                     selectedInvoiceNumber={selectedInvoiceNumber}
                     onInvoiceSelect={selectInvoice}
                     onPageChange={(page) => searchState.changePage(page, invoicePage?.pageSize)}
@@ -112,7 +116,7 @@ function InvoiceSearch({ mode, onInvoiceSelect }: InvoiceSearchProps) {
                     onPageSizeChange={searchState.changePageSize}
                 />
             )}
-            {!error && <InvoiceSearchSummary invoices={invoices} />}
+            {!error && showSummary && <InvoiceSearchSummary invoices={invoices} />}
         </div>
     )
 }

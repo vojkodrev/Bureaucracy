@@ -3,6 +3,7 @@ import { toast } from '@/lib/toast'
 import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
+import { cityWithoutPostalCode } from '@/lib/postal-address'
 import {
     fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
 } from '../invoice-api'
@@ -25,7 +26,8 @@ function draftFromInvoice(invoice: Invoice): InvoiceDraft {
         customerId: invoice.customerCode ?? '', customerName: invoice.customerName ?? '',
         customerAddress: invoice.customerAddress ?? '',
         customerPostalCode: invoice.customerPostalCode ?? '',
-        customerCity: invoice.customerCity ?? '', customerCountry: invoice.customerCountry ?? '',
+        customerCity: cityWithoutPostalCode(invoice.customerCity, invoice.customerPostalCode),
+        customerCountry: invoice.customerCountry ?? '',
         invoiceDate: dateFromInvoiceValue(invoice.issueDate),
         serviceDate: dateFromInvoiceValue(invoice.serviceDate),
         dueDate: dateFromInvoiceValue(invoice.dueDate),

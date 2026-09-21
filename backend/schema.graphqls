@@ -304,6 +304,11 @@ type Product {
   taxCode: String
 }
 
+type ProductInvoiceCount {
+  productCode: String!
+  invoiceCount: Int!
+}
+
 type ProductPage {
   products: [Product!]!
   totalCount: Int!
@@ -333,6 +338,8 @@ type Query {
     bankAccount: String
     customerId: String
     customerName: String
+    sortBy: String
+    sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): BankStatementPage!
@@ -435,11 +442,17 @@ type Query {
     businessYear: String!
     productCode: String
     productName: String
+    similarName: String
     sortBy: String
     sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+
+  productInvoiceCounts(
+    businessYear: String!
+    productCodes: [String!]!
+  ): [ProductInvoiceCount!]!
 
   taxCodes(businessYear: String!): [TaxCode!]!
 }

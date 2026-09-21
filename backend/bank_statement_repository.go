@@ -492,6 +492,8 @@ func (repository *BankStatementRepository) Search(
 	bankAccount *string,
 	customerID *string,
 	customerName *string,
+	sortBy *string,
+	sortDirection *string,
 	page int,
 	pageSize int,
 ) (*BankStatementPage, error) {
@@ -509,6 +511,10 @@ func (repository *BankStatementRepository) Search(
 	}
 	if statementNumber != nil && *statementNumber < 0 {
 		return nil, fmt.Errorf("statementNumber must not be negative")
+	}
+	orderBy, err := bankStatementOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
 	}
 
 	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
@@ -531,7 +537,7 @@ func (repository *BankStatementRepository) Search(
 		AND (@customerName = '' OR transactionRow.ImePartnerja LIKE @customerName ESCAPE '\')`
 
 	var totalCount int
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[BankaZRSaldo] statementRow
 		WHERE ISNULL(statementRow.Deleted, 0) = 0
@@ -566,7 +572,7 @@ func (repository *BankStatementRepository) Search(
 				  AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 				  AND %s
 			  )
-			ORDER BY statementRow.Datum DESC, statementRow.Stevilka DESC, statementRow.RecNo DESC
+			ORDER BY %s
 			OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
 		)
 		SELECT
@@ -590,9 +596,8 @@ func (repository *BankStatementRepository) Search(
 		LEFT JOIN [%s].[dbo].[BankaZRVD] transactionType
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
 		WHERE %s
-		ORDER BY statementRow.Datum DESC, statementRow.Stevilka DESC,
-			statementRow.RecNo DESC, transactionRow.RecNo`, databaseName, databaseName,
-		transactionFilter, databaseName, databaseName, transactionFilter), queryArguments...)
+		ORDER BY %s, transactionRow.RecNo`, databaseName, databaseName,
+		transactionFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
 	if err != nil {
 		return nil, fmt.Errorf("search bank statements: %w", err)
 	}
@@ -632,4 +637,22 @@ func (repository *BankStatementRepository) Search(
 		Entries: entries, TotalCount: totalCount, Page: page,
 		PageSize: pageSize, TotalPages: totalPages,
 	}, nil
+}
+
+func bankStatementOrderBy(sortBy *string, sortDirection *string) (string, error) {
+	if sortBy == nil && sortDirection == nil {
+		return "statementRow.Datum DESC, statementRow.Stevilka DESC, statementRow.RecNo DESC", nil
+	}
+	if sortBy == nil || sortDirection == nil {
+		return "", fmt.Errorf("sortBy and sortDirection must be provided together")
+	}
+	if *sortBy != "date" {
+		return "", fmt.Errorf("invalid bank statement sort column %q", *sortBy)
+	}
+	direction := strings.ToUpper(*sortDirection)
+	if direction != "ASC" && direction != "DESC" {
+		return "", fmt.Errorf("sortDirection must be asc or desc")
+	}
+	return "statementRow.Datum " + direction + ", statementRow.Stevilka " + direction +
+		", statementRow.RecNo " + direction, nil
 }

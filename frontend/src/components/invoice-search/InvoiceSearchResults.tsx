@@ -13,6 +13,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoicePage } from '@/lib/invoice-types'
 import type { InvoiceSearchCriteria, InvoiceSortColumn } from './types'
 import { invoiceSortColumns } from './types'
+import InvoicePaymentDate from './InvoicePaymentDate'
 
 type InvoiceSearchResultsProps = {
     invoicePage: InvoicePage | null
@@ -20,6 +21,7 @@ type InvoiceSearchResultsProps = {
     isLoading: boolean
     mode: ComponentMode
     search: InvoiceSearchCriteria
+    showSearchFields: boolean
     selectedInvoiceNumber: string | null
     onInvoiceSelect: (invoice: Invoice) => void
     onPageChange: (page: number) => void
@@ -42,6 +44,7 @@ function InvoiceSearchResults({
     isLoading,
     mode,
     search,
+    showSearchFields,
     selectedInvoiceNumber,
     onInvoiceSelect,
     onPageChange,
@@ -57,7 +60,7 @@ function InvoiceSearchResults({
     const isPageMode = mode === ComponentMode.Page
 
     return (
-        <div className="mt-8">
+        <div className={showSearchFields ? 'mt-8' : undefined}>
             {invoicePage && (
                 <Pager
                     firstItem={firstInvoice}
@@ -135,7 +138,12 @@ function InvoiceSearchResults({
                             </TableCell>
                             <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                             <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                            <TableCell>{formatDate(invoice.paymentDate)}</TableCell>
+                            <TableCell>
+                                <InvoicePaymentDate
+                                    paidAmount={invoice.paidAmount}
+                                    paymentDate={invoice.paymentDate}
+                                />
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
