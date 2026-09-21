@@ -151,6 +151,8 @@ type Invoice {
   amount: Float
   goodsAmount: Float
   paidAmount: Float
+  purchaseOrderNumber: String
+  deliveryNoteNumber: String
   paymentReference: String
   introductoryText: String
   closingText: String
@@ -291,6 +293,8 @@ input InvoiceInput {
   customerAddress: String
   customerCity: String
   paidAmount: Float
+  purchaseOrderNumber: String
+  deliveryNoteNumber: String
   introductoryText: String
   closingText: String
   items: [InvoiceItemInput!]!

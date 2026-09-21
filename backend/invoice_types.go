@@ -3,30 +3,32 @@ package main
 import "time"
 
 type Invoice struct {
-	ID                 int            `json:"id"`
-	InvoiceNumber      string         `json:"invoiceNumber"`
-	IssueDate          *time.Time     `json:"issueDate"`
-	ServiceDate        *time.Time     `json:"serviceDate"`
-	DueDate            *time.Time     `json:"dueDate"`
-	PaymentDate        *time.Time     `json:"paymentDate"`
-	CustomerCode       *string        `json:"customerCode"`
-	CustomerName       *string        `json:"customerName"`
-	CustomerAddress    *string        `json:"customerAddress"`
-	CustomerPostalCode *string        `json:"customerPostalCode"`
-	CustomerCity       *string        `json:"customerCity"`
-	CustomerCountry    *string        `json:"customerCountry"`
-	CustomerTaxID      *string        `json:"customerTaxId"`
-	IssuePlace         *string        `json:"issuePlace"`
-	CustomerContact    *string        `json:"customerContact"`
-	Currency           *string        `json:"currency"`
-	Amount             *float64       `json:"amount"`
-	GoodsAmount        *float64       `json:"goodsAmount"`
-	PaidAmount         *float64       `json:"paidAmount"`
-	PaymentReference   *string        `json:"paymentReference"`
-	IntroductoryText   *string        `json:"introductoryText"`
-	ClosingText        *string        `json:"closingText"`
-	Cancelled          *bool          `json:"cancelled"`
-	Items              []*InvoiceItem `json:"items"`
+	ID                  int            `json:"id"`
+	InvoiceNumber       string         `json:"invoiceNumber"`
+	IssueDate           *time.Time     `json:"issueDate"`
+	ServiceDate         *time.Time     `json:"serviceDate"`
+	DueDate             *time.Time     `json:"dueDate"`
+	PaymentDate         *time.Time     `json:"paymentDate"`
+	CustomerCode        *string        `json:"customerCode"`
+	CustomerName        *string        `json:"customerName"`
+	CustomerAddress     *string        `json:"customerAddress"`
+	CustomerPostalCode  *string        `json:"customerPostalCode"`
+	CustomerCity        *string        `json:"customerCity"`
+	CustomerCountry     *string        `json:"customerCountry"`
+	CustomerTaxID       *string        `json:"customerTaxId"`
+	IssuePlace          *string        `json:"issuePlace"`
+	CustomerContact     *string        `json:"customerContact"`
+	Currency            *string        `json:"currency"`
+	Amount              *float64       `json:"amount"`
+	GoodsAmount         *float64       `json:"goodsAmount"`
+	PaidAmount          *float64       `json:"paidAmount"`
+	PurchaseOrderNumber *string        `json:"purchaseOrderNumber"`
+	DeliveryNoteNumber  *string        `json:"deliveryNoteNumber"`
+	PaymentReference    *string        `json:"paymentReference"`
+	IntroductoryText    *string        `json:"introductoryText"`
+	ClosingText         *string        `json:"closingText"`
+	Cancelled           *bool          `json:"cancelled"`
+	Items               []*InvoiceItem `json:"items"`
 }
 
 type InvoiceItem struct {

@@ -47,6 +47,8 @@ export function useInvoiceSave({
                         draft.customerPostalCode, draft.customerCity,
                     )),
                     paidAmount: numberOrNull(draft.paidAmount),
+                    purchaseOrderNumber: emptyToNull(draft.purchaseOrderNumber),
+                    deliveryNoteNumber: emptyToNull(draft.deliveryNoteNumber),
                     introductoryText: emptyToNull(draft.introductoryText),
                     closingText: emptyToNull(draft.closingText),
                     items: draft.invoiceItems.map((item, index) => ({

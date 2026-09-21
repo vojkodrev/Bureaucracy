@@ -10,7 +10,7 @@ const invoiceQuery = `
         invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
             id invoiceNumber issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
-            paidAmount introductoryText closingText
+            paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText
             items {
                 id sequence productCode productName unit taxCode taxRate unitPrice
                 unitTaxAmount quantity discount netAmount grossAmount

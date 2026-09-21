@@ -15,6 +15,8 @@ export type InvoiceDraft = {
     dueDate?: Date
     paymentDate?: Date
     paidAmount: string
+    purchaseOrderNumber: string
+    deliveryNoteNumber: string
     introductoryText: string
     closingText: string
     invoiceItems: InvoiceItem[]
@@ -24,6 +26,7 @@ export const emptyInvoiceDraft = (): InvoiceDraft => ({
     invoiceNumber: '', customerId: '', customerName: '', customerAddress: '',
     customerPostalCode: '', customerCity: '', customerCountry: '', invoiceDate: undefined,
     serviceDate: undefined, dueDate: undefined, paymentDate: undefined, paidAmount: '',
+    purchaseOrderNumber: '', deliveryNoteNumber: '',
     introductoryText: '', closingText: '', invoiceItems: [],
 })
 

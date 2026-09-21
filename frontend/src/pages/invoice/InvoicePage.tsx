@@ -10,6 +10,7 @@ import { dateAfterDays } from '@/lib/dates'
 import { sendDocumentEmail } from '@/lib/document-email'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
+import DocumentReferencesInput from './DocumentReferencesInput'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
@@ -152,6 +153,10 @@ function InvoicePage() {
                 onServiceDateChange={(v) => setField('serviceDate', v)} />
         </div>
         <div className="mt-8 space-y-6">
+            <DocumentReferencesInput purchaseOrderNumber={draft.purchaseOrderNumber}
+                deliveryNoteNumber={draft.deliveryNoteNumber}
+                onPurchaseOrderNumberChange={(v) => setField('purchaseOrderNumber', v)}
+                onDeliveryNoteNumberChange={(v) => setField('deliveryNoteNumber', v)} />
             <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
                 <Textarea id="introductory-text" name="introductoryText" value={draft.introductoryText}
                     onChange={(e) => setField('introductoryText', e.target.value)} /></Field>

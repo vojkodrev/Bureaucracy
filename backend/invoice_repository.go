@@ -101,6 +101,7 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 				DatumZapadlosti=@dueDate, DatumPlacila=@paymentDate,
 				SifraPartnerja=@customerCode, ImePartnerja=@customerName,
 				NaslovPartnerja=@customerAddress, KrajPartnerja=@customerCity, PlacanoSIT=@paidAmount,
+				Narocilnica=@purchaseOrderNumber, StevilkaDobavnice=@deliveryNoteNumber,
 				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=@goodsAmount
 			WHERE RecNo=@id`, databaseName), invoiceArguments(input, invoiceID)...)
 		if updateErr != nil {
@@ -114,11 +115,11 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`
 			INSERT INTO [%s].[dbo].[Racuni] (
 				Stevilka, DatumIzstavitve, DatumDUR, DatumZapadlosti, DatumPlacila, SifraPartnerja,
-				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT,
+				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT, Narocilnica, StevilkaDobavnice,
 				SpremniText, Klavzula, Znesek, ZnesekBlaga, Storno
 			) OUTPUT INSERTED.RecNo VALUES (
 				@invoiceNumber, @issueDate, @serviceDate, @dueDate, @paymentDate, @customerCode,
-				@customerName, @customerAddress, @customerCity, @paidAmount,
+				@customerName, @customerAddress, @customerCity, @paidAmount, @purchaseOrderNumber, @deliveryNoteNumber,
 				@introductoryText, @closingText, @amount, @goodsAmount, 0
 			)`, databaseName), invoiceArguments(input, 0)...).Scan(&invoiceID)
 		if err != nil {
@@ -198,6 +199,8 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 		sql.Named("customerCode", input.CustomerCode),
 		sql.Named("customerName", input.CustomerName), sql.Named("customerAddress", input.CustomerAddress),
 		sql.Named("customerCity", input.CustomerCity), sql.Named("paidAmount", input.PaidAmount),
+		sql.Named("purchaseOrderNumber", input.PurchaseOrderNumber),
+		sql.Named("deliveryNoteNumber", input.DeliveryNoteNumber),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
 		sql.Named("amount", amount), sql.Named("goodsAmount", goodsAmount),
 	}
@@ -256,6 +259,8 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.Znesek,
 			r.ZnesekBlaga,
 			r.PlacanoSIT,
+			r.Narocilnica,
+			r.StevilkaDobavnice,
 			r.Sklic,
 			r.SpremniText,
 			r.Klavzula,
@@ -288,6 +293,8 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.Amount,
 		&invoice.GoodsAmount,
 		&invoice.PaidAmount,
+		&invoice.PurchaseOrderNumber,
+		&invoice.DeliveryNoteNumber,
 		&invoice.PaymentReference,
 		&invoice.IntroductoryText,
 		&invoice.ClosingText,
