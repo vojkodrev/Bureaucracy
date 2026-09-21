@@ -4,16 +4,27 @@ import type { InvoiceSearchCriteria } from '../types'
 
 type Options = {
     search: InvoiceSearchCriteria
-    canPrint: boolean
+    hasResults: boolean
+    isLoading: boolean
+    hasError: boolean
+    customerSummaryCount: number
     keyboardShortcutEnabled: boolean
 }
 
 export function useInvoiceSearchPrint({
     search,
-    canPrint,
+    hasResults,
+    isLoading,
+    hasError,
+    customerSummaryCount,
     keyboardShortcutEnabled,
 }: Options) {
     const [printError, setPrintError] = useState<string | null>(null)
+    const canPrint = !isLoading && !hasError && hasResults
+    const canPrintReminders = canPrint
+        && search.resultsView === 'customer'
+        && Boolean(search.customerId.trim() || search.customerName.trim())
+        && customerSummaryCount === 1
 
     const printReport = () => {
         if (!canPrint) return
@@ -49,5 +60,5 @@ export function useInvoiceSearchPrint({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [keyboardShortcutEnabled])
 
-    return { printReport, printReminders, printError }
+    return { canPrint, canPrintReminders, printReport, printReminders, printError }
 }
