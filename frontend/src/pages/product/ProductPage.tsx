@@ -1,18 +1,15 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
-import ErrorAlert from '@/components/ErrorAlert'
-import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { NumberInput } from '@/components/ui/number-input'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { emptyToNull } from '@/lib/form-input'
 import type { Product } from '@/lib/product-types'
 import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
+import ProductDetails from './ProductDetails'
+import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
-import UnsavedProductAlert from './UnsavedProductAlert'
+import ProductPricing from './ProductPricing'
+import UnsavedProductAlerts from './UnsavedProductAlerts'
 
 type ProductResponse = { data?: { product: Product | null }; errors?: { message: string }[] }
 type SaveProductResponse = { data?: { saveProduct: Product }; errors?: { message: string }[] }
@@ -319,24 +316,7 @@ function ProductPage() {
 
     return (
         <div className="max-w-5xl p-4">
-            {(loadError || saveError) && (
-                <div className="mb-6 space-y-2">
-                    {loadError && (
-                        <ErrorAlert
-                            title="Product could not be loaded"
-                            description="The product data could not be retrieved."
-                            error={loadError}
-                        />
-                    )}
-                    {saveError && (
-                        <ErrorAlert
-                            title="Product could not be saved"
-                            description="Your changes were not saved."
-                            error={saveError}
-                        />
-                    )}
-                </div>
-            )}
+            <ProductErrors loadError={loadError} saveError={saveError} />
             <ProductMenu
                 canSave={canSave}
                 canRevert={hasUnsavedChanges && !isDuplicating}
@@ -347,86 +327,35 @@ function ProductPage() {
                 onRevert={() => setConfirmingRevert(true)}
                 onDuplicate={() => void duplicateProduct()}
             />
-            <UnsavedProductAlert
-                open={blocker.state === 'blocked'}
-                onOpenChange={(open) => { if (!open && blocker.state === 'blocked') blocker.reset() }}
-                onDiscard={() => {
+            <UnsavedProductAlerts
+                isNavigationBlocked={blocker.state === 'blocked'}
+                isConfirmingRevert={confirmingRevert}
+                isConfirmingDuplicate={confirmingDuplicate}
+                onCancelNavigation={() => { if (blocker.state === 'blocked') blocker.reset() }}
+                onDiscardAndNavigate={() => {
                     if (blocker.state !== 'blocked') return
                     allowNextNavigationRef.current = true
                     setCleanDraft(JSON.stringify(draft))
                     blocker.proceed()
                 }}
-            />
-            <UnsavedProductAlert
-                open={confirmingRevert}
-                onOpenChange={setConfirmingRevert}
-                onDiscard={performRevert}
-                actionLabel="Discard and revert"
-            />
-            <UnsavedProductAlert
-                open={confirmingDuplicate}
-                onOpenChange={setConfirmingDuplicate}
-                onDiscard={() => void performDuplicateProduct()}
-                title="Duplicate with unsaved changes?"
-                description="Your changes have not been saved to the original product. The new duplicate will be created from the values currently shown."
-                actionLabel="Duplicate anyway"
-                actionVariant="default"
+                onConfirmingRevertChange={setConfirmingRevert}
+                onDiscardAndRevert={performRevert}
+                onConfirmingDuplicateChange={setConfirmingDuplicate}
+                onDuplicateAnyway={() => void performDuplicateProduct()}
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Product details</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel htmlFor="product-code">Product code</FieldLabel>
-                                <Input id="product-code" maxLength={25} required value={draft.productCode} onChange={(event) => setField('productCode', event.target.value)} />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="product-name">Name</FieldLabel>
-                                <Input id="product-name" maxLength={100} required value={draft.name} onChange={(event) => setField('name', event.target.value)} />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="product-unit">Unit</FieldLabel>
-                                <Input id="product-unit" maxLength={10} value={draft.unit} onChange={(event) => setField('unit', event.target.value)} />
-                            </Field>
-                        </FieldGroup>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Pricing</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel htmlFor="product-net-price">Net price</FieldLabel>
-                                <NumberInput id="product-net-price" min="0" step="0.01" value={draft.netPrice} onChange={(event) => setField('netPrice', event.target.value)} />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="product-gross-price">Gross price</FieldLabel>
-                                <NumberInput id="product-gross-price" min="0" step="0.01" value={grossPrice} disabled />
-                            </Field>
-                            <div className="grid grid-cols-2 gap-4">
-                                <TaxCodeComboboxField
-                                    id="product-tax-code"
-                                    label="Tax code"
-                                    value={draft.taxCode}
-                                    onChange={(code, rate) => setDraft((current) => ({
-                                        ...current,
-                                        taxCode: code,
-                                        taxRate: rate == null ? '' : String(rate),
-                                    }))}
-                                />
-                                <Field>
-                                    <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
-                                    <NumberInput id="product-tax-rate" min="0" step="0.01" value={draft.taxRate} disabled />
-                                </Field>
-                            </div>
-                        </FieldGroup>
-                    </CardContent>
-                </Card>
+                <ProductDetails productCode={draft.productCode} name={draft.name} unit={draft.unit}
+                    onProductCodeChange={(value) => setField('productCode', value)}
+                    onNameChange={(value) => setField('name', value)}
+                    onUnitChange={(value) => setField('unit', value)} />
+                <ProductPricing netPrice={draft.netPrice} grossPrice={grossPrice}
+                    taxRate={draft.taxRate} taxCode={draft.taxCode}
+                    onNetPriceChange={(value) => setField('netPrice', value)}
+                    onTaxChange={(code, rate) => setDraft((current) => ({
+                        ...current,
+                        taxCode: code,
+                        taxRate: rate == null ? '' : String(rate),
+                    }))} />
             </div>
         </div>
     )
