@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { MinusIcon } from "lucide-react";
 import BankTransactionTypeComboboxField from "@/components/BankTransactionTypeComboboxField";
-import CustomerPickerField from "@/components/CustomerPickerField";
-import InvoicePickerField from "@/components/InvoicePickerField";
+import CustomerPickerField from "@/components/customer-search/CustomerPickerField";
+import InvoicePickerField from "@/components/invoice-search/InvoicePickerField";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,

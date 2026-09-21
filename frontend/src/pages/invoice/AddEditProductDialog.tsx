@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import ProductPickerField from '@/components/ProductPickerField'
+import ProductPickerField from '@/components/product-search/ProductPickerField'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'

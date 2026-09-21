@@ -1,4 +1,4 @@
-import CustomerSearch from '@/components/CustomerSearch'
+import CustomerSearch from '@/components/customer-search/CustomerSearch'
 import { ComponentMode } from '@/lib/component-mode'
 
 function CustomerSearchPage() {
