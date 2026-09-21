@@ -1,17 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import ProductSearch from '@/components/ProductSearch'
-import InvoiceSearch from '@/components/invoice-search/InvoiceSearch'
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion'
-import { ComponentMode } from '@/lib/component-mode'
 import ProductDetails from './ProductDetails'
 import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
 import ProductPricing from './ProductPricing'
+import ProductRelatedData from './ProductRelatedData'
 import UnsavedProductAlerts from './UnsavedProductAlerts'
 import { useProductDraft } from './hooks/useProductDraft'
 import { useProductDuplicate } from './hooks/useProductDuplicate'
@@ -94,41 +86,18 @@ function ProductPage() {
                         taxRate: rate == null ? '' : String(rate),
                     }))} />
             </div>
-            {loader.productId != null && !draftState.hasUnsavedChanges && draft.name.trim() && (
-                <Accordion className="mt-6">
-                    <AccordionItem value="similar-products">
-                        <AccordionTrigger>Similar products</AccordionTrigger>
-                        <AccordionContent keepMounted>
-                            <ProductSearch
-                                mode={ComponentMode.Dialog}
-                                showSearchFields={false}
-                                showInvoiceCount
-                                similarName={draft.name}
-                                onProductSelect={(product) => {
-                                    if (product.productCode) {
-                                        void navigate(`/product/${encodeURIComponent(product.productCode)}`)
-                                    }
-                                }}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="invoices">
-                        <AccordionTrigger>Invoices</AccordionTrigger>
-                        <AccordionContent keepMounted>
-                            <InvoiceSearch
-                                key={draft.productCode}
-                                mode={ComponentMode.Dialog}
-                                defaultProductCode={draft.productCode}
-                                showSearchFields={false}
-                                showSummary={false}
-                                onInvoiceSelect={(invoice) => {
-                                    void navigate(`/invoice/${encodeURIComponent(invoice.invoiceNumber)}`)
-                                }}
-                            />
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-            )}
+            <ProductRelatedData
+                productId={loader.productId}
+                productCode={draft.productCode}
+                productName={draft.name}
+                hasUnsavedChanges={draftState.hasUnsavedChanges}
+                onProductSelect={(productCode) => {
+                    void navigate(`/product/${encodeURIComponent(productCode)}`)
+                }}
+                onInvoiceSelect={(invoiceNumber) => {
+                    void navigate(`/invoice/${encodeURIComponent(invoiceNumber)}`)
+                }}
+            />
         </div>
     )
 }
