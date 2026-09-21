@@ -121,6 +121,7 @@ function AddEditTransactionDialog({
                         </FieldLabel>
                         <Input
                             id="transaction-counterparty-name"
+                            maxLength={60}
                             value={counterparty}
                             onChange={(event) =>
                                 setCounterparty(event.target.value)

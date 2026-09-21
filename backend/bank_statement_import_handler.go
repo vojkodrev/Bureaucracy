@@ -285,6 +285,7 @@ func parseCamtEntry(source camtEntry) ([]*model.BankStatementEntryInput, error) 
 		if direction == "CRDT" {
 			name = strings.TrimSpace(transaction.RelatedParties.Debtor.Name)
 		}
+		name = truncateRunes(name, maxBankStatementCustomerNameLength)
 		entry := &model.BankStatementEntryInput{}
 		if name != "" {
 			entry.CustomerName = &name
