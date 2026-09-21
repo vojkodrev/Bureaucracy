@@ -95,7 +95,7 @@ function ProductPage() {
                     }))} />
             </div>
             {loader.productId != null && !draftState.hasUnsavedChanges && draft.name.trim() && (
-                <Accordion className="mt-6" defaultValue={['similar-products']}>
+                <Accordion className="mt-6">
                     <AccordionItem value="similar-products">
                         <AccordionTrigger>Similar products</AccordionTrigger>
                         <AccordionContent keepMounted>
