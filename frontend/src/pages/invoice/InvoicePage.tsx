@@ -25,6 +25,7 @@ import { useInvoiceNumberNavigation } from './hooks/useInvoiceNumberNavigation'
 import { useInvoicePrint } from './hooks/useInvoicePrint'
 import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
+import { useInvoiceXmlExport } from './hooks/useInvoiceXmlExport'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
 function InvoicePage() {
@@ -61,6 +62,10 @@ function InvoicePage() {
         isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
         canSave: save.canSave,
     })
+    const xmlExport = useInvoiceXmlExport({
+        invoiceNumber: draft.invoiceNumber,
+        canExport: print.canPrint,
+    })
     const revert = useInvoiceRevert({
         routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
         isLoading: loader.isLoading, isSaving: save.isSaving,
@@ -76,6 +81,7 @@ function InvoicePage() {
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
         ['print', 'Invoice could not be printed', 'The invoice PDF could not be prepared.', print.printError],
+        ['xml', 'Invoice XML could not be exported', 'The invoice XML could not be prepared.', xmlExport.exportError],
         ['save', 'Invoice could not be saved', 'Your changes were not saved.', save.saveError],
         ['latest', 'Latest invoice number could not be loaded', 'Invoice navigation may be unavailable.', navigation.latestInvoiceNumberError],
         ['next', 'Next invoice number could not be loaded', 'A number could not be assigned to the new invoice.', loader.requestErrors.nextInvoiceNumber],
@@ -93,11 +99,13 @@ function InvoicePage() {
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
+                canExportXml={print.canPrint} isExportingXml={xmlExport.isExporting}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
                 onEmail={email} onRevert={revert.requestRevert}
+                onExportXml={() => { void xmlExport.exportXml() }}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>

@@ -95,6 +95,32 @@ export function invoicePdfUrl(invoiceNumber: string, businessYear: string): stri
     return url.toString()
 }
 
+function invoiceXmlUrl(invoiceNumber: string, businessYear: string): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/xml`
+    url.searchParams.set('businessYear', businessYear)
+    url.hash = ''
+    return url.toString()
+}
+
+export async function downloadInvoiceXml(invoiceNumber: string, businessYear: string) {
+    const response = await fetch(invoiceXmlUrl(invoiceNumber, businessYear))
+    if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: string } | null
+        throw new Error(body?.error ?? `XML export failed (${response.status})`)
+    }
+    const disposition = response.headers.get('Content-Disposition') ?? ''
+    const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `invoice-${invoiceNumber}.xml`
+    const objectUrl = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+}
+
 export async function postSaveInvoice(variables: Record<string, unknown>) {
     return postGraphql<{
         data?: { saveInvoice: { id: number; invoiceNumber: string } }
