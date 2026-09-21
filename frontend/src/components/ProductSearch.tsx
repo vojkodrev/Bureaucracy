@@ -70,6 +70,8 @@ type ProductSearchResult = {
 type ProductSearchProps = {
     mode: ComponentMode
     onProductSelect?: (product: Product) => void
+    showSearchFields?: boolean
+    similarName?: string
 }
 
 const searchProductsQuery = `
@@ -77,6 +79,7 @@ const searchProductsQuery = `
         $businessYear: String!
         $productCode: String
         $productName: String
+        $similarName: String
         $sortBy: String
         $sortDirection: String
         $page: Int
@@ -86,6 +89,7 @@ const searchProductsQuery = `
             businessYear: $businessYear
             productCode: $productCode
             productName: $productName
+            similarName: $similarName
             sortBy: $sortBy
             sortDirection: $sortDirection
             page: $page
@@ -150,7 +154,12 @@ function searchParamsFromForm(search: SearchForm): URLSearchParams {
     return searchParams
 }
 
-function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
+function ProductSearch({
+    mode,
+    onProductSelect,
+    showSearchFields = true,
+    similarName,
+}: ProductSearchProps) {
     const [searchParams, setSearchParams] = useSearchParams()
     const pageSearch = useMemo(
         () => searchFormFromParams(searchParams),
@@ -161,8 +170,8 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
     )
     const activeSearch = mode === ComponentMode.Page ? pageSearch : dialogSearch
     const searchKey = useMemo(
-        () => new URLSearchParams(activeSearch).toString(),
-        [activeSearch],
+        () => new URLSearchParams({ ...activeSearch, similarName: similarName ?? '' }).toString(),
+        [activeSearch, similarName],
     )
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
     const [searchResult, setSearchResult] = useState<ProductSearchResult>({
@@ -194,6 +203,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                     businessYear: getSelectedBusinessYear(),
                     productCode: optionalFilter(activeSearch.productCode),
                     productName: optionalFilter(activeSearch.productName),
+                    similarName: optionalFilter(similarName ?? ''),
                     sortBy: activeSearch.sortBy || null,
                     sortDirection: activeSearch.sortDirection || null,
                     page: positiveInteger(activeSearch.page, defaultPage),
@@ -237,7 +247,7 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
             })
 
         return () => abortController.abort()
-    }, [activeSearch, searchKey])
+    }, [activeSearch, searchKey, similarName])
 
     function submitSearch(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -332,47 +342,49 @@ function ProductSearch({ mode, onProductSelect }: ProductSearchProps) {
                     />
                 </div>
             )}
-            <form
-                key={searchKey}
-                className="max-w-2xl"
-                onSubmit={submitSearch}
-                onReset={clearSearch}
-            >
-                <Card>
-                    <CardContent>
-                        <FieldGroup>
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <Field>
-                                    <FieldLabel htmlFor="product-code">Product code</FieldLabel>
-                                    <Input
-                                        id="product-code"
-                                        type="search"
-                                        name="productCode"
-                                        defaultValue={activeSearch.productCode}
-                                        autoComplete="off"
-                                    />
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor="product-name">Product name</FieldLabel>
-                                    <Input
-                                        id="product-name"
-                                        type="search"
-                                        name="productName"
-                                        defaultValue={activeSearch.productName}
-                                        autoComplete="off"
-                                    />
-                                </Field>
-                            </div>
-                        </FieldGroup>
-                    </CardContent>
-                    <CardFooter className="gap-2">
-                        <Button type="submit">Search</Button>
-                        <Button type="reset" variant="outline">Clear</Button>
-                    </CardFooter>
-                </Card>
-            </form>
+            {showSearchFields && (
+                <form
+                    key={searchKey}
+                    className="max-w-2xl"
+                    onSubmit={submitSearch}
+                    onReset={clearSearch}
+                >
+                    <Card>
+                        <CardContent>
+                            <FieldGroup>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <Field>
+                                        <FieldLabel htmlFor="product-code">Product code</FieldLabel>
+                                        <Input
+                                            id="product-code"
+                                            type="search"
+                                            name="productCode"
+                                            defaultValue={activeSearch.productCode}
+                                            autoComplete="off"
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="product-name">Product name</FieldLabel>
+                                        <Input
+                                            id="product-name"
+                                            type="search"
+                                            name="productName"
+                                            defaultValue={activeSearch.productName}
+                                            autoComplete="off"
+                                        />
+                                    </Field>
+                                </div>
+                            </FieldGroup>
+                        </CardContent>
+                        <CardFooter className="gap-2">
+                            <Button type="submit">Search</Button>
+                            <Button type="reset" variant="outline">Clear</Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+            )}
 
-            {!error && <div className="mt-8">
+            {!error && <div className={showSearchFields ? 'mt-8' : undefined}>
                 {productPage && (
                     <Pager
                         firstItem={firstProduct}

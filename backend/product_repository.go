@@ -148,6 +148,7 @@ func (repository *ProductRepository) Search(
 	businessYear string,
 	productCode *string,
 	productName *string,
+	similarName *string,
 	sortBy *string,
 	sortDirection *string,
 	page int,
@@ -162,6 +163,10 @@ func (repository *ProductRepository) Search(
 	if pageSize < 1 || pageSize > 10000 {
 		return nil, fmt.Errorf("pageSize must be between 1 and 10000")
 	}
+	similaritySearch := normalizedProductName(similarName)
+	if similarName != nil && similaritySearch == "" {
+		return nil, fmt.Errorf("similarName must contain letters or numbers")
+	}
 	orderBy, err := productOrderBy(sortBy, sortDirection)
 	if err != nil {
 		return nil, err
@@ -173,8 +178,24 @@ func (repository *ProductRepository) Search(
 		sql.Named("productName", optionalLikePattern(productName)),
 	}
 
+	if similaritySearch == "" {
+		return repository.searchProductsNormally(ctx, databaseName, queryArguments, orderBy, page, pageSize)
+	}
+
+	return repository.searchProductsBySimilarity(ctx, databaseName, queryArguments, orderBy,
+		*similarName, similarityDistanceLimit(similaritySearch), sortBy != nil, page, pageSize)
+}
+
+func (repository *ProductRepository) searchProductsNormally(
+	ctx context.Context,
+	databaseName string,
+	queryArguments []any,
+	orderBy string,
+	page int,
+	pageSize int,
+) (*ProductPage, error) {
 	var totalCount int
-	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[Artikel]
 		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
@@ -246,6 +267,120 @@ func (repository *ProductRepository) Search(
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func (repository *ProductRepository) searchProductsBySimilarity(
+	ctx context.Context,
+	databaseName string,
+	queryArguments []any,
+	orderBy string,
+	similarName string,
+	maximumDistance int,
+	hasExplicitSort bool,
+	page int,
+	pageSize int,
+) (*ProductPage, error) {
+	queryArguments = append(queryArguments,
+		sql.Named("similarName", similarName),
+		sql.Named("maximumDistance", maximumDistance),
+	)
+
+	var totalCount int
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		USE [%s];
+		SELECT COUNT(*)
+		FROM [dbo].[Artikel]
+		CROSS APPLY (VALUES (
+			LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+				LTRIM(RTRIM(@similarName)), ' ', ''), '-', ''), '_', ''), '.', ''), '/', ''), '\', '')),
+			LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+				LTRIM(RTRIM(Opis)), ' ', ''), '-', ''), '_', ''), '.', ''), '/', ''), '\', ''))
+		)) AS Normalized(SearchName, ProductName)
+		CROSS APPLY (VALUES (EDIT_DISTANCE(
+			Normalized.SearchName, Normalized.ProductName, @maximumDistance + 1
+		)))
+			AS Similarity(Distance)
+		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
+		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')
+		  AND Opis IS NOT NULL
+		  AND Similarity.Distance <= @maximumDistance`, databaseName),
+		queryArguments...,
+	).Scan(&totalCount)
+	if err != nil {
+		return nil, fmt.Errorf("count similar products: %w", err)
+	}
+
+	resultOrderBy := "Similarity.Distance, Artikel, RecNo"
+	if hasExplicitSort {
+		resultOrderBy = orderBy
+	}
+	queryArguments = append(queryArguments,
+		sql.Named("offset", (page-1)*pageSize),
+		sql.Named("pageSize", pageSize),
+	)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		USE [%s];
+		SELECT RecNo, Artikel, Opis, BarKoda, Enota, CenaBrezDavka,
+			CenaZDavkom, CAST(Davek AS float), SifraDavka
+		FROM [dbo].[Artikel]
+		CROSS APPLY (VALUES (
+			LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+				LTRIM(RTRIM(@similarName)), ' ', ''), '-', ''), '_', ''), '.', ''), '/', ''), '\', '')),
+			LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+				LTRIM(RTRIM(Opis)), ' ', ''), '-', ''), '_', ''), '.', ''), '/', ''), '\', ''))
+		)) AS Normalized(SearchName, ProductName)
+		CROSS APPLY (VALUES (EDIT_DISTANCE(
+			Normalized.SearchName, Normalized.ProductName, @maximumDistance + 1
+		)))
+			AS Similarity(Distance)
+		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
+		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')
+		  AND Opis IS NOT NULL
+		  AND Similarity.Distance <= @maximumDistance
+		ORDER BY %s
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
+		databaseName, resultOrderBy), queryArguments...)
+	if err != nil {
+		return nil, fmt.Errorf("search similar products: %w", err)
+	}
+	defer rows.Close()
+
+	products := make([]*Product, 0)
+	for rows.Next() {
+		product := &Product{}
+		if err := rows.Scan(
+			&product.ID, &product.ProductCode, &product.Name, &product.Barcode,
+			&product.Unit, &product.NetPrice, &product.GrossPrice, &product.TaxRate,
+			&product.TaxCode,
+		); err != nil {
+			return nil, fmt.Errorf("scan similar product: %w", err)
+		}
+		products = append(products, product)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read similar products: %w", err)
+	}
+
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = (totalCount + pageSize - 1) / pageSize
+	}
+	return &ProductPage{Products: products, TotalCount: totalCount, Page: page,
+		PageSize: pageSize, TotalPages: totalPages}, nil
+}
+
+func normalizedProductName(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return strings.NewReplacer(
+		" ", "", "-", "", "_", "", ".", "", "/", "", "\\", "",
+	).Replace(strings.ToLower(strings.TrimSpace(*value)))
+}
+
+func similarityDistanceLimit(name string) int {
+	// Allow small suffixes such as "40x40" or "cm", while keeping short names strict.
+	return min(10, max(2, (len([]rune(name))+2)/3))
 }
 
 func productOrderBy(sortBy *string, sortDirection *string) (string, error) {

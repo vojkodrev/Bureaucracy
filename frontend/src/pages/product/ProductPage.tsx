@@ -1,4 +1,12 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import ProductSearch from '@/components/ProductSearch'
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion'
+import { ComponentMode } from '@/lib/component-mode'
 import ProductDetails from './ProductDetails'
 import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
@@ -85,6 +93,25 @@ function ProductPage() {
                         taxRate: rate == null ? '' : String(rate),
                     }))} />
             </div>
+            {loader.productId != null && !draftState.hasUnsavedChanges && draft.name.trim() && (
+                <Accordion className="mt-6" defaultValue={['similar-products']}>
+                    <AccordionItem value="similar-products">
+                        <AccordionTrigger>Similar products</AccordionTrigger>
+                        <AccordionContent>
+                            <ProductSearch
+                                mode={ComponentMode.Dialog}
+                                showSearchFields={false}
+                                similarName={draft.name}
+                                onProductSelect={(product) => {
+                                    if (product.productCode) {
+                                        void navigate(`/product/${encodeURIComponent(product.productCode)}`)
+                                    }
+                                }}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            )}
         </div>
     )
 }
