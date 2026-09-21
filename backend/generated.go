@@ -107,6 +107,7 @@ type ComplexityRoot struct {
 
 	Customer struct {
 		Address            func(childComplexity int) int
+		BIC                func(childComplexity int) int
 		City               func(childComplexity int) int
 		Contact            func(childComplexity int) int
 		Country            func(childComplexity int) int
@@ -114,6 +115,7 @@ type ComplexityRoot struct {
 		Discount           func(childComplexity int) int
 		Email              func(childComplexity int) int
 		ID                 func(childComplexity int) int
+		IBAN               func(childComplexity int) int
 		Name               func(childComplexity int) int
 		PaymentTerm        func(childComplexity int) int
 		Phone              func(childComplexity int) int
@@ -633,6 +635,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Customer.City(childComplexity), true
+	case "Customer.bic":
+		if e.ComplexityRoot.Customer.BIC == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Customer.BIC(childComplexity), true
 	case "Customer.contact":
 		if e.ComplexityRoot.Customer.Contact == nil {
 			break
@@ -669,6 +677,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Customer.ID(childComplexity), true
+	case "Customer.iban":
+		if e.ComplexityRoot.Customer.IBAN == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Customer.IBAN(childComplexity), true
 	case "Customer.name":
 		if e.ComplexityRoot.Customer.Name == nil {
 			break
@@ -1902,6 +1916,10 @@ func (ec *executionContext) childFields_Customer(ctx context.Context, field grap
 		return ec.fieldContext_Customer_taxNumber(ctx, field)
 	case "registrationNumber":
 		return ec.fieldContext_Customer_registrationNumber(ctx, field)
+	case "iban":
+		return ec.fieldContext_Customer_iban(ctx, field)
+	case "bic":
+		return ec.fieldContext_Customer_bic(ctx, field)
 	case "paymentTerm":
 		return ec.fieldContext_Customer_paymentTerm(ctx, field)
 	case "discount":
@@ -4653,6 +4671,38 @@ func (ec *executionContext) _Customer_registrationNumber(ctx context.Context, fi
 	)
 }
 func (ec *executionContext) fieldContext_Customer_registrationNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Customer_iban(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx, ec.OperationContext, field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Customer_iban(ctx, field)
+		},
+		func(ctx context.Context) (any, error) { return obj.IBAN, nil }, nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		}, true, false,
+	)
+}
+func (ec *executionContext) fieldContext_Customer_iban(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Customer_bic(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx, ec.OperationContext, field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Customer_bic(ctx, field)
+		},
+		func(ctx context.Context) (any, error) { return obj.BIC, nil }, nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		}, true, false,
+	)
+}
+func (ec *executionContext) fieldContext_Customer_bic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -9607,7 +9657,7 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "customerId", "name", "address", "postalCode", "city", "country", "contact", "email", "phone", "taxNumber", "registrationNumber", "paymentTerm", "discount"}
+	fieldsInOrder := [...]string{"id", "customerId", "name", "address", "postalCode", "city", "country", "contact", "email", "phone", "taxNumber", "registrationNumber", "iban", "bic", "paymentTerm", "discount"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9698,6 +9748,20 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 				return it, err
 			}
 			it.RegistrationNumber = data
+		case "iban":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("iban"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Iban = data
+		case "bic":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bic"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Bic = data
 		case "paymentTerm":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentTerm"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -10731,6 +10795,16 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "registrationNumber":
 			out.Values[i] = ec._Customer_registrationNumber(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "iban":
+			out.Values[i] = ec._Customer_iban(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "bic":
+			out.Values[i] = ec._Customer_bic(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

@@ -75,7 +75,8 @@ func (repository *CustomerRepository) GetByID(ctx context.Context, businessYear 
 	customer := &Customer{}
 	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT RecNo, Sifra, Partner, Ulica, Posta, Kraj, Drzava, Kontakt,
-			Email, Telefon, IDStevilka, MaticnaStevilka, PlacilniRok, RabatGeneralno
+			Email, Telefon, IDStevilka, MaticnaStevilka, Ziro_Racun, Ziro_Racun1,
+			PlacilniRok, RabatGeneralno
 		FROM [%s].[dbo].[Partner]
 		WHERE Sifra = @customerID`, databaseName),
 		sql.Named("customerID", customerID),
@@ -83,7 +84,8 @@ func (repository *CustomerRepository) GetByID(ctx context.Context, businessYear 
 		&customer.ID, &customer.CustomerID, &customer.Name, &customer.Address,
 		&customer.PostalCode, &customer.City, &customer.Country, &customer.Contact,
 		&customer.Email, &customer.Phone, &customer.TaxNumber,
-		&customer.RegistrationNumber, &customer.PaymentTerm, &customer.Discount,
+		&customer.RegistrationNumber, &customer.IBAN, &customer.BIC,
+		&customer.PaymentTerm, &customer.Discount,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -116,6 +118,8 @@ func (repository *CustomerRepository) Save(ctx context.Context, businessYear str
 	input.Phone = trimmedCustomerString(input.Phone)
 	input.TaxNumber = trimmedCustomerString(input.TaxNumber)
 	input.RegistrationNumber = trimmedCustomerString(input.RegistrationNumber)
+	input.Iban = trimmedCustomerString(input.Iban)
+	input.Bic = trimmedCustomerString(input.Bic)
 	if input.Name == nil {
 		return nil, fmt.Errorf("name is required")
 	}
@@ -128,6 +132,7 @@ func (repository *CustomerRepository) Save(ctx context.Context, businessYear str
 		"country": {input.Country, 3}, "contact": {input.Contact, 60},
 		"email": {input.Email, 50}, "phone": {input.Phone, 60},
 		"taxNumber": {input.TaxNumber, 22}, "registrationNumber": {input.RegistrationNumber, 10},
+		"iban": {input.Iban, 60}, "bic": {input.Bic, 60},
 	} {
 		if field.value != nil && len([]rune(*field.value)) > field.limit {
 			return nil, fmt.Errorf("%s must be at most %d characters", name, field.limit)
@@ -148,6 +153,7 @@ func (repository *CustomerRepository) Save(ctx context.Context, businessYear str
 		sql.Named("contact", input.Contact), sql.Named("email", input.Email),
 		sql.Named("phone", input.Phone), sql.Named("taxNumber", input.TaxNumber),
 		sql.Named("registrationNumber", input.RegistrationNumber),
+		sql.Named("iban", input.Iban), sql.Named("bic", input.Bic),
 		sql.Named("paymentTerm", input.PaymentTerm), sql.Named("discount", input.Discount),
 	}
 	if input.ID != nil && *input.ID > 0 {
@@ -157,7 +163,8 @@ func (repository *CustomerRepository) Save(ctx context.Context, businessYear str
 			SET Sifra=@customerID, Partner=@name, Ulica=@address, Posta=@postalCode,
 				Kraj=@city, Drzava=@country, Kontakt=@contact, Email=@email,
 				Telefon=@phone, IDStevilka=@taxNumber,
-				MaticnaStevilka=@registrationNumber, PlacilniRok=@paymentTerm,
+				MaticnaStevilka=@registrationNumber, Ziro_Racun=@iban, Ziro_Racun1=@bic,
+				PlacilniRok=@paymentTerm,
 				RabatGeneralno=@discount
 			WHERE RecNo=@id`, databaseName), arguments...)
 		if err != nil {
@@ -171,10 +178,11 @@ func (repository *CustomerRepository) Save(ctx context.Context, businessYear str
 		_, err := repository.database.ExecContext(ctx, fmt.Sprintf(`
 			INSERT INTO [%s].[dbo].[Partner] (
 				Sifra, Partner, Ulica, Posta, Kraj, Drzava, Kontakt, Email,
-				Telefon, IDStevilka, MaticnaStevilka, PlacilniRok, RabatGeneralno
+				Telefon, IDStevilka, MaticnaStevilka, Ziro_Racun, Ziro_Racun1,
+				PlacilniRok, RabatGeneralno
 			) VALUES (
 				@customerID, @name, @address, @postalCode, @city, @country,
-				@contact, @email, @phone, @taxNumber, @registrationNumber,
+				@contact, @email, @phone, @taxNumber, @registrationNumber, @iban, @bic,
 				@paymentTerm, @discount
 			)`, databaseName), arguments...)
 		if err != nil {
@@ -255,6 +263,8 @@ func (repository *CustomerRepository) Search(
 			Telefon,
 			IDStevilka,
 			MaticnaStevilka,
+			Ziro_Racun,
+			Ziro_Racun1,
 			PlacilniRok,
 			RabatGeneralno
 		FROM [%s].[dbo].[Partner]
@@ -285,6 +295,8 @@ func (repository *CustomerRepository) Search(
 			&customer.Phone,
 			&customer.TaxNumber,
 			&customer.RegistrationNumber,
+			&customer.IBAN,
+			&customer.BIC,
 			&customer.PaymentTerm,
 			&customer.Discount,
 		); err != nil {

@@ -13,6 +13,8 @@ type Customer struct {
 	Phone              *string  `json:"phone"`
 	TaxNumber          *string  `json:"taxNumber"`
 	RegistrationNumber *string  `json:"registrationNumber"`
+	IBAN               *string  `json:"iban"`
+	BIC                *string  `json:"bic"`
 	PaymentTerm        *int     `json:"paymentTerm"`
 	Discount           *float64 `json:"discount"`
 }

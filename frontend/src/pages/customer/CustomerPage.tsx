@@ -34,13 +34,15 @@ type CustomerDraft = {
     phone: string
     taxNumber: string
     registrationNumber: string
+    iban: string
+    bic: string
     paymentTerm: string
     discount: string
 }
 
 const customerFields = `
     id customerId name address postalCode city country contact email phone
-    taxNumber registrationNumber paymentTerm discount
+    taxNumber registrationNumber iban bic paymentTerm discount
 `
 const customerQuery = `
     query Customer($businessYear: String!, $customerId: String!) {
@@ -69,6 +71,7 @@ function customerDraft(customer?: Customer | null): CustomerDraft {
         contact: customer?.contact ?? '', email: customer?.email ?? '',
         phone: customer?.phone ?? '', taxNumber: customer?.taxNumber ?? '',
         registrationNumber: customer?.registrationNumber ?? '',
+        iban: customer?.iban ?? '', bic: customer?.bic ?? '',
         paymentTerm: customer?.paymentTerm == null ? '' : String(customer.paymentTerm),
         discount: customer?.discount == null ? '' : String(customer.discount),
     }
@@ -190,6 +193,7 @@ function CustomerPage() {
                             email: emptyToNull(draft.email), phone: emptyToNull(draft.phone),
                             taxNumber: emptyToNull(draft.taxNumber),
                             registrationNumber: emptyToNull(draft.registrationNumber),
+                            iban: emptyToNull(draft.iban), bic: emptyToNull(draft.bic),
                             paymentTerm: numberOrNull(draft.paymentTerm), discount: numberOrNull(draft.discount),
                         },
                     },
@@ -321,19 +325,30 @@ function CustomerPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <Card>
-                    <CardHeader><CardTitle>Address</CardTitle></CardHeader>
-                    <CardContent>
-                        <FieldGroup>
-                            <Field><FieldLabel htmlFor="customer-address">Address</FieldLabel><Input id="customer-address" maxLength={32} value={draft.address} onChange={(event) => setField('address', event.target.value)} /></Field>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field><FieldLabel htmlFor="customer-postal-code">Postal code</FieldLabel><Input id="customer-postal-code" maxLength={10} value={draft.postalCode} onChange={(event) => setField('postalCode', event.target.value)} /></Field>
-                                <Field><FieldLabel htmlFor="customer-city">City</FieldLabel><Input id="customer-city" maxLength={50} value={draft.city} onChange={(event) => setField('city', event.target.value)} /></Field>
-                            </div>
-                            <CountryComboboxField id="customer-country" label="Country" value={draft.country} onChange={(value) => setField('country', value)} />
-                        </FieldGroup>
-                    </CardContent>
-                </Card>
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Address</CardTitle></CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field><FieldLabel htmlFor="customer-address">Address</FieldLabel><Input id="customer-address" maxLength={32} value={draft.address} onChange={(event) => setField('address', event.target.value)} /></Field>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field><FieldLabel htmlFor="customer-postal-code">Postal code</FieldLabel><Input id="customer-postal-code" maxLength={10} value={draft.postalCode} onChange={(event) => setField('postalCode', event.target.value)} /></Field>
+                                    <Field><FieldLabel htmlFor="customer-city">City</FieldLabel><Input id="customer-city" maxLength={50} value={draft.city} onChange={(event) => setField('city', event.target.value)} /></Field>
+                                </div>
+                                <CountryComboboxField id="customer-country" label="Country" value={draft.country} onChange={(value) => setField('country', value)} />
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle>Bank</CardTitle></CardHeader>
+                        <CardContent>
+                            <FieldGroup>
+                                <Field><FieldLabel htmlFor="customer-iban">IBAN</FieldLabel><Input id="customer-iban" maxLength={60} value={draft.iban} onChange={(event) => setField('iban', event.target.value)} /></Field>
+                                <Field><FieldLabel htmlFor="customer-bic">BIC</FieldLabel><Input id="customer-bic" maxLength={60} value={draft.bic} onChange={(event) => setField('bic', event.target.value)} /></Field>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     )

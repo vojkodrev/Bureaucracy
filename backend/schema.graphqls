@@ -28,6 +28,8 @@ type Customer {
   phone: String
   taxNumber: String
   registrationNumber: String
+  iban: String
+  bic: String
   paymentTerm: Int
   discount: Float
 }
@@ -125,6 +127,8 @@ input CustomerInput {
   phone: String
   taxNumber: String
   registrationNumber: String
+  iban: String
+  bic: String
   paymentTerm: Int
   discount: Float
 }

@@ -39,6 +39,8 @@ type CustomerInput struct {
 	Phone              *string  `json:"phone,omitempty"`
 	TaxNumber          *string  `json:"taxNumber,omitempty"`
 	RegistrationNumber *string  `json:"registrationNumber,omitempty"`
+	Iban               *string  `json:"iban,omitempty"`
+	Bic                *string  `json:"bic,omitempty"`
 	PaymentTerm        *int     `json:"paymentTerm,omitempty"`
 	Discount           *float64 `json:"discount,omitempty"`
 }
