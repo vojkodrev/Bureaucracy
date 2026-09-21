@@ -1,25 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import ErrorAlert from '@/components/ErrorAlert'
-import Pager from '@/components/Pager'
-import SortableTableHead from '@/components/SortableTableHead'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+import { useSearchParams } from 'react-router-dom'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { ComponentMode } from '@/lib/component-mode'
 import { optionalFilter } from '@/lib/filters'
-import { formatCurrency } from '@/lib/formatters'
 import {
     defaultPage,
     defaultPageSize,
@@ -27,35 +11,11 @@ import {
     positiveInteger,
 } from '@/lib/pagination'
 import type { Product, ProductPage } from '@/lib/product-types'
-
-type SearchForm = {
-    productCode: string
-    productName: string
-    page: string
-    pageSize: string
-    sortBy: ProductSortColumn | ''
-    sortDirection: SortDirection | ''
-}
-
-type ProductSortColumn =
-    | 'productCode'
-    | 'name'
-    | 'unit'
-    | 'netPrice'
-    | 'grossPrice'
-    | 'taxCode'
-    | 'taxRate'
-type SortDirection = 'asc' | 'desc'
-
-const productSortColumns: { key: ProductSortColumn, label: string, alignRight?: boolean }[] = [
-    { key: 'productCode', label: 'Product code' },
-    { key: 'name', label: 'Name' },
-    { key: 'unit', label: 'Unit' },
-    { key: 'netPrice', label: 'Net price', alignRight: true },
-    { key: 'grossPrice', label: 'Gross price', alignRight: true },
-    { key: 'taxCode', label: 'Tax code' },
-    { key: 'taxRate', label: 'Tax rate', alignRight: true },
-]
+import ProductSearchErrors from './ProductSearchErrors'
+import ProductSearchForm from './ProductSearchForm'
+import ProductSearchResults from './ProductSearchResults'
+import { productSortColumns } from './product-search-columns'
+import type { ProductSearchForm as SearchForm, ProductSortColumn } from './types'
 
 type SearchProductsResponse = {
     data?: { searchProducts: ProductPage }
@@ -215,14 +175,6 @@ function ProductSearch({
     const invoiceCountsLoading = showInvoiceCount && productPage != null &&
         invoiceCountResult.key !== invoiceCountsKey
     const error = isLoading ? null : searchResult.error
-    const firstProduct =
-        productPage && productPage.totalCount > 0
-            ? (productPage.page - 1) * productPage.pageSize + 1
-            : 0
-    const lastProduct = productPage
-        ? Math.min(productPage.page * productPage.pageSize, productPage.totalCount)
-        : 0
-
     useEffect(() => {
         const abortController = new AbortController()
 
@@ -411,176 +363,34 @@ function ProductSearch({
 
     return (
         <div className="p-4">
-            {error && (
-                <div className="mb-6 max-w-2xl">
-                    <ErrorAlert
-                        title="Products could not be loaded"
-                        description="The product search could not be completed."
-                        error={error}
-                    />
-                </div>
-            )}
+            <ProductSearchErrors error={error} />
             {showSearchFields && (
-                <form
+                <ProductSearchForm
                     key={searchKey}
-                    className="max-w-2xl"
+                    search={activeSearch}
                     onSubmit={submitSearch}
                     onReset={clearSearch}
-                >
-                    <Card>
-                        <CardContent>
-                            <FieldGroup>
-                                <div className="grid gap-6 sm:grid-cols-2">
-                                    <Field>
-                                        <FieldLabel htmlFor="product-code">Product code</FieldLabel>
-                                        <Input
-                                            id="product-code"
-                                            type="search"
-                                            name="productCode"
-                                            defaultValue={activeSearch.productCode}
-                                            autoComplete="off"
-                                        />
-                                    </Field>
-                                    <Field>
-                                        <FieldLabel htmlFor="product-name">Product name</FieldLabel>
-                                        <Input
-                                            id="product-name"
-                                            type="search"
-                                            name="productName"
-                                            defaultValue={activeSearch.productName}
-                                            autoComplete="off"
-                                        />
-                                    </Field>
-                                </div>
-                            </FieldGroup>
-                        </CardContent>
-                        <CardFooter className="gap-2">
-                            <Button type="submit">Search</Button>
-                            <Button type="reset" variant="outline">Clear</Button>
-                        </CardFooter>
-                    </Card>
-                </form>
+                />
             )}
-
-            {!error && <div className={showSearchFields ? 'mt-8' : undefined}>
-                {productPage && (
-                    <Pager
-                        firstItem={firstProduct}
-                        lastItem={lastProduct}
-                        page={productPage.page}
-                        pageSize={productPage.pageSize}
-                        totalItems={productPage.totalCount}
-                        totalPages={productPage.totalPages}
-                        onPageChange={changePage}
-                        onPageSizeChange={changePageSize}
-                    />
-                )}
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            {productSortColumns.map(({ key, label, alignRight }) => (
-                                <SortableTableHead
-                                    key={key}
-                                    label={label}
-                                    direction={activeSearch.sortBy === key
-                                        ? activeSearch.sortDirection
-                                        : ''}
-                                    alignRight={alignRight}
-                                    onSort={() => changeSort(key)}
-                                />
-                            ))}
-                            {showInvoiceCount && (
-                                <TableHead className="text-right">Invoices</TableHead>
-                            )}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && (
-                            <TableRow>
-                            <TableCell colSpan={showInvoiceCount ? 8 : 7} className="h-24 text-center text-muted-foreground">
-                                    Loading products…
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading && !error && products.length === 0 && (
-                            <TableRow>
-                            <TableCell colSpan={showInvoiceCount ? 8 : 7} className="h-24 text-center text-muted-foreground">
-                                    No products found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading &&
-                            !error &&
-                            products.map((product) => {
-                                const isPageMode = mode === ComponentMode.Page
-
-                                return (
-                                    <TableRow
-                                        key={product.id}
-                                        data-state={
-                                            selectedProductId === product.id
-                                                ? 'selected'
-                                                : undefined
-                                        }
-                                        className="relative cursor-pointer"
-                                        tabIndex={isPageMode ? undefined : 0}
-                                        onClick={isPageMode
-                                            ? undefined
-                                            : () => selectProduct(product)}
-                                        onKeyDown={isPageMode
-                                            ? undefined
-                                            : (event) => {
-                                                if (event.key === 'Enter' || event.key === ' ') {
-                                                    event.preventDefault()
-                                                    selectProduct(product)
-                                                }
-                                            }}
-                                    >
-                                        <TableCell className="font-medium">
-                                            {isPageMode && product.productCode && (
-                                                <Link
-                                                    to={`/product/${encodeURIComponent(product.productCode)}`}
-                                                    aria-label={`Open product ${product.productCode}`}
-                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                                />
-                                            )}
-                                            {product.productCode ?? '—'}
-                                        </TableCell>
-                                        <TableCell>{product.name ?? '—'}</TableCell>
-                                        <TableCell>{product.unit ?? '—'}</TableCell>
-                                        <TableCell className="text-right">
-                                            {product.netPrice == null
-                                                ? '—'
-                                                : formatCurrency(product.netPrice)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {product.grossPrice == null
-                                                ? '—'
-                                                : formatCurrency(product.grossPrice)}
-                                        </TableCell>
-                                        <TableCell>{product.taxCode ?? '—'}</TableCell>
-                                        <TableCell className="text-right">
-                                            {product.taxRate == null
-                                                ? '—'
-                                                : `${product.taxRate}%`}
-                                        </TableCell>
-                                        {showInvoiceCount && (
-                                            <TableCell className="text-right">
-                                                {invoiceCountsLoading
-                                                    ? '…'
-                                                    : invoiceCountResult.error
-                                                        ? '—'
-                                                        : product.productCode
-                                                            ? invoiceCountResult.counts[product.productCode] ?? 0
-                                                            : 0}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                )
-                            })}
-                    </TableBody>
-                </Table>
-            </div>}
+            {!error && (
+                <ProductSearchResults
+                    search={activeSearch}
+                    productPage={productPage}
+                    products={products}
+                    isLoading={isLoading}
+                    mode={mode}
+                    showSearchFields={showSearchFields}
+                    showInvoiceCount={showInvoiceCount}
+                    selectedProductId={selectedProductId}
+                    invoiceCounts={invoiceCountResult.counts}
+                    invoiceCountsLoading={invoiceCountsLoading}
+                    invoiceCountsError={invoiceCountResult.error}
+                    onProductSelect={selectProduct}
+                    onPageChange={changePage}
+                    onPageSizeChange={changePageSize}
+                    onSort={changeSort}
+                />
+            )}
         </div>
     )
 }
