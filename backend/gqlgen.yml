@@ -81,6 +81,9 @@ models:
   ProductPage:
     model:
       - bureaucracy/backend.ProductPage
+  ProductInvoiceCount:
+    model:
+      - bureaucracy/backend.ProductInvoiceCount
   TaxCode:
     model:
       - bureaucracy/backend.TaxCode

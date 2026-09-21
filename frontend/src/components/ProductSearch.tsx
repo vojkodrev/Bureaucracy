@@ -12,6 +12,7 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableHead,
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
@@ -61,6 +62,13 @@ type SearchProductsResponse = {
     errors?: { message: string }[]
 }
 
+type ProductInvoiceCountsResponse = {
+    data?: {
+        productInvoiceCounts: { productCode: string, invoiceCount: number }[]
+    }
+    errors?: { message: string }[]
+}
+
 type ProductSearchResult = {
     searchKey: string
     productPage: ProductPage | null
@@ -71,6 +79,7 @@ type ProductSearchProps = {
     mode: ComponentMode
     onProductSelect?: (product: Product) => void
     showSearchFields?: boolean
+    showInvoiceCount?: boolean
     similarName?: string
 }
 
@@ -109,6 +118,15 @@ const searchProductsQuery = `
             page
             pageSize
             totalPages
+        }
+    }
+`
+
+const productInvoiceCountsQuery = `
+    query ProductInvoiceCounts($businessYear: String!, $productCodes: [String!]!) {
+        productInvoiceCounts(businessYear: $businessYear, productCodes: $productCodes) {
+            productCode
+            invoiceCount
         }
     }
 `
@@ -158,6 +176,7 @@ function ProductSearch({
     mode,
     onProductSelect,
     showSearchFields = true,
+    showInvoiceCount = false,
     similarName,
 }: ProductSearchProps) {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -170,7 +189,10 @@ function ProductSearch({
     )
     const activeSearch = mode === ComponentMode.Page ? pageSearch : dialogSearch
     const searchKey = useMemo(
-        () => new URLSearchParams({ ...activeSearch, similarName: similarName ?? '' }).toString(),
+        () => new URLSearchParams({
+            ...activeSearch,
+            similarName: similarName ?? '',
+        }).toString(),
         [activeSearch, similarName],
     )
     const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
@@ -182,6 +204,16 @@ function ProductSearch({
     const isLoading = searchResult.searchKey !== searchKey
     const productPage = isLoading ? null : searchResult.productPage
     const products = productPage?.products ?? emptyProducts
+    const invoiceCountsKey = showInvoiceCount && productPage
+        ? `${searchKey}:${products.map(({ productCode }) => productCode ?? '').join(',')}`
+        : '__disabled__'
+    const [invoiceCountResult, setInvoiceCountResult] = useState<{
+        key: string
+        counts: Record<string, number>
+        error: boolean
+    }>({ key: '__initial__', counts: {}, error: false })
+    const invoiceCountsLoading = showInvoiceCount && productPage != null &&
+        invoiceCountResult.key !== invoiceCountsKey
     const error = isLoading ? null : searchResult.error
     const firstProduct =
         productPage && productPage.totalCount > 0
@@ -248,6 +280,52 @@ function ProductSearch({
 
         return () => abortController.abort()
     }, [activeSearch, searchKey, similarName])
+
+    useEffect(() => {
+        if (!showInvoiceCount || !productPage) return
+
+        const productCodes = products.flatMap(({ productCode }) =>
+            productCode ? [productCode] : [],
+        )
+        if (productCodes.length === 0) return
+
+        const abortController = new AbortController()
+        void fetch(graphqlUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: productInvoiceCountsQuery,
+                variables: {
+                    businessYear: getSelectedBusinessYear(),
+                    productCodes,
+                },
+            }),
+            signal: abortController.signal,
+        })
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Product invoice counts failed (${response.status})`)
+                }
+                const result = (await response.json()) as ProductInvoiceCountsResponse
+                if (result.errors?.length) {
+                    throw new Error(result.errors.map(({ message }) => message).join(', '))
+                }
+                const counts = Object.fromEntries(
+                    (result.data?.productInvoiceCounts ?? []).map(
+                        ({ productCode, invoiceCount }) => [productCode, invoiceCount],
+                    ),
+                )
+                setInvoiceCountResult({ key: invoiceCountsKey, counts, error: false })
+            })
+            .catch((requestError: unknown) => {
+                if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                    return
+                }
+                setInvoiceCountResult({ key: invoiceCountsKey, counts: {}, error: true })
+            })
+
+        return () => abortController.abort()
+    }, [invoiceCountsKey, productPage, products, showInvoiceCount])
 
     function submitSearch(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -411,19 +489,22 @@ function ProductSearch({
                                     onSort={() => changeSort(key)}
                                 />
                             ))}
+                            {showInvoiceCount && (
+                                <TableHead className="text-right">Invoices</TableHead>
+                            )}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading && (
                             <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={showInvoiceCount ? 8 : 7} className="h-24 text-center text-muted-foreground">
                                     Loading products…
                                 </TableCell>
                             </TableRow>
                         )}
                         {!isLoading && !error && products.length === 0 && (
                             <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={showInvoiceCount ? 8 : 7} className="h-24 text-center text-muted-foreground">
                                     No products found.
                                 </TableCell>
                             </TableRow>
@@ -483,6 +564,17 @@ function ProductSearch({
                                                 ? '—'
                                                 : `${product.taxRate}%`}
                                         </TableCell>
+                                        {showInvoiceCount && (
+                                            <TableCell className="text-right">
+                                                {invoiceCountsLoading
+                                                    ? '…'
+                                                    : invoiceCountResult.error
+                                                        ? '—'
+                                                        : product.productCode
+                                                            ? invoiceCountResult.counts[product.productCode] ?? 0
+                                                            : 0}
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 )
                             })}

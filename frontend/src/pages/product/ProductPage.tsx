@@ -97,10 +97,11 @@ function ProductPage() {
                 <Accordion className="mt-6" defaultValue={['similar-products']}>
                     <AccordionItem value="similar-products">
                         <AccordionTrigger>Similar products</AccordionTrigger>
-                        <AccordionContent>
+                        <AccordionContent keepMounted>
                             <ProductSearch
                                 mode={ComponentMode.Dialog}
                                 showSearchFields={false}
+                                showInvoiceCount
                                 similarName={draft.name}
                                 onProductSelect={(product) => {
                                     if (product.productCode) {

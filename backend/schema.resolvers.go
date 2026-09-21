@@ -203,6 +203,11 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 	return r.Products.Search(ctx, businessYear, productCode, productName, similarName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// ProductInvoiceCounts is the resolver for the productInvoiceCounts field.
+func (r *queryResolver) ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error) {
+	return r.Products.InvoiceCounts(ctx, businessYear, productCodes)
+}
+
 // TaxCodes is the resolver for the taxCodes field.
 func (r *queryResolver) TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error) {
 	return r.TaxCodeRepository.List(ctx, businessYear)

@@ -304,6 +304,11 @@ type Product {
   taxCode: String
 }
 
+type ProductInvoiceCount {
+  productCode: String!
+  invoiceCount: Int!
+}
+
 type ProductPage {
   products: [Product!]!
   totalCount: Int!
@@ -443,6 +448,11 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+
+  productInvoiceCounts(
+    businessYear: String!
+    productCodes: [String!]!
+  ): [ProductInvoiceCount!]!
 
   taxCodes(businessYear: String!): [TaxCode!]!
 }

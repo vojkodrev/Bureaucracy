@@ -369,6 +369,69 @@ func (repository *ProductRepository) searchProductsBySimilarity(
 		PageSize: pageSize, TotalPages: totalPages}, nil
 }
 
+func (repository *ProductRepository) InvoiceCounts(
+	ctx context.Context,
+	businessYear string,
+	productCodes []string,
+) ([]*ProductInvoiceCount, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	uniqueCodes := make([]string, 0, len(productCodes))
+	seenCodes := make(map[string]struct{}, len(productCodes))
+	for _, productCode := range productCodes {
+		productCode = strings.TrimSpace(productCode)
+		if productCode == "" {
+			continue
+		}
+		if _, exists := seenCodes[productCode]; exists {
+			continue
+		}
+		seenCodes[productCode] = struct{}{}
+		uniqueCodes = append(uniqueCodes, productCode)
+	}
+	if len(uniqueCodes) == 0 {
+		return []*ProductInvoiceCount{}, nil
+	}
+	if len(uniqueCodes) > 10000 {
+		return nil, fmt.Errorf("productCodes must contain at most 10000 values")
+	}
+
+	parameters := make([]string, len(uniqueCodes))
+	arguments := make([]any, len(uniqueCodes))
+	for index, productCode := range uniqueCodes {
+		parameterName := fmt.Sprintf("productCode%d", index)
+		parameters[index] = "@" + parameterName
+		arguments[index] = sql.Named(parameterName, productCode)
+	}
+
+	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT Artikel, COUNT(DISTINCT Stevilka)
+		FROM [%s].[dbo].[RacuniSpecifikacija]
+		WHERE Artikel IN (%s)
+		  AND ISNULL(Deleted, 0) = 0
+		GROUP BY Artikel`, invoiceDatabaseName, strings.Join(parameters, ", ")), arguments...)
+	if err != nil {
+		return nil, fmt.Errorf("count product invoices: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make([]*ProductInvoiceCount, 0, len(uniqueCodes))
+	for rows.Next() {
+		count := &ProductInvoiceCount{}
+		if err := rows.Scan(&count.ProductCode, &count.InvoiceCount); err != nil {
+			return nil, fmt.Errorf("scan product invoice count: %w", err)
+		}
+		counts = append(counts, count)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read product invoice counts: %w", err)
+	}
+	return counts, nil
+}
+
 func normalizedProductName(value *string) string {
 	if value == nil {
 		return ""

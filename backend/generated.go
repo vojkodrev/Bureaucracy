@@ -254,6 +254,11 @@ type ComplexityRoot struct {
 		Unit        func(childComplexity int) int
 	}
 
+	ProductInvoiceCount struct {
+		InvoiceCount func(childComplexity int) int
+		ProductCode  func(childComplexity int) int
+	}
+
 	ProductPage struct {
 		Page       func(childComplexity int) int
 		PageSize   func(childComplexity int) int
@@ -277,6 +282,7 @@ type ComplexityRoot struct {
 		PriceQuote                func(childComplexity int, businessYear string, quoteNumber string) int
 		PriceQuoteTextTemplate    func(childComplexity int, businessYear string) int
 		Product                   func(childComplexity int, businessYear string, productCode string) int
+		ProductInvoiceCounts      func(childComplexity int, businessYear string, productCodes []string) int
 		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers           func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices            func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -327,6 +333,7 @@ type QueryResolver interface {
 	SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error)
 	SearchPriceQuotes(ctx context.Context, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*PriceQuotePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
+	ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error)
 	TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error)
 }
 
@@ -1317,6 +1324,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Product.Unit(childComplexity), true
 
+	case "ProductInvoiceCount.invoiceCount":
+		if e.ComplexityRoot.ProductInvoiceCount.InvoiceCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ProductInvoiceCount.InvoiceCount(childComplexity), true
+	case "ProductInvoiceCount.productCode":
+		if e.ComplexityRoot.ProductInvoiceCount.ProductCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ProductInvoiceCount.ProductCode(childComplexity), true
+
 	case "ProductPage.page":
 		if e.ComplexityRoot.ProductPage.Page == nil {
 			break
@@ -1498,6 +1518,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Product(childComplexity, args["businessYear"].(string), args["productCode"].(string)), true
+	case "Query.productInvoiceCounts":
+		if e.ComplexityRoot.Query.ProductInvoiceCounts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_productInvoiceCounts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.ProductInvoiceCounts(childComplexity, args["businessYear"].(string), args["productCodes"].([]string)), true
 	case "Query.searchBankStatements":
 		if e.ComplexityRoot.Query.SearchBankStatements == nil {
 			break
@@ -2125,6 +2156,16 @@ func (ec *executionContext) childFields_Product(ctx context.Context, field graph
 	return nil, fmt.Errorf("no field named %q was found under type Product", field.Name)
 }
 
+func (ec *executionContext) childFields_ProductInvoiceCount(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "productCode":
+		return ec.fieldContext_ProductInvoiceCount_productCode(ctx, field)
+	case "invoiceCount":
+		return ec.fieldContext_ProductInvoiceCount_invoiceCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ProductInvoiceCount", field.Name)
+}
+
 func (ec *executionContext) childFields_ProductPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "products":
@@ -2654,6 +2695,28 @@ func (ec *executionContext) field_Query_priceQuote_args(ctx context.Context, raw
 		return nil, err
 	}
 	args["quoteNumber"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_productInvoiceCounts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "productCodes",
+		func(ctx context.Context, v any) ([]string, error) {
+			return ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCodes"] = arg1
 	return args, nil
 }
 
@@ -7036,6 +7099,52 @@ func (ec *executionContext) fieldContext_Product_taxCode(_ context.Context, fiel
 	return graphql.NewScalarFieldContext("Product", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _ProductInvoiceCount_productCode(ctx context.Context, field graphql.CollectedField, obj *ProductInvoiceCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ProductInvoiceCount_productCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ProductInvoiceCount_productCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ProductInvoiceCount", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _ProductInvoiceCount_invoiceCount(ctx context.Context, field graphql.CollectedField, obj *ProductInvoiceCount) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ProductInvoiceCount_invoiceCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.InvoiceCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ProductInvoiceCount_invoiceCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ProductInvoiceCount", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _ProductPage_products(ctx context.Context, field graphql.CollectedField, obj *ProductPage) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8022,6 +8131,50 @@ func (ec *executionContext) fieldContext_Query_searchProducts(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_searchProducts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_productInvoiceCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_productInvoiceCounts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().ProductInvoiceCounts(ctx, fc.Args["businessYear"].(string), fc.Args["productCodes"].([]string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*ProductInvoiceCount) graphql.Marshaler {
+			return ec.marshalNProductInvoiceCount2ᚕᚖbureaucracyᚋbackendᚐProductInvoiceCountᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_productInvoiceCounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ProductInvoiceCount(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_productInvoiceCounts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -11508,6 +11661,49 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var productInvoiceCountImplementors = []string{"ProductInvoiceCount"}
+
+func (ec *executionContext) _ProductInvoiceCount(ctx context.Context, sel ast.SelectionSet, obj *ProductInvoiceCount) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productInvoiceCountImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductInvoiceCount")
+		case "productCode":
+			out.Values[i] = ec._ProductInvoiceCount_productCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "invoiceCount":
+			out.Values[i] = ec._ProductInvoiceCount_invoiceCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var productPageImplementors = []string{"ProductPage"}
 
 func (ec *executionContext) _ProductPage(ctx context.Context, sel ast.SelectionSet, obj *ProductPage) graphql.Marshaler {
@@ -12014,6 +12210,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchProducts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "productInvoiceCounts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_productInvoiceCounts(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -13086,6 +13304,32 @@ func (ec *executionContext) unmarshalNProductInput2bureaucracyᚋbackendᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNProductInvoiceCount2ᚕᚖbureaucracyᚋbackendᚐProductInvoiceCountᚄ(ctx context.Context, sel ast.SelectionSet, v []*ProductInvoiceCount) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNProductInvoiceCount2ᚖbureaucracyᚋbackendᚐProductInvoiceCount(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNProductInvoiceCount2ᚖbureaucracyᚋbackendᚐProductInvoiceCount(ctx context.Context, sel ast.SelectionSet, v *ProductInvoiceCount) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProductInvoiceCount(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNProductPage2bureaucracyᚋbackendᚐProductPage(ctx context.Context, sel ast.SelectionSet, v ProductPage) graphql.Marshaler {
 	return ec._ProductPage(ctx, sel, &v)
 }
@@ -13114,6 +13358,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTaxCode2ᚕᚖbureaucracyᚋbackendᚐTaxCodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*TaxCode) graphql.Marshaler {
