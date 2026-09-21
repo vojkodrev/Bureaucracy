@@ -54,6 +54,12 @@
                     <strong>Datum odpreme/opravljene storitve :</strong>
                     <span>{{.Document.ServiceDate}}</span>
                 </div>
+                {{if .Document.PurchaseOrderNumber}}
+                <div class="invoice-detail">
+                    <strong>Naročilnica :</strong>
+                    <span>{{.Document.PurchaseOrderNumber}}</span>
+                </div>
+                {{end}}
             </div>
         </section>
 

@@ -77,10 +77,6 @@ main {
     line-height: 1.25;
 }
 
-.customer-location {
-    margin-top: auto;
-}
-
 .invoice-details {
     display: grid;
     grid-template-columns: max-content max-content;
