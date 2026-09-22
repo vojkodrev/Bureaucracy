@@ -19,6 +19,7 @@ const query = `
         $businessYear: String!
         $productCode: String
         $productName: String
+        $similarName: String
         $sortBy: String
         $sortDirection: String
         $page: Int
@@ -28,6 +29,7 @@ const query = `
             businessYear: $businessYear
             productCode: $productCode
             productName: $productName
+            similarName: $similarName
             sortBy: $sortBy
             sortDirection: $sortDirection
             page: $page
@@ -46,6 +48,7 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 export async function fetchInventoryItemSearch(
     search: InventoryItemSearchCriteria,
+    similarName: string | undefined,
     signal?: AbortSignal,
 ): Promise<InventoryItemPage | null> {
     const response = await fetch(graphqlUrl, {
@@ -57,6 +60,7 @@ export async function fetchInventoryItemSearch(
                 businessYear: getSelectedBusinessYear(),
                 productCode: optionalFilter(search.productCode),
                 productName: optionalFilter(search.productName),
+                similarName: optionalFilter(similarName ?? ''),
                 sortBy: search.sortBy || null,
                 sortDirection: search.sortDirection || null,
                 page: positiveInteger(search.page, defaultPage),

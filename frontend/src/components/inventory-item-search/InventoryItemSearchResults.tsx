@@ -12,13 +12,15 @@ type Props = {
     itemPage: InventoryItemPage | null
     items: InventoryItem[]
     isLoading: boolean
+    showSearchFields: boolean
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
     onSort: (sortBy: InventoryItemSortColumn) => void
 }
 
 export default function InventoryItemSearchResults({
-    search, itemPage, items, isLoading, onPageChange, onPageSizeChange, onSort,
+    search, itemPage, items, isLoading, showSearchFields,
+    onPageChange, onPageSizeChange, onSort,
 }: Props) {
     const firstItem = itemPage && itemPage.totalCount > 0
         ? (itemPage.page - 1) * itemPage.pageSize + 1
@@ -28,7 +30,7 @@ export default function InventoryItemSearchResults({
         : 0
 
     return (
-        <div className="mt-8">
+        <div className={showSearchFields ? 'mt-8' : undefined}>
             {itemPage && (
                 <Pager
                     firstItem={firstItem}

@@ -7,10 +7,13 @@ import {
 } from '../inventory-item-search-params'
 import type { InventoryItemSearchCriteria, InventoryItemSortColumn } from '../types'
 
-export function useInventoryItemSearchState() {
+export function useInventoryItemSearchState(similarName?: string) {
     const [params, setParams] = useSearchParams()
     const search = useMemo(() => inventoryItemSearchFromParams(params), [params])
-    const searchKey = useMemo(() => new URLSearchParams(search).toString(), [search])
+    const searchKey = useMemo(
+        () => new URLSearchParams({ ...search, similarName: similarName ?? '' }).toString(),
+        [search, similarName],
+    )
 
     function updateSearch(nextSearch: InventoryItemSearchCriteria) {
         setParams(inventoryItemSearchToParams(nextSearch))

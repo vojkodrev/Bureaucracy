@@ -477,6 +477,7 @@ type Query {
     businessYear: String!
     productCode: String
     productName: String
+    similarName: String
     sortBy: String
     sortDirection: String
     page: Int = 1

@@ -14,6 +14,7 @@ type SearchResult = {
 export function useInventoryItemSearchResults(
     search: InventoryItemSearchCriteria,
     searchKey: string,
+    similarName?: string,
 ) {
     const [result, setResult] = useState<SearchResult>({
         searchKey: '__initial__', itemPage: null, error: null,
@@ -25,7 +26,7 @@ export function useInventoryItemSearchResults(
 
     useEffect(() => {
         const controller = new AbortController()
-        void fetchInventoryItemSearch(search, controller.signal)
+        void fetchInventoryItemSearch(search, similarName, controller.signal)
             .then((nextPage) => setResult({ searchKey, itemPage: nextPage, error: null }))
             .catch((requestError: unknown) => {
                 if (requestError instanceof DOMException && requestError.name === 'AbortError') return
@@ -38,7 +39,7 @@ export function useInventoryItemSearchResults(
                 })
             })
         return () => controller.abort()
-    }, [search, searchKey])
+    }, [search, searchKey, similarName])
 
     return { itemPage, items, isLoading, error }
 }
