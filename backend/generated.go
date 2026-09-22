@@ -225,6 +225,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
 		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
+		SaveInventoryItem   func(childComplexity int, businessYear string, inventoryItem model.InventoryItemInput) int
 		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
 		SavePriceQuote      func(childComplexity int, businessYear string, priceQuote model.PriceQuoteInput) int
 		SaveProduct         func(childComplexity int, businessYear string, product model.ProductInput) int
@@ -296,6 +297,7 @@ type ComplexityRoot struct {
 		Countries                 func(childComplexity int, businessYear string) int
 		CurrentBusinessYear       func(childComplexity int) int
 		Customer                  func(childComplexity int, businessYear string, customerID string) int
+		InventoryItem             func(childComplexity int, businessYear string, productCode string) int
 		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate       func(childComplexity int, businessYear string) int
 		LatestBankStatementNumber func(childComplexity int, businessYear string, bankAccount *string) int
@@ -332,6 +334,7 @@ type MutationResolver interface {
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
 	SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error)
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
+	SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error)
 }
 type QueryResolver interface {
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
@@ -355,6 +358,7 @@ type QueryResolver interface {
 	SearchPriceQuotes(ctx context.Context, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*PriceQuotePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
 	SearchInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error)
+	InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error)
 	ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error)
 	TaxCodes(ctx context.Context, businessYear string) ([]*TaxCode, error)
 }
@@ -1197,6 +1201,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveCustomer(childComplexity, args["businessYear"].(string), args["customer"].(model.CustomerInput)), true
+	case "Mutation.saveInventoryItem":
+		if e.ComplexityRoot.Mutation.SaveInventoryItem == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveInventoryItem_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveInventoryItem(childComplexity, args["businessYear"].(string), args["inventoryItem"].(model.InventoryItemInput)), true
 	case "Mutation.saveInvoice":
 		if e.ComplexityRoot.Mutation.SaveInvoice == nil {
 			break
@@ -1560,6 +1575,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Customer(childComplexity, args["businessYear"].(string), args["customerId"].(string)), true
 
+	case "Query.inventoryItem":
+		if e.ComplexityRoot.Query.InventoryItem == nil {
+			break
+		}
+
+		args, err := ec.field_Query_inventoryItem_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.InventoryItem(childComplexity, args["businessYear"].(string), args["productCode"].(string)), true
 	case "Query.invoice":
 		if e.ComplexityRoot.Query.Invoice == nil {
 			break
@@ -1762,6 +1788,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBankStatementEntryInput,
 		ec.unmarshalInputBankStatementInput,
 		ec.unmarshalInputCustomerInput,
+		ec.unmarshalInputInventoryItemInput,
 		ec.unmarshalInputInvoiceInput,
 		ec.unmarshalInputInvoiceItemInput,
 		ec.unmarshalInputPriceQuoteInput,
@@ -2515,6 +2542,28 @@ func (ec *executionContext) field_Mutation_saveCustomer_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveInventoryItem_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "inventoryItem",
+		func(ctx context.Context, v any) (model.InventoryItemInput, error) {
+			return ec.unmarshalNInventoryItemInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐInventoryItemInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["inventoryItem"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveInvoice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2760,6 +2809,28 @@ func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["customerId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_inventoryItem_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg1
 	return args, nil
 }
 
@@ -6928,6 +6999,50 @@ func (ec *executionContext) fieldContext_Mutation_saveProduct(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveInventoryItem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveInventoryItem(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveInventoryItem(ctx, fc.Args["businessYear"].(string), fc.Args["inventoryItem"].(model.InventoryItemInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *InventoryItem) graphql.Marshaler {
+			return ec.marshalNInventoryItem2ᚖbureaucracyᚋbackendᚐInventoryItem(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveInventoryItem(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InventoryItem(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveInventoryItem_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PriceQuote_id(ctx context.Context, field graphql.CollectedField, obj *PriceQuote) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8741,6 +8856,50 @@ func (ec *executionContext) fieldContext_Query_searchInventoryItems(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_inventoryItem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_inventoryItem(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().InventoryItem(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *InventoryItem) graphql.Marshaler {
+			return ec.marshalOInventoryItem2ᚖbureaucracyᚋbackendᚐInventoryItem(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_inventoryItem(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InventoryItem(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_inventoryItem_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_productInvoiceCounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10330,6 +10489,64 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Discount = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInventoryItemInput(ctx context.Context, obj any) (model.InventoryItemInput, error) {
+	var it model.InventoryItemInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "productCode", "name", "unit", "minimumStockLevel"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "productCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductCode = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "unit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unit"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unit = data
+		case "minimumStockLevel":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minimumStockLevel"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MinimumStockLevel = data
 		}
 	}
 	return it, nil
@@ -12121,6 +12338,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "saveInventoryItem":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveInventoryItem(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13012,6 +13236,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "inventoryItem":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_inventoryItem(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "productInvoiceCounts":
 			field := field
 
@@ -13829,6 +14075,10 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNInventoryItem2bureaucracyᚋbackendᚐInventoryItem(ctx context.Context, sel ast.SelectionSet, v InventoryItem) graphql.Marshaler {
+	return ec._InventoryItem(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNInventoryItem2ᚕᚖbureaucracyᚋbackendᚐInventoryItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*InventoryItem) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -13853,6 +14103,11 @@ func (ec *executionContext) marshalNInventoryItem2ᚖbureaucracyᚋbackendᚐInv
 		return graphql.Null
 	}
 	return ec._InventoryItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInventoryItemInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐInventoryItemInput(ctx context.Context, v any) (model.InventoryItemInput, error) {
+	res, err := ec.unmarshalInputInventoryItemInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNInventoryItemPage2bureaucracyᚋbackendᚐInventoryItemPage(ctx context.Context, sel ast.SelectionSet, v InventoryItemPage) graphql.Marshaler {
@@ -14485,6 +14740,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOInventoryItem2ᚖbureaucracyᚋbackendᚐInventoryItem(ctx context.Context, sel ast.SelectionSet, v *InventoryItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InventoryItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOInvoice2ᚖbureaucracyᚋbackendᚐInvoice(ctx context.Context, sel ast.SelectionSet, v *Invoice) graphql.Marshaler {

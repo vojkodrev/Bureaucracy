@@ -41,6 +41,11 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 	return r.Products.Save(ctx, businessYear, product)
 }
 
+// SaveInventoryItem is the resolver for the saveInventoryItem field.
+func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error) {
+	return r.InventoryItems.Save(ctx, businessYear, inventoryItem)
+}
+
 // SearchBankStatements is the resolver for the searchBankStatements field.
 func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1
@@ -215,6 +220,11 @@ func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear s
 	}
 	return r.InventoryItems.Search(ctx, businessYear, productCode, productName, similarName,
 		sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// InventoryItem is the resolver for the inventoryItem field.
+func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
+	return r.InventoryItems.GetByCode(ctx, businessYear, productCode)
 }
 
 // ProductInvoiceCounts is the resolver for the productInvoiceCounts field.

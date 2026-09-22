@@ -341,6 +341,14 @@ type InventoryItemPage {
   totalPages: Int!
 }
 
+input InventoryItemInput {
+  id: Int
+  productCode: String!
+  name: String
+  unit: String
+  minimumStockLevel: Float
+}
+
 input ProductInput {
   id: Int
   productCode: String!
@@ -484,6 +492,8 @@ type Query {
     pageSize: Int = 20
   ): InventoryItemPage!
 
+  inventoryItem(businessYear: String!, productCode: String!): InventoryItem
+
   productInvoiceCounts(
     businessYear: String!
     productCodes: [String!]!
@@ -499,4 +509,5 @@ type Mutation {
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
   savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
+  saveInventoryItem(businessYear: String!, inventoryItem: InventoryItemInput!): InventoryItem!
 }

@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"strings"
+
+	"bureaucracy/backend/graph/model"
 )
 
 type InventoryItemRepository struct {
@@ -13,6 +16,76 @@ type InventoryItemRepository struct {
 
 func NewInventoryItemRepository(database *sql.DB) *InventoryItemRepository {
 	return &InventoryItemRepository{database: database}
+}
+
+func (repository *InventoryItemRepository) GetByCode(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	productCode = strings.TrimSpace(productCode)
+	if productCode == "" {
+		return nil, fmt.Errorf("productCode is required")
+	}
+	item := &InventoryItem{}
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT RecNo, Artikel, Opis, Enota, MinimalnaZaloga
+		FROM [%s].[dbo].[ArtikelNabava]
+		WHERE Artikel = @productCode`, fmt.Sprintf("BIRO%s3", businessYear)),
+		sql.Named("productCode", productCode),
+	).Scan(&item.ID, &item.ProductCode, &item.Name, &item.Unit, &item.MinimumStockLevel)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get inventory item: %w", err)
+	}
+	return item, nil
+}
+
+func (repository *InventoryItemRepository) Save(ctx context.Context, businessYear string, input model.InventoryItemInput) (*InventoryItem, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	input.ProductCode = strings.TrimSpace(input.ProductCode)
+	if input.ProductCode == "" {
+		return nil, fmt.Errorf("productCode is required")
+	}
+	if len([]rune(input.ProductCode)) > 25 {
+		return nil, fmt.Errorf("productCode must be at most 25 characters")
+	}
+	input.Name = trimmedProductString(input.Name)
+	input.Unit = trimmedProductString(input.Unit)
+	if input.Name == nil {
+		return nil, fmt.Errorf("name is required")
+	}
+	if len([]rune(*input.Name)) > 100 {
+		return nil, fmt.Errorf("name must be at most 100 characters")
+	}
+	if input.Unit != nil && len([]rune(*input.Unit)) > 10 {
+		return nil, fmt.Errorf("unit must be at most 10 characters")
+	}
+	if input.MinimumStockLevel != nil && (*input.MinimumStockLevel < 0 || math.IsNaN(*input.MinimumStockLevel) || math.IsInf(*input.MinimumStockLevel, 0)) {
+		return nil, fmt.Errorf("minimumStockLevel must be a non-negative number")
+	}
+	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
+	arguments := []any{sql.Named("productCode", input.ProductCode), sql.Named("name", input.Name), sql.Named("unit", input.Unit), sql.Named("minimumStockLevel", input.MinimumStockLevel)}
+	if input.ID != nil && *input.ID > 0 {
+		arguments = append(arguments, sql.Named("id", *input.ID))
+		result, err := repository.database.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[ArtikelNabava] SET Artikel=@productCode, Opis=@name, Enota=@unit, MinimalnaZaloga=@minimumStockLevel WHERE RecNo=@id`, databaseName), arguments...)
+		if err != nil {
+			return nil, fmt.Errorf("update inventory item: %w", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil || affected != 1 {
+			return nil, fmt.Errorf("inventory item RecNo %d was not found", *input.ID)
+		}
+	} else {
+		_, err := repository.database.ExecContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[ArtikelNabava] (Artikel, Opis, Enota, MinimalnaZaloga) VALUES (@productCode, @name, @unit, @minimumStockLevel)`, databaseName), arguments...)
+		if err != nil {
+			return nil, fmt.Errorf("insert inventory item: %w", err)
+		}
+	}
+	return repository.GetByCode(ctx, businessYear, input.ProductCode)
 }
 
 func (repository *InventoryItemRepository) Search(

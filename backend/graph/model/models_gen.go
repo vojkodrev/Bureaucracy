@@ -45,6 +45,14 @@ type CustomerInput struct {
 	Discount           *float64 `json:"discount,omitempty"`
 }
 
+type InventoryItemInput struct {
+	ID                *int     `json:"id,omitempty"`
+	ProductCode       string   `json:"productCode"`
+	Name              *string  `json:"name,omitempty"`
+	Unit              *string  `json:"unit,omitempty"`
+	MinimumStockLevel *float64 `json:"minimumStockLevel,omitempty"`
+}
+
 type InvoiceInput struct {
 	ID                  *int                `json:"id,omitempty"`
 	InvoiceNumber       string              `json:"invoiceNumber"`
