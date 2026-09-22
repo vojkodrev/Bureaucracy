@@ -39,25 +39,29 @@ type CustomerInput struct {
 	Phone              *string  `json:"phone,omitempty"`
 	TaxNumber          *string  `json:"taxNumber,omitempty"`
 	RegistrationNumber *string  `json:"registrationNumber,omitempty"`
+	Iban               *string  `json:"iban,omitempty"`
+	Bic                *string  `json:"bic,omitempty"`
 	PaymentTerm        *int     `json:"paymentTerm,omitempty"`
 	Discount           *float64 `json:"discount,omitempty"`
 }
 
 type InvoiceInput struct {
-	ID               *int                `json:"id,omitempty"`
-	InvoiceNumber    string              `json:"invoiceNumber"`
-	IssueDate        *time.Time          `json:"issueDate,omitempty"`
-	ServiceDate      *time.Time          `json:"serviceDate,omitempty"`
-	DueDate          *time.Time          `json:"dueDate,omitempty"`
-	PaymentDate      *time.Time          `json:"paymentDate,omitempty"`
-	CustomerCode     *string             `json:"customerCode,omitempty"`
-	CustomerName     *string             `json:"customerName,omitempty"`
-	CustomerAddress  *string             `json:"customerAddress,omitempty"`
-	CustomerCity     *string             `json:"customerCity,omitempty"`
-	PaidAmount       *float64            `json:"paidAmount,omitempty"`
-	IntroductoryText *string             `json:"introductoryText,omitempty"`
-	ClosingText      *string             `json:"closingText,omitempty"`
-	Items            []*InvoiceItemInput `json:"items"`
+	ID                  *int                `json:"id,omitempty"`
+	InvoiceNumber       string              `json:"invoiceNumber"`
+	IssueDate           *time.Time          `json:"issueDate,omitempty"`
+	ServiceDate         *time.Time          `json:"serviceDate,omitempty"`
+	DueDate             *time.Time          `json:"dueDate,omitempty"`
+	PaymentDate         *time.Time          `json:"paymentDate,omitempty"`
+	CustomerCode        *string             `json:"customerCode,omitempty"`
+	CustomerName        *string             `json:"customerName,omitempty"`
+	CustomerAddress     *string             `json:"customerAddress,omitempty"`
+	CustomerCity        *string             `json:"customerCity,omitempty"`
+	PaidAmount          *float64            `json:"paidAmount,omitempty"`
+	PurchaseOrderNumber *string             `json:"purchaseOrderNumber,omitempty"`
+	DeliveryNoteNumber  *string             `json:"deliveryNoteNumber,omitempty"`
+	IntroductoryText    *string             `json:"introductoryText,omitempty"`
+	ClosingText         *string             `json:"closingText,omitempty"`
+	Items               []*InvoiceItemInput `json:"items"`
 }
 
 type InvoiceItemInput struct {

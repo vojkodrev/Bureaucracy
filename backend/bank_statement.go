@@ -6,7 +6,18 @@ import (
 	"unicode"
 )
 
-const maxBankStatementReferenceLength = 13
+const (
+	maxBankStatementCustomerNameLength = 60
+	maxBankStatementReferenceLength    = 13
+)
+
+func truncateRunes(value string, maximum int) string {
+	characters := []rune(value)
+	if len(characters) <= maximum {
+		return value
+	}
+	return string(characters[:maximum])
+}
 
 func normalizeBankStatementReference(value string) string {
 	return strings.Map(func(character rune) rune {

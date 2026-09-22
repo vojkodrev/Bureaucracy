@@ -107,12 +107,14 @@ type ComplexityRoot struct {
 
 	Customer struct {
 		Address            func(childComplexity int) int
+		BIC                func(childComplexity int) int
 		City               func(childComplexity int) int
 		Contact            func(childComplexity int) int
 		Country            func(childComplexity int) int
 		CustomerID         func(childComplexity int) int
 		Discount           func(childComplexity int) int
 		Email              func(childComplexity int) int
+		IBAN               func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		Name               func(childComplexity int) int
 		PaymentTerm        func(childComplexity int) int
@@ -131,28 +133,30 @@ type ComplexityRoot struct {
 	}
 
 	Invoice struct {
-		Amount             func(childComplexity int) int
-		Cancelled          func(childComplexity int) int
-		ClosingText        func(childComplexity int) int
-		Currency           func(childComplexity int) int
-		CustomerAddress    func(childComplexity int) int
-		CustomerCity       func(childComplexity int) int
-		CustomerCode       func(childComplexity int) int
-		CustomerContact    func(childComplexity int) int
-		CustomerCountry    func(childComplexity int) int
-		CustomerName       func(childComplexity int) int
-		CustomerPostalCode func(childComplexity int) int
-		DueDate            func(childComplexity int) int
-		GoodsAmount        func(childComplexity int) int
-		ID                 func(childComplexity int) int
-		IntroductoryText   func(childComplexity int) int
-		InvoiceNumber      func(childComplexity int) int
-		IssueDate          func(childComplexity int) int
-		Items              func(childComplexity int) int
-		PaidAmount         func(childComplexity int) int
-		PaymentDate        func(childComplexity int) int
-		PaymentReference   func(childComplexity int) int
-		ServiceDate        func(childComplexity int) int
+		Amount              func(childComplexity int) int
+		Cancelled           func(childComplexity int) int
+		ClosingText         func(childComplexity int) int
+		Currency            func(childComplexity int) int
+		CustomerAddress     func(childComplexity int) int
+		CustomerCity        func(childComplexity int) int
+		CustomerCode        func(childComplexity int) int
+		CustomerContact     func(childComplexity int) int
+		CustomerCountry     func(childComplexity int) int
+		CustomerName        func(childComplexity int) int
+		CustomerPostalCode  func(childComplexity int) int
+		DeliveryNoteNumber  func(childComplexity int) int
+		DueDate             func(childComplexity int) int
+		GoodsAmount         func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		IntroductoryText    func(childComplexity int) int
+		InvoiceNumber       func(childComplexity int) int
+		IssueDate           func(childComplexity int) int
+		Items               func(childComplexity int) int
+		PaidAmount          func(childComplexity int) int
+		PaymentDate         func(childComplexity int) int
+		PaymentReference    func(childComplexity int) int
+		PurchaseOrderNumber func(childComplexity int) int
+		ServiceDate         func(childComplexity int) int
 	}
 
 	InvoiceCustomerSummary struct {
@@ -627,6 +631,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Customer.Address(childComplexity), true
+	case "Customer.bic":
+		if e.ComplexityRoot.Customer.BIC == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Customer.BIC(childComplexity), true
 	case "Customer.city":
 		if e.ComplexityRoot.Customer.City == nil {
 			break
@@ -663,6 +673,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Customer.Email(childComplexity), true
+	case "Customer.iban":
+		if e.ComplexityRoot.Customer.IBAN == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Customer.IBAN(childComplexity), true
 	case "Customer.id":
 		if e.ComplexityRoot.Customer.ID == nil {
 			break
@@ -803,6 +819,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.CustomerPostalCode(childComplexity), true
+	case "Invoice.deliveryNoteNumber":
+		if e.ComplexityRoot.Invoice.DeliveryNoteNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.DeliveryNoteNumber(childComplexity), true
 	case "Invoice.dueDate":
 		if e.ComplexityRoot.Invoice.DueDate == nil {
 			break
@@ -863,6 +885,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.PaymentReference(childComplexity), true
+	case "Invoice.purchaseOrderNumber":
+		if e.ComplexityRoot.Invoice.PurchaseOrderNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.PurchaseOrderNumber(childComplexity), true
 	case "Invoice.serviceDate":
 		if e.ComplexityRoot.Invoice.ServiceDate == nil {
 			break
@@ -1902,6 +1930,10 @@ func (ec *executionContext) childFields_Customer(ctx context.Context, field grap
 		return ec.fieldContext_Customer_taxNumber(ctx, field)
 	case "registrationNumber":
 		return ec.fieldContext_Customer_registrationNumber(ctx, field)
+	case "iban":
+		return ec.fieldContext_Customer_iban(ctx, field)
+	case "bic":
+		return ec.fieldContext_Customer_bic(ctx, field)
 	case "paymentTerm":
 		return ec.fieldContext_Customer_paymentTerm(ctx, field)
 	case "discount":
@@ -1962,6 +1994,10 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_goodsAmount(ctx, field)
 	case "paidAmount":
 		return ec.fieldContext_Invoice_paidAmount(ctx, field)
+	case "purchaseOrderNumber":
+		return ec.fieldContext_Invoice_purchaseOrderNumber(ctx, field)
+	case "deliveryNoteNumber":
+		return ec.fieldContext_Invoice_deliveryNoteNumber(ctx, field)
 	case "paymentReference":
 		return ec.fieldContext_Invoice_paymentReference(ctx, field)
 	case "introductoryText":
@@ -4656,6 +4692,52 @@ func (ec *executionContext) fieldContext_Customer_registrationNumber(_ context.C
 	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _Customer_iban(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Customer_iban(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IBAN, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Customer_iban(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Customer_bic(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Customer_bic(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.BIC, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Customer_bic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Customer", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _Customer_paymentTerm(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5215,6 +5297,52 @@ func (ec *executionContext) _Invoice_paidAmount(ctx context.Context, field graph
 }
 func (ec *executionContext) fieldContext_Invoice_paidAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_purchaseOrderNumber(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_purchaseOrderNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PurchaseOrderNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_purchaseOrderNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_deliveryNoteNumber(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_deliveryNoteNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeliveryNoteNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_deliveryNoteNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Invoice_paymentReference(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
@@ -9607,7 +9735,7 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "customerId", "name", "address", "postalCode", "city", "country", "contact", "email", "phone", "taxNumber", "registrationNumber", "paymentTerm", "discount"}
+	fieldsInOrder := [...]string{"id", "customerId", "name", "address", "postalCode", "city", "country", "contact", "email", "phone", "taxNumber", "registrationNumber", "iban", "bic", "paymentTerm", "discount"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9698,6 +9826,20 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 				return it, err
 			}
 			it.RegistrationNumber = data
+		case "iban":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("iban"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Iban = data
+		case "bic":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bic"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Bic = data
 		case "paymentTerm":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentTerm"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -9728,7 +9870,7 @@ func (ec *executionContext) unmarshalInputInvoiceInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "invoiceNumber", "issueDate", "serviceDate", "dueDate", "paymentDate", "customerCode", "customerName", "customerAddress", "customerCity", "paidAmount", "introductoryText", "closingText", "items"}
+	fieldsInOrder := [...]string{"id", "invoiceNumber", "issueDate", "serviceDate", "dueDate", "paymentDate", "customerCode", "customerName", "customerAddress", "customerCity", "paidAmount", "purchaseOrderNumber", "deliveryNoteNumber", "introductoryText", "closingText", "items"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -9812,6 +9954,20 @@ func (ec *executionContext) unmarshalInputInvoiceInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.PaidAmount = data
+		case "purchaseOrderNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("purchaseOrderNumber"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PurchaseOrderNumber = data
+		case "deliveryNoteNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deliveryNoteNumber"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeliveryNoteNumber = data
 		case "introductoryText":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("introductoryText"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -10734,6 +10890,16 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "iban":
+			out.Values[i] = ec._Customer_iban(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "bic":
+			out.Values[i] = ec._Customer_bic(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "paymentTerm":
 			out.Values[i] = ec._Customer_paymentTerm(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -10917,6 +11083,16 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "paidAmount":
 			out.Values[i] = ec._Invoice_paidAmount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "purchaseOrderNumber":
+			out.Values[i] = ec._Invoice_purchaseOrderNumber(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "deliveryNoteNumber":
+			out.Values[i] = ec._Invoice_deliveryNoteNumber(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

@@ -13,23 +13,24 @@ import (
 )
 
 type invoicePrintDocument struct {
-	XMLName       xml.Name             `xml:"invoice"`
-	InvoiceNumber string               `xml:"number"`
-	Title         string               `xml:"title"`
-	IssueDate     string               `xml:"issueDate"`
-	DueDate       string               `xml:"dueDate"`
-	ServiceDate   string               `xml:"serviceDate"`
-	IssuePlace    string               `xml:"issuePlace"`
-	Customer      invoicePrintCustomer `xml:"customer"`
-	IntroText     string               `xml:"introText"`
-	Items         []invoicePrintItem   `xml:"items>item"`
-	NetTotal      string               `xml:"totals>net"`
-	TaxTotal      string               `xml:"totals>tax"`
-	GrossTotal    string               `xml:"totals>gross"`
-	AmountInWords string               `xml:"amountInWords"`
-	TaxSummaries  []invoicePrintTax    `xml:"taxes>tax"`
-	ClosingText   string               `xml:"closingText"`
-	PaymentQRCode string               `xml:"paymentQRCode"`
+	XMLName             xml.Name             `xml:"invoice"`
+	InvoiceNumber       string               `xml:"number"`
+	Title               string               `xml:"title"`
+	IssueDate           string               `xml:"issueDate"`
+	DueDate             string               `xml:"dueDate"`
+	ServiceDate         string               `xml:"serviceDate"`
+	IssuePlace          string               `xml:"issuePlace"`
+	PurchaseOrderNumber string               `xml:"purchaseOrderNumber"`
+	Customer            invoicePrintCustomer `xml:"customer"`
+	IntroText           string               `xml:"introText"`
+	Items               []invoicePrintItem   `xml:"items>item"`
+	NetTotal            string               `xml:"totals>net"`
+	TaxTotal            string               `xml:"totals>tax"`
+	GrossTotal          string               `xml:"totals>gross"`
+	AmountInWords       string               `xml:"amountInWords"`
+	TaxSummaries        []invoicePrintTax    `xml:"taxes>tax"`
+	ClosingText         string               `xml:"closingText"`
+	PaymentQRCode       string               `xml:"paymentQRCode"`
 }
 
 type invoicePrintCustomer struct {
@@ -102,25 +103,33 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if invoice.Amount == nil {
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
+	introText := trimmedString(invoice.IntroductoryText)
+	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" {
+		if introText != "" {
+			introText += ", "
+		}
+		introText += "dob: " + deliveryNoteNumber
+	}
 	paymentQRCode, err := generateUPNQRCode(invoice, displayNumber, grossTotal)
 	if err != nil {
 		return nil, err
 	}
 
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
-		InvoiceNumber: displayNumber,
-		Title:         strings.TrimSpace(trimmedString(invoice.CustomerName) + " " + displayNumber),
-		IssueDate:     formatDocumentDate(invoice.IssueDate),
-		DueDate:       formatDocumentDate(invoice.DueDate),
-		ServiceDate:   formatDocumentDate(invoice.ServiceDate),
-		IssuePlace:    valueOrDefault(invoice.IssuePlace, "1000 Ljubljana"),
+		InvoiceNumber:       displayNumber,
+		Title:               strings.TrimSpace(trimmedString(invoice.CustomerName) + " " + displayNumber),
+		IssueDate:           formatDocumentDate(invoice.IssueDate),
+		DueDate:             formatDocumentDate(invoice.DueDate),
+		ServiceDate:         formatDocumentDate(invoice.ServiceDate),
+		IssuePlace:          valueOrDefault(invoice.IssuePlace, "1000 Ljubljana"),
+		PurchaseOrderNumber: trimmedString(invoice.PurchaseOrderNumber),
 		Customer: invoicePrintCustomer{
 			Name:     trimmedString(invoice.CustomerName),
 			Address:  trimmedString(invoice.CustomerAddress),
 			Location: customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity),
 			TaxID:    trimmedString(invoice.CustomerTaxID),
 		},
-		IntroText:     trimmedString(invoice.IntroductoryText),
+		IntroText:     introText,
 		Items:         printItems,
 		NetTotal:      formatMoneyAmount(netTotal),
 		TaxTotal:      formatMoneyAmount(grossTotal - netTotal),

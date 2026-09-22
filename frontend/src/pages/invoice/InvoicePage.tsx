@@ -5,6 +5,7 @@ import ErrorAlert from '@/components/ErrorAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
 import { sendDocumentEmail } from '@/lib/document-email'
@@ -24,6 +25,7 @@ import { useInvoiceNumberNavigation } from './hooks/useInvoiceNumberNavigation'
 import { useInvoicePrint } from './hooks/useInvoicePrint'
 import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
+import { useInvoiceXmlExport } from './hooks/useInvoiceXmlExport'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
 function InvoicePage() {
@@ -60,6 +62,10 @@ function InvoicePage() {
         isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
         canSave: save.canSave,
     })
+    const xmlExport = useInvoiceXmlExport({
+        invoiceNumber: draft.invoiceNumber,
+        canExport: print.canPrint, canSave: save.canSave,
+    })
     const revert = useInvoiceRevert({
         routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
         isLoading: loader.isLoading, isSaving: save.isSaving,
@@ -75,6 +81,7 @@ function InvoicePage() {
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
         ['print', 'Invoice could not be printed', 'The invoice PDF could not be prepared.', print.printError],
+        ['xml', 'Invoice XML could not be exported', 'The invoice XML could not be prepared.', xmlExport.exportError],
         ['save', 'Invoice could not be saved', 'Your changes were not saved.', save.saveError],
         ['latest', 'Latest invoice number could not be loaded', 'Invoice navigation may be unavailable.', navigation.latestInvoiceNumberError],
         ['next', 'Next invoice number could not be loaded', 'A number could not be assigned to the new invoice.', loader.requestErrors.nextInvoiceNumber],
@@ -92,11 +99,13 @@ function InvoicePage() {
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
+                canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
                 onEmail={email} onRevert={revert.requestRevert}
+                onExportXml={() => { void xmlExport.exportXml() }}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
@@ -124,6 +133,7 @@ function InvoicePage() {
             isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
             isConfirmingEmail={confirmingEmail}
+            isConfirmingXmlExport={xmlExport.confirmingExport}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
@@ -132,7 +142,11 @@ function InvoicePage() {
             onConfirmingPrintChange={print.setConfirmingPrint}
             onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }}
             onConfirmingEmailChange={setConfirmingEmail}
-            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }} />
+            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }}
+            onConfirmingXmlExportChange={xmlExport.setConfirmingExport}
+            onSaveBeforeXmlExport={() => {
+                xmlExport.setConfirmingExport(false); void save.requestSave()
+            }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
                 customerAddress={draft.customerAddress} customerPostalCode={draft.customerPostalCode}
@@ -146,12 +160,20 @@ function InvoicePage() {
                 onCustomerPaymentTermChange={(term) => setField('dueDate', dateAfterDays(draft.invoiceDate, term))} />
             <GeneralInformationInput invoiceNumber={draft.invoiceNumber} businessYear={loader.businessYear}
                 invoiceDate={draft.invoiceDate} dueDate={draft.dueDate} serviceDate={draft.serviceDate}
+                purchaseOrderNumber={draft.purchaseOrderNumber}
                 onInvoiceNumberChange={(v) => setField('invoiceNumber', v)}
                 onInvoiceDateChange={(v) => setField('invoiceDate', v)}
                 onDueDateChange={(v) => setField('dueDate', v)}
-                onServiceDateChange={(v) => setField('serviceDate', v)} />
+                onServiceDateChange={(v) => setField('serviceDate', v)}
+                onPurchaseOrderNumberChange={(v) => setField('purchaseOrderNumber', v)} />
         </div>
         <div className="mt-8 space-y-6">
+            <Field className="lg:w-[calc(50%-0.75rem)]">
+                <FieldLabel htmlFor="delivery-note-number">Delivery note number</FieldLabel>
+                <Input id="delivery-note-number" name="deliveryNoteNumber"
+                    value={draft.deliveryNoteNumber}
+                    onChange={(event) => setField('deliveryNoteNumber', event.target.value)} />
+            </Field>
             <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
                 <Textarea id="introductory-text" name="introductoryText" value={draft.introductoryText}
                     onChange={(e) => setField('introductoryText', e.target.value)} /></Field>

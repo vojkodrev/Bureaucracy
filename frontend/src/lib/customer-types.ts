@@ -11,6 +11,8 @@ export type Customer = {
     phone: string | null
     taxNumber: string | null
     registrationNumber: string | null
+    iban: string | null
+    bic: string | null
     paymentTerm: number | null
     discount: number | null
 }

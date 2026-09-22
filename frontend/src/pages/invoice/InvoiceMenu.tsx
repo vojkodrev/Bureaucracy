@@ -1,4 +1,4 @@
-import { Copy, Mail, Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, Download, Mail, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -12,18 +12,21 @@ type InvoiceMenuProps = {
     canSave: boolean
     canPrint: boolean
     canEmail: boolean
+    canExportXml: boolean
     canRevert: boolean
     canDuplicate: boolean
     isSaving: boolean
     isDuplicating: boolean
+    isExportingXml: boolean
     onSave: () => void
     onPrint: () => void
     onEmail: () => void
+    onExportXml: () => void
     onRevert: () => void
     onDuplicate: () => void
 }
 
-function InvoiceMenu({ canSave, canPrint, canEmail, canRevert, canDuplicate, isSaving, isDuplicating, onSave, onPrint, onEmail, onRevert, onDuplicate }: InvoiceMenuProps) {
+function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate, isSaving, isDuplicating, isExportingXml, onSave, onPrint, onEmail, onExportXml, onRevert, onDuplicate }: InvoiceMenuProps) {
     return (
         <Menubar className="w-fit">
             <MenubarMenu>
@@ -39,6 +42,9 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canRevert, canDuplicate, isS
                     </MenubarItem>
                     <MenubarItem disabled={!canEmail} onClick={onEmail}>
                         <Mail />Send email
+                    </MenubarItem>
+                    <MenubarItem disabled={!canExportXml || isExportingXml} onClick={onExportXml}>
+                        <Download />{isExportingXml ? 'Exporting XML…' : 'Export XML'}
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

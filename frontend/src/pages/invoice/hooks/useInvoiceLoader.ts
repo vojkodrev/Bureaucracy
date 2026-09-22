@@ -33,6 +33,8 @@ function draftFromInvoice(invoice: Invoice): InvoiceDraft {
         dueDate: dateFromInvoiceValue(invoice.dueDate),
         paymentDate: dateFromInvoiceValue(invoice.paymentDate),
         paidAmount: invoice.paidAmount == null ? '' : String(invoice.paidAmount),
+        purchaseOrderNumber: invoice.purchaseOrderNumber ?? '',
+        deliveryNoteNumber: invoice.deliveryNoteNumber ?? '',
         introductoryText: invoice.introductoryText ?? '', closingText: invoice.closingText ?? '',
         invoiceItems: invoice.items ?? [],
     }
@@ -103,6 +105,7 @@ export function useInvoiceLoader({
             invoiceNumber: '', customerId: '', customerName: '', customerAddress: '',
             customerPostalCode: '', customerCity: '', customerCountry: '', invoiceDate: today,
             serviceDate: undefined, dueDate: undefined, paymentDate: undefined, paidAmount: '',
+            purchaseOrderNumber: '', deliveryNoteNumber: '',
             introductoryText: '', closingText: '', invoiceItems: [],
         }
         setInvoiceId(null)

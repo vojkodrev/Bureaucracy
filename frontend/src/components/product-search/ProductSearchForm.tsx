@@ -1,4 +1,4 @@
-import type { SubmitEvent, SyntheticEvent } from 'react'
+import type { SubmitEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -7,13 +7,28 @@ import type { ProductSearchForm as SearchForm } from './types'
 
 type ProductSearchFormProps = {
     search: SearchForm
-    onSubmit: (event: SubmitEvent<HTMLFormElement>) => void
-    onReset: (event: SyntheticEvent<HTMLFormElement>) => void
+    onSubmit: (search: SearchForm) => void
+    onReset: () => void
 }
 
 function ProductSearchForm({ search, onSubmit, onReset }: ProductSearchFormProps) {
+    function submitSearch(event: SubmitEvent<HTMLFormElement>) {
+        event.preventDefault()
+        event.stopPropagation()
+        const formData = new FormData(event.currentTarget)
+
+        onSubmit({
+            productCode: String(formData.get('productCode') ?? '').trim(),
+            productName: String(formData.get('productName') ?? '').trim(),
+            page: '1',
+            pageSize: search.pageSize,
+            sortBy: search.sortBy,
+            sortDirection: search.sortDirection,
+        })
+    }
+
     return (
-        <form className="max-w-2xl" onSubmit={onSubmit} onReset={onReset}>
+        <form className="max-w-2xl" onSubmit={submitSearch} onReset={onReset}>
             <Card>
                 <CardContent>
                     <FieldGroup>
