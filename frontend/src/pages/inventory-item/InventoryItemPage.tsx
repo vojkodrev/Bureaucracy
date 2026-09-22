@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { emptyToNull } from "@/lib/form-input";
 import type { InventoryItem } from "@/lib/inventory-item-types";
 import { isOptionalNonNegativeNumber, numberOrNull } from "@/lib/numbers";
@@ -39,6 +39,9 @@ const itemDraft = (item: InventoryItem): Draft => ({
 
 export default function InventoryItemPage() {
     const { productCode: routeProductCode } = useParams();
+    const [searchParams] = useSearchParams();
+    const defaultName = searchParams.get("name") ?? "";
+    const defaultUnit = searchParams.get("unit") ?? "";
     const navigate = useNavigate();
     const [draft, setDraft] = useState(emptyDraft);
     const [cleanDraft, setCleanDraft] = useState(() =>
@@ -54,6 +57,7 @@ export default function InventoryItemPage() {
     const [confirmingDuplicate, setConfirmingDuplicate] = useState(false);
     const [reloadVersion, setReloadVersion] = useState(0);
     const preserveDuplicate = useRef(false);
+    const announcedProductDraft = useRef(false);
     const hasUnsavedChanges = useMemo(
         () => JSON.stringify(draft) !== cleanDraft,
         [draft, cleanDraft],
@@ -93,6 +97,10 @@ export default function InventoryItemPage() {
             return;
         }
         const initial = emptyDraft();
+        const productDefaults = {
+            name: defaultName,
+            unit: defaultUnit,
+        };
         setItemId(null);
         setDraft(initial);
         setCleanDraft(JSON.stringify(initial));
@@ -101,9 +109,28 @@ export default function InventoryItemPage() {
         const controller = new AbortController();
         void fetchNextInventoryItemCode(controller.signal)
             .then((productCode) => {
-                const next = { ...initial, productCode };
+                const next = { ...initial, ...productDefaults, productCode };
                 setDraft(next);
-                setCleanDraft(JSON.stringify(next));
+                setCleanDraft(
+                    JSON.stringify(
+                        productDefaults.name || productDefaults.unit
+                            ? { ...initial, productCode }
+                            : next,
+                        ),
+                );
+                if (
+                    (productDefaults.name || productDefaults.unit) &&
+                    !announcedProductDraft.current
+                ) {
+                    announcedProductDraft.current = true;
+                    toast.add({
+                        title: "Inventory item draft created",
+                        description:
+                            `Product code ${productCode} has been assigned. ` +
+                            "Review the inventory item and save it when ready.",
+                        type: "info",
+                    });
+                }
             })
             .catch((error: unknown) => {
                 if (!(
@@ -113,7 +140,7 @@ export default function InventoryItemPage() {
             });
         return () => controller.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [routeProductCode, reloadVersion]);
+    }, [routeProductCode, reloadVersion, defaultName, defaultUnit]);
 
     const canSave =
         Boolean(draft.productCode.trim() && draft.name.trim()) &&

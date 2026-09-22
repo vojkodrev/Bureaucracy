@@ -58,6 +58,14 @@ function ProductPage() {
                 onSave={() => { void save.saveProduct() }}
                 onRevert={revert.requestRevert}
                 onDuplicate={() => { void duplicate.duplicate() }}
+                canCreateInventoryItem={loader.productId != null && !loader.isLoading}
+                onCreateInventoryItem={() => {
+                    const params = new URLSearchParams({
+                        name: draft.name,
+                        unit: draft.unit,
+                    })
+                    void navigate(`/inventory-item?${params.toString()}`)
+                }}
             />
             <UnsavedProductAlerts
                 isNavigationBlocked={guard.blocker.state === 'blocked'}

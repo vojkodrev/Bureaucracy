@@ -1,4 +1,4 @@
-import { Copy, Save, Undo2 } from 'lucide-react'
+import { Copy, PackagePlus, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -17,6 +17,8 @@ type ProductMenuProps = {
     onSave: () => void
     onRevert: () => void
     onDuplicate: () => void
+    canCreateInventoryItem?: boolean
+    onCreateInventoryItem?: () => void
 }
 
 function ProductMenu({
@@ -28,16 +30,27 @@ function ProductMenu({
     onSave,
     onRevert,
     onDuplicate,
+    canCreateInventoryItem = false,
+    onCreateInventoryItem,
 }: ProductMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="w-max">
                     <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
                         <MenubarShortcut>Ctrl+S</MenubarShortcut>
                     </MenubarItem>
+                    {onCreateInventoryItem && (
+                        <MenubarItem
+                            className="whitespace-nowrap"
+                            disabled={!canCreateInventoryItem}
+                            onClick={onCreateInventoryItem}
+                        >
+                            <PackagePlus />Create inventory item
+                        </MenubarItem>
+                    )}
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
