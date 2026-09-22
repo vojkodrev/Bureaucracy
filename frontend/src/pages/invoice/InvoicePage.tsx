@@ -5,12 +5,12 @@ import ErrorAlert from '@/components/ErrorAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
 import { sendDocumentEmail } from '@/lib/document-email'
 import { toast } from '@/lib/toast'
 import CustomerInputFields from './CustomerInputFields'
-import DocumentReferencesInput from './DocumentReferencesInput'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
@@ -160,16 +160,20 @@ function InvoicePage() {
                 onCustomerPaymentTermChange={(term) => setField('dueDate', dateAfterDays(draft.invoiceDate, term))} />
             <GeneralInformationInput invoiceNumber={draft.invoiceNumber} businessYear={loader.businessYear}
                 invoiceDate={draft.invoiceDate} dueDate={draft.dueDate} serviceDate={draft.serviceDate}
+                purchaseOrderNumber={draft.purchaseOrderNumber}
                 onInvoiceNumberChange={(v) => setField('invoiceNumber', v)}
                 onInvoiceDateChange={(v) => setField('invoiceDate', v)}
                 onDueDateChange={(v) => setField('dueDate', v)}
-                onServiceDateChange={(v) => setField('serviceDate', v)} />
+                onServiceDateChange={(v) => setField('serviceDate', v)}
+                onPurchaseOrderNumberChange={(v) => setField('purchaseOrderNumber', v)} />
         </div>
         <div className="mt-8 space-y-6">
-            <DocumentReferencesInput purchaseOrderNumber={draft.purchaseOrderNumber}
-                deliveryNoteNumber={draft.deliveryNoteNumber}
-                onPurchaseOrderNumberChange={(v) => setField('purchaseOrderNumber', v)}
-                onDeliveryNoteNumberChange={(v) => setField('deliveryNoteNumber', v)} />
+            <Field className="lg:w-[calc(50%-0.75rem)]">
+                <FieldLabel htmlFor="delivery-note-number">Delivery note number</FieldLabel>
+                <Input id="delivery-note-number" name="deliveryNoteNumber"
+                    value={draft.deliveryNoteNumber}
+                    onChange={(event) => setField('deliveryNoteNumber', event.target.value)} />
+            </Field>
             <Field><FieldLabel htmlFor="introductory-text">Introductory text</FieldLabel>
                 <Textarea id="introductory-text" name="introductoryText" value={draft.introductoryText}
                     onChange={(e) => setField('introductoryText', e.target.value)} /></Field>
