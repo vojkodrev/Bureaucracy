@@ -6,6 +6,7 @@ type UnsavedInvoiceAlertsProps = {
     isConfirmingDuplicate: boolean
     isConfirmingPrint: boolean
     isConfirmingEmail: boolean
+    isConfirmingXmlExport: boolean
     onCancelNavigation: () => void
     onDiscardAndNavigate: () => void
     onConfirmingRevertChange: (open: boolean) => void
@@ -16,6 +17,8 @@ type UnsavedInvoiceAlertsProps = {
     onSaveBeforePrint: () => void
     onConfirmingEmailChange: (open: boolean) => void
     onSaveBeforeEmail: () => void
+    onConfirmingXmlExportChange: (open: boolean) => void
+    onSaveBeforeXmlExport: () => void
 }
 
 function UnsavedInvoiceAlerts({
@@ -24,6 +27,7 @@ function UnsavedInvoiceAlerts({
     isConfirmingDuplicate,
     isConfirmingPrint,
     isConfirmingEmail,
+    isConfirmingXmlExport,
     onCancelNavigation,
     onDiscardAndNavigate,
     onConfirmingRevertChange,
@@ -34,6 +38,8 @@ function UnsavedInvoiceAlerts({
     onSaveBeforePrint,
     onConfirmingEmailChange,
     onSaveBeforeEmail,
+    onConfirmingXmlExportChange,
+    onSaveBeforeXmlExport,
 }: UnsavedInvoiceAlertsProps) {
     return (
         <>
@@ -71,6 +77,15 @@ function UnsavedInvoiceAlerts({
                 onDiscard={onSaveBeforeEmail}
                 title="Save before emailing?"
                 description="This invoice has not been saved with its current values. Save it first so the emailed PDF matches the invoice shown here."
+                actionLabel="Save invoice"
+                actionVariant="default"
+            />
+            <UnsavedInvoiceAlert
+                open={isConfirmingXmlExport}
+                onOpenChange={onConfirmingXmlExportChange}
+                onDiscard={onSaveBeforeXmlExport}
+                title="Save before exporting XML?"
+                description="This invoice has not been saved with its current values. Save it first so the exported XML matches the invoice shown here."
                 actionLabel="Save invoice"
                 actionVariant="default"
             />

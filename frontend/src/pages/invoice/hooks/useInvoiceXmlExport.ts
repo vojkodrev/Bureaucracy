@@ -5,14 +5,20 @@ import { downloadInvoiceXml } from '../invoice-api'
 type Options = {
     invoiceNumber: string
     canExport: boolean
+    canSave: boolean
 }
 
-export function useInvoiceXmlExport({ invoiceNumber, canExport }: Options) {
+export function useInvoiceXmlExport({ invoiceNumber, canExport, canSave }: Options) {
     const [isExporting, setIsExporting] = useState(false)
     const [exportError, setExportError] = useState<string | null>(null)
+    const [confirmingExport, setConfirmingExport] = useState(false)
 
     const exportXml = async () => {
-        if (!canExport || isExporting) return
+        if (!canExport) {
+            if (canSave) setConfirmingExport(true)
+            return
+        }
+        if (isExporting) return
         setIsExporting(true)
         setExportError(null)
         try {
@@ -24,5 +30,7 @@ export function useInvoiceXmlExport({ invoiceNumber, canExport }: Options) {
         }
     }
 
-    return { exportXml, exportError, isExporting }
+    return {
+        exportXml, exportError, isExporting, confirmingExport, setConfirmingExport,
+    }
 }

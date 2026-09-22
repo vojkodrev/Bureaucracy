@@ -64,7 +64,7 @@ function InvoicePage() {
     })
     const xmlExport = useInvoiceXmlExport({
         invoiceNumber: draft.invoiceNumber,
-        canExport: print.canPrint,
+        canExport: print.canPrint, canSave: save.canSave,
     })
     const revert = useInvoiceRevert({
         routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
@@ -99,7 +99,7 @@ function InvoicePage() {
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
-                canExportXml={print.canPrint} isExportingXml={xmlExport.isExporting}
+                canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
@@ -133,6 +133,7 @@ function InvoicePage() {
             isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
             isConfirmingEmail={confirmingEmail}
+            isConfirmingXmlExport={xmlExport.confirmingExport}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
@@ -141,7 +142,11 @@ function InvoicePage() {
             onConfirmingPrintChange={print.setConfirmingPrint}
             onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }}
             onConfirmingEmailChange={setConfirmingEmail}
-            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }} />
+            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }}
+            onConfirmingXmlExportChange={xmlExport.setConfirmingExport}
+            onSaveBeforeXmlExport={() => {
+                xmlExport.setConfirmingExport(false); void save.requestSave()
+            }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
                 customerAddress={draft.customerAddress} customerPostalCode={draft.customerPostalCode}

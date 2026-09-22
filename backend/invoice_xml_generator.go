@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -301,7 +302,7 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 }
 
 func newEslogParty(role, name, address, postal, city, country, iban, bic, registration, taxID string) eslogParty {
-	party := eslogParty{Name: eslogPartyName{Role: role, Name: name, Address: address, City: city, CountryName: country, PostalCode: postal, CountryCode: countryCode(country)}}
+	party := eslogParty{Name: eslogPartyName{Role: role, Name: name, Address: address, City: cityWithoutPostalCode(city, postal), CountryName: country, PostalCode: postal, CountryCode: countryCode(country)}}
 	if iban != "" || bic != "" {
 		financialRole := "BB"
 		if role == "SE" {
@@ -318,7 +319,11 @@ func newEslogParty(role, name, address, postal, city, country, iban, bic, regist
 }
 
 func newEslogAmountGroup(qualifier string, amount float64) eslogAmountGroup {
-	return eslogAmountGroup{Amount: eslogAmount{Qualifier: qualifier, Value: fmt.Sprintf("%.4f", amount)}}
+	return eslogAmountGroup{Amount: eslogAmount{Qualifier: qualifier, Value: formatEslogAmount(amount)}}
+}
+
+func formatEslogAmount(amount float64) string {
+	return fmt.Sprintf("%.2f", amount)
 }
 
 func newEslogAllowanceGroup(net float64) eslogAllowanceGroup {
@@ -344,9 +349,23 @@ func newEslogTaxGroup(rate, net, tax float64) eslogTaxGroup {
 	if rate == 0 {
 		category = "Z"
 	}
-	return eslogTaxGroup{Tax: eslogTax{Function: "7", Type: "VAT", Rate: fmt.Sprintf("%g", rate), Category: category}, Amounts: []eslogAmount{{Qualifier: "125", Value: fmt.Sprintf("%.4f", net)}, {Qualifier: "124", Value: fmt.Sprintf("%.4f", tax)}}}
+	return eslogTaxGroup{Tax: eslogTax{Function: "7", Type: "VAT", Rate: fmt.Sprintf("%g", rate), Category: category}, Amounts: []eslogAmount{{Qualifier: "125", Value: formatEslogAmount(net)}, {Qualifier: "124", Value: formatEslogAmount(tax)}}}
 }
 
+func cityWithoutPostalCode(city, postalCode string) string {
+	city = strings.TrimSpace(city)
+	postalCode = strings.TrimSpace(postalCode)
+	if postalCode == "" || !strings.HasPrefix(city, postalCode) {
+		return city
+	}
+
+	remainder := city[len(postalCode):]
+	trimmedRemainder := strings.TrimLeftFunc(remainder, unicode.IsSpace)
+	if len(trimmedRemainder) == len(remainder) {
+		return city
+	}
+	return trimmedRemainder
+}
 func compactBankValue(value string) string {
 	return strings.NewReplacer(" ", "", "-", "").Replace(strings.TrimSpace(value))
 }
