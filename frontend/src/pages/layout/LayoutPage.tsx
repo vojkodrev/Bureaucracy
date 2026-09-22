@@ -41,7 +41,8 @@ function parameterLabel(name: string) {
 function breadcrumbLabel(pathname: string) {
     const labels: Record<string, string> = {
         '/bank-statements/search': 'Bank statement search', '/bank-statements/import': 'Import bank statements',
-        '/business-years': 'Business years', '/customers/search': 'Customer search', '/invoices/search': 'Invoice search',
+        '/business-years': 'Business years', '/customers/search': 'Customer search',
+        '/inventory-items/search': 'Inventory item search', '/invoices/search': 'Invoice search',
         '/price-quotes/search': 'Price quote search', '/products/search': 'Product search', '/export': 'Export data',
     }
     const entities = [

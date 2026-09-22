@@ -203,6 +203,20 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 	return r.Products.Search(ctx, businessYear, productCode, productName, similarName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// SearchInventoryItems is the resolver for the searchInventoryItems field.
+func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.InventoryItems.Search(ctx, businessYear, productCode, productName, sortBy,
+		sortDirection, resultPage, resultPageSize)
+}
+
 // ProductInvoiceCounts is the resolver for the productInvoiceCounts field.
 func (r *queryResolver) ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error) {
 	return r.Products.InvoiceCounts(ctx, businessYear, productCodes)

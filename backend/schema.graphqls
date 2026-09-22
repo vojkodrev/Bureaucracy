@@ -325,6 +325,22 @@ type ProductPage {
   totalPages: Int!
 }
 
+type InventoryItem {
+  id: Int!
+  productCode: String
+  name: String
+  unit: String
+  minimumStockLevel: Float
+}
+
+type InventoryItemPage {
+  items: [InventoryItem!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 input ProductInput {
   id: Int
   productCode: String!
@@ -456,6 +472,16 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): ProductPage!
+
+  searchInventoryItems(
+    businessYear: String!
+    productCode: String
+    productName: String
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): InventoryItemPage!
 
   productInvoiceCounts(
     businessYear: String!

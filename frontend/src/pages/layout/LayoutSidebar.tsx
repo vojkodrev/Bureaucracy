@@ -16,12 +16,13 @@ type Section = {
     label: string
     icon: LucideIcon
     searchPath: string
-    entityPath: string
-    entityLabel: string
+    entityPath?: string
+    entityLabel?: string
     additionalItem?: { path: string; label: string; icon: LucideIcon }
 }
 
 const sections: Section[] = [
+    { key: 'inventory-items', label: 'Inventory items', icon: PackageSearch, searchPath: '/inventory-items/search' },
     { key: 'products', label: 'Products', icon: PackageSearch, searchPath: '/products/search', entityPath: '/product', entityLabel: 'Product' },
     { key: 'customers', label: 'Customers', icon: Users, searchPath: '/customers/search', entityPath: '/customer', entityLabel: 'Customer' },
     { key: 'price-quotes', label: 'Price quotes', icon: ReceiptText, searchPath: '/price-quotes/search', entityPath: '/price-quote', entityLabel: 'Price quote' },
@@ -31,8 +32,9 @@ const sections: Section[] = [
 
 function sectionIsActive(section: Section, pathname: string) {
     return pathname === section.searchPath
-        || pathname === section.entityPath
-        || pathname.startsWith(`${section.entityPath}/`)
+        || (section.entityPath != null && (
+            pathname === section.entityPath || pathname.startsWith(`${section.entityPath}/`)
+        ))
         || pathname === section.additionalItem?.path
 }
 
@@ -78,9 +80,11 @@ export default function LayoutSidebar({ pathname, sidebarOpen }: { pathname: str
                                 <SidebarMenuSubItem><SidebarMenuSubButton isActive={pathname === section.searchPath} render={<NavLink to={section.searchPath} />}>
                                     <Search /><span>Search</span>
                                 </SidebarMenuSubButton></SidebarMenuSubItem>
-                                <SidebarMenuSubItem><SidebarMenuSubButton isActive={pathname === section.entityPath} render={<NavLink to={section.entityPath} />}>
-                                    <Plus /><span>{section.entityLabel}</span>
-                                </SidebarMenuSubButton></SidebarMenuSubItem>
+                                {section.entityPath && (
+                                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={pathname === section.entityPath} render={<NavLink to={section.entityPath} />}>
+                                        <Plus /><span>{section.entityLabel}</span>
+                                    </SidebarMenuSubButton></SidebarMenuSubItem>
+                                )}
                                 {section.additionalItem && (() => {
                                     const ItemIcon = section.additionalItem.icon
                                     return <SidebarMenuSubItem><SidebarMenuSubButton

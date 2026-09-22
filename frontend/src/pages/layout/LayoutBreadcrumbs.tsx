@@ -7,7 +7,8 @@ import {
 const labels: Record<string, string> = {
     '/bank-statements/search': 'Bank statement search', '/bank-statements/import': 'Import bank statements',
     '/business-years': 'Business years', '/customers/search': 'Customer search',
-    '/invoices/search': 'Invoice search', '/price-quotes/search': 'Price quote search',
+    '/inventory-items/search': 'Inventory item search', '/invoices/search': 'Invoice search',
+    '/price-quotes/search': 'Price quote search',
     '/products/search': 'Product search', '/export': 'Export data',
 }
 type Entity = { searchPath: string; searchLabel: string; editPath: string; editLabel: string; value?: string }
