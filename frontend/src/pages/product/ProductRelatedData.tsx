@@ -1,5 +1,6 @@
 import ProductSearch from '@/components/product-search/ProductSearch'
 import InvoiceSearch from '@/components/invoice-search/InvoiceSearch'
+import InventoryItemSearch from '@/components/inventory-item-search/InventoryItemSearch'
 import {
     Accordion,
     AccordionContent,
@@ -40,6 +41,15 @@ function ProductRelatedData({
                         onProductSelect={(product) => {
                             if (product.productCode) onProductSelect(product.productCode)
                         }}
+                    />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="similar-inventory-items">
+                <AccordionTrigger>Similar inventory items</AccordionTrigger>
+                <AccordionContent keepMounted>
+                    <InventoryItemSearch
+                        showSearchFields={false}
+                        similarName={productName}
                     />
                 </AccordionContent>
             </AccordionItem>
