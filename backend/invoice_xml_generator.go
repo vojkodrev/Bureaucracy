@@ -17,11 +17,13 @@ type eslogDocument struct {
 	XMLName        xml.Name     `xml:"Invoice"`
 	Namespace      string       `xml:"xmlns,attr"`
 	XSINamespace   string       `xml:"xmlns:xsi,attr"`
+	DSNamespace    string       `xml:"xmlns:ds,attr"`
 	SchemaLocation string       `xml:"xsi:schemaLocation,attr"`
 	Invoice        eslogInvoice `xml:"M_INVOIC"`
 }
 
 type eslogInvoice struct {
+	ID           string                `xml:"Id,attr"`
 	Header       eslogHeader           `xml:"S_UNH"`
 	Beginning    eslogBeginning        `xml:"S_BGM"`
 	Dates        []eslogDate           `xml:"S_DTM"`
@@ -30,6 +32,7 @@ type eslogInvoice struct {
 	Parties      []eslogParty          `xml:"G_SG2"`
 	Currency     eslogCurrencyGroup    `xml:"G_SG7"`
 	Payment      *eslogPaymentGroup    `xml:"G_SG8,omitempty"`
+	Allowance    eslogAllowanceGroup   `xml:"G_SG16"`
 	Lines        []eslogLine           `xml:"G_SG26"`
 	Totals       []eslogAmountGroup    `xml:"G_SG50"`
 	TaxSummaries []eslogTaxGroup       `xml:"G_SG52"`
@@ -97,22 +100,34 @@ type eslogCurrency struct {
 	Code      string `xml:"C_C504>D_6345"`
 }
 type eslogPaymentGroup struct {
-	Terms eslogPaymentTerms `xml:"S_PAT"`
-	Date  eslogDate         `xml:"S_DTM"`
+	Terms  eslogPaymentTerms  `xml:"S_PAT"`
+	Date   eslogDate          `xml:"S_DTM"`
+	Method eslogPaymentMethod `xml:"S_PAI"`
+}
+type eslogPaymentMethod struct {
+	Code string `xml:"C_C534>D_4461"`
+}
+type eslogAllowanceGroup struct {
+	Allowance eslogAllowance     `xml:"S_ALC"`
+	Amounts   []eslogAmountGroup `xml:"G_SG20"`
+}
+type eslogAllowance struct {
+	Indicator string `xml:"D_5463"`
 }
 type eslogPaymentTerms struct {
 	Code string `xml:"D_4279"`
 }
 
 type eslogLine struct {
-	Line        eslogLineNumber      `xml:"S_LIN"`
-	Product     *eslogProduct        `xml:"S_PIA,omitempty"`
-	Description eslogDescription     `xml:"S_IMD"`
-	Quantity    eslogQuantity        `xml:"S_QTY"`
-	Amounts     []eslogAmountGroup   `xml:"G_SG27"`
-	Price       eslogPriceGroup      `xml:"G_SG29"`
-	Reference   *eslogReferenceGroup `xml:"G_SG30,omitempty"`
-	Tax         eslogTaxGroup        `xml:"G_SG34"`
+	Line        eslogLineNumber       `xml:"S_LIN"`
+	Product     *eslogProduct         `xml:"S_PIA,omitempty"`
+	Description eslogDescription      `xml:"S_IMD"`
+	Quantity    eslogQuantity         `xml:"S_QTY"`
+	Amounts     []eslogAmountGroup    `xml:"G_SG27"`
+	Prices      []eslogPriceGroup     `xml:"G_SG29"`
+	References  []eslogReferenceGroup `xml:"G_SG30"`
+	Tax         eslogTaxGroup         `xml:"G_SG34"`
+	Allowance   eslogLineAllowance    `xml:"G_SG39"`
 }
 type eslogLineNumber struct {
 	Value string `xml:"D_1082"`
@@ -155,6 +170,18 @@ type eslogTax struct {
 	Rate     string `xml:"C_C243>D_5278"`
 	Category string `xml:"D_5305"`
 }
+type eslogLineAllowance struct {
+	Allowance  eslogAllowance       `xml:"S_ALC"`
+	Percentage eslogPercentageGroup `xml:"G_SG41"`
+	Amounts    []eslogAmountGroup   `xml:"G_SG42"`
+}
+type eslogPercentageGroup struct {
+	Percentage eslogPercentage `xml:"S_PCD"`
+}
+type eslogPercentage struct {
+	Qualifier string `xml:"C_C501>D_5245"`
+	Value     string `xml:"C_C501>D_5482"`
+}
 
 type InvoiceXMLGenerator struct{}
 
@@ -181,36 +208,42 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	}
 
 	document := eslogDocument{
-		Namespace: eslogNamespace, XSINamespace: "http://www.w3.org/2001/XMLSchema-instance",
+		Namespace: eslogNamespace, XSINamespace: "http://www.w3.org/2001/XMLSchema-instance", DSNamespace: "http://www.w3.org/2000/09/xmldsig#",
 		SchemaLocation: eslogNamespace + " eSLOG20_INVOIC_v200.xsd",
 		Invoice: eslogInvoice{
+			ID:        "data",
 			Header:    eslogHeader{Number: number, MessageType: "INVOIC", Directory: "D", Release: "01B", Agency: "UN"},
 			Beginning: eslogBeginning{DocumentCode: "380", DocumentNumber: number},
 			Dates:     []eslogDate{{Qualifier: "137", Value: invoice.IssueDate.Format("2006-01-02")}},
-			Texts:     []eslogText{{Subject: "DOC", Text: "urn:cen.eu:en16931:2017"}, {Subject: "PMD", Text: "PLAČILO RAČUNA " + number}},
+			Texts: []eslogText{
+				{Subject: "DOC", Text: "urn:cen.eu:en16931:2017"},
+				{Subject: "PMD", Text: "PLAČILO RAČUNA " + number},
+				{Subject: "PAI", Text: "0"},
+				{Subject: "ALQ", Text: "CMDT"},
+			},
 			Parties: []eslogParty{
-				newEslogParty("SE", "DREVI D.O.O.", "OB ŽELEZNICI 16", "1000", "LJUBLJANA", "SLOVENIJA", sellerIBAN, sellerBIC, "5314518000", "SI35954086"),
+				newEslogParty("SE", "DREVI D.O.O.", "OB ŽELEZNICI 16", "1000", "LJUBLJANA", "SLOVENIJA", sellerIBAN, sellerBIC, "5314518000", "35954086"),
 				newEslogParty("BY", trimmedString(invoice.CustomerName), trimmedString(invoice.CustomerAddress), trimmedString(invoice.CustomerPostalCode), trimmedString(invoice.CustomerCity), valueOrDefault(invoice.CustomerCountry, "SLOVENIJA"), trimmedString(invoice.CustomerIBAN), trimmedString(invoice.CustomerBIC), trimmedString(invoice.CustomerRegistrationNumber), trimmedString(invoice.CustomerTaxID)),
 			},
-			Currency: eslogCurrencyGroup{Currency: eslogCurrency{Qualifier: "2", Code: valueOrDefault(invoice.Currency, "EUR")}},
+			Currency:  eslogCurrencyGroup{Currency: eslogCurrency{Qualifier: "2", Code: valueOrDefault(invoice.Currency, "EUR")}},
+			Allowance: newEslogAllowanceGroup(net),
 		},
 	}
+	deliveryParty := newEslogParty("DP", trimmedString(invoice.CustomerName), trimmedString(invoice.CustomerAddress), trimmedString(invoice.CustomerPostalCode), trimmedString(invoice.CustomerCity), valueOrDefault(invoice.CustomerCountry, "SLOVENIJA"), trimmedString(invoice.CustomerIBAN), trimmedString(invoice.CustomerBIC), "", "")
+	document.Invoice.Parties = append(document.Invoice.Parties, deliveryParty)
 	if invoice.ServiceDate != nil {
 		document.Invoice.Dates = append(document.Invoice.Dates, eslogDate{Qualifier: "35", Value: invoice.ServiceDate.Format("2006-01-02")})
 	}
-	if text := trimmedString(invoice.IntroductoryText); text != "" {
-		document.Invoice.Texts = append(document.Invoice.Texts, eslogText{Subject: "AAI", Text: text})
-	}
-	if text := trimmedString(invoice.ClosingText); text != "" {
-		document.Invoice.Texts = append(document.Invoice.Texts, eslogText{Subject: "REG", Text: strings.ReplaceAll(text, "#ŠTEVILKA#", number)})
-	}
-	for _, reference := range []eslogReference{{Qualifier: "AAK", Value: trimmedString(invoice.DeliveryNoteNumber)}, {Qualifier: "ON", Value: trimmedString(invoice.PurchaseOrderNumber)}, {Qualifier: "PQ", Value: "SI" + number}} {
+	model, paymentReference := upnReference(trimmedString(invoice.PaymentReference), number)
+	paymentReference = strings.NewReplacer(" ", "", "-", "", "/", "").Replace(paymentReference)
+	deliveryNoteNumber := compactDeliveryNoteNumber(trimmedString(invoice.DeliveryNoteNumber))
+	for _, reference := range []eslogReference{{Qualifier: "AAK", Value: deliveryNoteNumber}, {Qualifier: "PQ", Value: model + paymentReference}} {
 		if reference.Value != "" {
 			document.Invoice.References = append(document.Invoice.References, eslogReferenceGroup{Reference: reference})
 		}
 	}
 	if invoice.DueDate != nil {
-		document.Invoice.Payment = &eslogPaymentGroup{Terms: eslogPaymentTerms{Code: "1"}, Date: eslogDate{Qualifier: "13", Value: invoice.DueDate.Format("2006-01-02")}}
+		document.Invoice.Payment = &eslogPaymentGroup{Terms: eslogPaymentTerms{Code: "1"}, Date: eslogDate{Qualifier: "13", Value: invoice.DueDate.Format("2006-01-02")}, Method: eslogPaymentMethod{Code: "30"}}
 	}
 
 	taxGroups := make(map[float64][2]float64)
@@ -225,14 +258,21 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 			Line: eslogLineNumber{Value: fmt.Sprintf("%d", index+1)}, Description: eslogDescription{Format: "F", Text: trimmedString(item.ProductName)},
 			Quantity: eslogQuantity{Qualifier: "47", Value: fmt.Sprintf("%.2f", quantity), Unit: unitCode(item.Unit)},
 			Amounts:  []eslogAmountGroup{newEslogAmountGroup("203", itemNet), newEslogAmountGroup("38", itemGross)},
-			Price:    eslogPriceGroup{Price: eslogPrice{Qualifier: "AAA", Value: fmt.Sprintf("%.4f", divide(itemNet, quantity))}},
-			Tax:      newEslogTaxGroup(rate, itemNet, itemGross-itemNet),
+			Prices: []eslogPriceGroup{
+				{Price: eslogPrice{Qualifier: "AAB", Value: fmt.Sprintf("%.4f", divide(itemNet, quantity))}},
+				{Price: eslogPrice{Qualifier: "AAA", Value: fmt.Sprintf("%.4f", divide(itemNet, quantity))}},
+			},
+			Tax:       newEslogTaxGroup(rate, itemNet, itemGross-itemNet),
+			Allowance: newEslogLineAllowance(float64OrZero(item.Discount), itemNet),
 		}
 		if code := trimmedString(item.ProductCode); code != "" {
 			line.Product = &eslogProduct{Function: "5", Code: code, CodeType: "SA"}
 		}
-		if delivery := trimmedString(invoice.DeliveryNoteNumber); delivery != "" {
-			line.Reference = &eslogReferenceGroup{Reference: eslogReference{Qualifier: "AAK", Value: delivery}}
+		if deliveryNoteNumber != "" {
+			line.References = append(line.References, eslogReferenceGroup{Reference: eslogReference{Qualifier: "AAK", Value: deliveryNoteNumber}})
+		}
+		if order := trimmedString(invoice.PurchaseOrderNumber); order != "" {
+			line.References = append(line.References, eslogReferenceGroup{Reference: eslogReference{Qualifier: "ON", Value: order}})
 		}
 		document.Invoice.Lines = append(document.Invoice.Lines, line)
 	}
@@ -256,7 +296,7 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	if err != nil {
 		return nil, fmt.Errorf("marshal invoice XML: %w", err)
 	}
-	prefix := xml.Header + `<?xml-stylesheet type="text/xsl" href="http://vizualiziraj.si/eInvoiceVizualization_2.0_24042020.xslt"?>` + "\n"
+	prefix := `<?xml version="1.0" encoding="UTF-8" standalone="no"?>` + "\n" + `<?xml-stylesheet type="text/xsl" href="http://vizualiziraj.si/eInvoiceVizualization_2.0_24042020.xslt"?>` + "\n"
 	return append([]byte(prefix), contents...), nil
 }
 
@@ -281,6 +321,24 @@ func newEslogAmountGroup(qualifier string, amount float64) eslogAmountGroup {
 	return eslogAmountGroup{Amount: eslogAmount{Qualifier: qualifier, Value: fmt.Sprintf("%.4f", amount)}}
 }
 
+func newEslogAllowanceGroup(net float64) eslogAllowanceGroup {
+	return eslogAllowanceGroup{
+		Allowance: eslogAllowance{Indicator: "A"},
+		Amounts: []eslogAmountGroup{
+			newEslogAmountGroup("204", 0),
+			newEslogAmountGroup("25", net),
+		},
+	}
+}
+
+func newEslogLineAllowance(discount, net float64) eslogLineAllowance {
+	return eslogLineAllowance{
+		Allowance:  eslogAllowance{Indicator: "A"},
+		Percentage: eslogPercentageGroup{Percentage: eslogPercentage{Qualifier: "1", Value: fmt.Sprintf("%.2f", discount)}},
+		Amounts:    []eslogAmountGroup{newEslogAmountGroup("204", 0), newEslogAmountGroup("25", net)},
+	}
+}
+
 func newEslogTaxGroup(rate, net, tax float64) eslogTaxGroup {
 	category := "S"
 	if rate == 0 {
@@ -291,6 +349,10 @@ func newEslogTaxGroup(rate, net, tax float64) eslogTaxGroup {
 
 func compactBankValue(value string) string {
 	return strings.NewReplacer(" ", "", "-", "").Replace(strings.TrimSpace(value))
+}
+
+func compactDeliveryNoteNumber(value string) string {
+	return strings.ReplaceAll(strings.TrimSpace(value), "/", "")
 }
 func countryCode(country string) string {
 	if strings.EqualFold(strings.TrimSpace(country), "SLOVENIJA") || strings.EqualFold(strings.TrimSpace(country), "SLO") {
