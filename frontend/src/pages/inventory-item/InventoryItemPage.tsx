@@ -1,289 +1,126 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { emptyToNull } from "@/lib/form-input";
-import type { InventoryItem } from "@/lib/inventory-item-types";
-import { isOptionalNonNegativeNumber, numberOrNull } from "@/lib/numbers";
-import { toast } from "@/lib/toast";
+import InventoryItemDetails from "./InventoryItemDetails";
 import InventoryItemErrors from "./InventoryItemErrors";
 import InventoryItemMenu from "./InventoryItemMenu";
-import UnsavedInventoryItemAlerts from "./UnsavedInventoryItemAlerts";
-import { useInventoryItemKeyboardShortcuts } from "./hooks/useInventoryItemKeyboardShortcuts";
-import { useUnsavedInventoryItemGuard } from "./hooks/useUnsavedInventoryItemGuard";
-import InventoryItemDetails from "./InventoryItemDetails";
 import InventoryItemRelatedData from "./InventoryItemRelatedData";
-import {
-    fetchInventoryItem,
-    fetchNextInventoryItemCode,
-    postSaveInventoryItem,
-} from "./inventory-item-api";
-
-type Draft = {
-    productCode: string;
-    name: string;
-    unit: string;
-    minimumStockLevel: string;
-};
-const emptyDraft = (): Draft => ({
-    productCode: "",
-    name: "",
-    unit: "",
-    minimumStockLevel: "",
-});
-const itemDraft = (item: InventoryItem): Draft => ({
-    productCode: item.productCode ?? "",
-    name: item.name ?? "",
-    unit: item.unit ?? "",
-    minimumStockLevel:
-        item.minimumStockLevel == null ? "" : String(item.minimumStockLevel),
-});
+import UnsavedInventoryItemAlerts from "./UnsavedInventoryItemAlerts";
+import { useInventoryItemDraft } from "./hooks/useInventoryItemDraft";
+import { useInventoryItemDuplicate } from "./hooks/useInventoryItemDuplicate";
+import { useInventoryItemKeyboardShortcuts } from "./hooks/useInventoryItemKeyboardShortcuts";
+import { useInventoryItemLoader } from "./hooks/useInventoryItemLoader";
+import { useInventoryItemRevert } from "./hooks/useInventoryItemRevert";
+import { useInventoryItemSave } from "./hooks/useInventoryItemSave";
+import { useUnsavedInventoryItemGuard } from "./hooks/useUnsavedInventoryItemGuard";
 
 export default function InventoryItemPage() {
     const { productCode: routeProductCode } = useParams();
     const [searchParams] = useSearchParams();
-    const defaultName = searchParams.get("name") ?? "";
-    const defaultUnit = searchParams.get("unit") ?? "";
     const navigate = useNavigate();
-    const [draft, setDraft] = useState(emptyDraft);
-    const [cleanDraft, setCleanDraft] = useState(() =>
-        JSON.stringify(emptyDraft()),
+    const draftState = useInventoryItemDraft();
+    const { draft, setDraft, setField } = draftState;
+    const guard = useUnsavedInventoryItemGuard(
+        draftState.hasUnsavedChanges,
     );
-    const [itemId, setItemId] = useState<number | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isDuplicating, setIsDuplicating] = useState(false);
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [saveError, setSaveError] = useState<string | null>(null);
-    const [confirmingRevert, setConfirmingRevert] = useState(false);
-    const [confirmingDuplicate, setConfirmingDuplicate] = useState(false);
-    const [reloadVersion, setReloadVersion] = useState(0);
-    const preserveDuplicate = useRef(false);
-    const announcedProductDraft = useRef(false);
-    const hasUnsavedChanges = useMemo(
-        () => JSON.stringify(draft) !== cleanDraft,
-        [draft, cleanDraft],
-    );
-    const guard = useUnsavedInventoryItemGuard(hasUnsavedChanges);
-
-    useEffect(() => {
-        if (routeProductCode) {
-            const controller = new AbortController();
-            setIsLoading(true);
-            setLoadError(null);
-            void fetchInventoryItem(routeProductCode, controller.signal)
-                .then((item) => {
-                    const loaded = itemDraft(item);
-                    setItemId(item.id);
-                    setDraft(loaded);
-                    setCleanDraft(JSON.stringify(loaded));
-                    guard.disallowNavigation();
-                })
-                .catch((error: unknown) => {
-                    if (!(
-                        error instanceof DOMException &&
-                        error.name === "AbortError"
-                    ))
-                        setLoadError(
-                            error instanceof Error
-                                ? error.message
-                                : "Loading inventory item failed",
-                        );
-                })
-                .finally(() => setIsLoading(false));
-            return () => controller.abort();
-        }
-        if (preserveDuplicate.current) {
-            preserveDuplicate.current = false;
-            guard.disallowNavigation();
-            return;
-        }
-        const initial = emptyDraft();
-        const productDefaults = {
-            name: defaultName,
-            unit: defaultUnit,
-        };
-        setItemId(null);
-        setDraft(initial);
-        setCleanDraft(JSON.stringify(initial));
-        setLoadError(null);
-        guard.disallowNavigation();
-        const controller = new AbortController();
-        void fetchNextInventoryItemCode(controller.signal)
-            .then((productCode) => {
-                const next = { ...initial, ...productDefaults, productCode };
-                setDraft(next);
-                setCleanDraft(
-                    JSON.stringify(
-                        productDefaults.name || productDefaults.unit
-                            ? { ...initial, productCode }
-                            : next,
-                        ),
-                );
-                if (
-                    (productDefaults.name || productDefaults.unit) &&
-                    !announcedProductDraft.current
-                ) {
-                    announcedProductDraft.current = true;
-                    toast.add({
-                        title: "Inventory item draft created",
-                        description:
-                            `Product code ${productCode} has been assigned. ` +
-                            "Review the inventory item and save it when ready.",
-                        type: "info",
-                    });
-                }
-            })
-            .catch((error: unknown) => {
-                if (!(
-                    error instanceof DOMException && error.name === "AbortError"
-                ))
-                    console.error(error);
-            });
-        return () => controller.abort();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [routeProductCode, reloadVersion, defaultName, defaultUnit]);
-
-    const canSave =
-        Boolean(draft.productCode.trim() && draft.name.trim()) &&
-        isOptionalNonNegativeNumber(draft.minimumStockLevel) &&
-        !isLoading &&
-        !isDuplicating &&
-        !loadError;
-    const save = async () => {
-        if (!canSave || isSaving) return;
-        setIsSaving(true);
-        setSaveError(null);
-        try {
-            const saved = await postSaveInventoryItem({
-                id: itemId,
-                productCode: draft.productCode.trim(),
-                name: emptyToNull(draft.name),
-                unit: emptyToNull(draft.unit),
-                minimumStockLevel: numberOrNull(draft.minimumStockLevel),
-            });
-            const next = itemDraft(saved);
-            const creating = itemId == null;
-            setItemId(saved.id);
-            setDraft(next);
-            setCleanDraft(JSON.stringify(next));
-            toast.add({
-                title: "Inventory item saved",
-                description: `${saved.productCode} was ${creating ? "created" : "updated"} successfully.`,
-                type: "success",
-            });
-            if (routeProductCode === saved.productCode)
-                setReloadVersion((value) => value + 1);
-            else {
-                guard.allowNavigation();
-                navigate(
-                    `/inventory-item/${encodeURIComponent(saved.productCode ?? "")}`,
-                );
-            }
-        } catch (error: unknown) {
-            setSaveError(
-                error instanceof Error
-                    ? error.message
-                    : "Saving inventory item failed",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    };
-    useInventoryItemKeyboardShortcuts(() => {
-        void save();
+    const loader = useInventoryItemLoader({
+        routeProductCode,
+        defaultName: searchParams.get("name") ?? "",
+        defaultUnit: searchParams.get("unit") ?? "",
+        replaceDraft: setDraft,
+        markClean: draftState.markClean,
+        disallowNavigation: guard.disallowNavigation,
     });
-
-    const revert = () => {
-        setConfirmingRevert(false);
-        setSaveError(null);
-        if (routeProductCode) setReloadVersion((value) => value + 1);
-        else {
-            const next = emptyDraft();
-            setDraft(next);
-            setCleanDraft(JSON.stringify(next));
-        }
-        toast.add({
-            title: "Inventory item reverted",
-            description: routeProductCode
-                ? `${routeProductCode} was restored to its last saved version.`
-                : "The new inventory item form was cleared.",
-            type: "success",
-        });
-    };
-    const duplicate = async () => {
-        if (itemId == null || isDuplicating) return;
-        if (hasUnsavedChanges && !confirmingDuplicate) {
-            setConfirmingDuplicate(true);
-            return;
-        }
-        setConfirmingDuplicate(false);
-        setIsDuplicating(true);
-        setSaveError(null);
-        try {
-            const productCode = await fetchNextInventoryItemCode();
-            setItemId(null);
-            setDraft((current) => ({ ...current, productCode }));
-            setCleanDraft("__unsaved__");
-            preserveDuplicate.current = true;
-            guard.allowNavigation();
-            navigate("/inventory-item");
-            toast.add({
-                title: "Inventory item duplicated",
-                description: `Product code ${productCode} has been assigned to the new unsaved copy.`,
-                type: "info",
-            });
-        } catch (error: unknown) {
-            setSaveError(
-                error instanceof Error
-                    ? error.message
-                    : "Duplicating inventory item failed",
-            );
-        } finally {
-            setIsDuplicating(false);
-        }
-    };
+    const duplicate = useInventoryItemDuplicate({
+        itemId: loader.itemId,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        navigate,
+        setItemId: loader.setItemId,
+        replaceDraft: setDraft,
+        markUnsaved: draftState.markUnsaved,
+        preserveDuplicateDraft: loader.preserveDuplicateDraft,
+        allowNavigation: guard.allowNavigation,
+    });
+    const save = useInventoryItemSave({
+        itemId: loader.itemId,
+        draft,
+        routeProductCode,
+        isLoading: loader.isLoading,
+        loadError: loader.error,
+        isDuplicating: duplicate.isDuplicating,
+        navigate,
+        replaceDraft: setDraft,
+        markClean: draftState.markClean,
+        setItemId: loader.setItemId,
+        clearDuplicateError: () => duplicate.setDuplicateError(null),
+        allowNavigation: guard.allowNavigation,
+        reloadAfterSave: loader.reloadAfterSave,
+    });
+    const revert = useInventoryItemRevert({
+        routeProductCode,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isDuplicating: duplicate.isDuplicating,
+        clearSaveError: () => save.setSaveError(null),
+        clearDuplicateError: () => duplicate.setDuplicateError(null),
+        replaceDraft: setDraft,
+        markClean: draftState.markClean,
+        reload: loader.reload,
+    });
+    useInventoryItemKeyboardShortcuts(() => {
+        void save.saveInventoryItem();
+    });
 
     return (
         <div className="max-w-5xl p-4">
-            <InventoryItemErrors loadError={loadError} saveError={saveError} />
+            <InventoryItemErrors
+                loadError={loader.error}
+                saveError={save.saveError ?? duplicate.duplicateError}
+            />
             <InventoryItemMenu
-                canSave={canSave}
-                canRevert={hasUnsavedChanges && !isDuplicating}
-                canDuplicate={itemId != null && !isLoading && !isSaving}
-                isSaving={isSaving}
-                isDuplicating={isDuplicating}
+                canSave={save.canSave}
+                canRevert={revert.canRevert}
+                canDuplicate={
+                    loader.itemId != null &&
+                    !loader.isLoading &&
+                    !save.isSaving
+                }
+                isSaving={save.isSaving}
+                isDuplicating={duplicate.isDuplicating}
                 onSave={() => {
-                    void save();
+                    void save.saveInventoryItem();
                 }}
-                onRevert={() => setConfirmingRevert(true)}
+                onRevert={revert.requestRevert}
                 onDuplicate={() => {
-                    void duplicate();
+                    void duplicate.duplicate();
                 }}
             />
             <UnsavedInventoryItemAlerts
                 isNavigationBlocked={guard.blocker.state === "blocked"}
-                isConfirmingRevert={confirmingRevert}
-                isConfirmingDuplicate={confirmingDuplicate}
+                isConfirmingRevert={revert.confirmingRevert}
+                isConfirmingDuplicate={duplicate.confirmingDuplicate}
                 onCancelNavigation={() => {
-                    if (guard.blocker.state === "blocked") guard.blocker.reset();
+                    if (guard.blocker.state === "blocked") {
+                        guard.blocker.reset();
+                    }
                 }}
                 onDiscardAndNavigate={guard.discardAndNavigate}
-                onConfirmingRevertChange={setConfirmingRevert}
-                onDiscardAndRevert={revert}
-                onConfirmingDuplicateChange={setConfirmingDuplicate}
-                onDuplicateAnyway={() => { void duplicate(); }}
+                onConfirmingRevertChange={revert.setConfirmingRevert}
+                onDiscardAndRevert={revert.performRevert}
+                onConfirmingDuplicateChange={
+                    duplicate.setConfirmingDuplicate
+                }
+                onDuplicateAnyway={() => {
+                    void duplicate.performDuplicate();
+                }}
             />
             <div className="max-w-lg">
                 <InventoryItemDetails
                     {...draft}
-                    onChange={(field, value) =>
-                        setDraft((current) => ({ ...current, [field]: value }))
-                    }
+                    onChange={(field, value) => setField(field, value)}
                 />
             </div>
             <InventoryItemRelatedData
-                itemId={itemId}
+                itemId={loader.itemId}
                 name={draft.name}
-                hasUnsavedChanges={hasUnsavedChanges}
+                hasUnsavedChanges={draftState.hasUnsavedChanges}
                 onItemSelect={(code) => {
                     void navigate(
                         `/inventory-item/${encodeURIComponent(code)}`,

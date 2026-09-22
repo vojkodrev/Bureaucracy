@@ -1,1 +1,3 @@
-export { useProductKeyboardShortcuts as useInventoryItemKeyboardShortcuts } from "../../product/hooks/useProductKeyboardShortcuts";
+export {
+    useProductKeyboardShortcuts as useInventoryItemKeyboardShortcuts,
+} from "../../product/hooks/useProductKeyboardShortcuts";
