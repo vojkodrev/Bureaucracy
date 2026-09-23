@@ -3,7 +3,7 @@ import type { NavigateFunction } from "react-router-dom";
 import { emptyToNull } from "@/lib/form-input";
 import { isOptionalNonNegativeNumber, numberOrNull } from "@/lib/numbers";
 import { toast } from "@/lib/toast";
-import { postSaveInventoryItem } from "../inventory-item-api";
+import { fetchInventoryItemExists, postSaveInventoryItem } from "../inventory-item-api";
 import {
     inventoryItemDraft,
     type InventoryItemDraft,
@@ -28,6 +28,7 @@ type Options = {
 export function useInventoryItemSave(options: Options) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [duplicateCodeWarning, setDuplicateCodeWarning] = useState(false);
     const canSave = Boolean(
         options.draft.productCode.trim() && options.draft.name.trim(),
     ) && isOptionalNonNegativeNumber(options.draft.minimumStockLevel) &&
@@ -40,6 +41,12 @@ export function useInventoryItemSave(options: Options) {
         setSaveError(null);
         options.clearDuplicateError();
         try {
+            if (options.itemId == null && await fetchInventoryItemExists(
+                options.draft.productCode.trim(),
+            )) {
+                setDuplicateCodeWarning(true);
+                return false;
+            }
             const saved = await postSaveInventoryItem({
                 id: options.itemId,
                 productCode: options.draft.productCode.trim(),
@@ -85,5 +92,7 @@ export function useInventoryItemSave(options: Options) {
         isSaving,
         saveError,
         setSaveError,
+        duplicateCodeWarning,
+        setDuplicateCodeWarning,
     };
 }

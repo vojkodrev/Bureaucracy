@@ -4,7 +4,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export type PriceQuoteNumberWarning = {
-    kind: 'historical' | 'skipped'
+    kind: 'duplicate' | 'historical' | 'skipped'
     latestPriceQuoteNumber?: string
 }
 
@@ -17,14 +17,19 @@ type Props = {
 
 export default function PriceQuoteNumberAlert({ quoteNumber, warning, onOpenChange, onConfirm }: Props) {
     const skipsNumbers = warning?.kind === 'skipped'
+    const isDuplicate = warning?.kind === 'duplicate'
     return <AlertDialog open={warning !== null} onOpenChange={onOpenChange}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>
-                    {skipsNumbers ? 'Skip price quote numbers?' : 'Save changes to an earlier price quote?'}
+                    {isDuplicate ? 'Price quote number already exists'
+                        : skipsNumbers ? 'Skip price quote numbers?' : 'Save changes to an earlier price quote?'}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                    {skipsNumbers
+                    {isDuplicate
+                        ? <>Price quote {quoteNumber} already exists for this business year.
+                            Choose a different price quote number before saving.</>
+                        : skipsNumbers
                         ? <>Price quote {quoteNumber} skips one or more price quote numbers
                             {warning?.latestPriceQuoteNumber
                                 ? ` after the latest price quote ${warning.latestPriceQuoteNumber}` : ''}.
@@ -34,10 +39,10 @@ export default function PriceQuoteNumberAlert({ quoteNumber, warning, onOpenChan
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                <AlertDialogAction onClick={onConfirm}>
+                <AlertDialogCancel>{isDuplicate ? 'OK' : 'Keep editing'}</AlertDialogCancel>
+                {!isDuplicate && <AlertDialogAction onClick={onConfirm}>
                     {skipsNumbers ? 'Save and skip numbers' : 'Save historical price quote'}
-                </AlertDialogAction>
+                </AlertDialogAction>}
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>

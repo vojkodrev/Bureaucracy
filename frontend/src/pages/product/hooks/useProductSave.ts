@@ -3,7 +3,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import { emptyToNull } from '@/lib/form-input'
 import { isOptionalNonNegativeNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
-import { fetchProductInvoiceCount, postSaveProduct } from '../product-api'
+import { fetchProductExists, fetchProductInvoiceCount, postSaveProduct } from '../product-api'
 import { productDraft } from './useProductDraft'
 import type { ProductDraft } from './useProductDraft'
 
@@ -32,6 +32,7 @@ export function useProductSave({
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [invoiceCountWarning, setInvoiceCountWarning] = useState<number | null>(null)
+    const [duplicateCodeWarning, setDuplicateCodeWarning] = useState(false)
     const canSave = Boolean(draft.productCode.trim() && draft.name.trim()) &&
         isOptionalNonNegativeNumber(draft.netPrice) &&
         isOptionalNonNegativeNumber(draft.taxRate) &&
@@ -77,6 +78,10 @@ export function useProductSave({
         setSaveError(null)
         clearDuplicateError()
         try {
+            if (productId == null && await fetchProductExists(draft.productCode.trim())) {
+                setDuplicateCodeWarning(true)
+                return false
+            }
             if (productId != null && routeProductCode) {
                 const invoiceCount = await fetchProductInvoiceCount(routeProductCode)
                 if (invoiceCount > 0) {
@@ -107,6 +112,6 @@ export function useProductSave({
 
     return {
         canSave, requestSave, confirmSave, isSaving, saveError, setSaveError,
-        invoiceCountWarning, setInvoiceCountWarning,
+        invoiceCountWarning, setInvoiceCountWarning, duplicateCodeWarning, setDuplicateCodeWarning,
     }
 }

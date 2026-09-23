@@ -45,6 +45,13 @@ export async function fetchProduct(productCode: string, signal?: AbortSignal): P
     return result.data.product
 }
 
+export async function fetchProductExists(productCode: string): Promise<boolean> {
+    const result = await postGraphql<{ data?: { product: Pick<Product, 'id'> | null } }>(
+        productQuery, { businessYear: getSelectedBusinessYear(), productCode },
+    )
+    return result.data?.product != null
+}
+
 export async function fetchNextProductCode(signal?: AbortSignal): Promise<string> {
     const result = await postGraphql<{
         data?: { searchProducts: { products: Pick<Product, 'productCode'>[] } }

@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import DuplicateIdentifierAlert from '@/components/DuplicateIdentifierAlert'
 import ProductDetails from './ProductDetails'
 import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
@@ -74,6 +75,10 @@ function ProductPage() {
                 onOpenChange={(open) => { if (!open) save.setInvoiceCountWarning(null) }}
                 onConfirm={() => { void save.confirmSave() }}
             />
+            <DuplicateIdentifierAlert open={save.duplicateCodeWarning}
+                recordName="product" identifierLabel="Product code"
+                identifier={draft.productCode.trim()}
+                onOpenChange={save.setDuplicateCodeWarning} />
             <UnsavedProductAlerts
                 isNavigationBlocked={guard.blocker.state === 'blocked'}
                 isConfirmingRevert={revert.confirmingRevert}

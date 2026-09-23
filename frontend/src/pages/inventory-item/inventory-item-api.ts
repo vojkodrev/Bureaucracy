@@ -24,6 +24,18 @@ export async function fetchInventoryItem(
     return result.data.inventoryItem;
 }
 
+export async function fetchInventoryItemExists(productCode: string): Promise<boolean> {
+    const result = await postGraphql<{
+        data?: { inventoryItem: Pick<InventoryItem, "id"> | null };
+    }>(
+        `query InventoryItemExists($businessYear: String!, $productCode: String!) {
+            inventoryItem(businessYear: $businessYear, productCode: $productCode) { id }
+        }`,
+        { businessYear: getSelectedBusinessYear(), productCode },
+    );
+    return result.data?.inventoryItem != null;
+}
+
 export async function fetchNextInventoryItemCode(
     signal?: AbortSignal,
 ): Promise<string> {

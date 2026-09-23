@@ -1,4 +1,5 @@
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import DuplicateIdentifierAlert from "@/components/DuplicateIdentifierAlert";
 import InventoryItemDetails from "./InventoryItemDetails";
 import InventoryItemErrors from "./InventoryItemErrors";
 import InventoryItemMenu from "./InventoryItemMenu";
@@ -91,6 +92,13 @@ export default function InventoryItemPage() {
                 onDuplicate={() => {
                     void duplicate.duplicate();
                 }}
+            />
+            <DuplicateIdentifierAlert
+                open={save.duplicateCodeWarning}
+                recordName="inventory item"
+                identifierLabel="Product code"
+                identifier={draft.productCode.trim()}
+                onOpenChange={save.setDuplicateCodeWarning}
             />
             <UnsavedInventoryItemAlerts
                 isNavigationBlocked={guard.blocker.state === "blocked"}

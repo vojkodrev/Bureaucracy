@@ -48,6 +48,15 @@ export async function fetchBankStatement(
     return result.data.bankStatement;
 }
 
+export async function fetchBankStatementExists(statementNumber: number): Promise<boolean> {
+    const result = await postGraphql<{
+        data?: { bankStatement: Pick<BankStatement, "id"> | null };
+    }>(bankStatementQuery, {
+        businessYear: getSelectedBusinessYear(), statementNumber,
+    });
+    return result.data?.bankStatement != null;
+}
+
 export async function fetchLatestBankStatementNumber(
     bankAccount: string | null,
     signal?: AbortSignal,

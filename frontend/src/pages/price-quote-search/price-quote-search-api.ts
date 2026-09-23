@@ -101,6 +101,13 @@ export async function fetchPriceQuote(
     return result.data.priceQuote
 }
 
+export async function fetchPriceQuoteExists(quoteNumber: string): Promise<boolean> {
+    const result = await postGraphql<{
+        data?: { priceQuote: Pick<PriceQuote, 'id'> | null }
+    }>(priceQuoteQuery, { businessYear: getSelectedBusinessYear(), quoteNumber })
+    return result.data?.priceQuote != null
+}
+
 export async function fetchLatestPriceQuoteNumber(
     signal?: AbortSignal,
     businessYear = getSelectedBusinessYear(),

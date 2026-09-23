@@ -9,7 +9,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export type BankStatementNumberWarning = "historical" | "skipped";
+export type BankStatementNumberWarning = "duplicate" | "historical" | "skipped";
 
 type Props = {
     warning: BankStatementNumberWarning | null;
@@ -19,29 +19,34 @@ type Props = {
 
 function BankStatementNumberAlert({ warning, onOpenChange, onConfirm }: Props) {
     const skipsNumbers = warning === "skipped";
+    const isDuplicate = warning === "duplicate";
 
     return (
         <AlertDialog open={warning !== null} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>
-                        {skipsNumbers
+                        {isDuplicate
+                            ? "Statement number already exists"
+                            : skipsNumbers
                             ? "Skip statement numbers?"
                             : "Save an earlier bank statement?"}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        {skipsNumbers
+                        {isDuplicate
+                            ? "A bank statement with this number already exists for this business year. Choose a different statement number before saving."
+                            : skipsNumbers
                             ? "This statement number leaves a gap in the sequence for the selected bank account."
                             : "This is not the latest statement for the selected bank account. Saving it will update a historical accounting record."}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>
+                    <AlertDialogCancel>{isDuplicate ? "OK" : "Keep editing"}</AlertDialogCancel>
+                    {!isDuplicate && <AlertDialogAction onClick={onConfirm}>
                         {skipsNumbers
                             ? "Save and skip numbers"
                             : "Save historical statement"}
-                    </AlertDialogAction>
+                    </AlertDialogAction>}
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

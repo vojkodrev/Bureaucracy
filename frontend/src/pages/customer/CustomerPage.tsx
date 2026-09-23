@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import CountryComboboxField from '@/components/CountryComboboxField'
+import DuplicateIdentifierAlert from '@/components/DuplicateIdentifierAlert'
 import ErrorAlert from '@/components/ErrorAlert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -112,6 +113,7 @@ function CustomerPage() {
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [duplicateIdWarning, setDuplicateIdWarning] = useState(false)
     const requestKey = `${routeCustomerId ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<LoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeCustomerId) && loadResult.requestKey !== requestKey
@@ -179,6 +181,21 @@ function CustomerPage() {
         setIsSaving(true)
         setSaveError(null)
         try {
+            if (isCreating) {
+                const response = await fetch(graphqlUrl, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: customerQuery, variables: {
+                        businessYear: getSelectedBusinessYear(), customerId: draft.customerId.trim(),
+                    }}),
+                })
+                if (!response.ok) throw new Error(`Checking customer ID failed (${response.status})`)
+                const result = await response.json() as CustomerResponse
+                if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+                if (result.data?.customer) {
+                    setDuplicateIdWarning(true)
+                    return
+                }
+            }
             const response = await fetch(graphqlUrl, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -284,6 +301,9 @@ function CustomerPage() {
                 </div>
             )}
             <CustomerMenu canSave={canSave} canRevert={hasUnsavedChanges} isSaving={isSaving} onSave={() => void saveCustomer()} onRevert={() => setConfirmingRevert(true)} />
+            <DuplicateIdentifierAlert open={duplicateIdWarning}
+                recordName="customer" identifierLabel="Customer ID"
+                identifier={draft.customerId.trim()} onOpenChange={setDuplicateIdWarning} />
             <UnsavedCustomerAlert
                 open={blocker.state === 'blocked'}
                 onOpenChange={(open) => { if (!open && blocker.state === 'blocked') blocker.reset() }}

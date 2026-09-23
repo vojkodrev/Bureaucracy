@@ -3,7 +3,7 @@ import type { NavigateFunction } from "react-router-dom";
 import { dateForApi } from "@/lib/dates";
 import { toast } from "@/lib/toast";
 import type { BankStatementNumberWarning } from "../BankStatementNumberAlert";
-import { fetchLatestBankStatementNumber, postSaveBankStatement } from "../bank-statement-api";
+import { fetchBankStatementExists, fetchLatestBankStatementNumber, postSaveBankStatement } from "../bank-statement-api";
 import type { BankStatementDraft } from "./useBankStatementDraft";
 
 type Options = {
@@ -82,8 +82,12 @@ export function useBankStatementSave({
         setIsSaving(true);
         setLatestNumberError(null);
         try {
-            const latest = await fetchLatestBankStatementNumber(draft.bankAccount || null);
             const value = Number(draft.statementNumber);
+            if (statementId == null && await fetchBankStatementExists(value)) {
+                setNumberWarning("duplicate");
+                return false;
+            }
+            const latest = await fetchLatestBankStatementNumber(draft.bankAccount || null);
             if (latest != null && value !== latest && value !== latest + 1) {
                 setNumberWarning(value > latest + 1 ? "skipped" : "historical");
                 return false;
