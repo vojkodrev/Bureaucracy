@@ -133,6 +133,7 @@ function InvoiceSearchResultsByCustomer({
                                         <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                                         <TableCell>
                                             <InvoicePaymentDate
+                                                invoiceNumber={invoice.invoiceNumber}
                                                 paidAmount={invoice.paidAmount}
                                                 paymentDate={invoice.paymentDate}
                                             />

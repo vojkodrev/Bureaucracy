@@ -489,6 +489,7 @@ func (repository *BankStatementRepository) Search(
 	dateFrom *time.Time,
 	dateTo *time.Time,
 	statementNumber *int,
+	documentNumber *string,
 	bankAccount *string,
 	customerID *string,
 	customerName *string,
@@ -526,6 +527,7 @@ func (repository *BankStatementRepository) Search(
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
+		sql.Named("documentNumber", optionalLikePattern(documentNumber)),
 		sql.Named("bankAccount", bankAccountValue),
 		sql.Named("customerID", optionalLikePattern(customerID)),
 		sql.Named("customerName", optionalLikePattern(customerName)),
@@ -533,6 +535,7 @@ func (repository *BankStatementRepository) Search(
 	transactionFilter := `
 		(@dateFrom IS NULL OR transactionRow.Datum >= @dateFrom)
 		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))
+		AND (@documentNumber = '' OR transactionRow.Stevilka LIKE @documentNumber ESCAPE '\')
 		AND (@customerID = '' OR transactionRow.SifraPartnerja LIKE @customerID ESCAPE '\')
 		AND (@customerName = '' OR transactionRow.ImePartnerja LIKE @customerName ESCAPE '\')`
 

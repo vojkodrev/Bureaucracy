@@ -31,6 +31,7 @@ type SearchForm = {
     from: string
     to: string
     statementNumber: string
+    documentNumber: string
     bankAccount: string
     customerId: string
     customerName: string
@@ -51,6 +52,7 @@ const searchBankStatementsQuery = `
         $dateFrom: Time
         $dateTo: Time
         $statementNumber: Int
+        $documentNumber: String
         $bankAccount: String
         $customerId: String
         $customerName: String
@@ -64,6 +66,7 @@ const searchBankStatementsQuery = `
             dateFrom: $dateFrom
             dateTo: $dateTo
             statementNumber: $statementNumber
+            documentNumber: $documentNumber
             bankAccount: $bankAccount
             customerId: $customerId
             customerName: $customerName
@@ -88,6 +91,7 @@ function searchFormFromParams(params: URLSearchParams): SearchForm {
         from: params.get('from') ?? '',
         to: params.get('to') ?? '',
         statementNumber: params.get('statementNumber') ?? '',
+        documentNumber: params.get('documentNumber') ?? '',
         bankAccount: params.get('bankAccount') ?? '',
         customerId: params.get('customerId') ?? '',
         customerName: params.get('customerName') ?? '',
@@ -103,7 +107,7 @@ function searchFormFromParams(params: URLSearchParams): SearchForm {
 
 function searchParamsFromForm(search: SearchForm): URLSearchParams {
     const params = new URLSearchParams()
-    for (const key of ['from', 'to', 'statementNumber', 'bankAccount', 'customerId', 'customerName'] as const) {
+    for (const key of ['from', 'to', 'statementNumber', 'documentNumber', 'bankAccount', 'customerId', 'customerName'] as const) {
         if (search[key]) params.set(key, search[key])
     }
     params.set('page', search.page)
@@ -169,6 +173,7 @@ function BankStatementSearchPage() {
                     dateFrom: optionalDate(search.from),
                     dateTo: optionalDate(search.to),
                     statementNumber: optionalStatementNumber(search.statementNumber),
+                    documentNumber: optionalFilter(search.documentNumber),
                     bankAccount: optionalFilter(search.bankAccount),
                     customerId: optionalFilter(search.customerId),
                     customerName: optionalFilter(search.customerName),
@@ -204,6 +209,7 @@ function BankStatementSearchPage() {
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
             statementNumber: String(formData.get('statementNumber') ?? '').trim(),
+            documentNumber: String(formData.get('documentNumber') ?? '').trim(),
             bankAccount,
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
@@ -280,6 +286,12 @@ function BankStatementSearchPage() {
                                     <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
                                     <NumberInput id="statement-number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
                                 </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="document-number">Document number</FieldLabel>
+                                    <Input id="document-number" type="search" name="documentNumber" defaultValue={search.documentNumber} autoComplete="off" />
+                                </Field>
+                            </div>
+                            <div className="grid gap-6 sm:grid-cols-2">
                                 <BankAccountComboboxField id="bank-account" label="Bank account" value={bankAccount} onChange={setBankAccount} />
                             </div>
                             <div className="grid gap-6 sm:grid-cols-2">

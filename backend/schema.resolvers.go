@@ -47,7 +47,7 @@ func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear s
 }
 
 // SearchBankStatements is the resolver for the searchBankStatements field.
-func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -56,7 +56,7 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, documentNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // BankAccounts is the resolver for the bankAccounts field.
