@@ -19,6 +19,12 @@ const invoiceQuery = `
     }
 `
 
+const invoiceExistsQuery = `
+    query InvoiceExists($businessYear: String!, $invoiceNumber: String!) {
+        invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) { id }
+    }
+`
+
 const latestInvoiceQuery = `
     query LatestInvoice($businessYear: String!) {
         searchInvoices(
@@ -55,6 +61,15 @@ export async function fetchInvoice(invoiceNumber: string, signal?: AbortSignal) 
     }, signal)
     if (!result.data?.invoice) throw new Error(`Invoice ${invoiceNumber} was not found`)
     return result.data.invoice
+}
+
+export async function fetchInvoiceExists(invoiceNumber: string): Promise<boolean> {
+    const result = await postGraphql<{
+        data?: { invoice: { id: number } | null }
+    }>(invoiceExistsQuery, {
+        businessYear: getSelectedBusinessYear(), invoiceNumber,
+    })
+    return result.data?.invoice != null
 }
 
 export async function fetchLatestInvoiceNumber(

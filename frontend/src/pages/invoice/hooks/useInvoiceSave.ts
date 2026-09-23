@@ -7,7 +7,7 @@ import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
 import { postalCodeAndCity } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import type { InvoiceNumberWarning } from '../InvoiceNumberAlert'
-import { fetchLatestInvoiceNumber, postSaveInvoice } from '../invoice-api'
+import { fetchInvoiceExists, fetchLatestInvoiceNumber, postSaveInvoice } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
 type Options = {
@@ -84,8 +84,12 @@ export function useInvoiceSave({
         setIsSaving(true)
         setSaveError(null)
         try {
-            const latest = await fetchLatestInvoiceNumber()
             const number = draft.invoiceNumber.trim()
+            if (invoiceId == null && await fetchInvoiceExists(number)) {
+                setInvoiceNumberWarning({ kind: 'duplicate' })
+                return false
+            }
+            const latest = await fetchLatestInvoiceNumber()
             if (number !== latest && number !== nextPaddedNumber(latest, 5)) {
                 const numberValue = Number.parseInt(number, 10)
                 const nextValue = Number.parseInt(nextPaddedNumber(latest, 5), 10)

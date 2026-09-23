@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 export type InvoiceNumberWarning = {
-    kind: 'historical' | 'skipped'
+    kind: 'duplicate' | 'historical' | 'skipped'
     latestInvoiceNumber?: string
 }
 
@@ -28,6 +28,7 @@ function InvoiceNumberAlert({
     onConfirm,
 }: InvoiceNumberAlertProps) {
     const skipsNumbers = warning?.kind === 'skipped'
+    const isDuplicate = warning?.kind === 'duplicate'
 
     return (
         <AlertDialog
@@ -37,12 +38,20 @@ function InvoiceNumberAlert({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>
-                        {skipsNumbers
+                        {isDuplicate
+                            ? 'Invoice number already exists'
+                            : skipsNumbers
                             ? 'Skip invoice numbers?'
                             : 'Save changes to an earlier invoice?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        {skipsNumbers ? (
+                        {isDuplicate ? (
+                            <>
+                                Invoice {invoiceNumber} already exists for this
+                                business year. Choose a different invoice number
+                                before saving.
+                            </>
+                        ) : skipsNumbers ? (
                             <>
                                 Invoice {invoiceNumber} skips one or more
                                 invoice numbers
@@ -63,12 +72,14 @@ function InvoiceNumberAlert({
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>
-                        {skipsNumbers
-                            ? 'Save and skip numbers'
-                            : 'Save historical invoice'}
-                    </AlertDialogAction>
+                    <AlertDialogCancel>{isDuplicate ? 'OK' : 'Keep editing'}</AlertDialogCancel>
+                    {!isDuplicate && (
+                        <AlertDialogAction onClick={onConfirm}>
+                            {skipsNumbers
+                                ? 'Save and skip numbers'
+                                : 'Save historical invoice'}
+                        </AlertDialogAction>
+                    )}
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
