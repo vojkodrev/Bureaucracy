@@ -4,6 +4,7 @@ import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
 import ProductPricing from './ProductPricing'
 import ProductRelatedData from './ProductRelatedData'
+import ProductUsageAlert from './ProductUsageAlert'
 import UnsavedProductAlerts from './UnsavedProductAlerts'
 import { useProductDraft } from './hooks/useProductDraft'
 import { useProductDuplicate } from './hooks/useProductDuplicate'
@@ -43,7 +44,7 @@ function ProductPage() {
         clearDuplicateError: () => duplicate.setDuplicateError(null),
         replaceDraft: setDraft, markClean: draftState.markClean, reload: loader.reload,
     })
-    useProductKeyboardShortcuts(() => { void save.saveProduct() })
+    useProductKeyboardShortcuts(() => { void save.requestSave() })
 
     return (
         <div className="max-w-5xl p-4">
@@ -55,7 +56,7 @@ function ProductPage() {
                 canDuplicate={loader.productId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving}
                 isDuplicating={duplicate.isDuplicating}
-                onSave={() => { void save.saveProduct() }}
+                onSave={() => { void save.requestSave() }}
                 onRevert={revert.requestRevert}
                 onDuplicate={() => { void duplicate.duplicate() }}
                 canCreateInventoryItem={loader.productId != null && !loader.isLoading}
@@ -66,6 +67,12 @@ function ProductPage() {
                     })
                     void navigate(`/inventory-item?${params.toString()}`)
                 }}
+            />
+            <ProductUsageAlert
+                productCode={routeProductCode ?? draft.productCode}
+                invoiceCount={save.invoiceCountWarning}
+                onOpenChange={(open) => { if (!open) save.setInvoiceCountWarning(null) }}
+                onConfirm={() => { void save.confirmSave() }}
             />
             <UnsavedProductAlerts
                 isNavigationBlocked={guard.blocker.state === 'blocked'}

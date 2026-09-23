@@ -27,6 +27,14 @@ const saveProductMutation = `
     }
 `
 
+const productInvoiceCountQuery = `
+    query ProductInvoiceCount($businessYear: String!, $productCodes: [String!]!) {
+        productInvoiceCounts(businessYear: $businessYear, productCodes: $productCodes) {
+            productCode invoiceCount
+        }
+    }
+`
+
 export async function fetchProduct(productCode: string, signal?: AbortSignal): Promise<Product> {
     const result = await postGraphql<{ data?: { product: Product | null }; errors?: { message: string }[] }>(
         productQuery,
@@ -52,4 +60,15 @@ export async function postSaveProduct(product: Record<string, unknown>): Promise
     }>(saveProductMutation, { businessYear: getSelectedBusinessYear(), product })
     if (!result.data?.saveProduct) throw new Error('Saving product returned no product')
     return result.data.saveProduct
+}
+
+export async function fetchProductInvoiceCount(productCode: string): Promise<number> {
+    const result = await postGraphql<{
+        data?: { productInvoiceCounts: { productCode: string, invoiceCount: number }[] }
+        errors?: { message: string }[]
+    }>(productInvoiceCountQuery, {
+        businessYear: getSelectedBusinessYear(),
+        productCodes: [productCode],
+    })
+    return result.data?.productInvoiceCounts[0]?.invoiceCount ?? 0
 }

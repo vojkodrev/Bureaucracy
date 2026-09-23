@@ -3,7 +3,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import { emptyToNull } from '@/lib/form-input'
 import { isOptionalNonNegativeNumber, numberOrNull } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
-import { postSaveProduct } from '../product-api'
+import { fetchProductInvoiceCount, postSaveProduct } from '../product-api'
 import { productDraft } from './useProductDraft'
 import type { ProductDraft } from './useProductDraft'
 
@@ -31,17 +31,14 @@ export function useProductSave({
 }: Options) {
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
+    const [invoiceCountWarning, setInvoiceCountWarning] = useState<number | null>(null)
     const canSave = Boolean(draft.productCode.trim() && draft.name.trim()) &&
         isOptionalNonNegativeNumber(draft.netPrice) &&
         isOptionalNonNegativeNumber(draft.taxRate) &&
         !isLoading && !isDuplicating && !loadError
 
-    const saveProduct = async () => {
-        if (!canSave || isSaving) return false
+    const performSave = async () => {
         const isCreating = productId == null
-        setIsSaving(true)
-        setSaveError(null)
-        clearDuplicateError()
         try {
             const savedProduct = await postSaveProduct({
                 id: productId,
@@ -71,10 +68,45 @@ export function useProductSave({
         } catch (requestError: unknown) {
             setSaveError(requestError instanceof Error ? requestError.message : 'Saving product failed')
             return false
+        }
+    }
+
+    const requestSave = async () => {
+        if (!canSave || isSaving) return false
+        setIsSaving(true)
+        setSaveError(null)
+        clearDuplicateError()
+        try {
+            if (productId != null && routeProductCode) {
+                const invoiceCount = await fetchProductInvoiceCount(routeProductCode)
+                if (invoiceCount > 0) {
+                    setInvoiceCountWarning(invoiceCount)
+                    return false
+                }
+            }
+            return await performSave()
+        } catch (requestError: unknown) {
+            setSaveError(requestError instanceof Error
+                ? requestError.message
+                : 'Checking product invoice usage failed')
+            return false
         } finally {
             setIsSaving(false)
         }
     }
 
-    return { canSave, saveProduct, isSaving, saveError, setSaveError }
+    const confirmSave = async () => {
+        if (!canSave || isSaving) return false
+        setInvoiceCountWarning(null)
+        setIsSaving(true)
+        setSaveError(null)
+        clearDuplicateError()
+        try { return await performSave() }
+        finally { setIsSaving(false) }
+    }
+
+    return {
+        canSave, requestSave, confirmSave, isSaving, saveError, setSaveError,
+        invoiceCountWarning, setInvoiceCountWarning,
+    }
 }
