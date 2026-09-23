@@ -19,6 +19,7 @@ import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
+import { useInvoiceHalcomExport } from './hooks/useInvoiceHalcomExport'
 import { useInvoiceKeyboardShortcuts } from './hooks/useInvoiceKeyboardShortcuts'
 import { useInvoiceLoader } from './hooks/useInvoiceLoader'
 import { useInvoiceNumberNavigation } from './hooks/useInvoiceNumberNavigation'
@@ -66,6 +67,10 @@ function InvoicePage() {
         invoiceNumber: draft.invoiceNumber,
         canExport: print.canPrint, canSave: save.canSave,
     })
+    const halcomExport = useInvoiceHalcomExport({
+        invoiceNumber: draft.invoiceNumber,
+        canExport: print.canPrint, canSave: save.canSave,
+    })
     const revert = useInvoiceRevert({
         routeInvoiceNumber, hasUnsavedChanges: draftState.hasUnsavedChanges,
         isLoading: loader.isLoading, isSaving: save.isSaving,
@@ -82,6 +87,7 @@ function InvoicePage() {
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
         ['print', 'Invoice could not be printed', 'The invoice PDF could not be prepared.', print.printError],
         ['xml', 'Invoice XML could not be exported', 'The invoice XML could not be prepared.', xmlExport.exportError],
+        ['halcom', 'Halcom package could not be exported', 'The invoice package could not be prepared.', halcomExport.exportError],
         ['save', 'Invoice could not be saved', 'Your changes were not saved.', save.saveError],
         ['latest', 'Latest invoice number could not be loaded', 'Invoice navigation may be unavailable.', navigation.latestInvoiceNumberError],
         ['next', 'Next invoice number could not be loaded', 'A number could not be assigned to the new invoice.', loader.requestErrors.nextInvoiceNumber],
@@ -100,12 +106,14 @@ function InvoicePage() {
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
+                isExportingHalcom={halcomExport.isExporting}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
                 onEmail={email} onRevert={revert.requestRevert}
                 onExportXml={() => { void xmlExport.exportXml() }}
+                onExportHalcom={() => { void halcomExport.exportHalcom() }}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
@@ -134,6 +142,7 @@ function InvoicePage() {
             isConfirmingPrint={print.confirmingPrint}
             isConfirmingEmail={confirmingEmail}
             isConfirmingXmlExport={xmlExport.confirmingExport}
+            isConfirmingHalcomExport={halcomExport.confirmingExport}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
@@ -146,6 +155,10 @@ function InvoicePage() {
             onConfirmingXmlExportChange={xmlExport.setConfirmingExport}
             onSaveBeforeXmlExport={() => {
                 xmlExport.setConfirmingExport(false); void save.requestSave()
+            }}
+            onConfirmingHalcomExportChange={halcomExport.setConfirmingExport}
+            onSaveBeforeHalcomExport={() => {
+                halcomExport.setConfirmingExport(false); void save.requestSave()
             }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}

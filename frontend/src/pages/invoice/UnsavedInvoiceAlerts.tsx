@@ -7,6 +7,7 @@ type UnsavedInvoiceAlertsProps = {
     isConfirmingPrint: boolean
     isConfirmingEmail: boolean
     isConfirmingXmlExport: boolean
+    isConfirmingHalcomExport: boolean
     onCancelNavigation: () => void
     onDiscardAndNavigate: () => void
     onConfirmingRevertChange: (open: boolean) => void
@@ -19,6 +20,8 @@ type UnsavedInvoiceAlertsProps = {
     onSaveBeforeEmail: () => void
     onConfirmingXmlExportChange: (open: boolean) => void
     onSaveBeforeXmlExport: () => void
+    onConfirmingHalcomExportChange: (open: boolean) => void
+    onSaveBeforeHalcomExport: () => void
 }
 
 function UnsavedInvoiceAlerts({
@@ -28,6 +31,7 @@ function UnsavedInvoiceAlerts({
     isConfirmingPrint,
     isConfirmingEmail,
     isConfirmingXmlExport,
+    isConfirmingHalcomExport,
     onCancelNavigation,
     onDiscardAndNavigate,
     onConfirmingRevertChange,
@@ -40,6 +44,8 @@ function UnsavedInvoiceAlerts({
     onSaveBeforeEmail,
     onConfirmingXmlExportChange,
     onSaveBeforeXmlExport,
+    onConfirmingHalcomExportChange,
+    onSaveBeforeHalcomExport,
 }: UnsavedInvoiceAlertsProps) {
     return (
         <>
@@ -86,6 +92,15 @@ function UnsavedInvoiceAlerts({
                 onDiscard={onSaveBeforeXmlExport}
                 title="Save before exporting XML?"
                 description="This invoice has not been saved with its current values. Save it first so the exported XML matches the invoice shown here."
+                actionLabel="Save invoice"
+                actionVariant="default"
+            />
+            <UnsavedInvoiceAlert
+                open={isConfirmingHalcomExport}
+                onOpenChange={onConfirmingHalcomExportChange}
+                onDiscard={onSaveBeforeHalcomExport}
+                title="Save before exporting for Halcom?"
+                description="This invoice has not been saved with its current values. Save it first so the exported PDF and XML match the invoice shown here."
                 actionLabel="Save invoice"
                 actionVariant="default"
             />

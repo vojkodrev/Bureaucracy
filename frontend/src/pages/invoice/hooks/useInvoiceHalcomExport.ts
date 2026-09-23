@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { toast } from '@/lib/toast'
-import { downloadInvoiceXml } from '../invoice-api'
+import { downloadInvoiceHalcom } from '../invoice-api'
 
 type Options = {
     invoiceNumber: string
@@ -9,12 +9,12 @@ type Options = {
     canSave: boolean
 }
 
-export function useInvoiceXmlExport({ invoiceNumber, canExport, canSave }: Options) {
+export function useInvoiceHalcomExport({ invoiceNumber, canExport, canSave }: Options) {
     const [isExporting, setIsExporting] = useState(false)
     const [exportError, setExportError] = useState<string | null>(null)
     const [confirmingExport, setConfirmingExport] = useState(false)
 
-    const exportXml = async () => {
+    const exportHalcom = async () => {
         if (!canExport) {
             if (canSave) setConfirmingExport(true)
             return
@@ -23,20 +23,18 @@ export function useInvoiceXmlExport({ invoiceNumber, canExport, canSave }: Optio
         setIsExporting(true)
         setExportError(null)
         toast.add({
-            title: 'XML export requested',
-            description: 'The invoice XML downloads automatically when ready.',
+            title: 'Halcom export requested',
+            description: 'The invoice package downloads automatically when ready.',
             type: 'info',
         })
         try {
-            await downloadInvoiceXml(invoiceNumber.trim(), getSelectedBusinessYear())
+            await downloadInvoiceHalcom(invoiceNumber.trim(), getSelectedBusinessYear())
         } catch (error) {
-            setExportError(error instanceof Error ? error.message : 'XML export failed')
+            setExportError(error instanceof Error ? error.message : 'Halcom export failed')
         } finally {
             setIsExporting(false)
         }
     }
 
-    return {
-        exportXml, exportError, isExporting, confirmingExport, setConfirmingExport,
-    }
+    return { exportHalcom, exportError, isExporting, confirmingExport, setConfirmingExport }
 }

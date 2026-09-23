@@ -103,14 +103,22 @@ function invoiceXmlUrl(invoiceNumber: string, businessYear: string): string {
     return url.toString()
 }
 
-export async function downloadInvoiceXml(invoiceNumber: string, businessYear: string) {
-    const response = await fetch(invoiceXmlUrl(invoiceNumber, businessYear))
+function invoiceHalcomUrl(invoiceNumber: string, businessYear: string): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/halcom`
+    url.searchParams.set('businessYear', businessYear)
+    url.hash = ''
+    return url.toString()
+}
+
+async function downloadInvoiceFile(url: string, fallbackFilename: string, exportName: string) {
+    const response = await fetch(url)
     if (!response.ok) {
         const body = await response.json().catch(() => null) as { error?: string } | null
-        throw new Error(body?.error ?? `XML export failed (${response.status})`)
+        throw new Error(body?.error ?? `${exportName} export failed (${response.status})`)
     }
     const disposition = response.headers.get('Content-Disposition') ?? ''
-    const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `invoice-${invoiceNumber}.xml`
+    const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? fallbackFilename
     const objectUrl = URL.createObjectURL(await response.blob())
     const link = document.createElement('a')
     link.href = objectUrl
@@ -119,6 +127,14 @@ export async function downloadInvoiceXml(invoiceNumber: string, businessYear: st
     link.click()
     link.remove()
     URL.revokeObjectURL(objectUrl)
+}
+
+export async function downloadInvoiceXml(invoiceNumber: string, businessYear: string) {
+    await downloadInvoiceFile(invoiceXmlUrl(invoiceNumber, businessYear), `invoice-${invoiceNumber}.xml`, 'XML')
+}
+
+export async function downloadInvoiceHalcom(invoiceNumber: string, businessYear: string) {
+    await downloadInvoiceFile(invoiceHalcomUrl(invoiceNumber, businessYear), `invoice-${invoiceNumber}-halcom.zip`, 'Halcom')
 }
 
 export async function postSaveInvoice(variables: Record<string, unknown>) {

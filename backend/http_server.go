@@ -26,6 +26,7 @@ func NewHTTPServer(
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
+	invoiceHalcomHandler *InvoiceHalcomHandler,
 	priceQuotePrintHandler *PriceQuotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceReminderHandler *InvoiceReminderHandler,
@@ -60,6 +61,7 @@ func NewHTTPServer(
 	})
 	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
 	router.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
+	router.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
 	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
 	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	router.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
