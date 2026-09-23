@@ -134,6 +134,7 @@ function InvoiceSearchResultsByCustomer({
                                         <TableCell>
                                             <InvoicePaymentDate
                                                 invoiceNumber={invoice.invoiceNumber}
+                                                amount={invoice.amount}
                                                 paidAmount={invoice.paidAmount}
                                                 paymentDate={invoice.paymentDate}
                                             />
