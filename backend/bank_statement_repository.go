@@ -494,7 +494,8 @@ func (repository *BankStatementRepository) Search(
 	}
 	transactionFilter := `
 		(@dateFrom IS NULL OR transactionRow.Datum >= @dateFrom)
-		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))
+		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))`
+	statementMatchFilter := transactionFilter + `
 		AND (@documentNumber = '' OR transactionRow.Stevilka LIKE @documentNumber ESCAPE '\')
 		AND (@customerID = '' OR transactionRow.SifraPartnerja LIKE @customerID ESCAPE '\')
 		AND (@customerName = '' OR transactionRow.ImePartnerja LIKE @customerName ESCAPE '\')`
@@ -512,7 +513,7 @@ func (repository *BankStatementRepository) Search(
 			WHERE transactionRow.Banka = statementRow.Racun
 			  AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 			  AND %s
-		  )`, databaseName, databaseName, transactionFilter), arguments...).Scan(&totalCount)
+		  )`, databaseName, databaseName, statementMatchFilter), arguments...).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("count bank statements: %w", err)
 	}
@@ -560,7 +561,7 @@ func (repository *BankStatementRepository) Search(
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
 		WHERE %s
 		ORDER BY %s, transactionRow.RecNo`, databaseName, databaseName,
-		transactionFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
+		statementMatchFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
 	if err != nil {
 		return nil, fmt.Errorf("search bank statements: %w", err)
 	}
