@@ -37,13 +37,18 @@ function InvoicePaymentDate({ invoiceNumber, amount, paidAmount, paymentDate }: 
             {isPaidAmountMismatch && (
                 <Tooltip>
                     <TooltipTrigger
-                        className="relative z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-orange-100 px-2 py-1 font-medium text-orange-950 dark:bg-orange-900 dark:text-orange-100"
+                        render={(
+                            <Link
+                                to={`/bank-statements/search?documentNumber=${encodeURIComponent(invoiceNumber)}`}
+                                className="relative z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-orange-100 px-2 py-1 font-medium text-orange-950 hover:underline dark:bg-orange-900 dark:text-orange-100"
+                            />
+                        )}
                     >
                         <AlertTriangleIcon className="size-4 shrink-0" aria-hidden="true" />
                         {formatCurrency(paidAmount)} paid, amount mismatch
                     </TooltipTrigger>
                     <TooltipContent>
-                        The paid amount does not match the invoice amount of {formatCurrency(amount)}.
+                        The paid amount does not match the invoice amount of {formatCurrency(amount)}. Click to search bank statements for this invoice number.
                     </TooltipContent>
                 </Tooltip>
             )}
