@@ -306,46 +306,6 @@ func paidInvoiceNumbers(ctx context.Context, tx *sql.Tx, databaseName string, st
 	return invoiceNumbers, nil
 }
 
-func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, invoiceNumbers []string) error {
-	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
-		SET DatumPlacila=NULL, PlacanoSIT=NULL
-		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
-	for _, invoiceNumber := range invoiceNumbers {
-		if _, err := tx.ExecContext(ctx, query, sql.Named("invoiceNumber", invoiceNumber)); err != nil {
-			return fmt.Errorf("clear paid invoice %q: %w", invoiceNumber, err)
-		}
-	}
-	return nil
-}
-
-// updatePaidInvoices synchronizes incoming bank statement entries with issued
-// invoices. An unmatched document number is allowed because bank statements can
-// also contain transactions that do not belong to an invoice.
-func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
-	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
-		SET DatumPlacila=@paymentDate, PlacanoSIT=@paidAmount
-		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
-
-	for _, entry := range entries {
-		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
-			continue
-		}
-		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
-		if invoiceNumber == "" {
-			continue
-		}
-		if _, err := tx.ExecContext(ctx, query,
-			sql.Named("paymentDate", paymentDate),
-			sql.Named("paidAmount", *entry.Inflow),
-			sql.Named("invoiceNumber", invoiceNumber)); err != nil {
-			return fmt.Errorf("update paid invoice %q: %w", invoiceNumber, err)
-		}
-	}
-	return nil
-}
-
 func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) float64 {
 	total := 0.0
 	for _, entry := range entries {

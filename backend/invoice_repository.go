@@ -21,6 +21,102 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
 }
 
+const invoiceUpdateBatchSize = 1000
+
+func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, invoiceNumbers []string) error {
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	uniqueNumbers := make([]string, 0, len(invoiceNumbers))
+	seen := make(map[string]struct{}, len(invoiceNumbers))
+	for _, invoiceNumber := range invoiceNumbers {
+		invoiceNumber = strings.TrimSpace(invoiceNumber)
+		if invoiceNumber == "" {
+			continue
+		}
+		if _, exists := seen[invoiceNumber]; exists {
+			continue
+		}
+		seen[invoiceNumber] = struct{}{}
+		uniqueNumbers = append(uniqueNumbers, invoiceNumber)
+	}
+
+	for start := 0; start < len(uniqueNumbers); start += invoiceUpdateBatchSize {
+		end := min(start+invoiceUpdateBatchSize, len(uniqueNumbers))
+		placeholders := make([]string, 0, end-start)
+		arguments := make([]any, 0, end-start)
+		for index, invoiceNumber := range uniqueNumbers[start:end] {
+			name := fmt.Sprintf("invoiceNumber%d", index)
+			placeholders = append(placeholders, "@"+name)
+			arguments = append(arguments, sql.Named(name, invoiceNumber))
+		}
+		query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
+			SET DatumPlacila=NULL, PlacanoSIT=NULL
+			WHERE LTRIM(RTRIM(Stevilka)) IN (%s)`, databaseName, strings.Join(placeholders, ", "))
+		if _, err := tx.ExecContext(ctx, query, arguments...); err != nil {
+			return fmt.Errorf("clear paid invoices: %w", err)
+		}
+	}
+	return nil
+}
+
+// updatePaidInvoices synchronizes incoming bank statement entries with issued
+// invoices. The paid amount is always recorded, while the payment date is only
+// set when that amount matches the invoice total to currency precision. An
+// unmatched document number is allowed because bank statements can also contain
+// transactions that do not belong to an invoice.
+func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
+	type invoicePayment struct {
+		invoiceNumber string
+		paidAmount    float64
+	}
+
+	payments := make([]invoicePayment, 0, len(entries))
+	paymentIndexes := make(map[string]int, len(entries))
+	for _, entry := range entries {
+		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
+			continue
+		}
+		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
+		if invoiceNumber == "" {
+			continue
+		}
+		payment := invoicePayment{invoiceNumber: invoiceNumber, paidAmount: *entry.Inflow}
+		if index, exists := paymentIndexes[invoiceNumber]; exists {
+			payments[index] = payment
+			continue
+		}
+		paymentIndexes[invoiceNumber] = len(payments)
+		payments = append(payments, payment)
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	for start := 0; start < len(payments); start += invoiceUpdateBatchSize {
+		end := min(start+invoiceUpdateBatchSize, len(payments))
+		values := make([]string, 0, end-start)
+		arguments := make([]any, 0, (end-start)*2+1)
+		arguments = append(arguments, sql.Named("paymentDate", paymentDate))
+		for index, payment := range payments[start:end] {
+			numberName := fmt.Sprintf("invoiceNumber%d", index)
+			amountName := fmt.Sprintf("paidAmount%d", index)
+			values = append(values, fmt.Sprintf("(@%s, @%s)", numberName, amountName))
+			arguments = append(arguments, sql.Named(numberName, payment.invoiceNumber), sql.Named(amountName, payment.paidAmount))
+		}
+		query := fmt.Sprintf(`UPDATE invoice
+			SET invoice.PlacanoSIT=payment.PaidAmount,
+				invoice.DatumPlacila=CASE
+					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek, 2)=ROUND(payment.PaidAmount, 2)
+					THEN @paymentDate
+					ELSE NULL
+				END
+			FROM [%s].[dbo].[Racuni] invoice
+			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount)
+				ON LTRIM(RTRIM(invoice.Stevilka))=payment.InvoiceNumber`, databaseName, strings.Join(values, ", "))
+		if _, err := tx.ExecContext(ctx, query, arguments...); err != nil {
+			return fmt.Errorf("update paid invoices: %w", err)
+		}
+	}
+	return nil
+}
+
 func (repository *InvoiceRepository) GetTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
