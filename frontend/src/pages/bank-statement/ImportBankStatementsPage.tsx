@@ -158,7 +158,7 @@ function ImportBankStatementsPage() {
             </Card>
 
             {results.length > 0 && (
-                <Card className="mt-6 max-w-6xl">
+                <Card className="mt-6 w-full">
                     <CardHeader><CardTitle>Import summary</CardTitle></CardHeader>
                     <CardContent>
                         <Table>
