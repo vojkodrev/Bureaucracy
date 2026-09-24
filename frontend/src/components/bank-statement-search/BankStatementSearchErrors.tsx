@@ -1,20 +1,30 @@
 import ErrorAlert from '@/components/ErrorAlert'
 
+export type BankStatementSearchError = readonly [
+    key: string,
+    title: string,
+    description: string,
+    error: string | null,
+]
+
 type BankStatementSearchErrorsProps = {
-    error: string | null
+    errors: readonly BankStatementSearchError[]
 }
 
-function BankStatementSearchErrors({ error }: BankStatementSearchErrorsProps) {
-    if (!error) return null
-
+function BankStatementSearchErrors({ errors }: BankStatementSearchErrorsProps) {
     return (
-        <div className="mb-6 max-w-4xl">
-            <ErrorAlert
-                title="Bank statements could not be loaded"
-                description="The bank statement search could not be completed."
-                error={error}
-            />
-        </div>
+        errors.some(([, , , currentError]) => currentError) && (
+            <div className="mb-6 max-w-4xl space-y-2">
+                {errors.map(([key, title, description, currentError]) => currentError && (
+                    <ErrorAlert
+                        key={key}
+                        title={title}
+                        description={description}
+                        error={currentError}
+                    />
+                ))}
+            </div>
+        )
     )
 }
 

@@ -73,3 +73,8 @@ type BankStatementPage struct {
 	PageSize   int                   `json:"pageSize"`
 	TotalPages int                   `json:"totalPages"`
 }
+
+type MissingBankStatementDate struct {
+	Date      time.Time `json:"date"`
+	IsWeekend bool      `json:"isWeekend"`
+}

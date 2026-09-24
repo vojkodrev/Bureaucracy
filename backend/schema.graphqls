@@ -114,6 +114,11 @@ type BankStatementPage {
   totalPages: Int!
 }
 
+type MissingBankStatementDate {
+  date: Time!
+  isWeekend: Boolean!
+}
+
 input CustomerInput {
   id: Int
   customerId: String!
@@ -381,6 +386,7 @@ type Query {
   bankTransactionTypes(businessYear: String!): [BankTransactionType!]!
   bankStatement(businessYear: String!, statementNumber: Int!): BankStatement
   latestBankStatementNumber(businessYear: String!, bankAccount: String): Int
+  missingBankStatementDates(businessYear: String!): [MissingBankStatementDate!]!
   businessYear(code: String!): BusinessYear
   currentBusinessYear: BusinessYear
 

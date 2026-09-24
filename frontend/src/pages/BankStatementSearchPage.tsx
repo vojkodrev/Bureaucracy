@@ -1,8 +1,11 @@
 import BankStatementSearchErrors from '@/components/bank-statement-search/BankStatementSearchErrors'
+import type { BankStatementSearchError } from '@/components/bank-statement-search/BankStatementSearchErrors'
 import BankStatementSearchForm from '@/components/bank-statement-search/BankStatementSearchForm'
 import BankStatementSearchResults from '@/components/bank-statement-search/BankStatementSearchResults'
+import MissingBankStatementsAlert from '@/components/bank-statement-search/MissingBankStatementsAlert'
 import { useBankStatementSearchResults } from '@/components/bank-statement-search/hooks/useBankStatementSearchResults'
 import { useBankStatementSearchState } from '@/components/bank-statement-search/hooks/useBankStatementSearchState'
+import { useMissingBankStatementDates } from '@/components/bank-statement-search/hooks/useMissingBankStatementDates'
 
 function BankStatementSearchPage() {
     const searchState = useBankStatementSearchState()
@@ -11,10 +14,26 @@ function BankStatementSearchPage() {
         search,
         searchKey,
     )
+    const missingStatements = useMissingBankStatementDates()
+    const errors: BankStatementSearchError[] = [
+        [
+            'search',
+            'Bank statements could not be loaded',
+            'The bank statement search could not be completed.',
+            error,
+        ],
+        [
+            'missing-dates',
+            'Missing bank statements could not be checked',
+            'The business-year completeness check could not be completed.',
+            missingStatements.error,
+        ],
+    ]
 
     return (
         <div className="p-4">
-            <BankStatementSearchErrors error={error} />
+            <BankStatementSearchErrors errors={errors} />
+            <MissingBankStatementsAlert missingDates={missingStatements.missingDates} />
             <BankStatementSearchForm
                 key={searchKey}
                 search={search}

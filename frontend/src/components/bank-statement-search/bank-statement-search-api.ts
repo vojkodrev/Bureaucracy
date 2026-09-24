@@ -1,4 +1,4 @@
-import type { BankStatementPage } from '@/lib/bank-statement-types'
+import type { BankStatementPage, MissingBankStatementDate } from '@/lib/bank-statement-types'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
@@ -8,6 +8,10 @@ import type { BankStatementSearchCriteria } from './types'
 
 type SearchBankStatementsResponse = {
     data?: { searchBankStatements: BankStatementPage }
+}
+
+type MissingBankStatementDatesResponse = {
+    data?: { missingBankStatementDates: MissingBankStatementDate[] }
 }
 
 const searchBankStatementsQuery = `
@@ -48,6 +52,15 @@ const searchBankStatementsQuery = `
     }
 `
 
+const missingBankStatementDatesQuery = `
+    query MissingBankStatementDates($businessYear: String!) {
+        missingBankStatementDates(businessYear: $businessYear) {
+            date
+            isWeekend
+        }
+    }
+`
+
 function optionalStatementNumber(value: string): number | null {
     if (!value) return null
     const number = Number(value)
@@ -76,4 +89,15 @@ export async function fetchBankStatementSearch(
         ),
     }, signal)
     return result.data?.searchBankStatements ?? null
+}
+
+export async function fetchMissingBankStatementDates(
+    signal?: AbortSignal,
+): Promise<MissingBankStatementDate[]> {
+    const result = await postGraphql<MissingBankStatementDatesResponse>(
+        missingBankStatementDatesQuery,
+        { businessYear: getSelectedBusinessYear() },
+        signal,
+    )
+    return result.data?.missingBankStatementDates ?? []
 }

@@ -22,6 +22,11 @@ export type BankStatementPage = {
     totalPages: number
 }
 
+export type MissingBankStatementDate = {
+    date: string
+    isWeekend: boolean
+}
+
 export type BankStatement = {
     id: number
     statementNumber: number | null

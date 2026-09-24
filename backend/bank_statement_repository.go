@@ -86,6 +86,79 @@ func (repository *BankStatementRepository) ExistsOnDate(ctx context.Context, bus
 	return exists, nil
 }
 
+func (repository *BankStatementRepository) ListMissingDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	var calendarYear int
+	err := repository.database.QueryRowContext(ctx, `
+		SELECT LetoPoslovanja
+		FROM [Birokrat].[dbo].[PoslovnaLeta]
+		WHERE Oznaka = @businessYear`,
+		sql.Named("businessYear", businessYear),
+	).Scan(&calendarYear)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("business year %s was not found", businessYear)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement calendar year: %w", err)
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		WITH DateBounds AS (
+			SELECT
+				DATEFROMPARTS(@calendarYear, 1, 1) AS YearStart,
+				CASE
+					WHEN DATEFROMPARTS(@calendarYear, 12, 31) < DATEADD(day, -1, CAST(GETDATE() AS date))
+						THEN DATEFROMPARTS(@calendarYear, 12, 31)
+					ELSE DATEADD(day, -1, CAST(GETDATE() AS date))
+				END AS LastExpectedDate
+		),
+		CalendarDates AS (
+			SELECT YearStart AS MissingDate, LastExpectedDate
+			FROM DateBounds
+			WHERE YearStart <= LastExpectedDate
+			UNION ALL
+			SELECT DATEADD(day, 1, MissingDate), LastExpectedDate
+			FROM CalendarDates
+			WHERE MissingDate < LastExpectedDate
+		)
+		SELECT
+			MissingDate,
+			CASE WHEN DATEDIFF(day, '19000101', MissingDate) %% 7 IN (5, 6)
+				THEN 1 ELSE 0 END AS IsWeekend
+		FROM CalendarDates
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM [%s].[dbo].[BankaZRSaldo] statementRow
+			WHERE CAST(statementRow.Datum AS date) = MissingDate
+			  AND ISNULL(statementRow.Deleted, 0) = 0
+		)
+		ORDER BY MissingDate
+		OPTION (MAXRECURSION 366)`, databaseName),
+		sql.Named("calendarYear", calendarYear),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list missing bank statement dates: %w", err)
+	}
+	defer rows.Close()
+
+	missingDates := make([]*MissingBankStatementDate, 0)
+	for rows.Next() {
+		missingDate := &MissingBankStatementDate{}
+		if err := rows.Scan(&missingDate.Date, &missingDate.IsWeekend); err != nil {
+			return nil, fmt.Errorf("scan missing bank statement date: %w", err)
+		}
+		missingDates = append(missingDates, missingDate)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read missing bank statement dates: %w", err)
+	}
+	return missingDates, nil
+}
+
 func (repository *BankStatementRepository) GetByNumber(ctx context.Context, businessYear string, number int) (*BankStatement, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")

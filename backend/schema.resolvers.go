@@ -79,6 +79,11 @@ func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessY
 	return r.BankStatements.LatestNumber(ctx, businessYear, bankAccount)
 }
 
+// MissingBankStatementDates is the resolver for the missingBankStatementDates field.
+func (r *queryResolver) MissingBankStatementDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error) {
+	return r.BankStatements.ListMissingDates(ctx, businessYear)
+}
+
 // BusinessYear is the resolver for the businessYear field.
 func (r *queryResolver) BusinessYear(ctx context.Context, code string) (*BusinessYear, error) {
 	return r.BusinessYearRepository.GetByCode(ctx, code)
