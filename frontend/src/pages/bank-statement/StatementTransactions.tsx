@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Scissors, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import type { BankStatementEntry } from "@/lib/bank-statement-types";
 import AddEditTransactionDialog from "./AddEditTransactionDialog";
+import SplitInflowDialog from "./SplitInflowDialog";
 
 type Props = {
     entries: BankStatementEntry[];
@@ -35,6 +36,7 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMounted, setDialogMounted] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [splittingIndex, setSplittingIndex] = useState<number | null>(null);
     const editing =
         editingIndex == null ? null : (entries[editingIndex] ?? null);
     const save = (entry: BankStatementEntry) => {
@@ -59,6 +61,30 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
         );
         setDialogOpen(false);
         setDialogMounted(false);
+    };
+    const splitInflow = (index: number, inflow: number) => {
+        const entry = entries[index];
+        if (entry?.inflow == null || inflow <= 0 || inflow >= entry.inflow) {
+            return;
+        }
+        const duplicate: BankStatementEntry = {
+            ...entry,
+            id: Math.min(0, ...entries.map(({ id }) => id)) - 1,
+            inflow,
+            documentNumber: null,
+        };
+        const nextEntries = [...entries];
+        nextEntries.splice(
+            index,
+            1,
+            {
+                ...entry,
+                inflow: Math.round((entry.inflow - inflow) * 100) / 100,
+            },
+            duplicate,
+        );
+        onChange(nextEntries);
+        setSplittingIndex(null);
     };
     return (
         <Card>
@@ -160,6 +186,20 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                                         >
                                             <Pencil />
                                         </Button>
+                                        {(entry.inflow ?? 0) > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon-xs"
+                                                aria-label="Split transaction inflow"
+                                                title="Split transaction inflow"
+                                                onClick={() =>
+                                                    setSplittingIndex(index)
+                                                }
+                                            >
+                                                <Scissors />
+                                            </Button>
+                                        )}
                                         <AlertDialog>
                                             <AlertDialogTrigger
                                                 render={
@@ -224,6 +264,20 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                         onSave={save}
                     />
                 )}
+                {splittingIndex !== null &&
+                    entries[splittingIndex]?.inflow != null && (
+                        <SplitInflowDialog
+                            key={`${entries[splittingIndex].id}-${splittingIndex}`}
+                            currentInflow={entries[splittingIndex].inflow}
+                            open
+                            onOpenChange={(open) => {
+                                if (!open) setSplittingIndex(null);
+                            }}
+                            onSplit={(inflow) =>
+                                splitInflow(splittingIndex, inflow)
+                            }
+                        />
+                    )}
             </CardContent>
         </Card>
     );
