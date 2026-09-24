@@ -1,45 +1,17 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import BankAccountComboboxField from '@/components/BankAccountComboboxField'
-import CustomerPickerField from '@/components/customer-search/CustomerPickerField'
-import DatePickerField from '@/components/DatePickerField'
-import ErrorAlert from '@/components/ErrorAlert'
-import Pager from '@/components/Pager'
-import SortableTableHead from '@/components/SortableTableHead'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { NumberInput } from '@/components/ui/number-input'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
+import { useSearchParams } from 'react-router-dom'
+import BankStatementSearchErrors from '@/components/bank-statement-search/BankStatementSearchErrors'
+import BankStatementSearchForm from '@/components/bank-statement-search/BankStatementSearchForm'
+import BankStatementSearchResults from '@/components/bank-statement-search/BankStatementSearchResults'
+import type { BankStatementSearchCriteria } from '@/components/bank-statement-search/types'
 import type { BankStatementEntry, BankStatementPage } from '@/lib/bank-statement-types'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue, optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
-import { formatCurrency, formatDate } from '@/lib/formatters'
 import { defaultPage, defaultPageSize, maximumPageSize, positiveInteger } from '@/lib/pagination'
 
-type SearchForm = {
-    from: string
-    to: string
-    statementNumber: string
-    documentNumber: string
-    bankAccount: string
-    customerId: string
-    customerName: string
-    page: string
-    pageSize: string
-    sortBy: 'date' | ''
-    sortDirection: 'asc' | 'desc' | ''
-}
+type SearchForm = BankStatementSearchCriteria
 
 type SearchBankStatementsResponse = {
     data?: { searchBankStatements: BankStatementPage }
@@ -259,135 +231,36 @@ function BankStatementSearchPage() {
         }))
     }
 
-    const firstStatement = statementPage && statementPage.totalCount > 0
-        ? (statementPage.page - 1) * statementPage.pageSize + 1
-        : 0
-    const lastStatement = statementPage
-        ? Math.min(statementPage.page * statementPage.pageSize, statementPage.totalCount)
-        : 0
-
     return (
         <div className="p-4">
-            {error && (
-                <div className="mb-6 max-w-4xl">
-                    <ErrorAlert
-                        title="Bank statements could not be loaded"
-                        description="The bank statement search could not be completed."
-                        error={error}
-                    />
-                </div>
+            <BankStatementSearchErrors error={error} />
+            <BankStatementSearchForm
+                key={searchKey}
+                search={search}
+                bankAccount={bankAccount}
+                customerId={customerId}
+                customerName={customerName}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onBankAccountChange={setBankAccount}
+                onCustomerIdChange={setCustomerId}
+                onCustomerNameChange={setCustomerName}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+                onSubmit={submitSearch}
+                onReset={clearSearch}
+            />
+            {!error && (
+                <BankStatementSearchResults
+                    statementPage={statementPage}
+                    groups={groups}
+                    isLoading={isLoading}
+                    search={search}
+                    onPageChange={changePage}
+                    onPageSizeChange={changePageSize}
+                    onSort={changeSort}
+                />
             )}
-            <form key={searchKey} className="max-w-4xl" onSubmit={submitSearch} onReset={clearSearch}>
-                <Card>
-                    <CardContent>
-                        <FieldGroup>
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <Field>
-                                    <FieldLabel htmlFor="statement-number">Statement number</FieldLabel>
-                                    <NumberInput id="statement-number" min="0" name="statementNumber" defaultValue={search.statementNumber} />
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor="document-number">Document number</FieldLabel>
-                                    <Input id="document-number" type="search" name="documentNumber" defaultValue={search.documentNumber} autoComplete="off" />
-                                </Field>
-                            </div>
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <BankAccountComboboxField id="bank-account" label="Bank account" value={bankAccount} onChange={setBankAccount} />
-                            </div>
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <DatePickerField id="statement-date-from" label="Payment date from" name="from" date={dateFrom} onSelect={setDateFrom} />
-                                <DatePickerField id="statement-date-to" label="Payment date to" name="to" date={dateTo} onSelect={setDateTo} />
-                            </div>
-                            <div className="grid gap-6 sm:grid-cols-2">
-                                <CustomerPickerField id="statement-customer-id" label="Counterparty number" name="customerId" customerId={customerId} onCustomerIdChange={setCustomerId} onCustomerNameChange={setCustomerName} />
-                                <Field>
-                                    <FieldLabel htmlFor="statement-customer-name">Counterparty</FieldLabel>
-                                    <Input id="statement-customer-name" type="search" name="customerName" value={customerName} autoComplete="off" onChange={(event) => setCustomerName(event.target.value)} />
-                                </Field>
-                            </div>
-                        </FieldGroup>
-                    </CardContent>
-                    <CardFooter className="gap-2">
-                        <Button type="submit">Search</Button>
-                        <Button type="reset" variant="outline">Clear</Button>
-                    </CardFooter>
-                </Card>
-            </form>
-
-            {!error && <div className="mt-8 w-full overflow-x-auto">
-                {statementPage && (
-                    <Pager firstItem={firstStatement} lastItem={lastStatement} page={statementPage.page} pageSize={statementPage.pageSize} totalItems={statementPage.totalCount} totalPages={statementPage.totalPages} onPageChange={changePage} onPageSizeChange={changePageSize} />
-                )}
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <SortableTableHead
-                                label="Date"
-                                direction={search.sortBy === 'date' ? search.sortDirection : ''}
-                                onSort={changeSort}
-                            />
-                            <TableHead>Counterparty</TableHead>
-                            <TableHead>Transaction type</TableHead>
-                            <TableHead className="text-right">Outflow</TableHead>
-                            <TableHead className="text-right">Inflow</TableHead>
-                            <TableHead>Document number</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Loading bank statements…</TableCell></TableRow>}
-                        {!isLoading && !error && groups.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No bank statements found.</TableCell></TableRow>}
-                        {!isLoading && !error && groups.map((entries) => {
-                            const statement = entries[0]
-                            const netMovement = entries.reduce((sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0), 0)
-                            return (
-                                <Fragment key={statement.statementId}>
-                                    <TableRow className="relative cursor-pointer bg-muted/60">
-                                        <TableCell colSpan={6} className="font-semibold">
-                                            {statement.statementNumber != null && (
-                                                <Link
-                                                    to={`/bank-statement/${statement.statementNumber}`}
-                                                    aria-label={`Open bank statement ${statement.statementNumber}`}
-                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                                />
-                                            )}
-                                            Statement {statement.statementNumber ?? '—'}
-                                        </TableCell>
-                                    </TableRow>
-                                    {entries.map((entry) => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell>{formatDate(entry.paymentDate)}</TableCell>
-                                            <TableCell>{entry.customerName || '—'}</TableCell>
-                                            <TableCell>{entry.transactionType || '—'}</TableCell>
-                                            <TableCell className="text-right tabular-nums">{entry.outflow == null ? '—' : formatCurrency(entry.outflow)}</TableCell>
-                                            <TableCell className="text-right tabular-nums">{entry.inflow == null ? '—' : formatCurrency(entry.inflow)}</TableCell>
-                                            <TableCell>
-                                                {entry.documentNumber ? (
-                                                    <Button
-                                                        variant="link"
-                                                        render={
-                                                            <Link
-                                                                to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
-                                                            />
-                                                        }
-                                                    >
-                                                        {entry.documentNumber}
-                                                    </Button>
-                                                ) : (
-                                                    '—'
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    <TableRow className="border-b-2 font-medium">
-                                        <TableCell colSpan={3} className="text-right">Net movement</TableCell>
-                                        <TableCell colSpan={3} className="text-right tabular-nums">{formatCurrency(netMovement)}</TableCell>
-                                    </TableRow>
-                                </Fragment>
-                            )
-                        })}
-                    </TableBody>
-                </Table>
-            </div>}
         </div>
     )
 }
