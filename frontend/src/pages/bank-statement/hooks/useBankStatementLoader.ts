@@ -97,7 +97,7 @@ export function useBankStatementLoader({
         markLoadedDraftClean(initialDraft);
         setRequestErrors({});
         const controller = new AbortController();
-        void fetchLatestBankStatementNumber(null, controller.signal)
+        void fetchLatestBankStatementNumber(controller.signal)
             .then((latest) => {
                 setLoadedCleanField("statementNumber", String((latest ?? 0) + 1));
             })

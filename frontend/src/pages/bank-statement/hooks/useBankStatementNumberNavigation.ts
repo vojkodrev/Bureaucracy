@@ -14,7 +14,7 @@ export function useBankStatementNumberNavigation(
 
     useEffect(() => {
         const controller = new AbortController();
-        void fetchLatestBankStatementNumber(null, controller.signal)
+        void fetchLatestBankStatementNumber(controller.signal)
             .then((value) => setResult({ routeStatementNumber, value }))
             .catch((error: unknown) => {
                 if (!(error instanceof DOMException && error.name === "AbortError")) {

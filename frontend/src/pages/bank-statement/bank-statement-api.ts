@@ -58,7 +58,6 @@ export async function fetchBankStatementExists(statementNumber: number): Promise
 }
 
 export async function fetchLatestBankStatementNumber(
-    bankAccount: string | null,
     signal?: AbortSignal,
 ): Promise<number | null> {
     const result = await postGraphql<{
@@ -66,7 +65,7 @@ export async function fetchLatestBankStatementNumber(
         errors?: { message: string }[];
     }>(latestBankStatementNumberQuery, {
         businessYear: getSelectedBusinessYear(),
-        bankAccount,
+        bankAccount: null,
     }, signal);
     return result.data?.latestBankStatementNumber ?? null;
 }

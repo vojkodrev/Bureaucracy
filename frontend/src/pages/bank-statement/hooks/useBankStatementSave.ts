@@ -87,7 +87,7 @@ export function useBankStatementSave({
                 setNumberWarning("duplicate");
                 return false;
             }
-            const latest = await fetchLatestBankStatementNumber(draft.bankAccount || null);
+            const latest = await fetchLatestBankStatementNumber();
             if (latest != null && value !== latest && value !== latest + 1) {
                 setNumberWarning(value > latest + 1 ? "skipped" : "historical");
                 return false;

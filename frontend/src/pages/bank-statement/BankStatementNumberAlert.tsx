@@ -36,8 +36,8 @@ function BankStatementNumberAlert({ warning, onOpenChange, onConfirm }: Props) {
                         {isDuplicate
                             ? "A bank statement with this number already exists for this business year. Choose a different statement number before saving."
                             : skipsNumbers
-                            ? "This statement number leaves a gap in the sequence for the selected bank account."
-                            : "This is not the latest statement for the selected bank account. Saving it will update a historical accounting record."}
+                            ? "This statement number leaves a gap in the sequence for this business year."
+                            : "This is not the latest statement for this business year. Saving it will update a historical accounting record."}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
