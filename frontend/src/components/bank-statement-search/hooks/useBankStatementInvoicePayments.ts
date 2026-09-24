@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { BankStatementInvoicePayment, BankStatementPage } from '@/lib/bank-statement-types'
 import { fetchBankStatementInvoicePayments } from '../bank-statement-search-api'
+import { normalizeInvoiceNumber } from '../invoice-payment-mismatches'
 
 type InvoicePaymentResult = {
     key: string
@@ -62,8 +63,4 @@ export function useBankStatementInvoicePayments(
         isLoading,
         error: hasInvoiceNumbers && !isLoading ? result.error : null,
     }
-}
-
-export function normalizeInvoiceNumber(value: string) {
-    return value.trim().toUpperCase()
 }

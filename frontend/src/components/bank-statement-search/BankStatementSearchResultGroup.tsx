@@ -6,7 +6,11 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { BankStatementEntry, BankStatementInvoicePayment } from '@/lib/bank-statement-types'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import { normalizeInvoiceNumber } from './hooks/useBankStatementInvoicePayments'
+import {
+    hasPaidAmountMismatch,
+    hasPaymentDateMismatch,
+    normalizeInvoiceNumber,
+} from './invoice-payment-mismatches'
 
 type BankStatementSearchResultGroupProps = {
     entries: BankStatementEntry[]
@@ -43,7 +47,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
                     <TableCell>
                         <div className="flex items-center gap-2">
                             {formatDate(entry.paymentDate)}
-                            {invoicePayment && !sameDate(entry.paymentDate, invoicePayment.paymentDate) && (
+                            {invoicePayment && hasPaymentDateMismatch(entry.paymentDate, invoicePayment.paymentDate) && (
                                 <MismatchWarning label="Payment date mismatch">
                                     The transaction date does not match the invoice payment date ({formatDate(invoicePayment.paymentDate)}).
                                 </MismatchWarning>
@@ -58,7 +62,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
                     <TableCell className="text-right tabular-nums">
                         <div className="flex items-center justify-end gap-2">
                             {entry.inflow == null ? '—' : formatCurrency(entry.inflow)}
-                            {invoicePayment && !sameAmount(entry.inflow, invoicePayment.paidAmount) && (
+                            {invoicePayment && hasPaidAmountMismatch(entry.inflow, invoicePayment.paidAmount) && (
                                 <MismatchWarning label="Paid amount mismatch">
                                     The transaction inflow does not match the invoice paid amount ({invoicePayment.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}).
                                 </MismatchWarning>
@@ -90,14 +94,6 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
             </TableRow>
         </Fragment>
     )
-}
-
-function sameDate(left: string | null | undefined, right: string | null | undefined) {
-    return left != null && right != null && left.slice(0, 10) === right.slice(0, 10)
-}
-
-function sameAmount(left: number | null | undefined, right: number | null | undefined) {
-    return left != null && right != null && Math.round(left * 100) === Math.round(right * 100)
 }
 
 function MismatchWarning({ label, children }: { label: string, children: React.ReactNode }) {

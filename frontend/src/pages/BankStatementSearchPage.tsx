@@ -2,6 +2,7 @@ import BankStatementSearchErrors from '@/components/bank-statement-search/BankSt
 import type { BankStatementSearchError } from '@/components/bank-statement-search/BankStatementSearchErrors'
 import BankStatementSearchForm from '@/components/bank-statement-search/BankStatementSearchForm'
 import BankStatementSearchResults from '@/components/bank-statement-search/BankStatementSearchResults'
+import InvoicePaymentMismatchAlert from '@/components/bank-statement-search/InvoicePaymentMismatchAlert'
 import MissingBankStatementsAlert from '@/components/bank-statement-search/MissingBankStatementsAlert'
 import { useBankStatementSearchResults } from '@/components/bank-statement-search/hooks/useBankStatementSearchResults'
 import { useBankStatementSearchState } from '@/components/bank-statement-search/hooks/useBankStatementSearchState'
@@ -42,6 +43,10 @@ function BankStatementSearchPage() {
         <div className="p-4">
             <BankStatementSearchErrors errors={errors} />
             <MissingBankStatementsAlert missingDates={missingStatements.missingDates} />
+            <InvoicePaymentMismatchAlert
+                entries={statementPage?.entries ?? []}
+                invoicePayments={invoicePayments.payments}
+            />
             <BankStatementSearchForm
                 key={searchKey}
                 search={search}
