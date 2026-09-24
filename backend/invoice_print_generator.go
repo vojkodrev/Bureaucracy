@@ -104,7 +104,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
 	introText := trimmedString(invoice.IntroductoryText)
-	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" {
+	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" && deliveryNoteNumber != "New" {
 		if introText != "" {
 			introText += ", "
 		}
