@@ -8,13 +8,14 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import type { BankStatementEntry, BankStatementPage } from '@/lib/bank-statement-types'
+import type { BankStatementEntry, BankStatementInvoicePayment, BankStatementPage } from '@/lib/bank-statement-types'
 import BankStatementSearchResultGroup from './BankStatementSearchResultGroup'
 import type { BankStatementSearchCriteria } from './types'
 
 type BankStatementSearchResultsProps = {
     statementPage: BankStatementPage | null
     groups: BankStatementEntry[][]
+    invoicePayments: Record<string, BankStatementInvoicePayment>
     isLoading: boolean
     search: BankStatementSearchCriteria
     onPageChange: (page: number) => void
@@ -25,6 +26,7 @@ type BankStatementSearchResultsProps = {
 function BankStatementSearchResults({
     statementPage,
     groups,
+    invoicePayments,
     isLoading,
     search,
     onPageChange,
@@ -86,6 +88,7 @@ function BankStatementSearchResults({
                         <BankStatementSearchResultGroup
                             key={entries[0].statementId}
                             entries={entries}
+                            invoicePayments={invoicePayments}
                         />
                     ))}
                 </TableBody>

@@ -64,6 +64,12 @@ type BankStatementEntry {
   purpose: String
 }
 
+type BankStatementInvoicePayment {
+  invoiceNumber: String!
+  paymentDate: Time
+  paidAmount: Float
+}
+
 type BankStatement {
   id: Int!
   statementNumber: Int
@@ -381,6 +387,11 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): BankStatementPage!
+
+  bankStatementInvoicePayments(
+    businessYear: String!
+    invoiceNumbers: [String!]!
+  ): [BankStatementInvoicePayment!]!
 
   bankAccounts(businessYear: String!): [BankAccount!]!
   bankTransactionTypes(businessYear: String!): [BankTransactionType!]!

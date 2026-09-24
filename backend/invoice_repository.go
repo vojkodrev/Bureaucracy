@@ -23,6 +23,63 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 
 const invoiceUpdateBatchSize = 1000
 
+func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	uniqueNumbers := make([]string, 0, len(invoiceNumbers))
+	seen := make(map[string]struct{}, len(invoiceNumbers))
+	for _, invoiceNumber := range invoiceNumbers {
+		invoiceNumber = strings.TrimSpace(invoiceNumber)
+		key := strings.ToUpper(invoiceNumber)
+		if invoiceNumber == "" {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		uniqueNumbers = append(uniqueNumbers, key)
+	}
+	if len(uniqueNumbers) > 10000 {
+		return nil, fmt.Errorf("invoiceNumbers must contain at most 10000 values")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	payments := make([]*BankStatementInvoicePayment, 0, len(uniqueNumbers))
+	for start := 0; start < len(uniqueNumbers); start += invoiceUpdateBatchSize {
+		end := min(start+invoiceUpdateBatchSize, len(uniqueNumbers))
+		placeholders := make([]string, 0, end-start)
+		arguments := make([]any, 0, end-start)
+		for index, invoiceNumber := range uniqueNumbers[start:end] {
+			name := fmt.Sprintf("invoiceNumber%d", index)
+			placeholders = append(placeholders, "@"+name)
+			arguments = append(arguments, sql.Named(name, invoiceNumber))
+		}
+		rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+			SELECT LTRIM(RTRIM(Stevilka)), DatumPlacila, PlacanoSIT
+			FROM [%s].[dbo].[Racuni]
+			WHERE UPPER(LTRIM(RTRIM(Stevilka))) IN (%s)`, databaseName, strings.Join(placeholders, ", ")), arguments...)
+		if err != nil {
+			return nil, fmt.Errorf("load invoice payments for bank statements: %w", err)
+		}
+		for rows.Next() {
+			payment := &BankStatementInvoicePayment{}
+			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.PaidAmount); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("scan invoice payment for bank statements: %w", err)
+			}
+			payments = append(payments, payment)
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("read invoice payments for bank statements: %w", err)
+		}
+		rows.Close()
+	}
+	return payments, nil
+}
+
 func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, invoiceNumbers []string) error {
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	uniqueNumbers := make([]string, 0, len(invoiceNumbers))

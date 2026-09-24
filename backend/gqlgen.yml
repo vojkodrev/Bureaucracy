@@ -39,6 +39,9 @@ models:
   BankStatementPage:
     model:
       - bureaucracy/backend.BankStatementPage
+  BankStatementInvoicePayment:
+    model:
+      - bureaucracy/backend.BankStatementInvoicePayment
   MissingBankStatementDate:
     model:
       - bureaucracy/backend.MissingBankStatementDate

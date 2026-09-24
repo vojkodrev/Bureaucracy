@@ -14,6 +14,12 @@ export type BankStatementEntry = {
     purpose: string | null
 }
 
+export type BankStatementInvoicePayment = {
+    invoiceNumber: string
+    paymentDate: string | null
+    paidAmount: number | null
+}
+
 export type BankStatementPage = {
     entries: BankStatementEntry[]
     totalCount: number

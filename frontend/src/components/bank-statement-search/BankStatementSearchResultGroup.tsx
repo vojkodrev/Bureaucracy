@@ -1,15 +1,19 @@
 import { Fragment } from 'react'
+import { AlertTriangleIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { TableCell, TableRow } from '@/components/ui/table'
-import type { BankStatementEntry } from '@/lib/bank-statement-types'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { BankStatementEntry, BankStatementInvoicePayment } from '@/lib/bank-statement-types'
 import { formatCurrency, formatDate } from '@/lib/formatters'
+import { normalizeInvoiceNumber } from './hooks/useBankStatementInvoicePayments'
 
 type BankStatementSearchResultGroupProps = {
     entries: BankStatementEntry[]
+    invoicePayments: Record<string, BankStatementInvoicePayment>
 }
 
-function BankStatementSearchResultGroup({ entries }: BankStatementSearchResultGroupProps) {
+function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatementSearchResultGroupProps) {
     const statement = entries[0]
     const netMovement = entries.reduce(
         (sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0),
@@ -30,16 +34,36 @@ function BankStatementSearchResultGroup({ entries }: BankStatementSearchResultGr
                     Statement {statement.statementNumber ?? '—'}
                 </TableCell>
             </TableRow>
-            {entries.map((entry) => (
+            {entries.map((entry) => {
+                const invoicePayment = entry.documentNumber
+                    ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
+                    : undefined
+                return (
                 <TableRow key={entry.id}>
-                    <TableCell>{formatDate(entry.paymentDate)}</TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-2">
+                            {formatDate(entry.paymentDate)}
+                            {invoicePayment && !sameDate(entry.paymentDate, invoicePayment.paymentDate) && (
+                                <MismatchWarning label="Payment date mismatch">
+                                    The transaction date does not match the invoice payment date ({formatDate(invoicePayment.paymentDate)}).
+                                </MismatchWarning>
+                            )}
+                        </div>
+                    </TableCell>
                     <TableCell>{entry.customerName || '—'}</TableCell>
                     <TableCell>{entry.transactionType || '—'}</TableCell>
                     <TableCell className="text-right tabular-nums">
                         {entry.outflow == null ? '—' : formatCurrency(entry.outflow)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                        {entry.inflow == null ? '—' : formatCurrency(entry.inflow)}
+                        <div className="flex items-center justify-end gap-2">
+                            {entry.inflow == null ? '—' : formatCurrency(entry.inflow)}
+                            {invoicePayment && !sameAmount(entry.inflow, invoicePayment.paidAmount) && (
+                                <MismatchWarning label="Paid amount mismatch">
+                                    The transaction inflow does not match the invoice paid amount ({invoicePayment.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}).
+                                </MismatchWarning>
+                            )}
+                        </div>
                     </TableCell>
                     <TableCell>
                         {entry.documentNumber ? (
@@ -56,7 +80,8 @@ function BankStatementSearchResultGroup({ entries }: BankStatementSearchResultGr
                         ) : '—'}
                     </TableCell>
                 </TableRow>
-            ))}
+                )
+            })}
             <TableRow className="border-b-2 font-medium">
                 <TableCell colSpan={3} className="text-right">Net movement</TableCell>
                 <TableCell colSpan={3} className="text-right tabular-nums">
@@ -64,6 +89,28 @@ function BankStatementSearchResultGroup({ entries }: BankStatementSearchResultGr
                 </TableCell>
             </TableRow>
         </Fragment>
+    )
+}
+
+function sameDate(left: string | null | undefined, right: string | null | undefined) {
+    return left != null && right != null && left.slice(0, 10) === right.slice(0, 10)
+}
+
+function sameAmount(left: number | null | undefined, right: number | null | undefined) {
+    return left != null && right != null && Math.round(left * 100) === Math.round(right * 100)
+}
+
+function MismatchWarning({ label, children }: { label: string, children: React.ReactNode }) {
+    return (
+        <Tooltip>
+            <TooltipTrigger
+                aria-label={label}
+                className="inline-flex shrink-0 rounded-md bg-amber-50 p-1 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+            >
+                <AlertTriangleIcon className="size-4" aria-hidden="true" />
+            </TooltipTrigger>
+            <TooltipContent>{children}</TooltipContent>
+        </Tooltip>
     )
 }
 

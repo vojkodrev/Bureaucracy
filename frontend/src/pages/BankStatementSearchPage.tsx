@@ -6,6 +6,7 @@ import MissingBankStatementsAlert from '@/components/bank-statement-search/Missi
 import { useBankStatementSearchResults } from '@/components/bank-statement-search/hooks/useBankStatementSearchResults'
 import { useBankStatementSearchState } from '@/components/bank-statement-search/hooks/useBankStatementSearchState'
 import { useMissingBankStatementDates } from '@/components/bank-statement-search/hooks/useMissingBankStatementDates'
+import { useBankStatementInvoicePayments } from '@/components/bank-statement-search/hooks/useBankStatementInvoicePayments'
 
 function BankStatementSearchPage() {
     const searchState = useBankStatementSearchState()
@@ -15,12 +16,19 @@ function BankStatementSearchPage() {
         searchKey,
     )
     const missingStatements = useMissingBankStatementDates()
+    const invoicePayments = useBankStatementInvoicePayments(statementPage, searchKey)
     const errors: BankStatementSearchError[] = [
         [
             'search',
             'Bank statements could not be loaded',
             'The bank statement search could not be completed.',
             error,
+        ],
+        [
+            'invoice-payments',
+            'Invoice payments could not be checked',
+            'Payment date and amount mismatches could not be checked.',
+            invoicePayments.error,
         ],
         [
             'missing-dates',
@@ -44,6 +52,7 @@ function BankStatementSearchPage() {
                 <BankStatementSearchResults
                     statementPage={statementPage}
                     groups={groups}
+                    invoicePayments={invoicePayments.payments}
                     isLoading={isLoading}
                     search={search}
                     onPageChange={(page) => searchState.changePage(

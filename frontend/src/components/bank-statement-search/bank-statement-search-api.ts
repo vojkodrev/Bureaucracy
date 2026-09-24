@@ -1,4 +1,4 @@
-import type { BankStatementPage, MissingBankStatementDate } from '@/lib/bank-statement-types'
+import type { BankStatementInvoicePayment, BankStatementPage, MissingBankStatementDate } from '@/lib/bank-statement-types'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
@@ -52,6 +52,21 @@ const searchBankStatementsQuery = `
     }
 `
 
+const bankStatementInvoicePaymentsQuery = `
+    query BankStatementInvoicePayments($businessYear: String!, $invoiceNumbers: [String!]!) {
+        bankStatementInvoicePayments(
+            businessYear: $businessYear
+            invoiceNumbers: $invoiceNumbers
+        ) {
+            invoiceNumber paymentDate paidAmount
+        }
+    }
+`
+
+type BankStatementInvoicePaymentsResponse = {
+    data?: { bankStatementInvoicePayments: BankStatementInvoicePayment[] }
+}
+
 const missingBankStatementDatesQuery = `
     query MissingBankStatementDates($businessYear: String!) {
         missingBankStatementDates(businessYear: $businessYear) {
@@ -100,4 +115,16 @@ export async function fetchMissingBankStatementDates(
         signal,
     )
     return result.data?.missingBankStatementDates ?? []
+}
+
+export async function fetchBankStatementInvoicePayments(
+    invoiceNumbers: string[],
+    signal?: AbortSignal,
+): Promise<BankStatementInvoicePayment[]> {
+    const result = await postGraphql<BankStatementInvoicePaymentsResponse>(
+        bankStatementInvoicePaymentsQuery,
+        { businessYear: getSelectedBusinessYear(), invoiceNumbers },
+        signal,
+    )
+    return result.data?.bankStatementInvoicePayments ?? []
 }

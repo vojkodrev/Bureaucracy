@@ -69,6 +69,12 @@ type ComplexityRoot struct {
 		TransactionTypeID func(childComplexity int) int
 	}
 
+	BankStatementInvoicePayment struct {
+		InvoiceNumber func(childComplexity int) int
+		PaidAmount    func(childComplexity int) int
+		PaymentDate   func(childComplexity int) int
+	}
+
 	BankStatementPage struct {
 		Entries    func(childComplexity int) int
 		Page       func(childComplexity int) int
@@ -294,31 +300,32 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		BankAccounts              func(childComplexity int, businessYear string) int
-		BankStatement             func(childComplexity int, businessYear string, statementNumber int) int
-		BankTransactionTypes      func(childComplexity int, businessYear string) int
-		BusinessYear              func(childComplexity int, code string) int
-		BusinessYears             func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		Countries                 func(childComplexity int, businessYear string) int
-		CurrentBusinessYear       func(childComplexity int) int
-		Customer                  func(childComplexity int, businessYear string, customerID string) int
-		InventoryItem             func(childComplexity int, businessYear string, productCode string) int
-		Invoice                   func(childComplexity int, businessYear string, invoiceNumber string) int
-		InvoiceTextTemplate       func(childComplexity int, businessYear string) int
-		LatestBankStatementNumber func(childComplexity int, businessYear string, bankAccount *string) int
-		MissingBankStatementDates func(childComplexity int, businessYear string) int
-		PriceQuote                func(childComplexity int, businessYear string, quoteNumber string) int
-		PriceQuoteTextTemplate    func(childComplexity int, businessYear string) int
-		Product                   func(childComplexity int, businessYear string, productCode string) int
-		ProductInvoiceCounts      func(childComplexity int, businessYear string, productCodes []string) int
-		SearchBankStatements      func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchCustomers           func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchInventoryItems      func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchInvoices            func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchInvoicesByCustomer  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchPriceQuotes         func(childComplexity int, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		SearchProducts            func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
-		TaxCodes                  func(childComplexity int, businessYear string) int
+		BankAccounts                 func(childComplexity int, businessYear string) int
+		BankStatement                func(childComplexity int, businessYear string, statementNumber int) int
+		BankStatementInvoicePayments func(childComplexity int, businessYear string, invoiceNumbers []string) int
+		BankTransactionTypes         func(childComplexity int, businessYear string) int
+		BusinessYear                 func(childComplexity int, code string) int
+		BusinessYears                func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		Countries                    func(childComplexity int, businessYear string) int
+		CurrentBusinessYear          func(childComplexity int) int
+		Customer                     func(childComplexity int, businessYear string, customerID string) int
+		InventoryItem                func(childComplexity int, businessYear string, productCode string) int
+		Invoice                      func(childComplexity int, businessYear string, invoiceNumber string) int
+		InvoiceTextTemplate          func(childComplexity int, businessYear string) int
+		LatestBankStatementNumber    func(childComplexity int, businessYear string, bankAccount *string) int
+		MissingBankStatementDates    func(childComplexity int, businessYear string) int
+		PriceQuote                   func(childComplexity int, businessYear string, quoteNumber string) int
+		PriceQuoteTextTemplate       func(childComplexity int, businessYear string) int
+		Product                      func(childComplexity int, businessYear string, productCode string) int
+		ProductInvoiceCounts         func(childComplexity int, businessYear string, productCodes []string) int
+		SearchBankStatements         func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchCustomers              func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInventoryItems         func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInvoices               func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchInvoicesByCustomer     func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchPriceQuotes            func(childComplexity int, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchProducts               func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		TaxCodes                     func(childComplexity int, businessYear string) int
 	}
 
 	TaxCode struct {
@@ -344,6 +351,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
+	BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error)
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error)
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
@@ -522,6 +530,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BankStatementEntry.TransactionTypeID(childComplexity), true
+
+	case "BankStatementInvoicePayment.invoiceNumber":
+		if e.ComplexityRoot.BankStatementInvoicePayment.InvoiceNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementInvoicePayment.InvoiceNumber(childComplexity), true
+	case "BankStatementInvoicePayment.paidAmount":
+		if e.ComplexityRoot.BankStatementInvoicePayment.PaidAmount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementInvoicePayment.PaidAmount(childComplexity), true
+	case "BankStatementInvoicePayment.paymentDate":
+		if e.ComplexityRoot.BankStatementInvoicePayment.PaymentDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementInvoicePayment.PaymentDate(childComplexity), true
 
 	case "BankStatementPage.entries":
 		if e.ComplexityRoot.BankStatementPage.Entries == nil {
@@ -1533,6 +1560,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.BankStatement(childComplexity, args["businessYear"].(string), args["statementNumber"].(int)), true
+	case "Query.bankStatementInvoicePayments":
+		if e.ComplexityRoot.Query.BankStatementInvoicePayments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_bankStatementInvoicePayments_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BankStatementInvoicePayments(childComplexity, args["businessYear"].(string), args["invoiceNumbers"].([]string)), true
 	case "Query.bankTransactionTypes":
 		if e.ComplexityRoot.Query.BankTransactionTypes == nil {
 			break
@@ -1979,6 +2017,18 @@ func (ec *executionContext) childFields_BankStatementEntry(ctx context.Context, 
 		return ec.fieldContext_BankStatementEntry_purpose(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type BankStatementEntry", field.Name)
+}
+
+func (ec *executionContext) childFields_BankStatementInvoicePayment(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "invoiceNumber":
+		return ec.fieldContext_BankStatementInvoicePayment_invoiceNumber(ctx, field)
+	case "paymentDate":
+		return ec.fieldContext_BankStatementInvoicePayment_paymentDate(ctx, field)
+	case "paidAmount":
+		return ec.fieldContext_BankStatementInvoicePayment_paidAmount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type BankStatementInvoicePayment", field.Name)
 }
 
 func (ec *executionContext) childFields_BankStatementPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -2726,6 +2776,28 @@ func (ec *executionContext) field_Query_bankAccounts_args(ctx context.Context, r
 		return nil, err
 	}
 	args["businessYear"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_bankStatementInvoicePayments_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumbers",
+		func(ctx context.Context, v any) ([]string, error) {
+			return ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["invoiceNumbers"] = arg1
 	return args, nil
 }
 
@@ -4240,6 +4312,75 @@ func (ec *executionContext) _BankStatementEntry_purpose(ctx context.Context, fie
 }
 func (ec *executionContext) fieldContext_BankStatementEntry_purpose(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementInvoicePayment_invoiceNumber(ctx context.Context, field graphql.CollectedField, obj *BankStatementInvoicePayment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementInvoicePayment_invoiceNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.InvoiceNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementInvoicePayment_invoiceNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementInvoicePayment", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementInvoicePayment_paymentDate(ctx context.Context, field graphql.CollectedField, obj *BankStatementInvoicePayment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementInvoicePayment_paymentDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PaymentDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementInvoicePayment_paymentDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementInvoicePayment", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementInvoicePayment_paidAmount(ctx context.Context, field graphql.CollectedField, obj *BankStatementInvoicePayment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementInvoicePayment_paidAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PaidAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementInvoicePayment_paidAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementInvoicePayment", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
 func (ec *executionContext) _BankStatementPage_entries(ctx context.Context, field graphql.CollectedField, obj *BankStatementPage) (ret graphql.Marshaler) {
@@ -8097,6 +8238,50 @@ func (ec *executionContext) fieldContext_Query_searchBankStatements(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_bankStatementInvoicePayments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_bankStatementInvoicePayments(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BankStatementInvoicePayments(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceNumbers"].([]string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*BankStatementInvoicePayment) graphql.Marshaler {
+			return ec.marshalNBankStatementInvoicePayment2ᚕᚖbureaucracyᚋbackendᚐBankStatementInvoicePaymentᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_bankStatementInvoicePayments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_BankStatementInvoicePayment(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bankStatementInvoicePayments_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_bankAccounts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11394,6 +11579,54 @@ func (ec *executionContext) _BankStatementEntry(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var bankStatementInvoicePaymentImplementors = []string{"BankStatementInvoicePayment"}
+
+func (ec *executionContext) _BankStatementInvoicePayment(ctx context.Context, sel ast.SelectionSet, obj *BankStatementInvoicePayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bankStatementInvoicePaymentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BankStatementInvoicePayment")
+		case "invoiceNumber":
+			out.Values[i] = ec._BankStatementInvoicePayment_invoiceNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "paymentDate":
+			out.Values[i] = ec._BankStatementInvoicePayment_paymentDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "paidAmount":
+			out.Values[i] = ec._BankStatementInvoicePayment_paidAmount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var bankStatementPageImplementors = []string{"BankStatementPage"}
 
 func (ec *executionContext) _BankStatementPage(ctx context.Context, sel ast.SelectionSet, obj *BankStatementPage) graphql.Marshaler {
@@ -12992,6 +13225,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "bankStatementInvoicePayments":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bankStatementInvoicePayments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "bankAccounts":
 			field := field
 
@@ -14088,6 +14343,32 @@ func (ec *executionContext) unmarshalNBankStatementEntryInput2ᚖbureaucracyᚋb
 func (ec *executionContext) unmarshalNBankStatementInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐBankStatementInput(ctx context.Context, v any) (model.BankStatementInput, error) {
 	res, err := ec.unmarshalInputBankStatementInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBankStatementInvoicePayment2ᚕᚖbureaucracyᚋbackendᚐBankStatementInvoicePaymentᚄ(ctx context.Context, sel ast.SelectionSet, v []*BankStatementInvoicePayment) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBankStatementInvoicePayment2ᚖbureaucracyᚋbackendᚐBankStatementInvoicePayment(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBankStatementInvoicePayment2ᚖbureaucracyᚋbackendᚐBankStatementInvoicePayment(ctx context.Context, sel ast.SelectionSet, v *BankStatementInvoicePayment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BankStatementInvoicePayment(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNBankStatementPage2bureaucracyᚋbackendᚐBankStatementPage(ctx context.Context, sel ast.SelectionSet, v BankStatementPage) graphql.Marshaler {

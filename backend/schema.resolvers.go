@@ -59,6 +59,11 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, documentNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// BankStatementInvoicePayments is the resolver for the bankStatementInvoicePayments field.
+func (r *queryResolver) BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error) {
+	return r.Invoices.BankStatementPayments(ctx, businessYear, invoiceNumbers)
+}
+
 // BankAccounts is the resolver for the bankAccounts field.
 func (r *queryResolver) BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error) {
 	return r.BankStatements.ListAccounts(ctx, businessYear)

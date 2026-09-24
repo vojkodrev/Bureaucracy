@@ -80,3 +80,9 @@ type InvoiceTextTemplate struct {
 	IntroductoryText *string `json:"introductoryText"`
 	ClosingText      *string `json:"closingText"`
 }
+
+type BankStatementInvoicePayment struct {
+	InvoiceNumber string     `json:"invoiceNumber"`
+	PaymentDate   *time.Time `json:"paymentDate"`
+	PaidAmount    *float64   `json:"paidAmount"`
+}
