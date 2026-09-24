@@ -42,46 +42,50 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
                 const invoicePayment = entry.documentNumber
                     ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
                     : undefined
+                const paymentDateMismatch = invoicePayment
+                    ? hasPaymentDateMismatch(entry.paymentDate, invoicePayment.paymentDate)
+                    : false
+                const paidAmountMismatch = invoicePayment
+                    ? hasPaidAmountMismatch(entry.inflow, invoicePayment.paidAmount)
+                    : false
                 return (
                 <TableRow key={entry.id}>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                            {formatDate(entry.paymentDate)}
-                            {invoicePayment && hasPaymentDateMismatch(entry.paymentDate, invoicePayment.paymentDate) && (
-                                <MismatchWarning label="Payment date mismatch">
-                                    The transaction date does not match the invoice payment date ({formatDate(invoicePayment.paymentDate)}).
-                                </MismatchWarning>
-                            )}
-                        </div>
-                    </TableCell>
+                    <TableCell>{formatDate(entry.paymentDate)}</TableCell>
                     <TableCell>{entry.customerName || '—'}</TableCell>
                     <TableCell>{entry.transactionType || '—'}</TableCell>
                     <TableCell className="text-right tabular-nums">
                         {entry.outflow == null ? '—' : formatCurrency(entry.outflow)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                        <div className="flex items-center justify-end gap-2">
-                            {entry.inflow == null ? '—' : formatCurrency(entry.inflow)}
-                            {invoicePayment && hasPaidAmountMismatch(entry.inflow, invoicePayment.paidAmount) && (
-                                <MismatchWarning label="Paid amount mismatch">
-                                    The transaction inflow does not match the invoice paid amount ({invoicePayment.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}).
-                                </MismatchWarning>
-                            )}
-                        </div>
+                        {entry.inflow == null ? '—' : formatCurrency(entry.inflow)}
                     </TableCell>
                     <TableCell>
-                        {entry.documentNumber ? (
-                            <Button
-                                variant="link"
-                                render={
-                                    <Link
-                                        to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
-                                    />
-                                }
-                            >
-                                {entry.documentNumber}
-                            </Button>
-                        ) : '—'}
+                        <div className="flex flex-wrap items-center gap-2">
+                            {entry.documentNumber ? (
+                                <Button
+                                    variant="link"
+                                    render={
+                                        <Link
+                                            to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
+                                        />
+                                    }
+                                >
+                                    {entry.documentNumber}
+                                </Button>
+                            ) : '—'}
+                            {entry.documentNumber && invoicePayment
+                                && (paymentDateMismatch || paidAmountMismatch) && (
+                                <MismatchWarning
+                                    documentNumber={entry.documentNumber}
+                                    paymentDateMismatch={paymentDateMismatch}
+                                    paidAmountMismatch={paidAmountMismatch}
+                                    transactionDate={entry.paymentDate}
+                                    invoicePaymentDate={invoicePayment.paymentDate}
+                                    transactionInflow={entry.inflow}
+                                    invoicePaidAmount={invoicePayment.paidAmount}
+                                />
+                            )}
+                        </div>
                     </TableCell>
                 </TableRow>
                 )
@@ -96,16 +100,59 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
     )
 }
 
-function MismatchWarning({ label, children }: { label: string, children: React.ReactNode }) {
+type MismatchWarningProps = {
+    documentNumber: string
+    paymentDateMismatch: boolean
+    paidAmountMismatch: boolean
+    transactionDate: string | null
+    invoicePaymentDate: string | null
+    transactionInflow: number | null
+    invoicePaidAmount: number | null
+}
+
+function MismatchWarning({
+    documentNumber,
+    paymentDateMismatch,
+    paidAmountMismatch,
+    transactionDate,
+    invoicePaymentDate,
+    transactionInflow,
+    invoicePaidAmount,
+}: MismatchWarningProps) {
+    const label = paymentDateMismatch && paidAmountMismatch
+        ? 'Payment date and amount mismatch'
+        : paymentDateMismatch
+            ? 'Payment date mismatch'
+            : 'Paid amount mismatch'
+
     return (
         <Tooltip>
             <TooltipTrigger
-                aria-label={label}
-                className="inline-flex shrink-0 rounded-md bg-amber-50 p-1 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                render={(
+                    <Link
+                        to={`/invoice/${encodeURIComponent(documentNumber)}`}
+                        className="relative z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-900 hover:underline dark:bg-amber-950 dark:text-amber-200"
+                    />
+                )}
             >
-                <AlertTriangleIcon className="size-4" aria-hidden="true" />
+                <AlertTriangleIcon className="size-4 shrink-0" aria-hidden="true" />
+                {label}
             </TooltipTrigger>
-            <TooltipContent>{children}</TooltipContent>
+            <TooltipContent>
+                <div className="space-y-1 text-left">
+                    {paymentDateMismatch && (
+                        <p>
+                            Transaction date {formatDate(transactionDate)} does not match invoice payment date {formatDate(invoicePaymentDate)}.
+                        </p>
+                    )}
+                    {paidAmountMismatch && (
+                        <p>
+                            Transaction inflow {transactionInflow == null ? '—' : formatCurrency(transactionInflow)} does not match invoice paid amount {invoicePaidAmount == null ? '—' : formatCurrency(invoicePaidAmount)}.
+                        </p>
+                    )}
+                    <p>Click to open invoice {documentNumber}.</p>
+                </div>
+            </TooltipContent>
         </Tooltip>
     )
 }
