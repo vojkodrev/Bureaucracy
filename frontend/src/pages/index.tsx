@@ -14,7 +14,7 @@ export const CustomerSearchPage = lazy(() => import("./CustomerSearchPage"));
 export const CustomerPage = lazy(() => import("./customer/CustomerPage"));
 export const LayoutPage = lazy(() => import("./layout/LayoutPage"));
 export const InvoiceSearchPage = lazy(
-    () => import("@/components/invoice-search/InvoiceSearchPage"),
+    () => import("./InvoiceSearchPage"),
 );
 export const InvoicePage = lazy(() => import("./invoice/InvoicePage"));
 export const InventoryItemSearchPage = lazy(
