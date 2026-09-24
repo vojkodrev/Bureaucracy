@@ -11,16 +11,30 @@ type MissingBankStatementsAlertProps = {
 
 function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlertProps) {
     const [dismissed, setDismissed] = useState(false)
+    const [expanded, setExpanded] = useState(false)
 
     if (dismissed || missingDates.length === 0) return null
 
     return (
-        <Alert variant="warning" className="mb-6 max-w-4xl">
+        <Alert
+            variant="warning"
+            role="button"
+            tabIndex={0}
+            aria-expanded={expanded}
+            className="mb-6 max-w-4xl cursor-pointer"
+            onClick={() => setExpanded((current) => !current)}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setExpanded((current) => !current)
+                }
+            }}
+        >
             <TriangleAlert />
             <AlertTitle>
                 {missingDates.length} missing bank {missingDates.length === 1 ? 'statement' : 'statements'}
             </AlertTitle>
-            <AlertDescription>
+            {expanded && <AlertDescription>
                 <p>
                     The reconciliation check found no bank statement for the following dates.
                     Weekend dates are included for completeness and marked as non-business days.
@@ -37,14 +51,18 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
                         </li>
                     ))}
                 </ul>
-            </AlertDescription>
+            </AlertDescription>}
             <AlertAction>
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon-xs"
                     aria-label="Dismiss missing bank statements warning"
-                    onClick={() => setDismissed(true)}
+                    onClick={(event) => {
+                        event.stopPropagation()
+                        setDismissed(true)
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
                 >
                     <X />
                 </Button>
