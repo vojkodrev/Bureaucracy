@@ -1,4 +1,5 @@
-import type { Dispatch, FormEventHandler, SetStateAction } from 'react'
+import { useState } from 'react'
+import type { FormEvent, SubmitEvent } from 'react'
 import BankAccountComboboxField from '@/components/BankAccountComboboxField'
 import CustomerPickerField from '@/components/customer-search/CustomerPickerField'
 import DatePickerField from '@/components/DatePickerField'
@@ -7,43 +8,56 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NumberInput } from '@/components/ui/number-input'
+import { dateFromSearchValue } from '@/lib/dates'
+import { defaultPage } from '@/lib/pagination'
 import type { BankStatementSearchCriteria } from './types'
-
-type DateValue = Parameters<typeof DatePickerField>[0]['date']
 
 type BankStatementSearchFormProps = {
     search: BankStatementSearchCriteria
-    bankAccount: string
-    customerId: string
-    customerName: string
-    dateFrom: DateValue
-    dateTo: DateValue
-    onBankAccountChange: Dispatch<SetStateAction<string>>
-    onCustomerIdChange: Dispatch<SetStateAction<string>>
-    onCustomerNameChange: Dispatch<SetStateAction<string>>
-    onDateFromChange: Dispatch<SetStateAction<DateValue>>
-    onDateToChange: Dispatch<SetStateAction<DateValue>>
-    onSubmit: FormEventHandler<HTMLFormElement>
-    onReset: FormEventHandler<HTMLFormElement>
+    onSubmit: (search: BankStatementSearchCriteria) => void
+    onReset: () => void
 }
 
 function BankStatementSearchForm({
     search,
-    bankAccount,
-    customerId,
-    customerName,
-    dateFrom,
-    dateTo,
-    onBankAccountChange,
-    onCustomerIdChange,
-    onCustomerNameChange,
-    onDateFromChange,
-    onDateToChange,
     onSubmit,
     onReset,
 }: BankStatementSearchFormProps) {
+    const [customerId, setCustomerId] = useState(search.customerId)
+    const [customerName, setCustomerName] = useState(search.customerName)
+    const [bankAccount, setBankAccount] = useState(search.bankAccount)
+    const [dateFrom, setDateFrom] = useState(() => dateFromSearchValue(search.from))
+    const [dateTo, setDateTo] = useState(() => dateFromSearchValue(search.to))
+
+    function submitSearch(event: SubmitEvent<HTMLFormElement>) {
+        event.preventDefault()
+        const formData = new FormData(event.currentTarget)
+        onSubmit({
+            from: String(formData.get('from') ?? ''),
+            to: String(formData.get('to') ?? ''),
+            statementNumber: String(formData.get('statementNumber') ?? '').trim(),
+            documentNumber: String(formData.get('documentNumber') ?? '').trim(),
+            bankAccount,
+            customerId: String(formData.get('customerId') ?? '').trim(),
+            customerName: String(formData.get('customerName') ?? '').trim(),
+            page: String(defaultPage),
+            pageSize: search.pageSize,
+            sortBy: search.sortBy,
+            sortDirection: search.sortDirection,
+        })
+    }
+
+    function clearSearch(_event: FormEvent<HTMLFormElement>) {
+        setCustomerId('')
+        setCustomerName('')
+        setBankAccount('')
+        setDateFrom(undefined)
+        setDateTo(undefined)
+        onReset()
+    }
+
     return (
-        <form className="max-w-4xl" onSubmit={onSubmit} onReset={onReset}>
+        <form className="max-w-4xl" onSubmit={submitSearch} onReset={clearSearch}>
             <Card>
                 <CardContent>
                     <FieldGroup>
@@ -73,7 +87,7 @@ function BankStatementSearchForm({
                                 id="bank-account"
                                 label="Bank account"
                                 value={bankAccount}
-                                onChange={onBankAccountChange}
+                                onChange={setBankAccount}
                             />
                         </div>
                         <div className="grid gap-6 sm:grid-cols-2">
@@ -82,14 +96,14 @@ function BankStatementSearchForm({
                                 label="Payment date from"
                                 name="from"
                                 date={dateFrom}
-                                onSelect={onDateFromChange}
+                                onSelect={setDateFrom}
                             />
                             <DatePickerField
                                 id="statement-date-to"
                                 label="Payment date to"
                                 name="to"
                                 date={dateTo}
-                                onSelect={onDateToChange}
+                                onSelect={setDateTo}
                             />
                         </div>
                         <div className="grid gap-6 sm:grid-cols-2">
@@ -98,8 +112,8 @@ function BankStatementSearchForm({
                                 label="Counterparty number"
                                 name="customerId"
                                 customerId={customerId}
-                                onCustomerIdChange={onCustomerIdChange}
-                                onCustomerNameChange={onCustomerNameChange}
+                                onCustomerIdChange={setCustomerId}
+                                onCustomerNameChange={setCustomerName}
                             />
                             <Field>
                                 <FieldLabel htmlFor="statement-customer-name">
@@ -111,7 +125,7 @@ function BankStatementSearchForm({
                                     name="customerName"
                                     value={customerName}
                                     autoComplete="off"
-                                    onChange={(event) => onCustomerNameChange(event.target.value)}
+                                    onChange={(event) => setCustomerName(event.target.value)}
                                 />
                             </Field>
                         </div>
