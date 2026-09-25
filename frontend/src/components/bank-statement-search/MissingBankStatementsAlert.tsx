@@ -68,7 +68,7 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
             <AlertTitle className="flex flex-wrap items-center gap-x-3">
                 <span>
                     {visibleDates.length === 0
-                        ? `${hiddenDateCount} hidden bank ${hiddenDateCount === 1 ? 'statement' : 'statements'}`
+                        ? 'There are missing bank statements, but all dates are hidden'
                         : `${visibleDates.length} missing bank ${visibleDates.length === 1 ? 'statement' : 'statements'}`}
                 </span>
                 {hiddenDateCount > 0 && (
