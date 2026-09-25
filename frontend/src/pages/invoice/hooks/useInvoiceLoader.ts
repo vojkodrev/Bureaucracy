@@ -139,7 +139,9 @@ export function useInvoiceLoader({
                     customerPostalCode: priceQuote.customerPostalCode,
                     customerCity: priceQuote.customerCity,
                     customerCountry: priceQuote.customerCountry,
-                    introductoryText: priceQuote.introductoryText,
+                    introductoryText: [
+                        nextDraft.introductoryText, priceQuote.introductoryText,
+                    ].filter(Boolean).join('\n'),
                     closingText: nextDraft.closingText || priceQuote.closingText,
                     invoiceItems: priceQuote.items.map((item, index) => ({
                         ...item, id: -index - 1,
