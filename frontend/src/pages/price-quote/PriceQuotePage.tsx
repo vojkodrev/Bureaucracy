@@ -18,6 +18,7 @@ import PriceQuoteSummary from './PriceQuoteSummary'
 import UnsavedPriceQuoteAlerts from './UnsavedPriceQuoteAlerts'
 import { usePriceQuoteDraft } from './hooks/usePriceQuoteDraft'
 import { usePriceQuoteDuplicate } from './hooks/usePriceQuoteDuplicate'
+import { usePriceQuoteDueDate } from './hooks/usePriceQuoteDueDate'
 import { usePriceQuoteKeyboardShortcuts } from './hooks/usePriceQuoteKeyboardShortcuts'
 import { usePriceQuoteLoader } from './hooks/usePriceQuoteLoader'
 import { usePriceQuoteNumberNavigation } from './hooks/usePriceQuoteNumberNavigation'
@@ -40,6 +41,11 @@ export default function PriceQuotePage() {
     const navigation = usePriceQuoteNumberNavigation(routeQuoteNumber, navigate)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
+    const dueDate = usePriceQuoteDueDate({
+        customerId: draft.customerId,
+        issueDate: draft.issueDate,
+        setDueDate: (value) => setField('dueDate', value),
+    })
     const save = usePriceQuoteSave({
         priceQuoteId: loader.priceQuoteId, draft, routeQuoteNumber,
         isLoading: loader.isLoading, loadError: loader.error, navigate,
@@ -84,6 +90,7 @@ export default function PriceQuotePage() {
         ['current-year', 'Current business year could not be loaded', 'The price quote could not be duplicated.', loader.requestErrors.currentBusinessYear],
         ['duplicate-number', 'Duplicate price quote number could not be loaded', 'A number could not be assigned to the duplicate.', loader.requestErrors.duplicatePriceQuoteNumber],
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate price quote validity date could not be calculated.', loader.requestErrors.customerPaymentTerm],
+        ['due-date', 'Valid until date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
     ] as const
 
     return <div className="max-w-5xl p-4">
@@ -155,7 +162,10 @@ export default function PriceQuotePage() {
                 businessYear={loader.businessYear} issueDate={draft.issueDate} dueDate={draft.dueDate}
                 onQuoteNumberChange={(value) => setField('quoteNumber', value)}
                 onIssueDateChange={(value) => setField('issueDate', value)}
-                onDueDateChange={(value) => setField('dueDate', value)} />
+                onDueDateChange={(value) => setField('dueDate', value)}
+                onRecalculateDueDate={() => { void dueDate.recalculate() }}
+                canRecalculateDueDate={dueDate.canRecalculate}
+                isRecalculatingDueDate={dueDate.isRecalculating} />
         </div>
         <div className="mt-8 space-y-6">
             <Field><FieldLabel htmlFor="price-quote-introductory-text">Introductory text</FieldLabel>

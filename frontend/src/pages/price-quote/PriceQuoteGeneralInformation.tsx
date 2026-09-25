@@ -1,4 +1,5 @@
 import DatePickerField from '@/components/DatePickerField'
+import { RefreshCwIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,9 @@ type Props = {
     onQuoteNumberChange: (value: string) => void
     onIssueDateChange: (date?: Date) => void
     onDueDateChange: (date?: Date) => void
+    onRecalculateDueDate: () => void
+    canRecalculateDueDate: boolean
+    isRecalculatingDueDate?: boolean
 }
 
 export default function PriceQuoteGeneralInformation(props: Props) {
@@ -55,6 +59,13 @@ export default function PriceQuoteGeneralInformation(props: Props) {
                         name="dueDate"
                         date={props.dueDate}
                         onSelect={props.onDueDateChange}
+                        action={{
+                            icon: <RefreshCwIcon className={props.isRecalculatingDueDate
+                                ? 'animate-spin' : undefined} />,
+                            label: 'Recalculate valid until date',
+                            disabled: !props.canRecalculateDueDate || props.isRecalculatingDueDate,
+                            onClick: props.onRecalculateDueDate,
+                        }}
                     />
                 </FieldGroup>
             </CardContent>
