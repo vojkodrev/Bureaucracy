@@ -19,6 +19,7 @@ import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
+import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
 import { useInvoiceHalcomExport } from './hooks/useInvoiceHalcomExport'
 import { useInvoiceKeyboardShortcuts } from './hooks/useInvoiceKeyboardShortcuts'
 import { useInvoiceLoader } from './hooks/useInvoiceLoader'
@@ -42,6 +43,11 @@ function InvoicePage() {
     const navigation = useInvoiceNumberNavigation(routeInvoiceNumber, navigate)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [confirmingEmail, setConfirmingEmail] = useState(false)
+    const dueDate = useInvoiceDueDate({
+        customerId: draft.customerId,
+        invoiceDate: draft.invoiceDate,
+        setDueDate: (value) => setField('dueDate', value),
+    })
 
     const save = useInvoiceSave({
         invoiceId: loader.invoiceId, draft, routeInvoiceNumber,
@@ -96,6 +102,7 @@ function InvoicePage() {
         ['current-year', 'Current business year could not be loaded', 'The invoice could not be duplicated.', loader.requestErrors.currentBusinessYear],
         ['duplicate-number', 'Duplicate invoice number could not be loaded', 'A number could not be assigned to the duplicate.', loader.requestErrors.duplicateInvoiceNumber],
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate invoice due date could not be calculated.', loader.requestErrors.customerPaymentTerm],
+        ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
     ] as const
 
     return <div className="max-w-5xl p-4">
@@ -177,6 +184,9 @@ function InvoicePage() {
                 onInvoiceNumberChange={(v) => setField('invoiceNumber', v)}
                 onInvoiceDateChange={(v) => setField('invoiceDate', v)}
                 onDueDateChange={(v) => setField('dueDate', v)}
+                onRecalculateDueDate={() => { void dueDate.recalculate() }}
+                canRecalculateDueDate={dueDate.canRecalculate}
+                isRecalculatingDueDate={dueDate.isRecalculating}
                 onServiceDateChange={(v) => setField('serviceDate', v)}
                 onPurchaseOrderNumberChange={(v) => setField('purchaseOrderNumber', v)} />
         </div>
