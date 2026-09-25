@@ -136,7 +136,7 @@ func (repository *BankStatementRepository) ListMissingDates(ctx context.Context,
 			WHERE CAST(statementRow.Datum AS date) = MissingDate
 			  AND ISNULL(statementRow.Deleted, 0) = 0
 		)
-		ORDER BY MissingDate
+		ORDER BY MissingDate DESC
 		OPTION (MAXRECURSION 366)`, databaseName),
 		sql.Named("calendarYear", calendarYear),
 	)

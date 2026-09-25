@@ -39,7 +39,7 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
                     The reconciliation check found no bank statement for the following dates.
                     Weekend dates are included for completeness and marked as non-business days.
                 </p>
-                <ul className="mt-3 grid max-h-64 gap-1 overflow-y-auto sm:grid-cols-2">
+                <ul className="mt-3 grid max-h-64 gap-1 overflow-y-auto">
                     {missingDates.map((missingDate) => (
                         <li key={missingDate.date}>
                             {formatDate(missingDate.date)}
