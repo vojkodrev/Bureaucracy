@@ -1,4 +1,4 @@
-import { Copy, Mail, Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, FileOutput, Mail, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -19,6 +19,7 @@ type Props = {
     onSave: () => void
     onPrint: () => void
     onEmail: () => void
+    onConvertToInvoice: () => void
     onRevert: () => void
     onDuplicate: () => void
 }
@@ -28,7 +29,7 @@ export default function PriceQuoteMenu(props: Props) {
         <Menubar className="w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-52 whitespace-nowrap">
                     <MenubarItem
                         disabled={!props.canSave || props.isSaving}
                         onClick={props.onSave}
@@ -48,6 +49,10 @@ export default function PriceQuoteMenu(props: Props) {
                     <MenubarItem disabled={!props.canEmail} onClick={props.onEmail}>
                         <Mail />
                         Send email
+                    </MenubarItem>
+                    <MenubarItem onClick={props.onConvertToInvoice}>
+                        <FileOutput />
+                        Convert to invoice
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

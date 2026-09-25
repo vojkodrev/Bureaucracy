@@ -19,6 +19,7 @@ import UnsavedPriceQuoteAlerts from './UnsavedPriceQuoteAlerts'
 import { usePriceQuoteDraft } from './hooks/usePriceQuoteDraft'
 import { usePriceQuoteDuplicate } from './hooks/usePriceQuoteDuplicate'
 import { usePriceQuoteDueDate } from './hooks/usePriceQuoteDueDate'
+import { usePriceQuoteInvoiceConversion } from './hooks/usePriceQuoteInvoiceConversion'
 import { usePriceQuoteKeyboardShortcuts } from './hooks/usePriceQuoteKeyboardShortcuts'
 import { usePriceQuoteLoader } from './hooks/usePriceQuoteLoader'
 import { usePriceQuoteNumberNavigation } from './hooks/usePriceQuoteNumberNavigation'
@@ -45,6 +46,9 @@ export default function PriceQuotePage() {
         customerId: draft.customerId,
         issueDate: draft.issueDate,
         setDueDate: (value) => setField('dueDate', value),
+    })
+    const invoiceConversion = usePriceQuoteInvoiceConversion({
+        draft, navigate, allowNavigation: guard.allowNavigation,
     })
     const save = usePriceQuoteSave({
         priceQuoteId: loader.priceQuoteId, draft, routeQuoteNumber,
@@ -91,6 +95,7 @@ export default function PriceQuotePage() {
         ['duplicate-number', 'Duplicate price quote number could not be loaded', 'A number could not be assigned to the duplicate.', loader.requestErrors.duplicatePriceQuoteNumber],
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate price quote validity date could not be calculated.', loader.requestErrors.customerPaymentTerm],
         ['due-date', 'Valid until date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
+        ['convert', 'Price quote could not be converted', 'The invoice draft could not be prepared.', invoiceConversion.error],
     ] as const
 
     return <div className="max-w-5xl p-4">
@@ -106,6 +111,7 @@ export default function PriceQuotePage() {
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printPriceQuote}
                 onEmail={email}
+                onConvertToInvoice={invoiceConversion.convertToInvoice}
                 onRevert={revert.requestRevert} onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous price quote"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}>

@@ -4,6 +4,7 @@ import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
+import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
     fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
 } from '../invoice-api'
@@ -129,9 +130,29 @@ export function useInvoiceLoader({
                     introductoryText: template.introductoryText ?? '',
                     closingText: template.closingText ?? '',
                 }
+                const priceQuote = takePriceQuoteForInvoice()
+                const convertedDraft: InvoiceDraft = priceQuote ? {
+                    ...nextDraft,
+                    customerId: priceQuote.customerId,
+                    customerName: priceQuote.customerName,
+                    customerAddress: priceQuote.customerAddress,
+                    customerPostalCode: priceQuote.customerPostalCode,
+                    customerCity: priceQuote.customerCity,
+                    customerCountry: priceQuote.customerCountry,
+                    introductoryText: priceQuote.introductoryText,
+                    closingText: nextDraft.closingText || priceQuote.closingText,
+                    invoiceItems: priceQuote.items.map((item, index) => ({
+                        ...item, id: -index - 1,
+                    })),
+                } : nextDraft
                 setRequestErrors((current) => ({ ...current, nextInvoiceNumber: undefined }))
-                replaceLoadedDraft(nextDraft)
+                replaceLoadedDraft(convertedDraft)
                 markLoadedDraftClean(nextDraft)
+                if (priceQuote) toast.add({
+                    title: 'Price quote converted',
+                    description: 'The invoice draft has been populated. Review and save it when ready.',
+                    type: 'success',
+                })
             }).catch((requestError: unknown) => {
                 if (!wasAborted(requestError)) setRequestErrors((current) => ({
                     ...current,
