@@ -20,11 +20,25 @@ export function useInvoiceSearchPrint({
     keyboardShortcutEnabled,
 }: Options) {
     const [printError, setPrintError] = useState<string | null>(null)
+    const [unavailableRemindersAction, setUnavailableRemindersAction] =
+        useState<'print' | 'email' | null>(null)
     const canPrint = !isLoading && !hasError && hasResults
     const canPrintReminders = canPrint
         && search.resultsView === 'customer'
         && Boolean(search.customerId.trim() || search.customerName.trim())
         && customerSummaryCount === 1
+    const unavailableRemindersDescription = (() => {
+        if (isLoading) return 'Wait for the invoice search to finish, then try again.'
+        if (hasError) return 'Resolve the invoice search error, then try again.'
+        if (!hasResults) return 'No invoices match the current search.'
+        if (search.resultsView !== 'customer') {
+            return 'Switch the results view to Customers before printing or emailing reminders.'
+        }
+        if (!search.customerId.trim() && !search.customerName.trim()) {
+            return 'Filter the search by customer ID or customer name first.'
+        }
+        return 'The search must match exactly one customer. Refine the customer filter and try again.'
+    })()
 
     const printReport = () => {
         if (!canPrint) return
@@ -37,8 +51,10 @@ export function useInvoiceSearchPrint({
         setPrintError(null)
     }
     const printReminders = () => {
-        if (!canPrint || search.resultsView !== 'customer'
-            || (!search.customerId.trim() && !search.customerName.trim())) return
+        if (!canPrintReminders) {
+            setUnavailableRemindersAction('print')
+            return
+        }
         const pdfTab = window.open(invoiceRemindersPdfUrl(search), '_blank')
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the reminders PDF.')
@@ -60,5 +76,15 @@ export function useInvoiceSearchPrint({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [keyboardShortcutEnabled])
 
-    return { canPrint, canPrintReminders, printReport, printReminders, printError }
+    return {
+        canPrint,
+        canPrintReminders,
+        printReport,
+        printReminders,
+        printError,
+        unavailableRemindersAction,
+        unavailableRemindersDescription,
+        showEmailRemindersUnavailable: () => setUnavailableRemindersAction('email'),
+        closeUnavailableRemindersAlert: () => setUnavailableRemindersAction(null),
+    }
 }

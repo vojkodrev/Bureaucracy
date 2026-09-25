@@ -12,6 +12,7 @@ import InvoiceSearchMenu from './InvoiceSearchMenu'
 import InvoiceSearchResults from './InvoiceSearchResults'
 import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
+import UnavailableRemindersAlert from './UnavailableRemindersAlert'
 import type { PaymentStatus } from './types'
 
 type InvoiceSearchProps = {
@@ -39,16 +40,20 @@ function InvoiceSearch({
     )
     const { selectedInvoiceNumber, selectInvoice, clearSelection } =
         useInvoiceSearchSelection(onInvoiceSelect)
-    const { canPrint, canPrintReminders, printReport, printReminders, printError } =
-        useInvoiceSearchPrint({
-            search,
-            hasResults: invoices.length > 0,
-            isLoading,
-            hasError: Boolean(error),
-            customerSummaryCount: customerSummaryPage?.customerSummaries.length ?? 0,
-            keyboardShortcutEnabled: mode === ComponentMode.Page,
-        })
-    const remindersEmail = useInvoiceRemindersEmail(search, customerSummaryPage)
+    const print = useInvoiceSearchPrint({
+        search,
+        hasResults: invoices.length > 0,
+        isLoading,
+        hasError: Boolean(error),
+        customerSummaryCount: customerSummaryPage?.customerSummaries.length ?? 0,
+        keyboardShortcutEnabled: mode === ComponentMode.Page,
+    })
+    const remindersEmail = useInvoiceRemindersEmail(
+        search,
+        customerSummaryPage,
+        print.canPrintReminders,
+        print.showEmailRemindersUnavailable,
+    )
 
     function clearSearchAndSelection() {
         clearSelection()
@@ -57,16 +62,20 @@ function InvoiceSearch({
 
     return (
         <div className="p-4">
-            <InvoiceSearchErrors printError={printError} searchError={error} />
+            <InvoiceSearchErrors printError={print.printError} searchError={error} />
             {mode === ComponentMode.Page && (
                 <InvoiceSearchMenu
-                    reportDisabled={!canPrint}
-                    remindersDisabled={!canPrintReminders}
-                    onPrintReport={printReport}
-                    onPrintReminders={printReminders}
+                    reportDisabled={!print.canPrint}
+                    onPrintReport={print.printReport}
+                    onPrintReminders={print.printReminders}
                     onEmailReminders={remindersEmail.openDialog}
                 />
             )}
+            <UnavailableRemindersAlert
+                action={print.unavailableRemindersAction}
+                description={print.unavailableRemindersDescription}
+                onOpenChange={(open) => { if (!open) print.closeUnavailableRemindersAlert() }}
+            />
             <EmailDocumentDialog
                 open={remindersEmail.dialogOpen}
                 documentName="reminders"

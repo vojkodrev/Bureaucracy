@@ -8,6 +8,8 @@ import type { InvoiceSearchCriteria } from '../types'
 export function useInvoiceRemindersEmail(
     search: InvoiceSearchCriteria,
     customerSummaryPage: InvoiceCustomerSummaryPage | null,
+    canEmail: boolean,
+    onUnavailable: () => void,
 ) {
     const [dialogOpen, setDialogOpen] = useState(false)
     const customerSummary = customerSummaryPage?.customerSummaries[0]
@@ -21,10 +23,15 @@ export function useInvoiceRemindersEmail(
         })
     }
 
+    function openDialog() {
+        if (canEmail) setDialogOpen(true)
+        else onUnavailable()
+    }
+
     return {
         dialogOpen,
         setDialogOpen,
-        openDialog: () => setDialogOpen(true),
+        openDialog,
         customerId: customerSummary?.customerCode ?? search.customerId,
         customerName: customerSummary?.customerName ?? search.customerName,
         businessYear: Number(getSelectedBusinessYear()) || null,
