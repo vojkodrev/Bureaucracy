@@ -75,6 +75,15 @@ models:
   InventoryItemPage:
     model:
       - bureaucracy/backend.InventoryItemPage
+  GoodsReceipt:
+    model:
+      - bureaucracy/backend.GoodsReceipt
+  GoodsReceiptItem:
+    model:
+      - bureaucracy/backend.GoodsReceiptItem
+  GoodsReceiptPage:
+    model:
+      - bureaucracy/backend.GoodsReceiptPage
   PriceQuote:
     model:
       - bureaucracy/backend.PriceQuote

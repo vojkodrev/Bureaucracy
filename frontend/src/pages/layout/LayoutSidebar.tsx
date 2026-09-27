@@ -6,6 +6,7 @@ import {
     FileDown,
     FileText,
     Landmark,
+    PackageCheck,
     PackageSearch,
     Plus,
     ReceiptText,
@@ -41,6 +42,12 @@ type Section = {
 };
 
 const sections: Section[] = [
+    {
+        key: "goods-receipts",
+        label: "Goods receipts",
+        icon: PackageCheck,
+        searchPath: "/goods-receipts/search",
+    },
     {
         key: "inventory-items",
         label: "Inventory items",

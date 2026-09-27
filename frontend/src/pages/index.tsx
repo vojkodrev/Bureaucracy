@@ -16,6 +16,9 @@ export const LayoutPage = lazy(() => import("./layout/LayoutPage"));
 export const InvoiceSearchPage = lazy(
     () => import("./InvoiceSearchPage"),
 );
+export const GoodsReceiptSearchPage = lazy(
+    () => import("./GoodsReceiptSearchPage"),
+);
 export const InvoicePage = lazy(() => import("./invoice/InvoicePage"));
 export const InventoryItemSearchPage = lazy(
     () => import("./InventoryItemSearchPage"),

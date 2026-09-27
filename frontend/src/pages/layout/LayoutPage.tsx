@@ -78,6 +78,7 @@ function breadcrumbLabel(pathname: string) {
         "/inventory-items/search": "Inventory item search",
         "/inventory-item": "Inventory item",
         "/invoices/search": "Invoice search",
+        "/goods-receipts/search": "Goods receipt search",
         "/price-quotes/search": "Price quote search",
         "/products/search": "Product search",
         "/export": "Export data",

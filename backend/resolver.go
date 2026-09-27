@@ -9,12 +9,13 @@ type Resolver struct {
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
 	InventoryItems         *InventoryItemRepository
+	GoodsReceipts          *GoodsReceiptRepository
 	PriceQuotes            *PriceQuoteRepository
 	Products               *ProductRepository
 	TaxCodeRepository      *TaxCodeRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, inventoryItems *InventoryItemRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
+func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, inventoryItems *InventoryItemRepository, goodsReceipts *GoodsReceiptRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
 		BankStatements:         bankStatements,
@@ -22,6 +23,7 @@ func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStat
 		Customers:              customers,
 		Invoices:               invoices,
 		InventoryItems:         inventoryItems,
+		GoodsReceipts:          goodsReceipts,
 		PriceQuotes:            priceQuotes,
 		Products:               products,
 		TaxCodeRepository:      taxCodes,

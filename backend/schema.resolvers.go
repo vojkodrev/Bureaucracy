@@ -46,6 +46,20 @@ func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear s
 	return r.InventoryItems.Save(ctx, businessYear, inventoryItem)
 }
 
+// SearchGoodsReceipts is the resolver for the searchGoodsReceipts field.
+func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.GoodsReceipts.Search(ctx, businessYear, productCode, productName,
+		receivedFrom, receivedTo, sortBy, sortDirection, resultPage, resultPageSize)
+}
+
 // SearchBankStatements is the resolver for the searchBankStatements field.
 func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1

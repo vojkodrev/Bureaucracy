@@ -138,6 +138,30 @@ type ComplexityRoot struct {
 		TotalPages func(childComplexity int) int
 	}
 
+	GoodsReceipt struct {
+		ID            func(childComplexity int) int
+		Items         func(childComplexity int) int
+		ReceiptDate   func(childComplexity int) int
+		ReceiptNumber func(childComplexity int) int
+		ReceivedBy    func(childComplexity int) int
+	}
+
+	GoodsReceiptItem struct {
+		ID          func(childComplexity int) int
+		ProductCode func(childComplexity int) int
+		ProductName func(childComplexity int) int
+		Quantity    func(childComplexity int) int
+		Unit        func(childComplexity int) int
+	}
+
+	GoodsReceiptPage struct {
+		GoodsReceipts func(childComplexity int) int
+		Page          func(childComplexity int) int
+		PageSize      func(childComplexity int) int
+		TotalCount    func(childComplexity int) int
+		TotalPages    func(childComplexity int) int
+	}
+
 	InventoryItem struct {
 		ID                func(childComplexity int) int
 		MinimumStockLevel func(childComplexity int) int
@@ -320,6 +344,7 @@ type ComplexityRoot struct {
 		ProductInvoiceCounts         func(childComplexity int, businessYear string, productCodes []string) int
 		SearchBankStatements         func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers              func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchGoodsReceipts          func(childComplexity int, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInventoryItems         func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices               func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoicesByCustomer     func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -350,6 +375,7 @@ type MutationResolver interface {
 	SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error)
 }
 type QueryResolver interface {
+	SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error)
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error)
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
@@ -808,6 +834,99 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.CustomerPage.TotalPages(childComplexity), true
+
+	case "GoodsReceipt.id":
+		if e.ComplexityRoot.GoodsReceipt.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.ID(childComplexity), true
+	case "GoodsReceipt.items":
+		if e.ComplexityRoot.GoodsReceipt.Items == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.Items(childComplexity), true
+	case "GoodsReceipt.receiptDate":
+		if e.ComplexityRoot.GoodsReceipt.ReceiptDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.ReceiptDate(childComplexity), true
+	case "GoodsReceipt.receiptNumber":
+		if e.ComplexityRoot.GoodsReceipt.ReceiptNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.ReceiptNumber(childComplexity), true
+	case "GoodsReceipt.receivedBy":
+		if e.ComplexityRoot.GoodsReceipt.ReceivedBy == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.ReceivedBy(childComplexity), true
+
+	case "GoodsReceiptItem.id":
+		if e.ComplexityRoot.GoodsReceiptItem.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.ID(childComplexity), true
+	case "GoodsReceiptItem.productCode":
+		if e.ComplexityRoot.GoodsReceiptItem.ProductCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.ProductCode(childComplexity), true
+	case "GoodsReceiptItem.productName":
+		if e.ComplexityRoot.GoodsReceiptItem.ProductName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.ProductName(childComplexity), true
+	case "GoodsReceiptItem.quantity":
+		if e.ComplexityRoot.GoodsReceiptItem.Quantity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.Quantity(childComplexity), true
+	case "GoodsReceiptItem.unit":
+		if e.ComplexityRoot.GoodsReceiptItem.Unit == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.Unit(childComplexity), true
+
+	case "GoodsReceiptPage.goodsReceipts":
+		if e.ComplexityRoot.GoodsReceiptPage.GoodsReceipts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptPage.GoodsReceipts(childComplexity), true
+	case "GoodsReceiptPage.page":
+		if e.ComplexityRoot.GoodsReceiptPage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptPage.Page(childComplexity), true
+	case "GoodsReceiptPage.pageSize":
+		if e.ComplexityRoot.GoodsReceiptPage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptPage.PageSize(childComplexity), true
+	case "GoodsReceiptPage.totalCount":
+		if e.ComplexityRoot.GoodsReceiptPage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptPage.TotalCount(childComplexity), true
+	case "GoodsReceiptPage.totalPages":
+		if e.ComplexityRoot.GoodsReceiptPage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptPage.TotalPages(childComplexity), true
 
 	case "InventoryItem.id":
 		if e.ComplexityRoot.InventoryItem.ID == nil {
@@ -1754,6 +1873,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SearchCustomers(childComplexity, args["businessYear"].(string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.searchGoodsReceipts":
+		if e.ComplexityRoot.Query.SearchGoodsReceipts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchGoodsReceipts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SearchGoodsReceipts(childComplexity, args["businessYear"].(string), args["productCode"].(*string), args["productName"].(*string), args["receivedFrom"].(*time.Time), args["receivedTo"].(*time.Time), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchInventoryItems":
 		if e.ComplexityRoot.Query.SearchInventoryItems == nil {
 			break
@@ -2155,6 +2285,54 @@ func (ec *executionContext) childFields_CustomerPage(ctx context.Context, field 
 		return ec.fieldContext_CustomerPage_totalPages(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type CustomerPage", field.Name)
+}
+
+func (ec *executionContext) childFields_GoodsReceipt(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_GoodsReceipt_id(ctx, field)
+	case "receiptNumber":
+		return ec.fieldContext_GoodsReceipt_receiptNumber(ctx, field)
+	case "receiptDate":
+		return ec.fieldContext_GoodsReceipt_receiptDate(ctx, field)
+	case "receivedBy":
+		return ec.fieldContext_GoodsReceipt_receivedBy(ctx, field)
+	case "items":
+		return ec.fieldContext_GoodsReceipt_items(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type GoodsReceipt", field.Name)
+}
+
+func (ec *executionContext) childFields_GoodsReceiptItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_GoodsReceiptItem_id(ctx, field)
+	case "productCode":
+		return ec.fieldContext_GoodsReceiptItem_productCode(ctx, field)
+	case "productName":
+		return ec.fieldContext_GoodsReceiptItem_productName(ctx, field)
+	case "unit":
+		return ec.fieldContext_GoodsReceiptItem_unit(ctx, field)
+	case "quantity":
+		return ec.fieldContext_GoodsReceiptItem_quantity(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type GoodsReceiptItem", field.Name)
+}
+
+func (ec *executionContext) childFields_GoodsReceiptPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "goodsReceipts":
+		return ec.fieldContext_GoodsReceiptPage_goodsReceipts(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_GoodsReceiptPage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_GoodsReceiptPage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_GoodsReceiptPage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_GoodsReceiptPage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type GoodsReceiptPage", field.Name)
 }
 
 func (ec *executionContext) childFields_InventoryItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3260,6 +3438,84 @@ func (ec *executionContext) field_Query_searchCustomers_args(ctx context.Context
 		return nil, err
 	}
 	args["pageSize"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchGoodsReceipts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "receivedFrom",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["receivedFrom"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "receivedTo",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["receivedTo"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg8
 	return args, nil
 }
 
@@ -5374,6 +5630,369 @@ func (ec *executionContext) _CustomerPage_totalPages(ctx context.Context, field 
 }
 func (ec *executionContext) fieldContext_CustomerPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("CustomerPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceipt_id(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceipt_receiptNumber(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_receiptNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ReceiptNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_receiptNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceipt_receiptDate(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_receiptDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ReceiptDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_receiptDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceipt_receivedBy(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_receivedBy(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ReceivedBy, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_receivedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceipt_items(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_items(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*GoodsReceiptItem) graphql.Marshaler {
+			return ec.marshalNGoodsReceiptItem2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoodsReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceiptItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoodsReceiptItem_id(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptItem_productCode(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_productCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_productCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptItem_productName(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_productName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_productName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptItem_unit(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_unit(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Unit, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptItem_quantity(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_quantity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Quantity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptPage_goodsReceipts(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptPage_goodsReceipts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.GoodsReceipts, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*GoodsReceipt) graphql.Marshaler {
+			return ec.marshalNGoodsReceipt2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptPage_goodsReceipts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoodsReceiptPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceipt(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoodsReceiptPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptPage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptPage_page(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptPage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptPage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptPage_pageSize(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptPage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptPage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptPage_totalPages(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptPage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptPage", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _InventoryItem_id(ctx context.Context, field graphql.CollectedField, obj *InventoryItem) (ret graphql.Marshaler) {
@@ -8192,6 +8811,50 @@ func (ec *executionContext) _ProductPage_totalPages(ctx context.Context, field g
 }
 func (ec *executionContext) fieldContext_ProductPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ProductPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Query_searchGoodsReceipts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_searchGoodsReceipts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SearchGoodsReceipts(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["receivedFrom"].(*time.Time), fc.Args["receivedTo"].(*time.Time), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *GoodsReceiptPage) graphql.Marshaler {
+			return ec.marshalNGoodsReceiptPage2ᚖbureaucracyᚋbackendᚐGoodsReceiptPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_searchGoodsReceipts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceiptPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchGoodsReceipts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Query_searchBankStatements(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12068,6 +12731,180 @@ func (ec *executionContext) _CustomerPage(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var goodsReceiptImplementors = []string{"GoodsReceipt"}
+
+func (ec *executionContext) _GoodsReceipt(ctx context.Context, sel ast.SelectionSet, obj *GoodsReceipt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goodsReceiptImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoodsReceipt")
+		case "id":
+			out.Values[i] = ec._GoodsReceipt_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "receiptNumber":
+			out.Values[i] = ec._GoodsReceipt_receiptNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "receiptDate":
+			out.Values[i] = ec._GoodsReceipt_receiptDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "receivedBy":
+			out.Values[i] = ec._GoodsReceipt_receivedBy(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "items":
+			out.Values[i] = ec._GoodsReceipt_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var goodsReceiptItemImplementors = []string{"GoodsReceiptItem"}
+
+func (ec *executionContext) _GoodsReceiptItem(ctx context.Context, sel ast.SelectionSet, obj *GoodsReceiptItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goodsReceiptItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoodsReceiptItem")
+		case "id":
+			out.Values[i] = ec._GoodsReceiptItem_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "productCode":
+			out.Values[i] = ec._GoodsReceiptItem_productCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "productName":
+			out.Values[i] = ec._GoodsReceiptItem_productName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "unit":
+			out.Values[i] = ec._GoodsReceiptItem_unit(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "quantity":
+			out.Values[i] = ec._GoodsReceiptItem_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var goodsReceiptPageImplementors = []string{"GoodsReceiptPage"}
+
+func (ec *executionContext) _GoodsReceiptPage(ctx context.Context, sel ast.SelectionSet, obj *GoodsReceiptPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goodsReceiptPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoodsReceiptPage")
+		case "goodsReceipts":
+			out.Values[i] = ec._GoodsReceiptPage_goodsReceipts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._GoodsReceiptPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._GoodsReceiptPage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._GoodsReceiptPage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._GoodsReceiptPage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var inventoryItemImplementors = []string{"InventoryItem"}
 
 func (ec *executionContext) _InventoryItem(ctx context.Context, sel ast.SelectionSet, obj *InventoryItem) graphql.Marshaler {
@@ -13203,6 +14040,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "searchGoodsReceipts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchGoodsReceipts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "searchBankStatements":
 			field := field
 
@@ -14556,6 +15415,72 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalNGoodsReceipt2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptᚄ(ctx context.Context, sel ast.SelectionSet, v []*GoodsReceipt) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNGoodsReceipt2ᚖbureaucracyᚋbackendᚐGoodsReceipt(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoodsReceipt2ᚖbureaucracyᚋbackendᚐGoodsReceipt(ctx context.Context, sel ast.SelectionSet, v *GoodsReceipt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoodsReceipt(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoodsReceiptItem2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*GoodsReceiptItem) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNGoodsReceiptItem2ᚖbureaucracyᚋbackendᚐGoodsReceiptItem(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoodsReceiptItem2ᚖbureaucracyᚋbackendᚐGoodsReceiptItem(ctx context.Context, sel ast.SelectionSet, v *GoodsReceiptItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoodsReceiptItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNGoodsReceiptPage2bureaucracyᚋbackendᚐGoodsReceiptPage(ctx context.Context, sel ast.SelectionSet, v GoodsReceiptPage) graphql.Marshaler {
+	return ec._GoodsReceiptPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGoodsReceiptPage2ᚖbureaucracyᚋbackendᚐGoodsReceiptPage(ctx context.Context, sel ast.SelectionSet, v *GoodsReceiptPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoodsReceiptPage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {

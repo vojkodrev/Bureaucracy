@@ -352,6 +352,30 @@ type InventoryItemPage {
   totalPages: Int!
 }
 
+type GoodsReceipt {
+  id: Int!
+  receiptNumber: String!
+  receiptDate: Time
+  receivedBy: String
+  items: [GoodsReceiptItem!]!
+}
+
+type GoodsReceiptItem {
+  id: Int!
+  productCode: String
+  productName: String
+  unit: String
+  quantity: Float
+}
+
+type GoodsReceiptPage {
+  goodsReceipts: [GoodsReceipt!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 input InventoryItemInput {
   id: Int
   productCode: String!
@@ -372,6 +396,18 @@ input ProductInput {
 }
 
 type Query {
+
+  searchGoodsReceipts(
+    businessYear: String!
+    productCode: String
+    productName: String
+    receivedFrom: Time
+    receivedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): GoodsReceiptPage!
 
   searchBankStatements(
     businessYear: String!
