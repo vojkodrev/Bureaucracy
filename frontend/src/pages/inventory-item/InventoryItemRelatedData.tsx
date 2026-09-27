@@ -30,6 +30,7 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Similar inventory items</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemSearch
+                        mode={ComponentMode.Dialog}
                         showSearchFields={false}
                         similarName={name}
                         onInventoryItemSelect={(item) => {

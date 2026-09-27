@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
 import DatePickerField from '@/components/DatePickerField'
+import InventoryItemPickerField from '@/components/inventory-item-search/InventoryItemPickerField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -17,6 +18,8 @@ type Props = {
 export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Props) {
     const [dateFrom, setDateFrom] = useState(() => dateFromSearchValue(search.from))
     const [dateTo, setDateTo] = useState(() => dateFromSearchValue(search.to))
+    const [productCode, setProductCode] = useState(search.productCode)
+    const [productName, setProductName] = useState(search.productName)
 
     function submit(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -54,18 +57,14 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
                                 />
                             </div>
                             <div className="grid gap-6 sm:grid-cols-2">
-                                <Field>
-                                    <FieldLabel htmlFor="product-code">
-                                        Inventory item code
-                                    </FieldLabel>
-                                    <Input
-                                        id="product-code"
-                                        type="search"
-                                        name="productCode"
-                                        defaultValue={search.productCode}
-                                        autoComplete="off"
-                                    />
-                                </Field>
+                                <InventoryItemPickerField
+                                    id="product-code"
+                                    label="Inventory item code"
+                                    name="productCode"
+                                    inventoryItemCode={productCode}
+                                    onInventoryItemCodeChange={setProductCode}
+                                    onInventoryItemNameChange={setProductName}
+                                />
                                 <Field>
                                     <FieldLabel htmlFor="product-name">
                                         Inventory item name
@@ -74,8 +73,9 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
                                         id="product-name"
                                         type="search"
                                         name="productName"
-                                        defaultValue={search.productName}
+                                        value={productName}
                                         autoComplete="off"
+                                        onChange={(event) => setProductName(event.target.value)}
                                     />
                                 </Field>
                             </div>

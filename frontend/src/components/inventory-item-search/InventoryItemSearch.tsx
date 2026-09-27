@@ -1,4 +1,5 @@
 import ErrorAlert from "@/components/ErrorAlert";
+import { ComponentMode } from "@/lib/component-mode";
 import type { InventoryItem } from "@/lib/inventory-item-types";
 import { useInventoryItemSearchResults } from "./hooks/useInventoryItemSearchResults";
 import { useInventoryItemSearchState } from "./hooks/useInventoryItemSearchState";
@@ -6,17 +7,19 @@ import InventoryItemSearchForm from "./InventoryItemSearchForm";
 import InventoryItemSearchResults from "./InventoryItemSearchResults";
 
 type InventoryItemSearchProps = {
+    mode: ComponentMode;
     showSearchFields?: boolean;
     similarName?: string;
     onInventoryItemSelect?: (item: InventoryItem) => void;
 };
 
 export default function InventoryItemSearch({
+    mode,
     showSearchFields = true,
     similarName,
     onInventoryItemSelect,
 }: InventoryItemSearchProps) {
-    const searchState = useInventoryItemSearchState(similarName);
+    const searchState = useInventoryItemSearchState(mode, similarName);
     const { search, searchKey } = searchState;
     const { itemPage, items, isLoading, error } = useInventoryItemSearchResults(
         search,
@@ -49,6 +52,7 @@ export default function InventoryItemSearch({
                     itemPage={itemPage}
                     items={items}
                     isLoading={isLoading}
+                    mode={mode}
                     showSearchFields={showSearchFields}
                     onPageChange={(page) =>
                         searchState.changePage(page, itemPage?.pageSize)

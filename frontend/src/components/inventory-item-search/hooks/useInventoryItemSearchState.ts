@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { ComponentMode } from '@/lib/component-mode'
 import { defaultPage, defaultPageSize } from '@/lib/pagination'
 import {
     inventoryItemSearchFromParams,
@@ -7,20 +8,32 @@ import {
 } from '../inventory-item-search-params'
 import type { InventoryItemSearchCriteria, InventoryItemSortColumn } from '../types'
 
-export function useInventoryItemSearchState(similarName?: string) {
+export function useInventoryItemSearchState(mode: ComponentMode, similarName?: string) {
     const [params, setParams] = useSearchParams()
-    const search = useMemo(() => inventoryItemSearchFromParams(params), [params])
+    const pageSearch = useMemo(() => inventoryItemSearchFromParams(params), [params])
+    const [dialogSearch, setDialogSearch] = useState<InventoryItemSearchCriteria>(() =>
+        inventoryItemSearchFromParams(new URLSearchParams()),
+    )
+    const search = mode === ComponentMode.Page ? pageSearch : dialogSearch
     const searchKey = useMemo(
         () => new URLSearchParams({ ...search, similarName: similarName ?? '' }).toString(),
         [search, similarName],
     )
 
     function updateSearch(nextSearch: InventoryItemSearchCriteria) {
-        setParams(inventoryItemSearchToParams(nextSearch))
+        if (mode === ComponentMode.Page) {
+            setParams(inventoryItemSearchToParams(nextSearch))
+        } else {
+            setDialogSearch(nextSearch)
+        }
     }
 
     function clearSearch() {
-        setParams({})
+        if (mode === ComponentMode.Page) {
+            setParams({})
+        } else {
+            setDialogSearch(inventoryItemSearchFromParams(new URLSearchParams()))
+        }
     }
 
     function changePage(page: number, currentPageSize?: number) {

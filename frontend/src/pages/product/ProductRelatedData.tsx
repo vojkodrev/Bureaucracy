@@ -48,6 +48,7 @@ function ProductRelatedData({
                 <AccordionTrigger>Similar inventory items</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemSearch
+                        mode={ComponentMode.Page}
                         showSearchFields={false}
                         similarName={productName}
                     />

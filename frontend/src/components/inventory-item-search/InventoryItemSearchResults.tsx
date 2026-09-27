@@ -12,6 +12,7 @@ import type {
     InventoryItem,
     InventoryItemPage,
 } from "@/lib/inventory-item-types";
+import { ComponentMode } from "@/lib/component-mode";
 import { inventoryItemSortColumns } from "./inventory-item-search-columns";
 import type {
     InventoryItemSearchCriteria,
@@ -23,6 +24,7 @@ type Props = {
     itemPage: InventoryItemPage | null;
     items: InventoryItem[];
     isLoading: boolean;
+    mode: ComponentMode;
     showSearchFields: boolean;
     onPageChange: (page: number) => void;
     onPageSizeChange: (pageSize: number) => void;
@@ -35,6 +37,7 @@ export default function InventoryItemSearchResults({
     itemPage,
     items,
     isLoading,
+    mode,
     showSearchFields,
     onPageChange,
     onPageSizeChange,
@@ -48,6 +51,7 @@ export default function InventoryItemSearchResults({
     const lastItem = itemPage
         ? Math.min(itemPage.page * itemPage.pageSize, itemPage.totalCount)
         : 0;
+    const isPageMode = mode === ComponentMode.Page;
 
     return (
         <div className={showSearchFields ? "mt-8" : undefined}>
@@ -109,21 +113,17 @@ export default function InventoryItemSearchResults({
                             <TableRow
                                 key={item.id}
                                 className="relative cursor-pointer"
-                                tabIndex={onInventoryItemSelect ? 0 : undefined}
-                                onClick={() => onInventoryItemSelect?.(item)}
-                                onKeyDown={(event) => {
-                                    if (
-                                        onInventoryItemSelect &&
-                                        (event.key === "Enter" ||
-                                            event.key === " ")
-                                    ) {
+                                tabIndex={isPageMode ? undefined : 0}
+                                onClick={isPageMode ? undefined : () => onInventoryItemSelect?.(item)}
+                                onKeyDown={isPageMode ? undefined : (event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
                                         event.preventDefault();
-                                        onInventoryItemSelect(item);
+                                        onInventoryItemSelect?.(item);
                                     }
                                 }}
                             >
                                 <TableCell className="font-medium">
-                                    {!onInventoryItemSelect &&
+                                    {isPageMode &&
                                         item.productCode && (
                                             <Link
                                                 to={`/inventory-item/${encodeURIComponent(item.productCode)}`}
