@@ -56,7 +56,7 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <Field>
                                     <FieldLabel htmlFor="product-code">
-                                        Product code
+                                        Inventory item code
                                     </FieldLabel>
                                     <Input
                                         id="product-code"
@@ -68,7 +68,7 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
                                 </Field>
                                 <Field>
                                     <FieldLabel htmlFor="product-name">
-                                        Product name
+                                        Inventory item name
                                     </FieldLabel>
                                     <Input
                                         id="product-name"

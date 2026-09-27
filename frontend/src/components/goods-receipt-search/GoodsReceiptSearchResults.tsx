@@ -75,7 +75,9 @@ export default function GoodsReceiptSearchResults({
                             }
                             onSort={() => onSort('receivedBy')}
                         />
-                        <TableHead className="text-right">Products / quantity</TableHead>
+                        <TableHead className="text-right">
+                            Inventory items / quantity
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
