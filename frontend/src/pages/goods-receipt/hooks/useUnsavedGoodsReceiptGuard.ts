@@ -6,7 +6,9 @@ export function useUnsavedGoodsReceiptGuard(hasUnsavedChanges: boolean) {
     const blocker = useBlocker(({ currentLocation, nextLocation }) =>
         !allowNavigationRef.current &&
         hasUnsavedChanges &&
-        currentLocation.pathname !== nextLocation.pathname,
+        (currentLocation.pathname !== nextLocation.pathname ||
+            currentLocation.search !== nextLocation.search ||
+            currentLocation.hash !== nextLocation.hash),
     );
 
     useEffect(() => {

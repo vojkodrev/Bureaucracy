@@ -1,17 +1,6 @@
-import { useEffect } from "react";
 import { Save, Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ErrorAlert from "@/components/ErrorAlert";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from
     "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -25,9 +14,14 @@ import {
     MenubarTrigger,
 } from "@/components/ui/menubar";
 import GoodsReceiptItems from "./GoodsReceiptItems";
+import GoodsReceiptNumberAlert from "./GoodsReceiptNumberAlert";
 import StorageComboboxField from "./StorageComboboxField";
+import UnsavedGoodsReceiptAlerts from "./UnsavedGoodsReceiptAlerts";
 import { useGoodsReceiptDraft } from "./hooks/useGoodsReceiptDraft";
 import { useGoodsReceiptLoader } from "./hooks/useGoodsReceiptLoader";
+import { useGoodsReceiptKeyboardShortcuts } from
+    "./hooks/useGoodsReceiptKeyboardShortcuts";
+import { useGoodsReceiptRevert } from "./hooks/useGoodsReceiptRevert";
 import { useGoodsReceiptSave } from "./hooks/useGoodsReceiptSave";
 import { useUnsavedGoodsReceiptGuard } from
     "./hooks/useUnsavedGoodsReceiptGuard";
@@ -58,42 +52,51 @@ export default function GoodsReceiptPage() {
         allowNavigation: guard.allowNavigation,
         reload: loader.reload,
     });
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!(event.ctrlKey || event.metaKey) ||
-                event.key.toLowerCase() !== "s") return;
-            event.preventDefault();
-            void save.save();
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [save]);
-    const revert = () => {
-        if (receiptNumber) loader.reload();
-        else {
-            guard.allowNavigation();
-            void navigate("/goods-receipt", { replace: true });
-        }
-    };
+    const revert = useGoodsReceiptRevert({
+        routeReceiptNumber: receiptNumber,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        isLoading: loader.isLoading,
+        isSaving: save.isSaving,
+        clearSaveError: () => save.setSaveError(null),
+        reload: loader.reload,
+    });
+    useGoodsReceiptKeyboardShortcuts(() => {
+        void save.requestSave();
+    });
+    const errors = [
+        [
+            "receipt",
+            "Goods receipt could not be loaded",
+            "The receipt data could not be retrieved.",
+            loader.error,
+        ],
+        [
+            "save",
+            "Goods receipt could not be saved",
+            "Your changes were not saved.",
+            save.saveError,
+        ],
+        [
+            "next-number",
+            "Next receipt number could not be loaded",
+            "Enter a receipt number manually before saving.",
+            loader.nextNumberError,
+        ],
+    ] as const;
 
     return (
         <div className="max-w-5xl p-4">
-            {(loader.error || save.saveError) && (
+            {errors.some(([, , , error]) => error) && (
                 <div className="mb-6 space-y-2">
-                    {loader.error && (
+                    {errors.map(([key, title, description, error]) =>
+                        error && (
                         <ErrorAlert
-                            title="Goods receipt could not be loaded"
-                            description="The receipt data could not be retrieved."
-                            error={loader.error}
+                            key={key}
+                            title={title}
+                            description={description}
+                            error={error}
                         />
-                    )}
-                    {save.saveError && (
-                        <ErrorAlert
-                            title="Goods receipt could not be saved"
-                            description="Your changes were not saved."
-                            error={save.saveError}
-                        />
-                    )}
+                        ))}
                 </div>
             )}
             <Menubar className="mb-6 w-fit">
@@ -102,7 +105,7 @@ export default function GoodsReceiptPage() {
                     <MenubarContent>
                         <MenubarItem
                             disabled={!save.canSave || save.isSaving}
-                            onClick={() => { void save.save(); }}
+                            onClick={() => { void save.requestSave(); }}
                         >
                             <Save />
                             {save.isSaving ? "Saving…" : "Save"}
@@ -114,14 +117,22 @@ export default function GoodsReceiptPage() {
                     <MenubarTrigger>Edit</MenubarTrigger>
                     <MenubarContent>
                         <MenubarItem
-                            disabled={!draftState.hasUnsavedChanges}
-                            onClick={revert}
+                            disabled={!revert.canRevert}
+                            onClick={revert.requestRevert}
                         >
                             <Undo2 /> Revert
                         </MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>
             </Menubar>
+            <GoodsReceiptNumberAlert
+                receiptNumber={draftState.draft.receiptNumber.trim()}
+                warning={save.numberWarning}
+                onOpenChange={(open) => {
+                    if (!open) save.setNumberWarning(null);
+                }}
+                onConfirm={() => { void save.confirmSave(); }}
+            />
             <Card className="max-w-2xl">
                 <CardHeader>
                     <CardTitle>Goods receipt details</CardTitle>
@@ -183,30 +194,18 @@ export default function GoodsReceiptPage() {
                     onChange={(items) => draftState.setField("items", items)}
                 />
             </div>
-            <AlertDialog open={guard.blocker.state === "blocked"}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Changes to this goods receipt have not been saved.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => {
-                                if (guard.blocker.state === "blocked") {
-                                    guard.blocker.reset();
-                                }
-                            }}
-                        >
-                            Keep editing
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={guard.discardAndNavigate}>
-                            Discard changes
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <UnsavedGoodsReceiptAlerts
+                isNavigationBlocked={guard.blocker.state === "blocked"}
+                isConfirmingRevert={revert.confirmingRevert}
+                onCancelNavigation={() => {
+                    if (guard.blocker.state === "blocked") {
+                        guard.blocker.reset();
+                    }
+                }}
+                onDiscardAndNavigate={guard.discardAndNavigate}
+                onConfirmingRevertChange={revert.setConfirmingRevert}
+                onDiscardAndRevert={revert.performRevert}
+            />
         </div>
     );
 }

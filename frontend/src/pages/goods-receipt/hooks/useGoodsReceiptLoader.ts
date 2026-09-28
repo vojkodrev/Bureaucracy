@@ -1,5 +1,8 @@
 import { useEffect, useEffectEvent, useState } from "react";
-import { fetchGoodsReceipt } from "../goods-receipt-api";
+import {
+    fetchGoodsReceipt,
+    fetchNextGoodsReceiptNumber,
+} from "../goods-receipt-api";
 import {
     goodsReceiptDraft,
     type GoodsReceiptDraft,
@@ -17,6 +20,7 @@ export function useGoodsReceiptLoader(
         key: "__initial__",
         error: null as string | null,
     });
+    const [nextNumberError, setNextNumberError] = useState<string | null>(null);
     const key = `${routeReceiptNumber ?? ""}:${reloadVersion}`;
     const replace = useEffectEvent(replaceDraft);
     const clean = useEffectEvent(markClean);
@@ -31,7 +35,24 @@ export function useGoodsReceiptLoader(
             clean(next);
             finish();
             setResult({ key, error: null });
-            return;
+            setNextNumberError(null);
+            void fetchNextGoodsReceiptNumber(controller.signal)
+                .then((receiptNumber) => {
+                    const numberedDraft = {
+                        ...next,
+                        receiptNumber,
+                    };
+                    replace(numberedDraft);
+                    clean(numberedDraft);
+                })
+                .catch((error: unknown) => {
+                    if (error instanceof DOMException &&
+                        error.name === "AbortError") return;
+                    setNextNumberError(error instanceof Error
+                        ? error.message
+                        : "Loading next goods receipt number failed");
+                });
+            return () => controller.abort();
         }
         void fetchGoodsReceipt(routeReceiptNumber, controller.signal)
             .then((receipt) => {
@@ -60,6 +81,7 @@ export function useGoodsReceiptLoader(
         setReceiptId,
         isLoading: Boolean(routeReceiptNumber) && result.key !== key,
         error: result.key === key ? result.error : null,
+        nextNumberError,
         reload: () => setReloadVersion((version) => version + 1),
     };
 }

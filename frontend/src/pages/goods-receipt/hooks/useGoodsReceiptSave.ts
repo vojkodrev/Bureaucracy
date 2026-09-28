@@ -1,7 +1,14 @@
 import { useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
+import { nextPaddedNumber } from "@/lib/numbers";
 import { toast } from "@/lib/toast";
-import { saveGoodsReceipt } from "../goods-receipt-api";
+import type { GoodsReceiptNumberWarning } from
+    "../GoodsReceiptNumberAlert";
+import {
+    fetchGoodsReceiptExists,
+    fetchLatestGoodsReceiptNumber,
+    saveGoodsReceipt,
+} from "../goods-receipt-api";
 import {
     goodsReceiptDraft,
     type GoodsReceiptDraft,
@@ -24,6 +31,8 @@ type Options = {
 export function useGoodsReceiptSave(options: Options) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [numberWarning, setNumberWarning] =
+        useState<GoodsReceiptNumberWarning | null>(null);
     const hasValidItems = options.draft.items.length > 0 &&
         options.draft.items.every((item) =>
             Boolean(item.productCode?.trim()) &&
@@ -38,10 +47,7 @@ export function useGoodsReceiptSave(options: Options) {
         hasValidItems,
     ) && !options.isLoading && !options.loadError;
 
-    const save = async () => {
-        if (!canSave || isSaving) return;
-        setIsSaving(true);
-        setSaveError(null);
+    const performSave = async () => {
         try {
             const saved = await saveGoodsReceipt({
                 id: options.receiptId,
@@ -75,10 +81,57 @@ export function useGoodsReceiptSave(options: Options) {
                     `/goods-receipt/${encodeURIComponent(saved.receiptNumber)}`,
                 );
             }
+            return true;
         } catch (error) {
             setSaveError(error instanceof Error
                 ? error.message
                 : "Saving goods receipt failed");
+            return false;
+        }
+    };
+
+    const requestSave = async () => {
+        if (!canSave || isSaving) return false;
+        setIsSaving(true);
+        setSaveError(null);
+        try {
+            const number = options.draft.receiptNumber.trim();
+            if (options.receiptId == null &&
+                await fetchGoodsReceiptExists(number)) {
+                setNumberWarning({ kind: "duplicate" });
+                return false;
+            }
+            const latest = await fetchLatestGoodsReceiptNumber();
+            const next = nextPaddedNumber(latest, 5);
+            if (number !== latest && number !== next) {
+                const numberValue = Number.parseInt(number, 10);
+                const nextValue = Number.parseInt(next, 10);
+                setNumberWarning({
+                    kind: numberValue > nextValue
+                        ? "skipped"
+                        : "historical",
+                    latestReceiptNumber: latest,
+                });
+                return false;
+            }
+            return await performSave();
+        } catch (error) {
+            setSaveError(error instanceof Error
+                ? error.message
+                : "Checking latest goods receipt failed");
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const confirmSave = async () => {
+        if (!canSave || isSaving) return false;
+        setNumberWarning(null);
+        setIsSaving(true);
+        setSaveError(null);
+        try {
+            return await performSave();
         } finally {
             setIsSaving(false);
         }
@@ -89,6 +142,9 @@ export function useGoodsReceiptSave(options: Options) {
         isSaving,
         saveError,
         setSaveError,
-        save,
+        requestSave,
+        confirmSave,
+        numberWarning,
+        setNumberWarning,
     };
 }
