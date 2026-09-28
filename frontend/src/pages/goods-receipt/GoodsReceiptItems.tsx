@@ -72,7 +72,7 @@ export default function GoodsReceiptItems({
                             <TableHead>Description</TableHead>
                             <TableHead>Unit of measure</TableHead>
                             <TableHead className="text-right">
-                                Received quantity
+                                Quantity
                             </TableHead>
                             <TableHead className="w-20">
                                 <span className="sr-only">Actions</span>

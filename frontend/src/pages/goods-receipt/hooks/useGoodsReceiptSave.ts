@@ -40,12 +40,11 @@ export function useGoodsReceiptSave(options: Options) {
         options.draft.items.every((item) =>
             Boolean(item.productCode?.trim()) &&
             item.quantity != null &&
-            item.quantity > 0,
+            item.quantity !== 0,
         );
     const canSave = Boolean(
         options.draft.receiptNumber.trim() &&
         options.draft.receiptDate &&
-        options.draft.storage.trim() &&
         options.draft.receivedBy.trim() &&
         hasValidItems,
     ) && !options.isLoading && !options.isDuplicating && !options.loadError;

@@ -401,7 +401,7 @@ input GoodsReceiptInput {
   id: Int
   receiptNumber: String!
   receiptDate: Time!
-  storage: String!
+  storage: String
   receivedBy: String!
   items: [GoodsReceiptItemInput!]!
 }

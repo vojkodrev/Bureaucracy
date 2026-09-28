@@ -223,13 +223,13 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
 	input.ReceiptNumber = strings.TrimSpace(input.ReceiptNumber)
-	input.Storage = strings.TrimSpace(input.Storage)
+	input.Storage = trimmedProductString(input.Storage)
 	input.ReceivedBy = strings.TrimSpace(input.ReceivedBy)
 	if input.ReceiptNumber == "" || len([]rune(input.ReceiptNumber)) > 10 {
 		return nil, fmt.Errorf("receiptNumber is required and must be at most 10 characters")
 	}
-	if input.Storage == "" || len([]rune(input.Storage)) > 1 {
-		return nil, fmt.Errorf("storage is required and must be one character")
+	if input.Storage != nil && len([]rune(*input.Storage)) > 1 {
+		return nil, fmt.Errorf("storage must be at most one character")
 	}
 	if input.ReceivedBy == "" || len([]rune(input.ReceivedBy)) > 30 {
 		return nil, fmt.Errorf("receivedBy is required and must be at most 30 characters")
@@ -242,8 +242,8 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 		if item.ProductCode == "" || len([]rune(item.ProductCode)) > 25 {
 			return nil, fmt.Errorf("each item must have a product code of at most 25 characters")
 		}
-		if item.Quantity <= 0 || math.IsNaN(item.Quantity) || math.IsInf(item.Quantity, 0) {
-			return nil, fmt.Errorf("each item quantity must be greater than zero")
+		if item.Quantity == 0 || math.IsNaN(item.Quantity) || math.IsInf(item.Quantity, 0) {
+			return nil, fmt.Errorf("each item quantity must be a non-zero number")
 		}
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)

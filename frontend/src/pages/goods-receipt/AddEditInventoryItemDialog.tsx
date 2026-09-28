@@ -37,7 +37,7 @@ export default function AddEditInventoryItemDialog({
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&
         Number.isFinite(quantityValue) &&
-        quantityValue > 0;
+        quantityValue !== 0;
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
@@ -47,7 +47,8 @@ export default function AddEditInventoryItemDialog({
                         {item ? "Edit stock item" : "Add stock item"}
                     </DialogTitle>
                     <DialogDescription>
-                        Select an inventory item and enter the received quantity.
+                        Select an inventory item and enter the stock movement
+                        quantity. Use a negative value for stock going out.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-[1fr_2fr_8rem]">
@@ -83,11 +84,10 @@ export default function AddEditInventoryItemDialog({
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="goods-receipt-item-quantity">
-                            Received quantity
+                            Quantity
                         </FieldLabel>
                         <NumberInput
                             id="goods-receipt-item-quantity"
-                            min="0"
                             step="any"
                             value={quantity}
                             onChange={(event) => setQuantity(event.target.value)}

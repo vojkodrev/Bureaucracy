@@ -49,7 +49,7 @@ type GoodsReceiptInput struct {
 	ID            *int                     `json:"id,omitempty"`
 	ReceiptNumber string                   `json:"receiptNumber"`
 	ReceiptDate   time.Time                `json:"receiptDate"`
-	Storage       string                   `json:"storage"`
+	Storage       *string                  `json:"storage,omitempty"`
 	ReceivedBy    string                   `json:"receivedBy"`
 	Items         []*GoodsReceiptItemInput `json:"items"`
 }

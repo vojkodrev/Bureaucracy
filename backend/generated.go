@@ -11841,7 +11841,7 @@ func (ec *executionContext) unmarshalInputGoodsReceiptInput(ctx context.Context,
 			it.ReceiptDate = data
 		case "storage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("storage"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
