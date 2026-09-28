@@ -113,7 +113,7 @@ const sectionGroups = [
     },
     {
         label: "Storage",
-        sectionKeys: ["goods-receipts", "inventory-items"],
+        sectionKeys: ["inventory-items", "goods-receipts"],
     },
     { label: "Accounting", sectionKeys: ["bank-statements"] },
 ] as const;
