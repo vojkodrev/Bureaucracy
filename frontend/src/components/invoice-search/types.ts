@@ -13,6 +13,8 @@ export type SortDirection = 'asc' | 'desc'
 
 export type InvoiceSearchCriteria = {
     invoiceNumber: string
+    reminderCustomerCode?: string
+    reminderCustomerName?: string
     customerId: string
     customerName: string
     productCode: string

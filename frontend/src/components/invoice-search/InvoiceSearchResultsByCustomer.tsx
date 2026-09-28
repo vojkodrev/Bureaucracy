@@ -1,3 +1,6 @@
+import { Mail, MoreHorizontal, Printer } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import Pager from '@/components/Pager'
@@ -11,10 +14,12 @@ import {
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import type { Invoice, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
+import type { Invoice, InvoiceCustomerSummary, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 import InvoicePaymentDate from './InvoicePaymentDate'
 
 type InvoiceSearchResultsByCustomerProps = {
+    onPrintReminders: (customer: InvoiceCustomerSummary) => void
+    onEmailReminders: (customer: InvoiceCustomerSummary) => void
     summaryPage: InvoiceCustomerSummaryPage | null
     isLoading: boolean
     mode: ComponentMode
@@ -25,6 +30,8 @@ type InvoiceSearchResultsByCustomerProps = {
 }
 
 function InvoiceSearchResultsByCustomer({
+    onPrintReminders,
+    onEmailReminders,
     summaryPage,
     isLoading,
     mode,
@@ -93,7 +100,7 @@ function InvoiceSearchResultsByCustomer({
 
                         return (
                             <Fragment key={customerKey}>
-                                {summary.invoices.map((invoice) => (
+                                {summary.invoices.map((invoice, invoiceIndex) => (
                                     <TableRow
                                         key={invoice.invoiceNumber}
                                         data-state={selectedInvoiceNumber === invoice.invoiceNumber
@@ -132,12 +139,29 @@ function InvoiceSearchResultsByCustomer({
                                         <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                                         <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                                         <TableCell>
-                                            <InvoicePaymentDate
-                                                invoiceNumber={invoice.invoiceNumber}
-                                                amount={invoice.amount}
-                                                paidAmount={invoice.paidAmount}
-                                                paymentDate={invoice.paymentDate}
-                                            />
+                                            <div className="flex items-center justify-between gap-2">
+                                                <InvoicePaymentDate
+                                                    invoiceNumber={invoice.invoiceNumber}
+                                                    amount={invoice.amount}
+                                                    paidAmount={invoice.paidAmount}
+                                                    paymentDate={invoice.paymentDate}
+                                                />
+                                                {isPageMode && invoiceIndex === 0 && (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger render={<Button className="relative z-20 h-5 w-8 [&_svg]:size-4" variant="ghost" size="icon" aria-label={`Reminder actions for ${summary.customerName ?? summary.customerCode ?? 'customer'}`} />}>
+                                                            <MoreHorizontal />
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="min-w-44">
+                                                            <DropdownMenuItem disabled={!summary.customerCode && !summary.customerName} onClick={() => onPrintReminders(summary)}>
+                                                                <Printer /> Print reminders
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem disabled={!summary.customerCode && !summary.customerName} onClick={() => onEmailReminders(summary)}>
+                                                                <Mail /> Email reminders
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}

@@ -49,6 +49,21 @@ func loadInvoiceReminderPage(context *gin.Context, invoices *InvoiceRepository, 
 	if !ok {
 		return nil, 0, false
 	}
+	customerCode := strings.TrimSpace(context.Query("reminderCustomerCode"))
+	customerName := strings.TrimSpace(context.Query("reminderCustomerName"))
+	if customerCode != "" || customerName != "" {
+		matching := make([]*Invoice, 0, len(invoicePage.Invoices))
+		for _, invoice := range invoicePage.Invoices {
+			if invoice == nil {
+				continue
+			}
+			if (customerCode != "" && strings.TrimSpace(trimmedString(invoice.CustomerCode)) == customerCode) ||
+				(customerCode == "" && strings.TrimSpace(trimmedString(invoice.CustomerCode)) == "" && strings.TrimSpace(trimmedString(invoice.CustomerName)) == customerName) {
+				matching = append(matching, invoice)
+			}
+		}
+		invoicePage.Invoices = matching
+	}
 	if invoiceReminderCustomerCount(invoicePage.Invoices) != 1 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "reminders require exactly one matching customer"})
 		return nil, 0, false

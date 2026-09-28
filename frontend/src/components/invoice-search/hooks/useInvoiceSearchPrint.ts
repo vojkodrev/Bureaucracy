@@ -50,12 +50,12 @@ export function useInvoiceSearchPrint({
         pdfTab.opener = null
         setPrintError(null)
     }
-    const printReminders = () => {
-        if (!canPrintReminders) {
+    const printReminders = (customerSearch?: InvoiceSearchCriteria) => {
+        if (!customerSearch && !canPrintReminders) {
             setUnavailableRemindersAction('print')
             return
         }
-        const pdfTab = window.open(invoiceRemindersPdfUrl(search), '_blank')
+        const pdfTab = window.open(invoiceRemindersPdfUrl(customerSearch ?? search), '_blank')
         if (!pdfTab) {
             setPrintError('Allow pop-ups to open the reminders PDF.')
             return

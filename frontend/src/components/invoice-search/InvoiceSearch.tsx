@@ -1,6 +1,6 @@
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { ComponentMode } from '@/lib/component-mode'
-import type { Invoice } from '@/lib/invoice-types'
+import type { Invoice, InvoiceCustomerSummary } from '@/lib/invoice-types'
 import { useInvoiceSearchPrint } from './hooks/useInvoiceSearchPrint'
 import { useInvoiceRemindersEmail } from './hooks/useInvoiceRemindersEmail'
 import { useInvoiceSearchResults } from './hooks/useInvoiceSearchResults'
@@ -55,6 +55,16 @@ function InvoiceSearch({
         print.showEmailRemindersUnavailable,
     )
 
+    function customerReminderSearch(customer: InvoiceCustomerSummary) {
+        return {
+            ...search,
+            customerId: customer.customerCode ?? '',
+            customerName: customer.customerCode ? '' : customer.customerName ?? '',
+            reminderCustomerCode: customer.customerCode ?? undefined,
+            reminderCustomerName: customer.customerCode ? undefined : customer.customerName ?? undefined,
+        }
+    }
+
     function clearSearchAndSelection() {
         clearSelection()
         searchState.clearSearch()
@@ -67,7 +77,7 @@ function InvoiceSearch({
                 <InvoiceSearchMenu
                     reportDisabled={!print.canPrint}
                     onPrintReport={print.printReport}
-                    onPrintReminders={print.printReminders}
+                    onPrintReminders={() => print.printReminders()}
                     onEmailReminders={remindersEmail.openDialog}
                 />
             )}
@@ -114,6 +124,8 @@ function InvoiceSearch({
             {!error && search.resultsView === 'customer' && (
                 <InvoiceSearchResultsByCustomer
                     summaryPage={customerSummaryPage}
+                    onPrintReminders={(customer) => print.printReminders(customerReminderSearch(customer))}
+                    onEmailReminders={(customer) => remindersEmail.openCustomerDialog(customer, customerReminderSearch(customer))}
                     isLoading={isLoading}
                     mode={mode}
                     selectedInvoiceNumber={selectedInvoiceNumber}
