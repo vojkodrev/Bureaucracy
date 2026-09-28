@@ -3,12 +3,14 @@ import { ComponentMode } from '@/lib/component-mode'
 import type { GoodsReceipt } from '@/lib/goods-receipt-types'
 import GoodsReceiptSearchForm from './GoodsReceiptSearchForm'
 import GoodsReceiptSearchResults from './GoodsReceiptSearchResults'
+import GoodsReceiptSearchSummary from './GoodsReceiptSearchSummary'
 import { useGoodsReceiptSearchResults } from './hooks/useGoodsReceiptSearchResults'
 import { useGoodsReceiptSearchState } from './hooks/useGoodsReceiptSearchState'
 
 type Props = {
     mode: ComponentMode
     showSearchFields?: boolean
+    showSummary?: boolean
     defaultProductCode?: string
     onGoodsReceiptSelect?: (receipt: GoodsReceipt) => void
 }
@@ -16,6 +18,7 @@ type Props = {
 export default function GoodsReceiptSearch({
     mode,
     showSearchFields = true,
+    showSummary = true,
     defaultProductCode,
     onGoodsReceiptSelect,
 }: Props) {
@@ -52,6 +55,11 @@ export default function GoodsReceiptSearch({
                     }
                     onPageSizeChange={state.changePageSize}
                     onSort={state.changeSort}
+                />
+            )}
+            {!result.error && showSummary && (
+                <GoodsReceiptSearchSummary
+                    goodsReceipts={result.page?.goodsReceipts ?? []}
                 />
             )}
         </div>

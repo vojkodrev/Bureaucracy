@@ -83,7 +83,7 @@ export default function GoodsReceiptSearchResults({
                             onSort={() => onSort('receivedBy')}
                         />
                         <TableHead className="text-right">
-                            Inventory items / quantity
+                            Quantity received
                         </TableHead>
                     </TableRow>
                 </TableHeader>

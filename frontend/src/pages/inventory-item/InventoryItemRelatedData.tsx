@@ -64,6 +64,7 @@ export default function InventoryItemRelatedData({
                         key={productCode}
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
+                        showSummary={false}
                         defaultProductCode={productCode}
                         onGoodsReceiptSelect={(receipt) =>
                             onGoodsReceiptSelect(receipt.receiptNumber)
