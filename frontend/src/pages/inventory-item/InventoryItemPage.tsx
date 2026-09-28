@@ -140,6 +140,7 @@ export default function InventoryItemPage() {
                 itemId={loader.itemId}
                 productCode={draft.productCode}
                 name={draft.name}
+                unit={draft.unit}
                 hasUnsavedChanges={draftState.hasUnsavedChanges}
                 onItemSelect={(code) => {
                     void navigate(

@@ -1,6 +1,7 @@
 import InventoryItemSearch from "@/components/inventory-item-search/InventoryItemSearch";
 import ProductSearch from "@/components/product-search/ProductSearch";
 import GoodsReceiptSearch from "@/components/goods-receipt-search/GoodsReceiptSearch";
+import InventoryItemStockSummary from "./InventoryItemStockSummary";
 import {
     Accordion,
     AccordionContent,
@@ -13,6 +14,7 @@ type Props = {
     itemId: number | null;
     productCode: string;
     name: string;
+    unit: string;
     hasUnsavedChanges: boolean;
     onItemSelect: (code: string) => void;
     onProductSelect: (code: string) => void;
@@ -23,6 +25,7 @@ export default function InventoryItemRelatedData({
     itemId,
     productCode,
     name,
+    unit,
     hasUnsavedChanges,
     onItemSelect,
     onProductSelect,
@@ -30,7 +33,16 @@ export default function InventoryItemRelatedData({
 }: Props) {
     if (itemId == null || hasUnsavedChanges || !name.trim()) return null;
     return (
-        <Accordion className="mt-6">
+        <Accordion className="mt-6" defaultValue={["stock-summary"]}>
+            <AccordionItem value="stock-summary">
+                <AccordionTrigger>Stock summary</AccordionTrigger>
+                <AccordionContent keepMounted>
+                    <InventoryItemStockSummary
+                        productCode={productCode}
+                        unit={unit}
+                    />
+                </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="similar-inventory-items">
                 <AccordionTrigger>Similar inventory items</AccordionTrigger>
                 <AccordionContent keepMounted>

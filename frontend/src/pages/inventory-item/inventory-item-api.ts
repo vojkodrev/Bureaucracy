@@ -5,6 +5,11 @@ import { nextPaddedNumber } from "@/lib/numbers";
 
 const fields = "id productCode name unit minimumStockLevel";
 
+export type InventoryItemStock = {
+    storage: string | null;
+    quantity: number;
+};
+
 export async function fetchInventoryItem(
     productCode: string,
     signal?: AbortSignal,
@@ -53,6 +58,48 @@ export async function fetchInventoryItemGoodsReceiptCount(
         { businessYear: getSelectedBusinessYear(), productCode },
     );
     return result.data?.searchGoodsReceipts.totalCount ?? 0;
+}
+
+export async function fetchInventoryItemStock(
+    productCode: string,
+    signal?: AbortSignal,
+): Promise<InventoryItemStock[]> {
+    const result = await postGraphql<{
+        data?: {
+            searchGoodsReceipts: {
+                goodsReceipts: {
+                    storage: string | null;
+                    items: { productCode: string | null; quantity: number | null }[];
+                }[];
+            };
+        };
+    }>(
+        `query InventoryItemStock($businessYear: String!, $productCode: String!) {
+            searchGoodsReceipts(
+                businessYear: $businessYear
+                productCode: $productCode
+                page: 1
+                pageSize: 10000
+            ) {
+                goodsReceipts {
+                    storage
+                    items { productCode quantity }
+                }
+            }
+        }`,
+        { businessYear: getSelectedBusinessYear(), productCode },
+        signal,
+    );
+    const quantities = new Map<string | null, number>();
+    for (const receipt of result.data?.searchGoodsReceipts.goodsReceipts ?? []) {
+        const quantity = receipt.items
+            .filter((item) => item.productCode === productCode)
+            .reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+        quantities.set(receipt.storage, (quantities.get(receipt.storage) ?? 0) + quantity);
+    }
+    return [...quantities.entries()]
+        .map(([storage, quantity]) => ({ storage, quantity }))
+        .sort((left, right) => (left.storage ?? "").localeCompare(right.storage ?? ""));
 }
 
 export async function fetchNextInventoryItemCode(
