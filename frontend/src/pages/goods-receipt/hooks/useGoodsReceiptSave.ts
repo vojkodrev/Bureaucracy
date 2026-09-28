@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { nextPaddedNumber } from "@/lib/numbers";
+import { dateForApi } from "@/lib/dates";
 import { toast } from "@/lib/toast";
 import type { GoodsReceiptNumberWarning } from
     "../GoodsReceiptNumberAlert";
@@ -54,7 +55,7 @@ export function useGoodsReceiptSave(options: Options) {
             const saved = await saveGoodsReceipt({
                 id: options.receiptId,
                 receiptNumber: options.draft.receiptNumber.trim(),
-                receiptDate: `${options.draft.receiptDate}T00:00:00Z`,
+                receiptDate: dateForApi(options.draft.receiptDate),
                 storage: options.draft.storage.trim(),
                 receivedBy: options.draft.receivedBy.trim(),
                 items: options.draft.items.map((item) => ({

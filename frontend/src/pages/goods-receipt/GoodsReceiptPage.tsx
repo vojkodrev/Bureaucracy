@@ -1,6 +1,7 @@
 import { Copy, Save, Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ErrorAlert from "@/components/ErrorAlert";
+import DatePickerField from "@/components/DatePickerField";
 import { Card, CardContent, CardHeader, CardTitle } from
     "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -187,20 +188,14 @@ export default function GoodsReceiptPage() {
                             )}
                         />
                     </Field>
-                    <Field>
-                        <FieldLabel htmlFor="goods-receipt-date">
-                            Receipt date
-                        </FieldLabel>
-                        <Input
-                            id="goods-receipt-date"
-                            type="date"
-                            value={draftState.draft.receiptDate}
-                            onChange={(event) => draftState.setField(
-                                "receiptDate",
-                                event.target.value,
-                            )}
-                        />
-                    </Field>
+                    <DatePickerField
+                        id="goods-receipt-date"
+                        label="Receipt date"
+                        name="receiptDate"
+                        date={draftState.draft.receiptDate}
+                        onSelect={(date) =>
+                            draftState.setField("receiptDate", date)}
+                    />
                     <StorageComboboxField
                         value={draftState.draft.storage}
                         onChange={(value) =>

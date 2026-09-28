@@ -3,11 +3,11 @@ import type {
     GoodsReceipt,
     GoodsReceiptItem,
 } from "@/lib/goods-receipt-types";
-import { dateForInput } from "@/lib/dates";
+import { dateFromSearchValue } from "@/lib/dates";
 
 export type GoodsReceiptDraft = {
     receiptNumber: string;
-    receiptDate: string;
+    receiptDate?: Date;
     storage: string;
     receivedBy: string;
     items: GoodsReceiptItem[];
@@ -18,7 +18,9 @@ export function goodsReceiptDraft(
 ): GoodsReceiptDraft {
     return {
         receiptNumber: receipt?.receiptNumber ?? "",
-        receiptDate: receipt?.receiptDate?.slice(0, 10) ?? dateForInput(),
+        receiptDate: receipt?.receiptDate
+            ? dateFromSearchValue(receipt.receiptDate.slice(0, 10))
+            : new Date(),
         storage: receipt?.storage ?? "",
         receivedBy: receipt?.receivedBy ?? "",
         items: receipt?.items ?? [],

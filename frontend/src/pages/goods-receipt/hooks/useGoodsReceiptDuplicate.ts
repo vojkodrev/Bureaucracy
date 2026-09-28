@@ -5,7 +5,6 @@ import {
     setSelectedBusinessYear,
 } from "@/lib/business-year";
 import { fetchCurrentBusinessYear } from "@/lib/business-year-api";
-import { dateForInput } from "@/lib/dates";
 import { toast } from "@/lib/toast";
 import { fetchNextGoodsReceiptNumber } from "../goods-receipt-api";
 import type { GoodsReceiptDraft } from "./useGoodsReceiptDraft";
@@ -44,7 +43,7 @@ export function useGoodsReceiptDuplicate(options: Options) {
             const duplicateDraft: GoodsReceiptDraft = {
                 ...options.draft,
                 receiptNumber,
-                receiptDate: dateForInput(),
+                receiptDate: new Date(),
                 items: options.draft.items.map((item, index) => ({
                     ...item,
                     id: -index - 1,
