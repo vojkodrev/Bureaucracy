@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { Link } from 'react-router-dom'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatDate } from '@/lib/formatters'
@@ -13,7 +14,14 @@ export default function GoodsReceiptSearchResultGroup({ receipt }: { receipt: Go
     return (
         <Fragment>
             <TableRow className="bg-muted/60 font-semibold">
-                <TableCell>Goods receipt {receipt.receiptNumber || '—'}</TableCell>
+                <TableCell>
+                    <Link
+                        className="underline-offset-4 hover:underline"
+                        to={`/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}`}
+                    >
+                        Goods receipt {receipt.receiptNumber || '—'}
+                    </Link>
+                </TableCell>
                 <TableCell>{formatDate(receipt.receiptDate)}</TableCell>
                 <TableCell>{receipt.receivedBy || '—'}</TableCell>
                 <TableCell>

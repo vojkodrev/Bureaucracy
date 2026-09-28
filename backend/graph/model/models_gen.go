@@ -45,6 +45,23 @@ type CustomerInput struct {
 	Discount           *float64 `json:"discount,omitempty"`
 }
 
+type GoodsReceiptInput struct {
+	ID            *int                     `json:"id,omitempty"`
+	ReceiptNumber string                   `json:"receiptNumber"`
+	ReceiptDate   time.Time                `json:"receiptDate"`
+	Storage       string                   `json:"storage"`
+	ReceivedBy    string                   `json:"receivedBy"`
+	Items         []*GoodsReceiptItemInput `json:"items"`
+}
+
+type GoodsReceiptItemInput struct {
+	ID          *int    `json:"id,omitempty"`
+	ProductCode string  `json:"productCode"`
+	ProductName *string `json:"productName,omitempty"`
+	Unit        *string `json:"unit,omitempty"`
+	Quantity    float64 `json:"quantity"`
+}
+
 type InventoryItemInput struct {
 	ID                *int     `json:"id,omitempty"`
 	ProductCode       string   `json:"productCode"`

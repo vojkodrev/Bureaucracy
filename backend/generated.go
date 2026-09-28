@@ -144,6 +144,7 @@ type ComplexityRoot struct {
 		ReceiptDate   func(childComplexity int) int
 		ReceiptNumber func(childComplexity int) int
 		ReceivedBy    func(childComplexity int) int
+		Storage       func(childComplexity int) int
 	}
 
 	GoodsReceiptItem struct {
@@ -260,6 +261,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
 		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
+		SaveGoodsReceipt    func(childComplexity int, businessYear string, goodsReceipt model.GoodsReceiptInput) int
 		SaveInventoryItem   func(childComplexity int, businessYear string, inventoryItem model.InventoryItemInput) int
 		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
 		SavePriceQuote      func(childComplexity int, businessYear string, priceQuote model.PriceQuoteInput) int
@@ -333,6 +335,8 @@ type ComplexityRoot struct {
 		Countries                    func(childComplexity int, businessYear string) int
 		CurrentBusinessYear          func(childComplexity int) int
 		Customer                     func(childComplexity int, businessYear string, customerID string) int
+		GoodsReceipt                 func(childComplexity int, businessYear string, receiptNumber string) int
+		GoodsReceiptStorages         func(childComplexity int, businessYear string) int
 		InventoryItem                func(childComplexity int, businessYear string, productCode string) int
 		Invoice                      func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate          func(childComplexity int, businessYear string) int
@@ -353,6 +357,10 @@ type ComplexityRoot struct {
 		TaxCodes                     func(childComplexity int, businessYear string) int
 	}
 
+	Storage struct {
+		Code func(childComplexity int) int
+	}
+
 	TaxCode struct {
 		Code        func(childComplexity int) int
 		Description func(childComplexity int) int
@@ -366,6 +374,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
+	SaveGoodsReceipt(ctx context.Context, businessYear string, goodsReceipt model.GoodsReceiptInput) (*GoodsReceipt, error)
 	SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error)
 	SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error)
 	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
@@ -375,6 +384,8 @@ type MutationResolver interface {
 	SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error)
 }
 type QueryResolver interface {
+	GoodsReceipt(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error)
+	GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error)
 	SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error)
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error)
@@ -865,6 +876,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.GoodsReceipt.ReceivedBy(childComplexity), true
+	case "GoodsReceipt.storage":
+		if e.ComplexityRoot.GoodsReceipt.Storage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceipt.Storage(childComplexity), true
 
 	case "GoodsReceiptItem.id":
 		if e.ComplexityRoot.GoodsReceiptItem.ID == nil {
@@ -1367,6 +1384,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveCustomer(childComplexity, args["businessYear"].(string), args["customer"].(model.CustomerInput)), true
+	case "Mutation.saveGoodsReceipt":
+		if e.ComplexityRoot.Mutation.SaveGoodsReceipt == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveGoodsReceipt_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveGoodsReceipt(childComplexity, args["businessYear"].(string), args["goodsReceipt"].(model.GoodsReceiptInput)), true
 	case "Mutation.saveInventoryItem":
 		if e.ComplexityRoot.Mutation.SaveInventoryItem == nil {
 			break
@@ -1751,6 +1779,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Customer(childComplexity, args["businessYear"].(string), args["customerId"].(string)), true
+	case "Query.goodsReceipt":
+		if e.ComplexityRoot.Query.GoodsReceipt == nil {
+			break
+		}
+
+		args, err := ec.field_Query_goodsReceipt_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.GoodsReceipt(childComplexity, args["businessYear"].(string), args["receiptNumber"].(string)), true
+	case "Query.goodsReceiptStorages":
+		if e.ComplexityRoot.Query.GoodsReceiptStorages == nil {
+			break
+		}
+
+		args, err := ec.field_Query_goodsReceiptStorages_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.GoodsReceiptStorages(childComplexity, args["businessYear"].(string)), true
 
 	case "Query.inventoryItem":
 		if e.ComplexityRoot.Query.InventoryItem == nil {
@@ -1951,6 +2001,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.TaxCodes(childComplexity, args["businessYear"].(string)), true
 
+	case "Storage.code":
+		if e.ComplexityRoot.Storage.Code == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Storage.Code(childComplexity), true
+
 	case "TaxCode.code":
 		if e.ComplexityRoot.TaxCode.Code == nil {
 			break
@@ -1987,6 +2044,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBankStatementEntryInput,
 		ec.unmarshalInputBankStatementInput,
 		ec.unmarshalInputCustomerInput,
+		ec.unmarshalInputGoodsReceiptInput,
+		ec.unmarshalInputGoodsReceiptItemInput,
 		ec.unmarshalInputInventoryItemInput,
 		ec.unmarshalInputInvoiceInput,
 		ec.unmarshalInputInvoiceItemInput,
@@ -2295,6 +2354,8 @@ func (ec *executionContext) childFields_GoodsReceipt(ctx context.Context, field 
 		return ec.fieldContext_GoodsReceipt_receiptNumber(ctx, field)
 	case "receiptDate":
 		return ec.fieldContext_GoodsReceipt_receiptDate(ctx, field)
+	case "storage":
+		return ec.fieldContext_GoodsReceipt_storage(ctx, field)
 	case "receivedBy":
 		return ec.fieldContext_GoodsReceipt_receivedBy(ctx, field)
 	case "items":
@@ -2637,6 +2698,14 @@ func (ec *executionContext) childFields_ProductPage(ctx context.Context, field g
 	return nil, fmt.Errorf("no field named %q was found under type ProductPage", field.Name)
 }
 
+func (ec *executionContext) childFields_Storage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "code":
+		return ec.fieldContext_Storage_code(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Storage", field.Name)
+}
+
 func (ec *executionContext) childFields_TaxCode(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -2808,6 +2877,28 @@ func (ec *executionContext) field_Mutation_saveCustomer_args(ctx context.Context
 		return nil, err
 	}
 	args["customer"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveGoodsReceipt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "goodsReceipt",
+		func(ctx context.Context, v any) (model.GoodsReceiptInput, error) {
+			return ec.unmarshalNGoodsReceiptInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["goodsReceipt"] = arg1
 	return args, nil
 }
 
@@ -3100,6 +3191,42 @@ func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["customerId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_goodsReceiptStorages_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_goodsReceipt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "receiptNumber",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["receiptNumber"] = arg1
 	return args, nil
 }
 
@@ -5701,6 +5828,29 @@ func (ec *executionContext) fieldContext_GoodsReceipt_receiptDate(_ context.Cont
 	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
+func (ec *executionContext) _GoodsReceipt_storage(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceipt_storage(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Storage, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceipt_storage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceipt", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _GoodsReceipt_receivedBy(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7604,6 +7754,50 @@ func (ec *executionContext) fieldContext_MissingBankStatementDate_isWeekend(_ co
 	return graphql.NewScalarFieldContext("MissingBankStatementDate", field, false, false, errors.New("field of type Boolean does not have child fields"))
 }
 
+func (ec *executionContext) _Mutation_saveGoodsReceipt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveGoodsReceipt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveGoodsReceipt(ctx, fc.Args["businessYear"].(string), fc.Args["goodsReceipt"].(model.GoodsReceiptInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *GoodsReceipt) graphql.Marshaler {
+			return ec.marshalNGoodsReceipt2ᚖbureaucracyᚋbackendᚐGoodsReceipt(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveGoodsReceipt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceipt(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveGoodsReceipt_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_saveBankStatement(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8811,6 +9005,94 @@ func (ec *executionContext) _ProductPage_totalPages(ctx context.Context, field g
 }
 func (ec *executionContext) fieldContext_ProductPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ProductPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Query_goodsReceipt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_goodsReceipt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().GoodsReceipt(ctx, fc.Args["businessYear"].(string), fc.Args["receiptNumber"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *GoodsReceipt) graphql.Marshaler {
+			return ec.marshalOGoodsReceipt2ᚖbureaucracyᚋbackendᚐGoodsReceipt(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_goodsReceipt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceipt(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_goodsReceipt_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_goodsReceiptStorages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_goodsReceiptStorages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().GoodsReceiptStorages(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*Storage) graphql.Marshaler {
+			return ec.marshalNStorage2ᚕᚖbureaucracyᚋbackendᚐStorageᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_goodsReceiptStorages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Storage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_goodsReceiptStorages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Query_searchGoodsReceipts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10063,6 +10345,29 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Storage_code(ctx context.Context, field graphql.CollectedField, obj *Storage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Storage_code(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Storage_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Storage", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _TaxCode_id(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
@@ -11495,6 +11800,129 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputGoodsReceiptInput(ctx context.Context, obj any) (model.GoodsReceiptInput, error) {
+	var it model.GoodsReceiptInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "receiptNumber", "receiptDate", "storage", "receivedBy", "items"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "receiptNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("receiptNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReceiptNumber = data
+		case "receiptDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("receiptDate"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReceiptDate = data
+		case "storage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("storage"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Storage = data
+		case "receivedBy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("receivedBy"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReceivedBy = data
+		case "items":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+			data, err := ec.unmarshalNGoodsReceiptItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Items = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGoodsReceiptItemInput(ctx context.Context, obj any) (model.GoodsReceiptItemInput, error) {
+	var it model.GoodsReceiptItemInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "productCode", "productName", "unit", "quantity"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "productCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductCode = data
+		case "productName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductName = data
+		case "unit":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unit"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unit = data
+		case "quantity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quantity = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInventoryItemInput(ctx context.Context, obj any) (model.InventoryItemInput, error) {
 	var it model.InventoryItemInput
 	if obj == nil {
@@ -12758,6 +13186,11 @@ func (ec *executionContext) _GoodsReceipt(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "storage":
+			out.Values[i] = ec._GoodsReceipt_storage(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "receivedBy":
 			out.Values[i] = ec._GoodsReceipt_receivedBy(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
@@ -13562,6 +13995,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "saveGoodsReceipt":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveGoodsReceipt(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "saveBankStatement":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveBankStatement(ctx, field)
@@ -14040,6 +14480,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "goodsReceipt":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_goodsReceipt(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "goodsReceiptStorages":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_goodsReceiptStorages(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "searchGoodsReceipts":
 			field := field
 
@@ -14647,6 +15131,44 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var storageImplementors = []string{"Storage"}
+
+func (ec *executionContext) _Storage(ctx context.Context, sel ast.SelectionSet, obj *Storage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, storageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Storage")
+		case "code":
+			out.Values[i] = ec._Storage_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -15417,6 +15939,10 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
+func (ec *executionContext) marshalNGoodsReceipt2bureaucracyᚋbackendᚐGoodsReceipt(ctx context.Context, sel ast.SelectionSet, v GoodsReceipt) graphql.Marshaler {
+	return ec._GoodsReceipt(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNGoodsReceipt2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptᚄ(ctx context.Context, sel ast.SelectionSet, v []*GoodsReceipt) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -15443,6 +15969,11 @@ func (ec *executionContext) marshalNGoodsReceipt2ᚖbureaucracyᚋbackendᚐGood
 	return ec._GoodsReceipt(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNGoodsReceiptInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptInput(ctx context.Context, v any) (model.GoodsReceiptInput, error) {
+	res, err := ec.unmarshalInputGoodsReceiptInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNGoodsReceiptItem2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*GoodsReceiptItem) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -15467,6 +15998,25 @@ func (ec *executionContext) marshalNGoodsReceiptItem2ᚖbureaucracyᚋbackendᚐ
 		return graphql.Null
 	}
 	return ec._GoodsReceiptItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNGoodsReceiptItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptItemInputᚄ(ctx context.Context, v any) ([]*model.GoodsReceiptItemInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.GoodsReceiptItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNGoodsReceiptItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNGoodsReceiptItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐGoodsReceiptItemInput(ctx context.Context, v any) (*model.GoodsReceiptItemInput, error) {
+	res, err := ec.unmarshalInputGoodsReceiptItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNGoodsReceiptPage2bureaucracyᚋbackendᚐGoodsReceiptPage(ctx context.Context, sel ast.SelectionSet, v GoodsReceiptPage) graphql.Marshaler {
@@ -15879,6 +16429,32 @@ func (ec *executionContext) marshalNProductPage2ᚖbureaucracyᚋbackendᚐProdu
 	return ec._ProductPage(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNStorage2ᚕᚖbureaucracyᚋbackendᚐStorageᚄ(ctx context.Context, sel ast.SelectionSet, v []*Storage) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNStorage2ᚖbureaucracyᚋbackendᚐStorage(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStorage2ᚖbureaucracyᚋbackendᚐStorage(ctx context.Context, sel ast.SelectionSet, v *Storage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Storage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16172,6 +16748,13 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	_ = sel
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalOGoodsReceipt2ᚖbureaucracyᚋbackendᚐGoodsReceipt(ctx context.Context, sel ast.SelectionSet, v *GoodsReceipt) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GoodsReceipt(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {

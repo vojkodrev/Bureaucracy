@@ -37,6 +37,7 @@ const query = `
                 id
                 receiptNumber
                 receiptDate
+                storage
                 receivedBy
                 items { id productCode productName unit quantity }
             }

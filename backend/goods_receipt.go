@@ -6,8 +6,13 @@ type GoodsReceipt struct {
 	ID            int                 `json:"id"`
 	ReceiptNumber string              `json:"receiptNumber"`
 	ReceiptDate   *time.Time          `json:"receiptDate"`
+	Storage       *string             `json:"storage"`
 	ReceivedBy    *string             `json:"receivedBy"`
 	Items         []*GoodsReceiptItem `json:"items"`
+}
+
+type Storage struct {
+	Code string `json:"code"`
 }
 
 type GoodsReceiptItem struct {

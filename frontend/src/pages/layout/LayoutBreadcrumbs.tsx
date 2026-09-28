@@ -44,6 +44,13 @@ function pathValue(pathname: string, prefix: string) {
 function getBreadcrumbContext(pathname: string): BreadcrumbContext {
     const entities = [
         {
+            prefix: "/goods-receipt/",
+            editPath: "/goods-receipt",
+            editLabel: "Goods receipt",
+            searchPath: "/goods-receipts/search",
+            searchLabel: "Goods receipt search",
+        },
+        {
             prefix: "/invoice/",
             editPath: "/invoice",
             editLabel: "Invoice",

@@ -10,9 +10,12 @@ export type GoodsReceipt = {
     id: number
     receiptNumber: string
     receiptDate: string | null
+    storage: string | null
     receivedBy: string | null
     items: GoodsReceiptItem[]
 }
+
+export type Storage = { code: string }
 
 export type GoodsReceiptPage = {
     goodsReceipts: GoodsReceipt[]

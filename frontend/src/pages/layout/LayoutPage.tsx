@@ -79,11 +79,13 @@ function breadcrumbLabel(pathname: string) {
         "/inventory-item": "Inventory item",
         "/invoices/search": "Invoice search",
         "/goods-receipts/search": "Goods receipt search",
+        "/goods-receipt": "Goods receipt",
         "/price-quotes/search": "Price quote search",
         "/products/search": "Product search",
         "/export": "Export data",
     };
     const entities = [
+        ["/goods-receipt", "Goods receipt"],
         ["/invoice", "Invoice"],
         ["/price-quote", "Price quote"],
         ["/product", "Product"],

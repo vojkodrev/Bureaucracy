@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// SaveGoodsReceipt is the resolver for the saveGoodsReceipt field.
+func (r *mutationResolver) SaveGoodsReceipt(ctx context.Context, businessYear string, goodsReceipt model.GoodsReceiptInput) (*GoodsReceipt, error) {
+	return r.GoodsReceipts.Save(ctx, businessYear, goodsReceipt)
+}
+
 // SaveBankStatement is the resolver for the saveBankStatement field.
 func (r *mutationResolver) SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error) {
 	return r.BankStatements.Save(ctx, businessYear, statement)
@@ -44,6 +49,16 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 // SaveInventoryItem is the resolver for the saveInventoryItem field.
 func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error) {
 	return r.InventoryItems.Save(ctx, businessYear, inventoryItem)
+}
+
+// GoodsReceipt is the resolver for the goodsReceipt field.
+func (r *queryResolver) GoodsReceipt(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error) {
+	return r.GoodsReceipts.GetByNumber(ctx, businessYear, receiptNumber)
+}
+
+// GoodsReceiptStorages is the resolver for the goodsReceiptStorages field.
+func (r *queryResolver) GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
+	return r.GoodsReceipts.ListStorages(ctx, businessYear)
 }
 
 // SearchGoodsReceipts is the resolver for the searchGoodsReceipts field.

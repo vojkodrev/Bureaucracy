@@ -356,8 +356,13 @@ type GoodsReceipt {
   id: Int!
   receiptNumber: String!
   receiptDate: Time
+  storage: String
   receivedBy: String
   items: [GoodsReceiptItem!]!
+}
+
+type Storage {
+  code: String!
 }
 
 type GoodsReceiptItem {
@@ -384,6 +389,23 @@ input InventoryItemInput {
   minimumStockLevel: Float
 }
 
+input GoodsReceiptItemInput {
+  id: Int
+  productCode: String!
+  productName: String
+  unit: String
+  quantity: Float!
+}
+
+input GoodsReceiptInput {
+  id: Int
+  receiptNumber: String!
+  receiptDate: Time!
+  storage: String!
+  receivedBy: String!
+  items: [GoodsReceiptItemInput!]!
+}
+
 input ProductInput {
   id: Int
   productCode: String!
@@ -396,6 +418,9 @@ input ProductInput {
 }
 
 type Query {
+
+  goodsReceipt(businessYear: String!, receiptNumber: String!): GoodsReceipt
+  goodsReceiptStorages(businessYear: String!): [Storage!]!
 
   searchGoodsReceipts(
     businessYear: String!
@@ -557,6 +582,7 @@ type Query {
 }
 
 type Mutation {
+  saveGoodsReceipt(businessYear: String!, goodsReceipt: GoodsReceiptInput!): GoodsReceipt!
   saveBankStatement(businessYear: String!, statement: BankStatementInput!): BankStatement!
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!

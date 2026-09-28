@@ -16,6 +16,7 @@ import {
     InvoicePage,
     InvoiceSearchPage,
     GoodsReceiptSearchPage,
+    GoodsReceiptPage,
     InventoryItemSearchPage,
     InventoryItemPage,
     PriceQuoteSearchPage,
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
             { path: "/customer/:customerId?", element: <CustomerPage /> },
             { path: "/invoices/search", element: <InvoiceSearchPage /> },
             { path: "/goods-receipts/search", element: <GoodsReceiptSearchPage /> },
+            {
+                path: "/goods-receipt/:receiptNumber?",
+                element: <GoodsReceiptPage />,
+            },
             {
                 path: "/inventory-items/search",
                 element: <InventoryItemSearchPage />,

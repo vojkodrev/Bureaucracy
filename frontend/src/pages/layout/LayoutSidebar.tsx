@@ -47,6 +47,8 @@ const sections: Section[] = [
         label: "Goods receipts",
         icon: PackageCheck,
         searchPath: "/goods-receipts/search",
+        entityPath: "/goods-receipt",
+        entityLabel: "Goods receipt",
     },
     {
         key: "inventory-items",

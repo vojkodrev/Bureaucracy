@@ -19,6 +19,9 @@ export const InvoiceSearchPage = lazy(
 export const GoodsReceiptSearchPage = lazy(
     () => import("./GoodsReceiptSearchPage"),
 );
+export const GoodsReceiptPage = lazy(
+    () => import("./goods-receipt/GoodsReceiptPage"),
+);
 export const InvoicePage = lazy(() => import("./invoice/InvoicePage"));
 export const InventoryItemSearchPage = lazy(
     () => import("./InventoryItemSearchPage"),

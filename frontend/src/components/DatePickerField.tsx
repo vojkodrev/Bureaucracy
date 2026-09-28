@@ -14,6 +14,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover'
+import { dateForInput } from '@/lib/dates'
 
 type DatePickerFieldProps = {
     date: Date | undefined
@@ -93,7 +94,7 @@ function DatePickerField({
             <input
                 type="hidden"
                 name={name}
-                value={date ? format(date, 'yyyy-MM-dd') : ''}
+                value={date ? dateForInput(date) : ''}
             />
         </Field>
     )

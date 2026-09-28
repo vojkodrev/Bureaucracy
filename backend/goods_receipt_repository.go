@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math"
 	"strings"
 	"time"
+
+	"bureaucracy/backend/graph/model"
 )
 
 type GoodsReceiptRepository struct{ database *sql.DB }
@@ -74,7 +77,7 @@ func (repository *GoodsReceiptRepository) Search(
 
 	arguments = append(arguments, sql.Named("offset", (page-1)*pageSize), sql.Named("pageSize", pageSize))
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
-		SELECT d.RecNo, COALESCE(d.Stevilka, ''), d.Datum,
+		SELECT d.RecNo, COALESCE(d.Stevilka, ''), d.Datum, NULLIF(LTRIM(RTRIM(d.Skladisce)), ''),
 		       COALESCE(NULLIF(LTRIM(RTRIM(d.Prevzemnik)), ''), NULLIF(LTRIM(RTRIM(d.Prevzel)), '')),
 		       d.MPO
 		FROM [%s].[dbo].[Dobava] d
@@ -94,7 +97,7 @@ func (repository *GoodsReceiptRepository) Search(
 	for rows.Next() {
 		receipt := &GoodsReceipt{}
 		var mpo *string
-		if err := rows.Scan(&receipt.ID, &receipt.ReceiptNumber, &receipt.ReceiptDate, &receipt.ReceivedBy, &mpo); err != nil {
+		if err := rows.Scan(&receipt.ID, &receipt.ReceiptNumber, &receipt.ReceiptDate, &receipt.Storage, &receipt.ReceivedBy, &mpo); err != nil {
 			return nil, fmt.Errorf("scan goods receipt: %w", err)
 		}
 		receipt.Items = make([]*GoodsReceiptItem, 0)
@@ -141,6 +144,188 @@ func (repository *GoodsReceiptRepository) Search(
 		totalPages = (totalCount + pageSize - 1) / pageSize
 	}
 	return &GoodsReceiptPage{GoodsReceipts: receipts, TotalCount: totalCount, Page: page, PageSize: pageSize, TotalPages: totalPages}, nil
+}
+
+func (repository *GoodsReceiptRepository) GetByNumber(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	receiptNumber = strings.TrimSpace(receiptNumber)
+	if receiptNumber == "" {
+		return nil, fmt.Errorf("receiptNumber is required")
+	}
+	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
+	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
+	receipt := &GoodsReceipt{Items: make([]*GoodsReceiptItem, 0)}
+	var mpo *string
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT TOP 1 RecNo, COALESCE(Stevilka, ''), Datum, NULLIF(LTRIM(RTRIM(Skladisce)), ''),
+		       COALESCE(NULLIF(LTRIM(RTRIM(Prevzemnik)), ''), NULLIF(LTRIM(RTRIM(Prevzel)), '')), MPO
+		FROM [%s].[dbo].[Dobava] WHERE Stevilka=@receiptNumber ORDER BY RecNo DESC`, receiptDatabase),
+		sql.Named("receiptNumber", receiptNumber)).Scan(&receipt.ID, &receipt.ReceiptNumber, &receipt.ReceiptDate, &receipt.Storage, &receipt.ReceivedBy, &mpo)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get goods receipt: %w", err)
+	}
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT ds.RecNo, ds.Artikel, inventory.Opis, inventory.Enota, ds.Kolicina
+		FROM [%s].[dbo].[DobavaSpecifikacija] ds
+		LEFT JOIN [%s].[dbo].[ArtikelNabava] inventory ON inventory.Artikel=ds.Artikel
+		WHERE ds.Stevilka=@receiptNumber AND ISNULL(ds.MPO, '')=ISNULL(@mpo, '') AND ISNULL(ds.Deleted, 0)=0
+		ORDER BY ds.RecNo`, receiptDatabase, inventoryDatabase), sql.Named("receiptNumber", receiptNumber), sql.Named("mpo", mpo))
+	if err != nil {
+		return nil, fmt.Errorf("get goods receipt items: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		item := &GoodsReceiptItem{}
+		if err := rows.Scan(&item.ID, &item.ProductCode, &item.ProductName, &item.Unit, &item.Quantity); err != nil {
+			return nil, fmt.Errorf("scan goods receipt item: %w", err)
+		}
+		receipt.Items = append(receipt.Items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read goods receipt items: %w", err)
+	}
+	return receipt, nil
+}
+
+func (repository *GoodsReceiptRepository) ListStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
+	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT DISTINCT code FROM (
+			SELECT NULLIF(LTRIM(RTRIM(Skladisce)), '') code FROM [%s].[dbo].[Dobava]
+			UNION SELECT NULLIF(LTRIM(RTRIM(Skladisce)), '') FROM [%s].[dbo].[ArtikelCene]
+		) storages WHERE code IS NOT NULL ORDER BY code`, receiptDatabase, inventoryDatabase))
+	if err != nil {
+		return nil, fmt.Errorf("list goods receipt storages: %w", err)
+	}
+	defer rows.Close()
+	storages := make([]*Storage, 0)
+	for rows.Next() {
+		storage := &Storage{}
+		if err := rows.Scan(&storage.Code); err != nil {
+			return nil, fmt.Errorf("scan goods receipt storage: %w", err)
+		}
+		storages = append(storages, storage)
+	}
+	return storages, rows.Err()
+}
+
+func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear string, input model.GoodsReceiptInput) (*GoodsReceipt, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	input.ReceiptNumber = strings.TrimSpace(input.ReceiptNumber)
+	input.Storage = strings.TrimSpace(input.Storage)
+	input.ReceivedBy = strings.TrimSpace(input.ReceivedBy)
+	if input.ReceiptNumber == "" || len([]rune(input.ReceiptNumber)) > 10 {
+		return nil, fmt.Errorf("receiptNumber is required and must be at most 10 characters")
+	}
+	if input.Storage == "" || len([]rune(input.Storage)) > 1 {
+		return nil, fmt.Errorf("storage is required and must be one character")
+	}
+	if input.ReceivedBy == "" || len([]rune(input.ReceivedBy)) > 30 {
+		return nil, fmt.Errorf("receivedBy is required and must be at most 30 characters")
+	}
+	if len(input.Items) == 0 {
+		return nil, fmt.Errorf("at least one goods receipt item is required")
+	}
+	for _, item := range input.Items {
+		item.ProductCode = strings.TrimSpace(item.ProductCode)
+		if item.ProductCode == "" || len([]rune(item.ProductCode)) > 25 {
+			return nil, fmt.Errorf("each item must have a product code of at most 25 characters")
+		}
+		if item.Quantity <= 0 || math.IsNaN(item.Quantity) || math.IsInf(item.Quantity, 0) {
+			return nil, fmt.Errorf("each item quantity must be greater than zero")
+		}
+	}
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	tx, err := repository.database.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin goods receipt save: %w", err)
+	}
+	defer tx.Rollback()
+	var mpo *string
+	if input.ID != nil && *input.ID > 0 {
+		var oldReceiptNumber string
+		err = tx.QueryRowContext(
+			ctx,
+			fmt.Sprintf(`
+				SELECT COALESCE(Stevilka, ''), MPO
+				FROM [%s].[dbo].[Dobava]
+				WHERE RecNo=@id`, databaseName),
+			sql.Named("id", *input.ID),
+		).Scan(&oldReceiptNumber, &mpo)
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("goods receipt RecNo %d was not found", *input.ID)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("get goods receipt before update: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			fmt.Sprintf(`UPDATE [%s].[dbo].[Dobava]
+				SET Stevilka=@number, Datum=@date,
+				    Skladisce=@storage, Prevzemnik=@receivedBy
+				WHERE RecNo=@id`, databaseName),
+			sql.Named("number", input.ReceiptNumber),
+			sql.Named("date", input.ReceiptDate),
+			sql.Named("storage", input.Storage),
+			sql.Named("receivedBy", input.ReceivedBy),
+			sql.Named("id", *input.ID),
+		)
+		if err == nil {
+			_, err = tx.ExecContext(
+				ctx,
+				fmt.Sprintf(`DELETE FROM [%s].[dbo].[DobavaSpecifikacija]
+					WHERE Stevilka=@oldNumber
+					  AND ISNULL(MPO,'')=ISNULL(@mpo,'')`, databaseName),
+				sql.Named("oldNumber", oldReceiptNumber),
+				sql.Named("mpo", mpo),
+			)
+		}
+	} else {
+		_, err = tx.ExecContext(
+			ctx,
+			fmt.Sprintf(`INSERT INTO [%s].[dbo].[Dobava]
+				(Stevilka, Datum, Skladisce, Prevzemnik)
+				VALUES (@number,@date,@storage,@receivedBy)`, databaseName),
+			sql.Named("number", input.ReceiptNumber),
+			sql.Named("date", input.ReceiptDate),
+			sql.Named("storage", input.Storage),
+			sql.Named("receivedBy", input.ReceivedBy),
+		)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("save goods receipt header: %w", err)
+	}
+	for _, item := range input.Items {
+		_, err = tx.ExecContext(
+			ctx,
+			fmt.Sprintf(`INSERT INTO [%s].[dbo].[DobavaSpecifikacija]
+				(Stevilka,MPO,Artikel,Datum,Kolicina,Deleted)
+				VALUES (@number,@mpo,@code,@date,@quantity,0)`, databaseName),
+			sql.Named("number", input.ReceiptNumber),
+			sql.Named("mpo", mpo),
+			sql.Named("code", item.ProductCode),
+			sql.Named("date", input.ReceiptDate),
+			sql.Named("quantity", item.Quantity),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("save goods receipt item: %w", err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit goods receipt: %w", err)
+	}
+	return repository.GetByNumber(ctx, businessYear, input.ReceiptNumber)
 }
 
 func goodsReceiptOrderBy(sortBy *string, sortDirection *string) (string, error) {

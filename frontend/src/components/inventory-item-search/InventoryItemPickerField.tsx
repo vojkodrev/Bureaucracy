@@ -28,6 +28,7 @@ type Props = {
     name: string
     onInventoryItemCodeChange: (code: string) => void
     onInventoryItemNameChange: (name: string) => void
+    onInventoryItemUnitChange?: (unit: string) => void
 }
 
 export default function InventoryItemPickerField({
@@ -37,6 +38,7 @@ export default function InventoryItemPickerField({
     name,
     onInventoryItemCodeChange,
     onInventoryItemNameChange,
+    onInventoryItemUnitChange,
 }: Props) {
     const [open, setOpen] = useState(false)
 
@@ -44,6 +46,7 @@ export default function InventoryItemPickerField({
         setOpen(false)
         onInventoryItemCodeChange(item.productCode ?? '')
         onInventoryItemNameChange(item.name ?? '')
+        onInventoryItemUnitChange?.(item.unit ?? '')
     }
 
     return (

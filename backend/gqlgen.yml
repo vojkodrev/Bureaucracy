@@ -84,6 +84,9 @@ models:
   GoodsReceiptPage:
     model:
       - bureaucracy/backend.GoodsReceiptPage
+  Storage:
+    model:
+      - bureaucracy/backend.Storage
   PriceQuote:
     model:
       - bureaucracy/backend.PriceQuote
