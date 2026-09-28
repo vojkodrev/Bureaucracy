@@ -1,22 +1,10 @@
-import { Copy, Save, Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import ErrorAlert from "@/components/ErrorAlert";
-import DatePickerField from "@/components/DatePickerField";
-import { Card, CardContent, CardHeader, CardTitle } from
-    "@/components/ui/card";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarShortcut,
-    MenubarTrigger,
-} from "@/components/ui/menubar";
+import GoodsReceiptErrors from "./GoodsReceiptErrors";
+import GoodsReceiptGeneralInformation from
+    "./GoodsReceiptGeneralInformation";
 import GoodsReceiptItems from "./GoodsReceiptItems";
+import GoodsReceiptMenu from "./GoodsReceiptMenu";
 import GoodsReceiptNumberAlert from "./GoodsReceiptNumberAlert";
-import StorageComboboxField from "./StorageComboboxField";
 import UnsavedGoodsReceiptAlerts from "./UnsavedGoodsReceiptAlerts";
 import { useGoodsReceiptDraft } from "./hooks/useGoodsReceiptDraft";
 import { useGoodsReceiptDuplicate } from "./hooks/useGoodsReceiptDuplicate";
@@ -79,88 +67,28 @@ export default function GoodsReceiptPage() {
     useGoodsReceiptKeyboardShortcuts(() => {
         void save.requestSave();
     });
-    const errors = [
-        [
-            "receipt",
-            "Goods receipt could not be loaded",
-            "The receipt data could not be retrieved.",
-            loader.error,
-        ],
-        [
-            "save",
-            "Goods receipt could not be saved",
-            "Your changes were not saved.",
-            save.saveError,
-        ],
-        [
-            "duplicate",
-            "Goods receipt could not be duplicated",
-            "The new goods receipt draft could not be prepared.",
-            duplicate.duplicateError,
-        ],
-        [
-            "next-number",
-            "Next receipt number could not be loaded",
-            "Enter a receipt number manually before saving.",
-            loader.nextNumberError,
-        ],
-    ] as const;
-
     return (
         <div className="max-w-5xl p-4">
-            {errors.some(([, , , error]) => error) && (
-                <div className="mb-6 space-y-2">
-                    {errors.map(([key, title, description, error]) =>
-                        error && (
-                        <ErrorAlert
-                            key={key}
-                            title={title}
-                            description={description}
-                            error={error}
-                        />
-                        ))}
-                </div>
-            )}
-            <Menubar className="mb-6 w-fit">
-                <MenubarMenu>
-                    <MenubarTrigger>File</MenubarTrigger>
-                    <MenubarContent>
-                        <MenubarItem
-                            disabled={!save.canSave || save.isSaving}
-                            onClick={() => { void save.requestSave(); }}
-                        >
-                            <Save />
-                            {save.isSaving ? "Saving…" : "Save"}
-                            <MenubarShortcut>Ctrl+S</MenubarShortcut>
-                        </MenubarItem>
-                    </MenubarContent>
-                </MenubarMenu>
-                <MenubarMenu>
-                    <MenubarTrigger>Edit</MenubarTrigger>
-                    <MenubarContent>
-                        <MenubarItem
-                            disabled={!revert.canRevert}
-                            onClick={revert.requestRevert}
-                        >
-                            <Undo2 /> Revert
-                        </MenubarItem>
-                        <MenubarItem
-                            disabled={
-                                loader.receiptId == null ||
-                                loader.isLoading ||
-                                save.isSaving ||
-                                duplicate.isDuplicating
-                            }
-                            onClick={() => { void duplicate.duplicate(); }}
-                        >
-                            <Copy />
-                            {duplicate.isDuplicating
-                                ? "Duplicating…"
-                                : "Duplicate"}
-                        </MenubarItem>
-                    </MenubarContent>
-                </MenubarMenu>
-            </Menubar>
+            <GoodsReceiptErrors
+                loadError={loader.error}
+                saveError={save.saveError}
+                duplicateError={duplicate.duplicateError}
+                nextNumberError={loader.nextNumberError}
+            />
+            <GoodsReceiptMenu
+                canSave={save.canSave}
+                canRevert={revert.canRevert}
+                canDuplicate={
+                    loader.receiptId != null &&
+                    !loader.isLoading &&
+                    !save.isSaving
+                }
+                isSaving={save.isSaving}
+                isDuplicating={duplicate.isDuplicating}
+                onSave={() => { void save.requestSave(); }}
+                onRevert={revert.requestRevert}
+                onDuplicate={() => { void duplicate.duplicate(); }}
+            />
             <GoodsReceiptNumberAlert
                 receiptNumber={draftState.draft.receiptNumber.trim()}
                 warning={save.numberWarning}
@@ -169,54 +97,20 @@ export default function GoodsReceiptPage() {
                 }}
                 onConfirm={() => { void save.confirmSave(); }}
             />
-            <Card className="max-w-2xl">
-                <CardHeader>
-                    <CardTitle>Goods receipt details</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                    <Field>
-                        <FieldLabel htmlFor="goods-receipt-number">
-                            Receipt number
-                        </FieldLabel>
-                        <Input
-                            id="goods-receipt-number"
-                            maxLength={10}
-                            value={draftState.draft.receiptNumber}
-                            onChange={(event) => draftState.setField(
-                                "receiptNumber",
-                                event.target.value,
-                            )}
-                        />
-                    </Field>
-                    <DatePickerField
-                        id="goods-receipt-date"
-                        label="Receipt date"
-                        name="receiptDate"
-                        date={draftState.draft.receiptDate}
-                        onSelect={(date) =>
-                            draftState.setField("receiptDate", date)}
-                    />
-                    <StorageComboboxField
-                        value={draftState.draft.storage}
-                        onChange={(value) =>
-                            draftState.setField("storage", value)}
-                    />
-                    <Field>
-                        <FieldLabel htmlFor="goods-receipt-received-by">
-                            Received by
-                        </FieldLabel>
-                        <Input
-                            id="goods-receipt-received-by"
-                            maxLength={30}
-                            value={draftState.draft.receivedBy}
-                            onChange={(event) => draftState.setField(
-                                "receivedBy",
-                                event.target.value,
-                            )}
-                        />
-                    </Field>
-                </CardContent>
-            </Card>
+            <GoodsReceiptGeneralInformation
+                receiptNumber={draftState.draft.receiptNumber}
+                receiptDate={draftState.draft.receiptDate}
+                storage={draftState.draft.storage}
+                receivedBy={draftState.draft.receivedBy}
+                onReceiptNumberChange={(value) =>
+                    draftState.setField("receiptNumber", value)}
+                onReceiptDateChange={(value) =>
+                    draftState.setField("receiptDate", value)}
+                onStorageChange={(value) =>
+                    draftState.setField("storage", value)}
+                onReceivedByChange={(value) =>
+                    draftState.setField("receivedBy", value)}
+            />
             <div className="mt-6">
                 <GoodsReceiptItems
                     items={draftState.draft.items}
