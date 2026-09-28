@@ -36,6 +36,25 @@ export async function fetchInventoryItemExists(productCode: string): Promise<boo
     return result.data?.inventoryItem != null;
 }
 
+export async function fetchInventoryItemGoodsReceiptCount(
+    productCode: string,
+): Promise<number> {
+    const result = await postGraphql<{
+        data?: { searchGoodsReceipts: { totalCount: number } };
+    }>(
+        `query InventoryItemGoodsReceiptCount($businessYear: String!, $productCode: String!) {
+            searchGoodsReceipts(
+                businessYear: $businessYear
+                productCode: $productCode
+                page: 1
+                pageSize: 1
+            ) { totalCount }
+        }`,
+        { businessYear: getSelectedBusinessYear(), productCode },
+    );
+    return result.data?.searchGoodsReceipts.totalCount ?? 0;
+}
+
 export async function fetchNextInventoryItemCode(
     signal?: AbortSignal,
 ): Promise<string> {

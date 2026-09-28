@@ -4,6 +4,7 @@ import InventoryItemDetails from "./InventoryItemDetails";
 import InventoryItemErrors from "./InventoryItemErrors";
 import InventoryItemMenu from "./InventoryItemMenu";
 import InventoryItemRelatedData from "./InventoryItemRelatedData";
+import InventoryItemUsageAlert from "./InventoryItemUsageAlert";
 import UnsavedInventoryItemAlerts from "./UnsavedInventoryItemAlerts";
 import { useInventoryItemDraft } from "./hooks/useInventoryItemDraft";
 import { useInventoryItemDuplicate } from "./hooks/useInventoryItemDuplicate";
@@ -91,6 +92,16 @@ export default function InventoryItemPage() {
                 onRevert={revert.requestRevert}
                 onDuplicate={() => {
                     void duplicate.duplicate();
+                }}
+            />
+            <InventoryItemUsageAlert
+                productCode={routeProductCode ?? draft.productCode}
+                goodsReceiptCount={save.goodsReceiptCountWarning}
+                onOpenChange={(open) => {
+                    if (!open) save.setGoodsReceiptCountWarning(null);
+                }}
+                onConfirm={() => {
+                    void save.confirmSave();
                 }}
             />
             <DuplicateIdentifierAlert
