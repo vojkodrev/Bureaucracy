@@ -5,6 +5,7 @@ type Options = {
     hasUnsavedChanges: boolean;
     isLoading: boolean;
     isSaving: boolean;
+    isDuplicating: boolean;
     clearSaveError: () => void;
     reload: () => void;
 };
@@ -14,13 +15,15 @@ export function useGoodsReceiptRevert({
     hasUnsavedChanges,
     isLoading,
     isSaving,
+    isDuplicating,
     clearSaveError,
     reload,
 }: Options) {
     const [confirmingRevert, setConfirmingRevert] = useState(false);
     const canRevert = Boolean(routeReceiptNumber) &&
         !isLoading &&
-        !isSaving;
+        !isSaving &&
+        !isDuplicating;
 
     const performRevert = () => {
         setConfirmingRevert(false);

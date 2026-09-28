@@ -36,6 +36,7 @@ export async function fetchGoodsReceiptExists(receiptNumber: string) {
 
 export async function fetchLatestGoodsReceiptNumber(
     signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
 ) {
     const result = await postGraphql<{
         data?: {
@@ -55,15 +56,16 @@ export async function fetchLatestGoodsReceiptNumber(
                 goodsReceipts { receiptNumber }
             }
         }
-    `, { businessYear: getSelectedBusinessYear() }, signal)
+    `, { businessYear }, signal)
     return result.data?.searchGoodsReceipts.goodsReceipts[0]
         ?.receiptNumber ?? ''
 }
 
 export async function fetchNextGoodsReceiptNumber(
     signal?: AbortSignal,
+    businessYear = getSelectedBusinessYear(),
 ) {
-    const latest = await fetchLatestGoodsReceiptNumber(signal)
+    const latest = await fetchLatestGoodsReceiptNumber(signal, businessYear)
     return nextPaddedNumber(latest, 5)
 }
 

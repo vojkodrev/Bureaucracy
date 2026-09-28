@@ -41,6 +41,7 @@ export function useGoodsReceiptDraft() {
         ) => setDraft((current) => ({ ...current, [field]: value })),
         markClean: (value: GoodsReceiptDraft = draft) =>
             setCleanDraft(JSON.stringify(value)),
+        markUnsaved: () => setCleanDraft("__unsaved__"),
         hasUnsavedChanges: serialized !== cleanDraft,
     };
 }

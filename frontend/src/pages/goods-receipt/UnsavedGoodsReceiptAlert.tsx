@@ -14,7 +14,9 @@ type Props = {
     onOpenChange: (open: boolean) => void;
     onDiscard: () => void;
     actionLabel?: string;
+    title?: string;
     description?: string;
+    actionVariant?: "default" | "destructive";
 };
 
 export default function UnsavedGoodsReceiptAlert({
@@ -22,14 +24,16 @@ export default function UnsavedGoodsReceiptAlert({
     onOpenChange,
     onDiscard,
     actionLabel = "Leave without saving",
+    title = "Discard unsaved changes?",
     description = "This goods receipt has changes that have not been saved. " +
         "If you continue, those changes will be lost.",
+    actionVariant = "destructive",
 }: Props) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>
                         {description}
                     </AlertDialogDescription>
@@ -37,7 +41,7 @@ export default function UnsavedGoodsReceiptAlert({
                 <AlertDialogFooter>
                     <AlertDialogCancel>Keep editing</AlertDialogCancel>
                     <AlertDialogAction
-                        variant="destructive"
+                        variant={actionVariant}
                         onClick={onDiscard}
                     >
                         {actionLabel}

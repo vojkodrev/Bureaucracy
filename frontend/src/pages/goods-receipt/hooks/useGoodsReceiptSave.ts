@@ -20,12 +20,14 @@ type Options = {
     routeReceiptNumber?: string;
     isLoading: boolean;
     loadError: string | null;
+    isDuplicating: boolean;
     navigate: NavigateFunction;
     replaceDraft: (draft: GoodsReceiptDraft) => void;
     markClean: (draft: GoodsReceiptDraft) => void;
     setReceiptId: (id: number | null) => void;
     allowNavigation: () => void;
     reload: () => void;
+    clearDuplicateError: () => void;
 };
 
 export function useGoodsReceiptSave(options: Options) {
@@ -45,7 +47,7 @@ export function useGoodsReceiptSave(options: Options) {
         options.draft.storage.trim() &&
         options.draft.receivedBy.trim() &&
         hasValidItems,
-    ) && !options.isLoading && !options.loadError;
+    ) && !options.isLoading && !options.isDuplicating && !options.loadError;
 
     const performSave = async () => {
         try {
@@ -94,6 +96,7 @@ export function useGoodsReceiptSave(options: Options) {
         if (!canSave || isSaving) return false;
         setIsSaving(true);
         setSaveError(null);
+        options.clearDuplicateError();
         try {
             const number = options.draft.receiptNumber.trim();
             if (options.receiptId == null &&

@@ -1,4 +1,4 @@
-import { Save, Undo2 } from "lucide-react";
+import { Copy, Save, Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import ErrorAlert from "@/components/ErrorAlert";
 import { Card, CardContent, CardHeader, CardTitle } from
@@ -18,6 +18,7 @@ import GoodsReceiptNumberAlert from "./GoodsReceiptNumberAlert";
 import StorageComboboxField from "./StorageComboboxField";
 import UnsavedGoodsReceiptAlerts from "./UnsavedGoodsReceiptAlerts";
 import { useGoodsReceiptDraft } from "./hooks/useGoodsReceiptDraft";
+import { useGoodsReceiptDuplicate } from "./hooks/useGoodsReceiptDuplicate";
 import { useGoodsReceiptLoader } from "./hooks/useGoodsReceiptLoader";
 import { useGoodsReceiptKeyboardShortcuts } from
     "./hooks/useGoodsReceiptKeyboardShortcuts";
@@ -39,24 +40,38 @@ export default function GoodsReceiptPage() {
         draftState.markClean,
         guard.disallowNavigation,
     );
+    const duplicate = useGoodsReceiptDuplicate({
+        receiptId: loader.receiptId,
+        draft: draftState.draft,
+        hasUnsavedChanges: draftState.hasUnsavedChanges,
+        navigate,
+        replaceDraft: draftState.setDraft,
+        markUnsaved: draftState.markUnsaved,
+        setReceiptId: loader.setReceiptId,
+        preserveDuplicateDraft: loader.preserveDuplicateDraft,
+        allowNavigation: guard.allowNavigation,
+    });
     const save = useGoodsReceiptSave({
         receiptId: loader.receiptId,
         draft: draftState.draft,
         routeReceiptNumber: receiptNumber,
         isLoading: loader.isLoading,
         loadError: loader.error,
+        isDuplicating: duplicate.isDuplicating,
         navigate,
         replaceDraft: draftState.setDraft,
         markClean: draftState.markClean,
         setReceiptId: loader.setReceiptId,
         allowNavigation: guard.allowNavigation,
         reload: loader.reload,
+        clearDuplicateError: () => duplicate.setDuplicateError(null),
     });
     const revert = useGoodsReceiptRevert({
         routeReceiptNumber: receiptNumber,
         hasUnsavedChanges: draftState.hasUnsavedChanges,
         isLoading: loader.isLoading,
         isSaving: save.isSaving,
+        isDuplicating: duplicate.isDuplicating,
         clearSaveError: () => save.setSaveError(null),
         reload: loader.reload,
     });
@@ -75,6 +90,12 @@ export default function GoodsReceiptPage() {
             "Goods receipt could not be saved",
             "Your changes were not saved.",
             save.saveError,
+        ],
+        [
+            "duplicate",
+            "Goods receipt could not be duplicated",
+            "The new goods receipt draft could not be prepared.",
+            duplicate.duplicateError,
         ],
         [
             "next-number",
@@ -121,6 +142,20 @@ export default function GoodsReceiptPage() {
                             onClick={revert.requestRevert}
                         >
                             <Undo2 /> Revert
+                        </MenubarItem>
+                        <MenubarItem
+                            disabled={
+                                loader.receiptId == null ||
+                                loader.isLoading ||
+                                save.isSaving ||
+                                duplicate.isDuplicating
+                            }
+                            onClick={() => { void duplicate.duplicate(); }}
+                        >
+                            <Copy />
+                            {duplicate.isDuplicating
+                                ? "Duplicating…"
+                                : "Duplicate"}
                         </MenubarItem>
                     </MenubarContent>
                 </MenubarMenu>
@@ -197,6 +232,7 @@ export default function GoodsReceiptPage() {
             <UnsavedGoodsReceiptAlerts
                 isNavigationBlocked={guard.blocker.state === "blocked"}
                 isConfirmingRevert={revert.confirmingRevert}
+                isConfirmingDuplicate={duplicate.confirmingDuplicate}
                 onCancelNavigation={() => {
                     if (guard.blocker.state === "blocked") {
                         guard.blocker.reset();
@@ -205,6 +241,12 @@ export default function GoodsReceiptPage() {
                 onDiscardAndNavigate={guard.discardAndNavigate}
                 onConfirmingRevertChange={revert.setConfirmingRevert}
                 onDiscardAndRevert={revert.performRevert}
+                onConfirmingDuplicateChange={
+                    duplicate.setConfirmingDuplicate
+                }
+                onDuplicateAnyway={() => {
+                    void duplicate.performDuplicate();
+                }}
             />
         </div>
     );

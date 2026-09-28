@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
     fetchGoodsReceipt,
     fetchNextGoodsReceiptNumber,
@@ -14,6 +14,7 @@ export function useGoodsReceiptLoader(
     markClean: (draft: GoodsReceiptDraft) => void,
     disallowNavigation: () => void,
 ) {
+    const preserveDuplicateRef = useRef(false);
     const [receiptId, setReceiptId] = useState<number | null>(null);
     const [reloadVersion, setReloadVersion] = useState(0);
     const [result, setResult] = useState({
@@ -29,6 +30,12 @@ export function useGoodsReceiptLoader(
     useEffect(() => {
         const controller = new AbortController();
         if (!routeReceiptNumber) {
+            if (preserveDuplicateRef.current) {
+                preserveDuplicateRef.current = false;
+                finish();
+                setResult({ key, error: null });
+                return;
+            }
             const next = goodsReceiptDraft();
             setReceiptId(null);
             replace(next);
@@ -83,5 +90,8 @@ export function useGoodsReceiptLoader(
         error: result.key === key ? result.error : null,
         nextNumberError,
         reload: () => setReloadVersion((version) => version + 1),
+        preserveDuplicateDraft: () => {
+            preserveDuplicateRef.current = true;
+        },
     };
 }
