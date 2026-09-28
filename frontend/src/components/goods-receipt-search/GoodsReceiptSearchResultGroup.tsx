@@ -1,39 +1,24 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { TableCell, TableRow } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatDate } from '@/lib/formatters'
 import type { GoodsReceipt } from '@/lib/goods-receipt-types'
 
 export default function GoodsReceiptSearchResultGroup({ receipt }: { receipt: GoodsReceipt }) {
-    const productNames = receipt.items
-        .map(({ productName }) => productName?.trim())
-        .filter((name): name is string => Boolean(name))
-        .join(', ')
-
     return (
         <Fragment>
-            <TableRow className="bg-muted/60 font-semibold">
+            <TableRow className="relative cursor-pointer bg-muted/60 font-semibold">
                 <TableCell>
                     <Link
-                        className="underline-offset-4 hover:underline"
                         to={`/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}`}
-                    >
-                        Goods receipt {receipt.receiptNumber || '—'}
-                    </Link>
+                        aria-label={`Open goods receipt ${receipt.receiptNumber}`}
+                        className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+                    />
+                    Goods receipt {receipt.receiptNumber || '—'}
                 </TableCell>
                 <TableCell>{formatDate(receipt.receiptDate)}</TableCell>
                 <TableCell>{receipt.receivedBy || '—'}</TableCell>
-                <TableCell>
-                    {productNames ? (
-                        <Tooltip>
-                            <TooltipTrigger className="block max-w-md truncate text-left">
-                                {productNames}
-                            </TooltipTrigger>
-                            <TooltipContent>{productNames}</TooltipContent>
-                        </Tooltip>
-                    ) : '—'}
-                </TableCell>
+                <TableCell />
             </TableRow>
             {receipt.items.map((item) => (
                 <TableRow key={item.id}>
