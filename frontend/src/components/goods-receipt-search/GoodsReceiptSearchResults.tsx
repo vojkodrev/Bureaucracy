@@ -8,14 +8,18 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import type { GoodsReceiptPage } from '@/lib/goods-receipt-types'
+import type { GoodsReceipt, GoodsReceiptPage } from '@/lib/goods-receipt-types'
+import { ComponentMode } from '@/lib/component-mode'
 import GoodsReceiptSearchResultGroup from './GoodsReceiptSearchResultGroup'
 import type { GoodsReceiptSearchCriteria, GoodsReceiptSortColumn } from './types'
 
 type Props = {
     page: GoodsReceiptPage | null
     isLoading: boolean
+    mode: ComponentMode
     search: GoodsReceiptSearchCriteria
+    showSearchFields: boolean
+    onGoodsReceiptSelect?: (receipt: GoodsReceipt) => void
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
     onSort: (column: GoodsReceiptSortColumn) => void
@@ -24,7 +28,10 @@ type Props = {
 export default function GoodsReceiptSearchResults({
     page,
     isLoading,
+    mode,
     search,
+    showSearchFields,
+    onGoodsReceiptSelect,
     onPageChange,
     onPageSizeChange,
     onSort,
@@ -32,7 +39,7 @@ export default function GoodsReceiptSearchResults({
     const first = page && page.totalCount > 0 ? (page.page - 1) * page.pageSize + 1 : 0
     const last = page ? Math.min(page.page * page.pageSize, page.totalCount) : 0
     return (
-        <div className="mt-8 w-full overflow-x-auto">
+        <div className={`${showSearchFields ? 'mt-8 ' : ''}w-full overflow-x-auto`}>
             {page && (
                 <Pager
                     firstItem={first}
@@ -105,6 +112,8 @@ export default function GoodsReceiptSearchResults({
                         <GoodsReceiptSearchResultGroup
                             key={receipt.id}
                             receipt={receipt}
+                            mode={mode}
+                            onGoodsReceiptSelect={onGoodsReceiptSelect}
                         />
                     ))}
                 </TableBody>

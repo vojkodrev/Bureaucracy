@@ -1,5 +1,6 @@
 import InventoryItemSearch from "@/components/inventory-item-search/InventoryItemSearch";
 import ProductSearch from "@/components/product-search/ProductSearch";
+import GoodsReceiptSearch from "@/components/goods-receipt-search/GoodsReceiptSearch";
 import {
     Accordion,
     AccordionContent,
@@ -10,18 +11,22 @@ import { ComponentMode } from "@/lib/component-mode";
 
 type Props = {
     itemId: number | null;
+    productCode: string;
     name: string;
     hasUnsavedChanges: boolean;
     onItemSelect: (code: string) => void;
     onProductSelect: (code: string) => void;
+    onGoodsReceiptSelect: (receiptNumber: string) => void;
 };
 
 export default function InventoryItemRelatedData({
     itemId,
+    productCode,
     name,
     hasUnsavedChanges,
     onItemSelect,
     onProductSelect,
+    onGoodsReceiptSelect,
 }: Props) {
     if (itemId == null || hasUnsavedChanges || !name.trim()) return null;
     return (
@@ -37,6 +42,20 @@ export default function InventoryItemRelatedData({
                             if (item.productCode)
                                 onItemSelect(item.productCode);
                         }}
+                    />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="goods-receipts">
+                <AccordionTrigger>Goods receipts</AccordionTrigger>
+                <AccordionContent keepMounted>
+                    <GoodsReceiptSearch
+                        key={productCode}
+                        mode={ComponentMode.Dialog}
+                        showSearchFields={false}
+                        defaultProductCode={productCode}
+                        onGoodsReceiptSelect={(receipt) =>
+                            onGoodsReceiptSelect(receipt.receiptNumber)
+                        }
                     />
                 </AccordionContent>
             </AccordionItem>

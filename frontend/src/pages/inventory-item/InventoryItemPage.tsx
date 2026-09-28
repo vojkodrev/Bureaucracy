@@ -127,6 +127,7 @@ export default function InventoryItemPage() {
             </div>
             <InventoryItemRelatedData
                 itemId={loader.itemId}
+                productCode={draft.productCode}
                 name={draft.name}
                 hasUnsavedChanges={draftState.hasUnsavedChanges}
                 onItemSelect={(code) => {
@@ -136,6 +137,11 @@ export default function InventoryItemPage() {
                 }}
                 onProductSelect={(code) => {
                     void navigate(`/product/${encodeURIComponent(code)}`);
+                }}
+                onGoodsReceiptSelect={(receiptNumber) => {
+                    void navigate(
+                        `/goods-receipt/${encodeURIComponent(receiptNumber)}`,
+                    );
                 }}
             />
         </div>
