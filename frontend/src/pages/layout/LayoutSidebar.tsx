@@ -301,6 +301,18 @@ export default function LayoutSidebar({
                                     </Collapsible.Root>
                                     );
                                 })}
+                                {group.label === "Accounting" && (
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            isActive={pathname === "/export"}
+                                            tooltip="Export data"
+                                            render={<NavLink to="/export" />}
+                                        >
+                                            <FileDown />
+                                            <span>Export data</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                )}
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
@@ -317,16 +329,6 @@ export default function LayoutSidebar({
                                 >
                                     <CalendarRange />
                                     <span>Business years</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    isActive={pathname === "/export"}
-                                    tooltip="Export data"
-                                    render={<NavLink to="/export" />}
-                                >
-                                    <FileDown />
-                                    <span>Export data</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
