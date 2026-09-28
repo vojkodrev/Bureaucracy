@@ -21,6 +21,7 @@ import {
     SidebarContent,
     SidebarGroup,
     SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -105,6 +106,18 @@ const sections: Section[] = [
     },
 ];
 
+const sectionGroups = [
+    {
+        label: "Billing",
+        sectionKeys: ["customers", "products", "price-quotes", "invoices"],
+    },
+    {
+        label: "Storage",
+        sectionKeys: ["goods-receipts", "inventory-items"],
+    },
+    { label: "Accounting", sectionKeys: ["bank-statements"] },
+] as const;
+
 function sectionIsActive(section: Section, pathname: string) {
     return (
         pathname === section.searchPath ||
@@ -153,12 +166,17 @@ export default function LayoutSidebar({
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {sections.map((section) => {
-                                const Icon = section.icon;
-                                return (
+                {sectionGroups.map((group) => (
+                    <SidebarGroup key={group.label}>
+                        <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {group.sectionKeys.map((sectionKey) => {
+                                    const section = sections.find(
+                                        ({ key }) => key === sectionKey,
+                                    )!;
+                                    const Icon = section.icon;
+                                    return (
                                     <Collapsible.Root
                                         key={section.key}
                                         open={openMenu === section.key}
@@ -281,8 +299,16 @@ export default function LayoutSidebar({
                                                 })()}
                                         </Collapsible.Panel>
                                     </Collapsible.Root>
-                                );
-                            })}
+                                    );
+                                })}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
+                <SidebarGroup>
+                    <SidebarGroupLabel>Administration</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     isActive={pathname === "/business-years"}
