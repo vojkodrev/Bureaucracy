@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import InventoryItemPickerField from
     "@/components/inventory-item-search/InventoryItemPickerField";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,11 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import type { GoodsReceiptItem } from "@/lib/goods-receipt-types";
+import {
+    goodsReceiptPhotoUrl,
+    removeGoodsReceiptPhoto,
+    uploadGoodsReceiptPhoto,
+} from "./goods-receipt-api";
 
 type Props = {
     item: GoodsReceiptItem | null;
@@ -33,11 +39,42 @@ export default function AddEditInventoryItemDialog({
     const [quantity, setQuantity] = useState(
         item?.quantity == null ? "" : String(item.quantity),
     );
+    const [photos, setPhotos] = useState(item?.photos ?? []);
+    const [isUploading, setIsUploading] = useState(false);
+    const [photoError, setPhotoError] = useState<string | null>(null);
+    const fileInput = useRef<HTMLInputElement>(null);
     const quantityValue = quantity.trim() === "" ? null : Number(quantity);
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&
         Number.isFinite(quantityValue) &&
-        quantityValue !== 0;
+        quantityValue !== 0 && !isUploading;
+
+    const uploadPhotos = async (files: FileList | null) => {
+        if (!files?.length) return;
+        setIsUploading(true);
+        setPhotoError(null);
+        try {
+            for (const file of Array.from(files)) {
+                const photo = await uploadGoodsReceiptPhoto(file);
+                setPhotos((current) => [...current, photo]);
+            }
+        } catch (error) {
+            setPhotoError(error instanceof Error ? error.message : "Photo upload failed");
+        } finally {
+            setIsUploading(false);
+            if (fileInput.current) fileInput.current.value = "";
+        }
+    };
+
+    const removePhoto = async (fileId: string) => {
+        setPhotoError(null);
+        try {
+            await removeGoodsReceiptPhoto(fileId);
+            setPhotos((current) => current.filter((photo) => photo.fileId !== fileId));
+        } catch (error) {
+            setPhotoError(error instanceof Error ? error.message : "Removing photo failed");
+        }
+    };
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
@@ -94,6 +131,49 @@ export default function AddEditInventoryItemDialog({
                         />
                     </Field>
                 </div>
+                <Field>
+                    <FieldLabel>Photos</FieldLabel>
+                    <input
+                        ref={fileInput}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="sr-only"
+                        onChange={(event) => { void uploadPhotos(event.target.files); }}
+                    />
+                    <div className="flex flex-wrap gap-3">
+                        {photos.map((photo) => (
+                            <div key={photo.fileId} className="group relative h-28 w-28 overflow-hidden rounded-md border bg-muted">
+                                <img
+                                    src={goodsReceiptPhotoUrl(photo.fileId)}
+                                    alt="Goods receipt item"
+                                    className="h-full w-full object-cover"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon-xs"
+                                    className="absolute right-1 top-1"
+                                    aria-label="Remove photo"
+                                    onClick={() => { void removePhoto(photo.fileId); }}
+                                >
+                                    <X />
+                                </Button>
+                            </div>
+                        ))}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="h-28 w-28 flex-col"
+                            disabled={isUploading}
+                            onClick={() => fileInput.current?.click()}
+                        >
+                            {isUploading ? <Loader2 className="animate-spin" /> : <ImagePlus />}
+                            {isUploading ? "Uploading…" : "Add photos"}
+                        </Button>
+                    </div>
+                    {photoError && <p className="text-sm text-destructive">{photoError}</p>}
+                </Field>
                 <DialogFooter>
                     <DialogClose render={<Button variant="outline" />}>
                         Cancel
@@ -107,6 +187,7 @@ export default function AddEditInventoryItemDialog({
                             productName: description.trim() || null,
                             unit: unit.trim() || null,
                             quantity: quantityValue,
+                            photos,
                         })}
                     >
                         {item ? "Save changes" : "Add stock item"}

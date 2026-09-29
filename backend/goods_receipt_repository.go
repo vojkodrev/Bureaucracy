@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
 	"bureaucracy/backend/graph/model"
+	"github.com/google/uuid"
 )
 
 type GoodsReceiptRepository struct{ database *sql.DB }
@@ -121,7 +123,7 @@ func (repository *GoodsReceiptRepository) Search(
 			return nil, fmt.Errorf("get goods receipt items: %w", queryErr)
 		}
 		for itemRows.Next() {
-			item := &GoodsReceiptItem{}
+			item := &GoodsReceiptItem{Photos: make([]*GoodsReceiptItemPhoto, 0)}
 			if scanErr := itemRows.Scan(&item.ID, &item.ProductCode, &item.ProductName, &item.Unit, &item.Quantity); scanErr != nil {
 				itemRows.Close()
 				return nil, fmt.Errorf("scan goods receipt item: %w", scanErr)
@@ -180,7 +182,7 @@ func (repository *GoodsReceiptRepository) GetByNumber(ctx context.Context, busin
 	}
 	defer rows.Close()
 	for rows.Next() {
-		item := &GoodsReceiptItem{}
+		item := &GoodsReceiptItem{Photos: make([]*GoodsReceiptItemPhoto, 0)}
 		if err := rows.Scan(&item.ID, &item.ProductCode, &item.ProductName, &item.Unit, &item.Quantity); err != nil {
 			return nil, fmt.Errorf("scan goods receipt item: %w", err)
 		}
@@ -189,7 +191,40 @@ func (repository *GoodsReceiptRepository) GetByNumber(ctx context.Context, busin
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read goods receipt items: %w", err)
 	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
+	}
+	if err := repository.loadItemPhotos(ctx, businessYearID, receipt.Items); err != nil {
+		return nil, err
+	}
 	return receipt, nil
+}
+
+func (repository *GoodsReceiptRepository) loadItemPhotos(ctx context.Context, businessYearID int, items []*GoodsReceiptItem) error {
+	for _, item := range items {
+		rows, err := repository.database.QueryContext(ctx, `
+			SELECT CONVERT(nvarchar(36), file_id) FROM [Bureaucracy].[dbo].[goods_receipt_item_photos]
+			WHERE business_year_id=@businessYearID AND goods_receipt_item_id=@itemID
+			ORDER BY created_at, file_id`, sql.Named("businessYearID", businessYearID), sql.Named("itemID", item.ID))
+		if err != nil {
+			return fmt.Errorf("get goods receipt item photos: %w", err)
+		}
+		for rows.Next() {
+			photo := &GoodsReceiptItemPhoto{}
+			if err := rows.Scan(&photo.FileID); err != nil {
+				rows.Close()
+				return fmt.Errorf("scan goods receipt item photo: %w", err)
+			}
+			item.Photos = append(item.Photos, photo)
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return fmt.Errorf("read goods receipt item photos: %w", err)
+		}
+		rows.Close()
+	}
+	return nil
 }
 
 func (repository *GoodsReceiptRepository) ListStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
@@ -245,6 +280,20 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 		if item.Quantity == 0 || math.IsNaN(item.Quantity) || math.IsInf(item.Quantity, 0) {
 			return nil, fmt.Errorf("each item quantity must be a non-zero number")
 		}
+		seenPhotos := make(map[string]bool, len(item.PhotoFileIds))
+		for _, fileID := range item.PhotoFileIds {
+			if _, parseErr := uuid.Parse(fileID); parseErr != nil {
+				return nil, fmt.Errorf("invalid goods receipt photo file ID")
+			}
+			if seenPhotos[fileID] {
+				return nil, fmt.Errorf("duplicate goods receipt photo file ID")
+			}
+			seenPhotos[fileID] = true
+		}
+	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	tx, err := repository.database.BeginTx(ctx, nil)
@@ -253,8 +302,8 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 	}
 	defer tx.Rollback()
 	var mpo *string
+	oldReceiptNumber := input.ReceiptNumber
 	if input.ID != nil && *input.ID > 0 {
-		var oldReceiptNumber string
 		err = tx.QueryRowContext(
 			ctx,
 			fmt.Sprintf(`
@@ -281,16 +330,6 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 			sql.Named("receivedBy", input.ReceivedBy),
 			sql.Named("id", *input.ID),
 		)
-		if err == nil {
-			_, err = tx.ExecContext(
-				ctx,
-				fmt.Sprintf(`DELETE FROM [%s].[dbo].[DobavaSpecifikacija]
-					WHERE Stevilka=@oldNumber
-					  AND ISNULL(MPO,'')=ISNULL(@mpo,'')`, databaseName),
-				sql.Named("oldNumber", oldReceiptNumber),
-				sql.Named("mpo", mpo),
-			)
-		}
 	} else {
 		_, err = tx.ExecContext(
 			ctx,
@@ -306,20 +345,83 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 	if err != nil {
 		return nil, fmt.Errorf("save goods receipt header: %w", err)
 	}
-	for _, item := range input.Items {
-		_, err = tx.ExecContext(
-			ctx,
-			fmt.Sprintf(`INSERT INTO [%s].[dbo].[DobavaSpecifikacija]
+	if _, err = tx.ExecContext(ctx, `CREATE TABLE #SavedGoodsReceiptItems (RecNo int NOT NULL PRIMARY KEY)`); err != nil {
+		return nil, fmt.Errorf("prepare goods receipt items: %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, `CREATE TABLE #SavedGoodsReceiptPhotos (FileID uniqueidentifier NOT NULL PRIMARY KEY)`); err != nil {
+		return nil, fmt.Errorf("prepare goods receipt photos: %w", err)
+	}
+	for index, item := range input.Items {
+		itemID := 0
+		if item.ID != nil && *item.ID > 0 {
+			itemID = *item.ID
+			result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`UPDATE [%s].[dbo].[DobavaSpecifikacija]
+				SET Stevilka=@number,MPO=@mpo,Artikel=@code,Datum=@date,Kolicina=@quantity,Deleted=0
+				WHERE RecNo=@id AND Stevilka IN (@oldNumber,@number)`, databaseName),
+				sql.Named("id", itemID), sql.Named("oldNumber", oldReceiptNumber), sql.Named("number", input.ReceiptNumber),
+				sql.Named("mpo", mpo), sql.Named("code", item.ProductCode), sql.Named("date", input.ReceiptDate), sql.Named("quantity", item.Quantity))
+			if updateErr != nil {
+				return nil, fmt.Errorf("update goods receipt item %d: %w", index+1, updateErr)
+			}
+			affected, affectedErr := result.RowsAffected()
+			if affectedErr != nil || affected != 1 {
+				return nil, fmt.Errorf("goods receipt item RecNo %d was not found", itemID)
+			}
+		} else {
+			err = tx.QueryRowContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[DobavaSpecifikacija]
 				(Stevilka,MPO,Artikel,Datum,Kolicina,Deleted)
-				VALUES (@number,@mpo,@code,@date,@quantity,0)`, databaseName),
-			sql.Named("number", input.ReceiptNumber),
-			sql.Named("mpo", mpo),
-			sql.Named("code", item.ProductCode),
-			sql.Named("date", input.ReceiptDate),
-			sql.Named("quantity", item.Quantity),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("save goods receipt item: %w", err)
+				OUTPUT INSERTED.RecNo VALUES (@number,@mpo,@code,@date,@quantity,0)`, databaseName),
+				sql.Named("number", input.ReceiptNumber), sql.Named("mpo", mpo), sql.Named("code", item.ProductCode),
+				sql.Named("date", input.ReceiptDate), sql.Named("quantity", item.Quantity)).Scan(&itemID)
+			if err != nil {
+				return nil, fmt.Errorf("insert goods receipt item %d: %w", index+1, err)
+			}
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO #SavedGoodsReceiptItems (RecNo) VALUES (@id)`, sql.Named("id", itemID)); err != nil {
+			return nil, fmt.Errorf("retain goods receipt item %d: %w", index+1, err)
+		}
+		for _, fileID := range item.PhotoFileIds {
+			var available int
+			err = tx.QueryRowContext(ctx, `SELECT COUNT(*)
+				FROM [Bureaucracy].[dbo].[file_storage] stored
+				LEFT JOIN [Bureaucracy].[dbo].[goods_receipt_item_photos] photo ON photo.file_id=stored.id
+				WHERE stored.id=@fileID AND (
+					photo.file_id IS NULL OR
+					(photo.business_year_id=@businessYearID AND photo.goods_receipt_item_id=@itemID)
+				)`, sql.Named("fileID", fileID), sql.Named("businessYearID", businessYearID), sql.Named("itemID", itemID)).Scan(&available)
+			if err != nil {
+				return nil, fmt.Errorf("check goods receipt photo file: %w", err)
+			}
+			if available != 1 {
+				return nil, fmt.Errorf("goods receipt photo file %s was not found or belongs to another item", fileID)
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO [Bureaucracy].[dbo].[goods_receipt_item_photos]
+				(business_year_id,goods_receipt_item_id,file_id)
+				SELECT @businessYearID,@itemID,@fileID
+				WHERE NOT EXISTS (SELECT 1 FROM [Bureaucracy].[dbo].[goods_receipt_item_photos] WHERE file_id=@fileID)`,
+				sql.Named("businessYearID", businessYearID), sql.Named("itemID", itemID), sql.Named("fileID", fileID)); err != nil {
+				return nil, fmt.Errorf("assign goods receipt item photo: %w", err)
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO #SavedGoodsReceiptPhotos (FileID) VALUES (@fileID)`, sql.Named("fileID", fileID)); err != nil {
+				return nil, fmt.Errorf("retain goods receipt item photo: %w", err)
+			}
+		}
+	}
+	if input.ID != nil && *input.ID > 0 {
+		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE stored
+			FROM [Bureaucracy].[dbo].[file_storage] stored
+			INNER JOIN [Bureaucracy].[dbo].[goods_receipt_item_photos] photo ON photo.file_id=stored.id
+			INNER JOIN [%s].[dbo].[DobavaSpecifikacija] item ON item.RecNo=photo.goods_receipt_item_id
+			WHERE photo.business_year_id=@businessYearID AND item.Stevilka IN (@oldNumber,@number)
+			  AND NOT EXISTS (SELECT 1 FROM #SavedGoodsReceiptPhotos saved WHERE saved.FileID=photo.file_id)`, databaseName),
+			sql.Named("businessYearID", businessYearID), sql.Named("oldNumber", oldReceiptNumber), sql.Named("number", input.ReceiptNumber)); err != nil {
+			return nil, fmt.Errorf("remove stale goods receipt item photos: %w", err)
+		}
+		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE item FROM [%s].[dbo].[DobavaSpecifikacija] item
+			WHERE item.Stevilka IN (@oldNumber,@number) AND ISNULL(item.MPO,'')=ISNULL(@mpo,'')
+			  AND NOT EXISTS (SELECT 1 FROM #SavedGoodsReceiptItems saved WHERE saved.RecNo=item.RecNo)`, databaseName),
+			sql.Named("oldNumber", oldReceiptNumber), sql.Named("number", input.ReceiptNumber), sql.Named("mpo", mpo)); err != nil {
+			return nil, fmt.Errorf("remove stale goods receipt items: %w", err)
 		}
 	}
 	if err = tx.Commit(); err != nil {

@@ -47,6 +47,7 @@ export function useGoodsReceiptDuplicate(options: Options) {
                 items: options.draft.items.map((item, index) => ({
                     ...item,
                     id: -index - 1,
+                    photos: [],
                 })),
             };
             options.setReceiptId(null);

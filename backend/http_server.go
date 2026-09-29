@@ -35,6 +35,7 @@ func NewHTTPServer(
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
+	fileHandler *FileHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -49,7 +50,7 @@ func NewHTTPServer(
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
 			AllowOrigins: config.AllowedOrigins,
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
 			AllowHeaders: []string{"Content-Type"},
 		}),
 	)
@@ -70,6 +71,9 @@ func NewHTTPServer(
 	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
 	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
+	router.POST("/api/file", fileHandler.UploadImage)
+	router.GET("/api/file/:fileId", fileHandler.Display)
+	router.DELETE("/api/file/:fileId", fileHandler.Delete)
 
 	return &HTTPServer{
 		config: config,

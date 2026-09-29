@@ -81,6 +81,9 @@ models:
   GoodsReceiptItem:
     model:
       - bureaucracy/backend.GoodsReceiptItem
+  GoodsReceiptItemPhoto:
+    model:
+      - bureaucracy/backend.GoodsReceiptItemPhoto
   GoodsReceiptPage:
     model:
       - bureaucracy/backend.GoodsReceiptPage

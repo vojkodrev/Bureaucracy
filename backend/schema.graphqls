@@ -371,6 +371,11 @@ type GoodsReceiptItem {
   productName: String
   unit: String
   quantity: Float
+  photos: [GoodsReceiptItemPhoto!]!
+}
+
+type GoodsReceiptItemPhoto {
+  fileId: ID!
 }
 
 type GoodsReceiptPage {
@@ -395,6 +400,7 @@ input GoodsReceiptItemInput {
   productName: String
   unit: String
   quantity: Float!
+  photoFileIds: [ID!]!
 }
 
 input GoodsReceiptInput {

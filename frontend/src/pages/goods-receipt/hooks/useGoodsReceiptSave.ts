@@ -63,6 +63,7 @@ export function useGoodsReceiptSave(options: Options) {
                     productName: item.productName,
                     unit: item.unit,
                     quantity: item.quantity,
+                    photoFileIds: item.photos.map(({ fileId }) => fileId),
                 })),
             });
             const next = goodsReceiptDraft(saved);

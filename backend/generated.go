@@ -149,10 +149,15 @@ type ComplexityRoot struct {
 
 	GoodsReceiptItem struct {
 		ID          func(childComplexity int) int
+		Photos      func(childComplexity int) int
 		ProductCode func(childComplexity int) int
 		ProductName func(childComplexity int) int
 		Quantity    func(childComplexity int) int
 		Unit        func(childComplexity int) int
+	}
+
+	GoodsReceiptItemPhoto struct {
+		FileID func(childComplexity int) int
 	}
 
 	GoodsReceiptPage struct {
@@ -889,6 +894,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.GoodsReceiptItem.ID(childComplexity), true
+	case "GoodsReceiptItem.photos":
+		if e.ComplexityRoot.GoodsReceiptItem.Photos == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItem.Photos(childComplexity), true
 	case "GoodsReceiptItem.productCode":
 		if e.ComplexityRoot.GoodsReceiptItem.ProductCode == nil {
 			break
@@ -913,6 +924,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.GoodsReceiptItem.Unit(childComplexity), true
+
+	case "GoodsReceiptItemPhoto.fileId":
+		if e.ComplexityRoot.GoodsReceiptItemPhoto.FileID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.GoodsReceiptItemPhoto.FileID(childComplexity), true
 
 	case "GoodsReceiptPage.goodsReceipts":
 		if e.ComplexityRoot.GoodsReceiptPage.GoodsReceipts == nil {
@@ -2376,8 +2394,18 @@ func (ec *executionContext) childFields_GoodsReceiptItem(ctx context.Context, fi
 		return ec.fieldContext_GoodsReceiptItem_unit(ctx, field)
 	case "quantity":
 		return ec.fieldContext_GoodsReceiptItem_quantity(ctx, field)
+	case "photos":
+		return ec.fieldContext_GoodsReceiptItem_photos(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type GoodsReceiptItem", field.Name)
+}
+
+func (ec *executionContext) childFields_GoodsReceiptItemPhoto(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "fileId":
+		return ec.fieldContext_GoodsReceiptItemPhoto_fileId(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type GoodsReceiptItemPhoto", field.Name)
 }
 
 func (ec *executionContext) childFields_GoodsReceiptPage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -6019,6 +6047,61 @@ func (ec *executionContext) _GoodsReceiptItem_quantity(ctx context.Context, fiel
 }
 func (ec *executionContext) fieldContext_GoodsReceiptItem_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("GoodsReceiptItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _GoodsReceiptItem_photos(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItem_photos(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Photos, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*GoodsReceiptItemPhoto) graphql.Marshaler {
+			return ec.marshalNGoodsReceiptItemPhoto2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemPhotoᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItem_photos(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GoodsReceiptItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceiptItemPhoto(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GoodsReceiptItemPhoto_fileId(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptItemPhoto) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_GoodsReceiptItemPhoto_fileId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.FileID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_GoodsReceiptItemPhoto_fileId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("GoodsReceiptItemPhoto", field, false, false, errors.New("field of type ID does not have child fields"))
 }
 
 func (ec *executionContext) _GoodsReceiptPage_goodsReceipts(ctx context.Context, field graphql.CollectedField, obj *GoodsReceiptPage) (ret graphql.Marshaler) {
@@ -11876,7 +11959,7 @@ func (ec *executionContext) unmarshalInputGoodsReceiptItemInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "productCode", "productName", "unit", "quantity"}
+	fieldsInOrder := [...]string{"id", "productCode", "productName", "unit", "quantity", "photoFileIds"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11918,6 +12001,13 @@ func (ec *executionContext) unmarshalInputGoodsReceiptItemInput(ctx context.Cont
 				return it, err
 			}
 			it.Quantity = data
+		case "photoFileIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("photoFileIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PhotoFileIds = data
 		}
 	}
 	return it, nil
@@ -13257,6 +13347,49 @@ func (ec *executionContext) _GoodsReceiptItem(ctx context.Context, sel ast.Selec
 		case "quantity":
 			out.Values[i] = ec._GoodsReceiptItem_quantity(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "photos":
+			out.Values[i] = ec._GoodsReceiptItem_photos(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var goodsReceiptItemPhotoImplementors = []string{"GoodsReceiptItemPhoto"}
+
+func (ec *executionContext) _GoodsReceiptItemPhoto(ctx context.Context, sel ast.SelectionSet, obj *GoodsReceiptItemPhoto) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, goodsReceiptItemPhotoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GoodsReceiptItemPhoto")
+		case "fileId":
+			out.Values[i] = ec._GoodsReceiptItemPhoto_fileId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		default:
@@ -16019,6 +16152,32 @@ func (ec *executionContext) unmarshalNGoodsReceiptItemInput2ᚖbureaucracyᚋbac
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNGoodsReceiptItemPhoto2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemPhotoᚄ(ctx context.Context, sel ast.SelectionSet, v []*GoodsReceiptItemPhoto) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNGoodsReceiptItemPhoto2ᚖbureaucracyᚋbackendᚐGoodsReceiptItemPhoto(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNGoodsReceiptItemPhoto2ᚖbureaucracyᚋbackendᚐGoodsReceiptItemPhoto(ctx context.Context, sel ast.SelectionSet, v *GoodsReceiptItemPhoto) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._GoodsReceiptItemPhoto(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNGoodsReceiptPage2bureaucracyᚋbackendᚐGoodsReceiptPage(ctx context.Context, sel ast.SelectionSet, v GoodsReceiptPage) graphql.Marshaler {
 	return ec._GoodsReceiptPage(ctx, sel, &v)
 }
@@ -16031,6 +16190,51 @@ func (ec *executionContext) marshalNGoodsReceiptPage2ᚖbureaucracyᚋbackendᚐ
 		return graphql.Null
 	}
 	return ec._GoodsReceiptPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {

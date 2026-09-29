@@ -3,7 +3,35 @@ import { postGraphql } from '@/lib/graphql'
 import type { GoodsReceipt, Storage } from '@/lib/goods-receipt-types'
 import { nextPaddedNumber } from '@/lib/numbers'
 
-const fields = 'id receiptNumber receiptDate storage receivedBy items { id productCode productName unit quantity }'
+const fields = 'id receiptNumber receiptDate storage receivedBy items { id productCode productName unit quantity photos { fileId } }'
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+
+function fileApiUrl(fileId?: string) {
+    const url = new URL(graphqlUrl)
+    url.pathname = fileId
+        ? `/api/file/${encodeURIComponent(fileId)}`
+        : '/api/file'
+    url.search = ''
+    return url.toString()
+}
+
+export function goodsReceiptPhotoUrl(fileId: string) {
+    return fileApiUrl(fileId)
+}
+
+export async function uploadGoodsReceiptPhoto(file: File) {
+    const body = new FormData()
+    body.append('file', file)
+    const response = await fetch(fileApiUrl(), { method: 'POST', body })
+    const result = await response.json().catch(() => ({})) as { fileId?: string; error?: string }
+    if (!response.ok || !result.fileId) throw new Error(result.error ?? `Photo upload failed (${response.status})`)
+    return { fileId: result.fileId }
+}
+
+export async function removeGoodsReceiptPhoto(fileId: string) {
+    const response = await fetch(fileApiUrl(fileId), { method: 'DELETE' })
+    if (!response.ok) throw new Error(`Removing photo failed (${response.status})`)
+}
 
 export async function fetchGoodsReceipt(receiptNumber: string, signal?: AbortSignal) {
     const result = await postGraphql<{ data?: { goodsReceipt: GoodsReceipt | null } }>(`

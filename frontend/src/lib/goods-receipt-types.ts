@@ -4,7 +4,10 @@ export type GoodsReceiptItem = {
     productName: string | null
     unit: string | null
     quantity: number | null
+    photos: GoodsReceiptItemPhoto[]
 }
+
+export type GoodsReceiptItemPhoto = { fileId: string }
 
 export type GoodsReceipt = {
     id: number

@@ -16,11 +16,16 @@ type Storage struct {
 }
 
 type GoodsReceiptItem struct {
-	ID          int      `json:"id"`
-	ProductCode *string  `json:"productCode"`
-	ProductName *string  `json:"productName"`
-	Unit        *string  `json:"unit"`
-	Quantity    *float64 `json:"quantity"`
+	ID          int                      `json:"id"`
+	ProductCode *string                  `json:"productCode"`
+	ProductName *string                  `json:"productName"`
+	Unit        *string                  `json:"unit"`
+	Quantity    *float64                 `json:"quantity"`
+	Photos      []*GoodsReceiptItemPhoto `json:"photos"`
+}
+
+type GoodsReceiptItemPhoto struct {
+	FileID string `json:"fileId"`
 }
 
 type GoodsReceiptPage struct {

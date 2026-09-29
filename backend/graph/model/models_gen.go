@@ -55,11 +55,12 @@ type GoodsReceiptInput struct {
 }
 
 type GoodsReceiptItemInput struct {
-	ID          *int    `json:"id,omitempty"`
-	ProductCode string  `json:"productCode"`
-	ProductName *string `json:"productName,omitempty"`
-	Unit        *string `json:"unit,omitempty"`
-	Quantity    float64 `json:"quantity"`
+	ID           *int     `json:"id,omitempty"`
+	ProductCode  string   `json:"productCode"`
+	ProductName  *string  `json:"productName,omitempty"`
+	Unit         *string  `json:"unit,omitempty"`
+	Quantity     float64  `json:"quantity"`
+	PhotoFileIds []string `json:"photoFileIds"`
 }
 
 type InventoryItemInput struct {
