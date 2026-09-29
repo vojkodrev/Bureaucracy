@@ -1,9 +1,16 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import InventoryItemPickerField from
     "@/components/inventory-item-search/InventoryItemPickerField";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+} from "@/components/ui/carousel";
 import {
     Dialog,
     DialogClose,
@@ -45,6 +52,7 @@ export default function AddEditInventoryItemDialog({
     const [cameraOpen, setCameraOpen] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     const cameraInput = useRef<HTMLInputElement>(null);
+    const wheelGesturesPlugin = useMemo(() => WheelGesturesPlugin(), []);
     const quantityValue = quantity.trim() === "" ? null : Number(quantity);
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&
@@ -84,7 +92,7 @@ export default function AddEditInventoryItemDialog({
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="sm:max-w-3xl">
+            <DialogContent showCloseButton={false} className="sm:max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>
                         {item ? "Edit stock item" : "Add stock item"}
@@ -155,47 +163,80 @@ export default function AddEditInventoryItemDialog({
                         className="sr-only"
                         onChange={(event) => { void uploadPhotos(event.target.files); }}
                     />
-                    <div className="flex flex-wrap gap-3">
-                        {photos.map((photo) => (
-                            <div key={photo.fileId} className="group relative h-28 w-28 overflow-hidden rounded-md border bg-muted">
-                                <img
-                                    src={goodsReceiptPhotoUrl(photo.fileId)}
-                                    alt="Goods receipt item"
-                                    className="h-full w-full object-cover"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon-xs"
-                                    className="absolute right-1 top-1"
-                                    aria-label="Remove photo"
-                                    onClick={() => removePhoto(photo.fileId)}
+                    <Carousel
+                        opts={{ align: "start" }}
+                        plugins={[wheelGesturesPlugin]}
+                        className="w-full"
+                    >
+                        <CarouselContent>
+                            {photos.map((photo) => (
+                                <CarouselItem
+                                    key={photo.fileId}
+                                    className="basis-[48%] md:basis-[30%]"
                                 >
-                                    <X />
-                                </Button>
-                            </div>
-                        ))}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-28 w-28 flex-col"
-                            disabled={isUploading}
-                            onClick={() => fileInput.current?.click()}
-                        >
-                            {isUploading ? <Loader2 className="animate-spin" /> : <ImagePlus />}
-                            {isUploading ? "Uploading…" : "Add photos"}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-28 w-28 flex-col"
-                            disabled={isUploading}
-                            onClick={openCamera}
-                        >
-                            <Camera />
-                            Take photo
-                        </Button>
-                    </div>
+                                    <div className="p-1">
+                                        <Card className="overflow-hidden py-0">
+                                            <CardContent className="relative aspect-square p-0">
+                                                <img
+                                                    src={goodsReceiptPhotoUrl(photo.fileId)}
+                                                    alt="Goods receipt item"
+                                                    className="h-full w-full object-cover"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon-xs"
+                                                    className="absolute right-2 top-2"
+                                                    aria-label="Remove photo"
+                                                    onClick={() => removePhoto(photo.fileId)}
+                                                >
+                                                    <X />
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                            <CarouselItem className="basis-[48%] md:basis-[30%]">
+                                <div className="p-1">
+                                    <Card className="py-0">
+                                        <CardContent className="aspect-square p-0">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="h-full w-full flex-col rounded-xl"
+                                                disabled={isUploading}
+                                                onClick={() => fileInput.current?.click()}
+                                            >
+                                                {isUploading
+                                                    ? <Loader2 className="animate-spin" />
+                                                    : <ImagePlus />}
+                                                {isUploading ? "Uploading…" : "Add photos"}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </CarouselItem>
+                            <CarouselItem className="basis-[48%] md:basis-[30%]">
+                                <div className="p-1">
+                                    <Card className="py-0">
+                                        <CardContent className="aspect-square p-0">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="h-full w-full flex-col rounded-xl"
+                                                disabled={isUploading}
+                                                onClick={openCamera}
+                                            >
+                                                <Camera />
+                                                Take photo
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </CarouselItem>
+                        </CarouselContent>
+                    </Carousel>
                     {photoError && <p className="text-sm text-destructive">{photoError}</p>}
                 </Field>
                 <DialogFooter>
