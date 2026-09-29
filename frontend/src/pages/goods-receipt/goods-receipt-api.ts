@@ -28,10 +28,6 @@ export async function uploadGoodsReceiptPhoto(file: File) {
     return { fileId: result.fileId }
 }
 
-export async function removeGoodsReceiptPhoto(fileId: string) {
-    const response = await fetch(fileApiUrl(fileId), { method: 'DELETE' })
-    if (!response.ok) throw new Error(`Removing photo failed (${response.status})`)
-}
 
 export async function fetchGoodsReceipt(receiptNumber: string, signal?: AbortSignal) {
     const result = await postGraphql<{ data?: { goodsReceipt: GoodsReceipt | null } }>(`

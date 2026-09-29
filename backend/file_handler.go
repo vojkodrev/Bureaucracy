@@ -91,21 +91,6 @@ func (handler *FileHandler) Display(context *gin.Context) {
 	context.Data(http.StatusOK, contentType, data)
 }
 
-func (handler *FileHandler) Delete(context *gin.Context) {
-	fileID, err := uuid.Parse(context.Param("fileId"))
-	if err != nil {
-		context.Status(http.StatusBadRequest)
-		return
-	}
-	if _, err := handler.database.ExecContext(context.Request.Context(), `
-		DELETE FROM [Bureaucracy].[dbo].[file_storage]
-		WHERE id=@id`, sql.Named("id", fileID)); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "Could not remove file"})
-		return
-	}
-	context.Status(http.StatusNoContent)
-}
-
 func prepareImage(upload []byte) ([]byte, int, int, error) {
 	configuration, _, err := image.DecodeConfig(bytes.NewReader(upload))
 	if err != nil || configuration.Width < 1 || configuration.Height < 1 {

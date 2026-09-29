@@ -50,7 +50,7 @@ func NewHTTPServer(
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
 			AllowOrigins: config.AllowedOrigins,
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
+			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 			AllowHeaders: []string{"Content-Type"},
 		}),
 	)
@@ -73,7 +73,6 @@ func NewHTTPServer(
 	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 	router.POST("/api/file", fileHandler.UploadImage)
 	router.GET("/api/file/:fileId", fileHandler.Display)
-	router.DELETE("/api/file/:fileId", fileHandler.Delete)
 
 	return &HTTPServer{
 		config: config,

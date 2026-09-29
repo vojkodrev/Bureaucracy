@@ -18,7 +18,6 @@ import { NumberInput } from "@/components/ui/number-input";
 import type { GoodsReceiptItem } from "@/lib/goods-receipt-types";
 import {
     goodsReceiptPhotoUrl,
-    removeGoodsReceiptPhoto,
     uploadGoodsReceiptPhoto,
 } from "./goods-receipt-api";
 
@@ -66,14 +65,9 @@ export default function AddEditInventoryItemDialog({
         }
     };
 
-    const removePhoto = async (fileId: string) => {
+    const removePhoto = (fileId: string) => {
         setPhotoError(null);
-        try {
-            await removeGoodsReceiptPhoto(fileId);
-            setPhotos((current) => current.filter((photo) => photo.fileId !== fileId));
-        } catch (error) {
-            setPhotoError(error instanceof Error ? error.message : "Removing photo failed");
-        }
+        setPhotos((current) => current.filter((photo) => photo.fileId !== fileId));
     };
 
     return (
@@ -155,7 +149,7 @@ export default function AddEditInventoryItemDialog({
                                     size="icon-xs"
                                     className="absolute right-1 top-1"
                                     aria-label="Remove photo"
-                                    onClick={() => { void removePhoto(photo.fileId); }}
+                                    onClick={() => removePhoto(photo.fileId)}
                                 >
                                     <X />
                                 </Button>

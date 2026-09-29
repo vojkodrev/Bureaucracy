@@ -280,15 +280,16 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 		if item.Quantity == 0 || math.IsNaN(item.Quantity) || math.IsInf(item.Quantity, 0) {
 			return nil, fmt.Errorf("each item quantity must be a non-zero number")
 		}
-		seenPhotos := make(map[string]bool, len(item.PhotoFileIds))
+		seenPhotos := make(map[uuid.UUID]bool, len(item.PhotoFileIds))
 		for _, fileID := range item.PhotoFileIds {
-			if _, parseErr := uuid.Parse(fileID); parseErr != nil {
+			parsedFileID, parseErr := uuid.Parse(fileID)
+			if parseErr != nil {
 				return nil, fmt.Errorf("invalid goods receipt photo file ID")
 			}
-			if seenPhotos[fileID] {
+			if seenPhotos[parsedFileID] {
 				return nil, fmt.Errorf("duplicate goods receipt photo file ID")
 			}
-			seenPhotos[fileID] = true
+			seenPhotos[parsedFileID] = true
 		}
 	}
 	businessYearID, err := strconv.Atoi(businessYear)
