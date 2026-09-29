@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import InventoryItemPickerField from
     "@/components/inventory-item-search/InventoryItemPickerField";
+import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -41,14 +42,16 @@ export default function AddEditInventoryItemDialog({
     const [photos, setPhotos] = useState(item?.photos ?? []);
     const [isUploading, setIsUploading] = useState(false);
     const [photoError, setPhotoError] = useState<string | null>(null);
+    const [cameraOpen, setCameraOpen] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
+    const cameraInput = useRef<HTMLInputElement>(null);
     const quantityValue = quantity.trim() === "" ? null : Number(quantity);
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&
         Number.isFinite(quantityValue) &&
         quantityValue !== 0 && !isUploading;
 
-    const uploadPhotos = async (files: FileList | null) => {
+    const uploadPhotos = async (files: FileList | File[] | null) => {
         if (!files?.length) return;
         setIsUploading(true);
         setPhotoError(null);
@@ -62,12 +65,21 @@ export default function AddEditInventoryItemDialog({
         } finally {
             setIsUploading(false);
             if (fileInput.current) fileInput.current.value = "";
+            if (cameraInput.current) cameraInput.current.value = "";
         }
     };
 
     const removePhoto = (fileId: string) => {
         setPhotoError(null);
         setPhotos((current) => current.filter((photo) => photo.fileId !== fileId));
+    };
+
+    const openCamera = () => {
+        if (typeof navigator.mediaDevices?.getUserMedia === "function") {
+            setCameraOpen(true);
+        } else {
+            cameraInput.current?.click();
+        }
     };
 
     return (
@@ -135,6 +147,14 @@ export default function AddEditInventoryItemDialog({
                         className="sr-only"
                         onChange={(event) => { void uploadPhotos(event.target.files); }}
                     />
+                    <input
+                        ref={cameraInput}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="sr-only"
+                        onChange={(event) => { void uploadPhotos(event.target.files); }}
+                    />
                     <div className="flex flex-wrap gap-3">
                         {photos.map((photo) => (
                             <div key={photo.fileId} className="group relative h-28 w-28 overflow-hidden rounded-md border bg-muted">
@@ -165,6 +185,16 @@ export default function AddEditInventoryItemDialog({
                             {isUploading ? <Loader2 className="animate-spin" /> : <ImagePlus />}
                             {isUploading ? "Uploading…" : "Add photos"}
                         </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="h-28 w-28 flex-col"
+                            disabled={isUploading}
+                            onClick={openCamera}
+                        >
+                            <Camera />
+                            Take photo
+                        </Button>
                     </div>
                     {photoError && <p className="text-sm text-destructive">{photoError}</p>}
                 </Field>
@@ -187,6 +217,14 @@ export default function AddEditInventoryItemDialog({
                         {item ? "Save changes" : "Add stock item"}
                     </Button>
                 </DialogFooter>
+                {cameraOpen && (
+                    <CameraCaptureDialog
+                        onOpenChange={setCameraOpen}
+                        onCapture={async (file) => {
+                            await uploadPhotos([file]);
+                        }}
+                    />
+                )}
             </DialogContent>
         </Dialog>
     );
