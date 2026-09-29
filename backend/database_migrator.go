@@ -77,6 +77,12 @@ func (migrator *DatabaseMigrator) Migrate(ctx context.Context) error {
 			continue
 		}
 
+		slog.Info("running database migration",
+			"version", migration.Version,
+			"name", migration.Name,
+			"script", migration.Path,
+		)
+
 		for batchNumber, batch := range splitSQLServerBatches(migration.SQL) {
 			if _, err := connection.ExecContext(ctx, batch); err != nil {
 				return fmt.Errorf("apply migration %s batch %d: %w", migration.Path, batchNumber+1, err)
@@ -92,7 +98,11 @@ VALUES (@version, @name);`,
 			return fmt.Errorf("record migration %s: %w", migration.Path, err)
 		}
 
-		slog.Info("database migration applied", "version", migration.Version, "name", migration.Name)
+		slog.Info("database migration applied",
+			"version", migration.Version,
+			"name", migration.Name,
+			"script", migration.Path,
+		)
 	}
 
 	return nil
