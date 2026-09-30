@@ -37,6 +37,7 @@ type invoicePrintCustomer struct {
 	Name     string `xml:"name"`
 	Address  string `xml:"address"`
 	Location string `xml:"location"`
+	Country  string `xml:"country"`
 	TaxID    string `xml:"taxId"`
 }
 
@@ -127,6 +128,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 			Name:     trimmedString(invoice.CustomerName),
 			Address:  trimmedString(invoice.CustomerAddress),
 			Location: customerLocation(invoice.CustomerPostalCode, invoice.CustomerCity),
+			Country:  foreignCustomerCountry(invoice.CustomerCountry, invoice.CustomerCountryName),
 			TaxID:    trimmedString(invoice.CustomerTaxID),
 		},
 		IntroText:     introText,
@@ -184,6 +186,13 @@ func customerLocation(postalCode *string, city *string) string {
 		return postal
 	}
 	return postal + "    " + location
+}
+
+func foreignCustomerCountry(code *string, name *string) string {
+	if strings.EqualFold(trimmedString(code), "SLO") {
+		return ""
+	}
+	return valueOrDefault(name, trimmedString(code))
 }
 
 func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax) {

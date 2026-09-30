@@ -405,6 +405,7 @@ func (repository *InvoiceRepository) GetByNumber(
 			p.Posta,
 			r.KrajPartnerja,
 			p.Drzava,
+			COALESCE(NULLIF(LTRIM(RTRIM(d.Drzava)), ''), p.Drzava, ''),
 			p.IDStevilka,
 			p.MaticnaStevilka,
 			p.Ziro_Racun,
@@ -423,7 +424,8 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.Storno
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
-		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, customerDatabaseName),
+		LEFT JOIN [%s].[dbo].[Drzave] d ON d.OznakaDrzave = p.Drzava AND ISNULL(d.Deleted, 0) = 0
+		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
 		sql.Named("invoiceNumber", invoiceNumber),
 	)
 
@@ -442,6 +444,7 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.CustomerPostalCode,
 		&invoice.CustomerCity,
 		&invoice.CustomerCountry,
+		&invoice.CustomerCountryName,
 		&invoice.CustomerTaxID,
 		&invoice.CustomerRegistrationNumber,
 		&invoice.CustomerIBAN,
