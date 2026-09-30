@@ -8,21 +8,30 @@ type UnsavedCustomerAlertProps = {
     onOpenChange: (open: boolean) => void
     onDiscard: () => void
     actionLabel?: string
+    title?: string
+    description?: string
+    actionVariant?: 'default' | 'destructive'
 }
 
-function UnsavedCustomerAlert({ open, onOpenChange, onDiscard, actionLabel = 'Leave without saving' }: UnsavedCustomerAlertProps) {
+function UnsavedCustomerAlert({
+    open,
+    onOpenChange,
+    onDiscard,
+    actionLabel = 'Leave without saving',
+    title = 'Discard unsaved changes?',
+    description = 'This customer has changes that have not been saved. If you continue, those changes will be lost.',
+    actionVariant = 'destructive',
+}: UnsavedCustomerAlertProps) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This customer has changes that have not been saved. If you continue, those changes will be lost.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{title}</AlertDialogTitle>
+                    <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Keep editing</AlertDialogCancel>
-                    <AlertDialogAction variant="destructive" onClick={onDiscard}>{actionLabel}</AlertDialogAction>
+                    <AlertDialogAction variant={actionVariant} onClick={onDiscard}>{actionLabel}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
