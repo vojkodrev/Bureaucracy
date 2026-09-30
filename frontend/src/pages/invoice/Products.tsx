@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClipboardPaste, Copy, Pencil, Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, ClipboardPaste, Copy, Pencil, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -91,13 +91,21 @@ function Products({
             toast.add({ title: 'Product row could not be pasted', description: 'Copy a product row from an invoice and try again.', type: 'error' })
         }
     }
+    const moveItem = (index: number, direction: -1 | 1) => {
+        const targetIndex = index + direction
+        if (targetIndex < 0 || targetIndex >= items.length) return
+
+        const reorderedItems = [...items]
+        ;[reorderedItems[index], reorderedItems[targetIndex]] = [reorderedItems[targetIndex], reorderedItems[index]]
+        onItemsChange(reorderedItems.map((item, itemIndex) => ({ ...item, sequence: itemIndex + 1 })))
+    }
 
     return (
         <Card>
             <CardHeader className="flex-row items-center justify-between"><CardTitle>Products</CardTitle><div className="flex items-center gap-2"><Button type="button" size="sm" onClick={openNew}><Plus />Add product</Button><Button type="button" variant="outline" size="sm" onClick={() => { void pasteItem() }}><ClipboardPaste />Paste product</Button></div></CardHeader>
             <CardContent>
                 <Table>
-                    <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product code</TableHead><TableHead>Product name</TableHead><TableHead className="text-right">Unit price</TableHead><TableHead className="text-right">Unit tax</TableHead><TableHead className="text-right">Quantity</TableHead><TableHead className="text-right">Discount</TableHead><TableHead className="text-right">Net amount</TableHead><TableHead className="text-right">Gross amount</TableHead><TableHead className="w-16"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product code</TableHead><TableHead>Product name</TableHead><TableHead className="text-right">Unit price</TableHead><TableHead className="text-right">Unit tax</TableHead><TableHead className="text-right">Quantity</TableHead><TableHead className="text-right">Discount</TableHead><TableHead className="text-right">Net amount</TableHead><TableHead className="text-right">Gross amount</TableHead><TableHead className="w-28"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading && (
                             <MessageRow>Loading {documentName} items…</MessageRow>
@@ -111,7 +119,7 @@ function Products({
                                 <TableRow key={`${item.id}-${index}`}>
                                     <TableCell>{item.sequence ?? '—'}</TableCell><TableCell className="font-medium">{item.productCode ?? '—'}</TableCell><TableCell>{item.productName ?? '—'}</TableCell>
                                     <MoneyCell value={item.unitPrice} /><MoneyCell value={item.unitTaxAmount} /><TableCell className="text-right">{item.quantity ?? '—'}</TableCell><TableCell className="text-right">{item.discount == null ? '—' : `${item.discount}%`}</TableCell><MoneyCell value={item.netAmount} /><MoneyCell value={item.grossAmount} />
-                                    <TableCell><div className="flex items-center gap-1"><Button type="button" variant="ghost" size="icon-xs" aria-label={`Copy ${name}`} onClick={() => { void copyItem(item) }}><Copy /></Button><Button type="button" variant="ghost" size="icon-xs" aria-label={`Edit ${name}`} onClick={() => openEdit(index)}><Pencil /></Button><RemoveProductAlert productName={name} onRemove={() => onItemsChange(items.filter((_, itemIndex) => itemIndex !== index))} /></div></TableCell>
+                                    <TableCell><div className="flex items-center gap-1"><Button type="button" variant="ghost" size="icon-xs" aria-label={`Move ${name} up`} disabled={index === 0} onClick={() => moveItem(index, -1)}><ArrowUp /></Button><Button type="button" variant="ghost" size="icon-xs" aria-label={`Move ${name} down`} disabled={index === items.length - 1} onClick={() => moveItem(index, 1)}><ArrowDown /></Button><Button type="button" variant="ghost" size="icon-xs" aria-label={`Copy ${name}`} onClick={() => { void copyItem(item) }}><Copy /></Button><Button type="button" variant="ghost" size="icon-xs" aria-label={`Edit ${name}`} onClick={() => openEdit(index)}><Pencil /></Button><RemoveProductAlert productName={name} onRemove={() => onItemsChange(items.filter((_, itemIndex) => itemIndex !== index))} /></div></TableCell>
                                 </TableRow>
                             )
                         })}
