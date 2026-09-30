@@ -3,6 +3,10 @@
 package model
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -141,4 +145,59 @@ type ProductInput struct {
 }
 
 type Query struct {
+}
+
+type BankStatementDateDirection string
+
+const (
+	BankStatementDateDirectionPrevious BankStatementDateDirection = "PREVIOUS"
+	BankStatementDateDirectionNext     BankStatementDateDirection = "NEXT"
+)
+
+var AllBankStatementDateDirection = []BankStatementDateDirection{
+	BankStatementDateDirectionPrevious,
+	BankStatementDateDirectionNext,
+}
+
+func (e BankStatementDateDirection) IsValid() bool {
+	switch e {
+	case BankStatementDateDirectionPrevious, BankStatementDateDirectionNext:
+		return true
+	}
+	return false
+}
+
+func (e BankStatementDateDirection) String() string {
+	return string(e)
+}
+
+func (e *BankStatementDateDirection) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BankStatementDateDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BankStatementDateDirection", str)
+	}
+	return nil
+}
+
+func (e BankStatementDateDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *BankStatementDateDirection) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e BankStatementDateDirection) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

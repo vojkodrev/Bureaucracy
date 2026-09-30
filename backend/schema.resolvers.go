@@ -108,6 +108,11 @@ func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, 
 	return r.BankStatements.GetByNumber(ctx, businessYear, statementNumber)
 }
 
+// BankStatementNumberByDate is the resolver for the bankStatementNumberByDate field.
+func (r *queryResolver) BankStatementNumberByDate(ctx context.Context, businessYear string, statementDate time.Time, direction model.BankStatementDateDirection) (*int, error) {
+	return r.BankStatements.NumberByDate(ctx, businessYear, statementDate, string(direction))
+}
+
 // LatestBankStatementNumber is the resolver for the latestBankStatementNumber field.
 func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error) {
 	return r.BankStatements.LatestNumber(ctx, businessYear, bankAccount)

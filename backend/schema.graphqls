@@ -1,5 +1,10 @@
 scalar Time
 
+enum BankStatementDateDirection {
+  PREVIOUS
+  NEXT
+}
+
 type BusinessYear {
   code: String
   description: String
@@ -463,6 +468,11 @@ type Query {
   bankAccounts(businessYear: String!): [BankAccount!]!
   bankTransactionTypes(businessYear: String!): [BankTransactionType!]!
   bankStatement(businessYear: String!, statementNumber: Int!): BankStatement
+  bankStatementNumberByDate(
+    businessYear: String!
+    statementDate: Time!
+    direction: BankStatementDateDirection!
+  ): Int
   latestBankStatementNumber(businessYear: String!, bankAccount: String): Int
   missingBankStatementDates(businessYear: String!): [MissingBankStatementDate!]!
   businessYear(code: String!): BusinessYear

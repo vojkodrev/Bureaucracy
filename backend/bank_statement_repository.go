@@ -86,6 +86,37 @@ func (repository *BankStatementRepository) ExistsOnDate(ctx context.Context, bus
 	return exists, nil
 }
 
+func (repository *BankStatementRepository) NumberByDate(ctx context.Context, businessYear string, statementDate time.Time, direction string) (*int, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	comparison, ordering := "", ""
+	switch direction {
+	case "PREVIOUS":
+		comparison, ordering = "<", "DESC"
+	case "NEXT":
+		comparison, ordering = ">", "ASC"
+	default:
+		return nil, fmt.Errorf("direction must be PREVIOUS or NEXT")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	var number int
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT TOP 1 CAST(Stevilka AS int)
+		FROM [%s].[dbo].[BankaZRSaldo]
+		WHERE CAST(Datum AS date) %s CAST(@statementDate AS date)
+		  AND ISNULL(Deleted, 0) = 0
+		ORDER BY Datum %s, RecNo %s`, databaseName, comparison, ordering, ordering),
+		sql.Named("statementDate", statementDate)).Scan(&number)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement number by date: %w", err)
+	}
+	return &number, nil
+}
+
 func (repository *BankStatementRepository) ListMissingDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")

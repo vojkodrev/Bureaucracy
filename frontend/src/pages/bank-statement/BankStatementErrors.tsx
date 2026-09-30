@@ -24,8 +24,8 @@ function BankStatementErrors({
         ],
         [
             "navigation",
-            "Latest statement number could not be loaded",
-            "Bank statement navigation may be unavailable.",
+            "Bank statement could not be found by date",
+            "There is no bank statement in that direction.",
             navigationError,
         ],
         [

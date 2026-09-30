@@ -334,6 +334,7 @@ type ComplexityRoot struct {
 		BankAccounts                 func(childComplexity int, businessYear string) int
 		BankStatement                func(childComplexity int, businessYear string, statementNumber int) int
 		BankStatementInvoicePayments func(childComplexity int, businessYear string, invoiceNumbers []string) int
+		BankStatementNumberByDate    func(childComplexity int, businessYear string, statementDate time.Time, direction model.BankStatementDateDirection) int
 		BankTransactionTypes         func(childComplexity int, businessYear string) int
 		BusinessYear                 func(childComplexity int, code string) int
 		BusinessYears                func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -397,6 +398,7 @@ type QueryResolver interface {
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error)
 	BankStatement(ctx context.Context, businessYear string, statementNumber int) (*BankStatement, error)
+	BankStatementNumberByDate(ctx context.Context, businessYear string, statementDate time.Time, direction model.BankStatementDateDirection) (*int, error)
 	LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error)
 	MissingBankStatementDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error)
 	BusinessYear(ctx context.Context, code string) (*BusinessYear, error)
@@ -1736,6 +1738,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.BankStatementInvoicePayments(childComplexity, args["businessYear"].(string), args["invoiceNumbers"].([]string)), true
+	case "Query.bankStatementNumberByDate":
+		if e.ComplexityRoot.Query.BankStatementNumberByDate == nil {
+			break
+		}
+
+		args, err := ec.field_Query_bankStatementNumberByDate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.BankStatementNumberByDate(childComplexity, args["businessYear"].(string), args["statementDate"].(time.Time), args["direction"].(model.BankStatementDateDirection)), true
 	case "Query.bankTransactionTypes":
 		if e.ComplexityRoot.Query.BankTransactionTypes == nil {
 			break
@@ -3095,6 +3108,36 @@ func (ec *executionContext) field_Query_bankStatementInvoicePayments_args(ctx co
 		return nil, err
 	}
 	args["invoiceNumbers"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_bankStatementNumberByDate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "statementDate",
+		func(ctx context.Context, v any) (time.Time, error) {
+			return ec.unmarshalNTime2timeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["statementDate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "direction",
+		func(ctx context.Context, v any) (model.BankStatementDateDirection, error) {
+			return ec.unmarshalNBankStatementDateDirection2bureaucracyᚋbackendᚋgraphᚋmodelᚐBankStatementDateDirection(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["direction"] = arg2
 	return args, nil
 }
 
@@ -9442,6 +9485,50 @@ func (ec *executionContext) fieldContext_Query_bankStatement(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_bankStatementNumberByDate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_bankStatementNumberByDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().BankStatementNumberByDate(ctx, fc.Args["businessYear"].(string), fc.Args["statementDate"].(time.Time), fc.Args["direction"].(model.BankStatementDateDirection))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *int) graphql.Marshaler {
+			return ec.marshalOInt2ᚖint(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_bankStatementNumberByDate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bankStatementNumberByDate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_latestBankStatementNumber(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -14789,6 +14876,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "bankStatementNumberByDate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bankStatementNumberByDate(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "latestBankStatementNumber":
 			field := field
 
@@ -15807,6 +15916,16 @@ func (ec *executionContext) marshalNBankStatement2ᚖbureaucracyᚋbackendᚐBan
 		return graphql.Null
 	}
 	return ec._BankStatement(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBankStatementDateDirection2bureaucracyᚋbackendᚋgraphᚋmodelᚐBankStatementDateDirection(ctx context.Context, v any) (model.BankStatementDateDirection, error) {
+	var res model.BankStatementDateDirection
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBankStatementDateDirection2bureaucracyᚋbackendᚋgraphᚋmodelᚐBankStatementDateDirection(ctx context.Context, sel ast.SelectionSet, v model.BankStatementDateDirection) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNBankStatementEntry2ᚕᚖbureaucracyᚋbackendᚐBankStatementEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*BankStatementEntry) graphql.Marshaler {

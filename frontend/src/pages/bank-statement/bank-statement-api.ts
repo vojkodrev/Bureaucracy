@@ -1,5 +1,6 @@
 import { getSelectedBusinessYear } from "@/lib/business-year";
 import type { BankStatement } from "@/lib/bank-statement-types";
+import { dateForApi } from "@/lib/dates";
 import { postGraphql } from "@/lib/graphql";
 
 const bankStatementQuery = `
@@ -17,6 +18,20 @@ const bankStatementQuery = `
 const latestBankStatementNumberQuery = `
     query LatestBankStatementNumber($businessYear: String!, $bankAccount: String) {
         latestBankStatementNumber(businessYear: $businessYear, bankAccount: $bankAccount)
+    }
+`;
+
+const bankStatementNumberByDateQuery = `
+    query BankStatementNumberByDate(
+        $businessYear: String!
+        $statementDate: Time!
+        $direction: BankStatementDateDirection!
+    ) {
+        bankStatementNumberByDate(
+            businessYear: $businessYear
+            statementDate: $statementDate
+            direction: $direction
+        )
     }
 `;
 
@@ -55,6 +70,22 @@ export async function fetchBankStatementExists(statementNumber: number): Promise
         businessYear: getSelectedBusinessYear(), statementNumber,
     });
     return result.data?.bankStatement != null;
+}
+
+export async function fetchBankStatementNumberByDate(
+    statementDate: Date,
+    direction: "PREVIOUS" | "NEXT",
+    signal?: AbortSignal,
+): Promise<number | null> {
+    const result = await postGraphql<{
+        data?: { bankStatementNumberByDate: number | null };
+        errors?: { message: string }[];
+    }>(bankStatementNumberByDateQuery, {
+        businessYear: getSelectedBusinessYear(),
+        statementDate: dateForApi(statementDate),
+        direction,
+    }, signal);
+    return result.data?.bankStatementNumberByDate ?? null;
 }
 
 export async function fetchLatestBankStatementNumber(
