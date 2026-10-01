@@ -12,25 +12,25 @@ import {
 type Props = {
     canSave: boolean;
     canRevert: boolean;
-    canNavigatePrevious: boolean;
-    canNavigateNext: boolean;
+    canNavigatePreviousDate: boolean;
+    canNavigateNextDate: boolean;
     isSaving: boolean;
     onSave: () => void;
     onRevert: () => void;
-    onNavigatePrevious: () => void;
-    onNavigateNext: () => void;
+    onNavigatePreviousDate: () => void;
+    onNavigateNextDate: () => void;
 };
 
 function BankStatementMenu({
     canSave,
     canRevert,
-    canNavigatePrevious,
-    canNavigateNext,
+    canNavigatePreviousDate,
+    canNavigateNextDate,
     isSaving,
     onSave,
     onRevert,
-    onNavigatePrevious,
-    onNavigateNext,
+    onNavigatePreviousDate,
+    onNavigateNextDate,
 }: Props) {
     return (
         <div className="mb-6 flex items-center gap-2">
@@ -59,9 +59,10 @@ function BankStatementMenu({
                 type="button"
                 variant="outline"
                 size="icon"
-                aria-label="Previous bank statement"
-                disabled={!canNavigatePrevious}
-                onClick={onNavigatePrevious}
+                aria-label="Previous day"
+                title="Previous day"
+                disabled={!canNavigatePreviousDate}
+                onClick={onNavigatePreviousDate}
             >
                 <ChevronLeft />
             </Button>
@@ -69,9 +70,10 @@ function BankStatementMenu({
                 type="button"
                 variant="outline"
                 size="icon"
-                aria-label="Next bank statement"
-                disabled={!canNavigateNext}
-                onClick={onNavigateNext}
+                aria-label="Next day"
+                title="Next day"
+                disabled={!canNavigateNextDate}
+                onClick={onNavigateNextDate}
             >
                 <ChevronRight />
             </Button>

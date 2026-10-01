@@ -14,12 +14,23 @@ export type BankStatementEntry = {
     purpose: string | null
 }
 
+export type BankStatementInvoicePayment = {
+    invoiceNumber: string
+    paymentDate: string | null
+    paidAmount: number | null
+}
+
 export type BankStatementPage = {
     entries: BankStatementEntry[]
     totalCount: number
     page: number
     pageSize: number
     totalPages: number
+}
+
+export type MissingBankStatementDate = {
+    date: string
+    isWeekend: boolean
 }
 
 export type BankStatement = {

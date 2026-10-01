@@ -44,7 +44,7 @@ func (handler *InvoiceReminderEmailHandler) Send(context *gin.Context) {
 			storedRecipient = trimmedString(customer.Email)
 		}
 	}
-	sendDocumentEmail(context, handler.sender, request, invoiceReminderFilename(), pdf, storedRecipient)
+	sendDocumentEmail(context, handler.sender, request, EmailAttachment{Filename: invoiceReminderFilename(), ContentType: "application/pdf", Data: pdf}, storedRecipient)
 }
 
 func reminderCustomerCode(invoices []*Invoice) string {

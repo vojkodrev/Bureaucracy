@@ -5,7 +5,7 @@ import { emptyToNull } from '@/lib/form-input'
 import { nextPaddedNumber } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import {
-    fetchLatestPriceQuoteNumber, savePriceQuote,
+    fetchLatestPriceQuoteNumber, fetchPriceQuoteExists, savePriceQuote,
 } from '@/pages/price-quote-search/price-quote-search-api'
 import type { PriceQuoteNumberWarning } from '../PriceQuoteNumberAlert'
 import type { PriceQuoteDraft } from './usePriceQuoteDraft'
@@ -76,8 +76,12 @@ export function usePriceQuoteSave({
         setIsSaving(true)
         setSaveError(null)
         try {
-            const latest = await fetchLatestPriceQuoteNumber()
             const number = draft.quoteNumber.trim()
+            if (priceQuoteId == null && await fetchPriceQuoteExists(number)) {
+                setNumberWarning({ kind: 'duplicate' })
+                return false
+            }
+            const latest = await fetchLatestPriceQuoteNumber()
             if (number !== latest && number !== nextPaddedNumber(latest, 5)) {
                 const numberValue = Number.parseInt(number, 10)
                 const nextValue = Number.parseInt(nextPaddedNumber(latest, 5), 10)

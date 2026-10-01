@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// SaveGoodsReceipt is the resolver for the saveGoodsReceipt field.
+func (r *mutationResolver) SaveGoodsReceipt(ctx context.Context, businessYear string, goodsReceipt model.GoodsReceiptInput) (*GoodsReceipt, error) {
+	return r.GoodsReceipts.Save(ctx, businessYear, goodsReceipt)
+}
+
 // SaveBankStatement is the resolver for the saveBankStatement field.
 func (r *mutationResolver) SaveBankStatement(ctx context.Context, businessYear string, statement model.BankStatementInput) (*BankStatement, error) {
 	return r.BankStatements.Save(ctx, businessYear, statement)
@@ -41,8 +46,23 @@ func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string,
 	return r.Products.Save(ctx, businessYear, product)
 }
 
-// SearchBankStatements is the resolver for the searchBankStatements field.
-func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
+// SaveInventoryItem is the resolver for the saveInventoryItem field.
+func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error) {
+	return r.InventoryItems.Save(ctx, businessYear, inventoryItem)
+}
+
+// GoodsReceipt is the resolver for the goodsReceipt field.
+func (r *queryResolver) GoodsReceipt(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error) {
+	return r.GoodsReceipts.GetByNumber(ctx, businessYear, receiptNumber)
+}
+
+// GoodsReceiptStorages is the resolver for the goodsReceiptStorages field.
+func (r *queryResolver) GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
+	return r.GoodsReceipts.ListStorages(ctx, businessYear)
+}
+
+// SearchGoodsReceipts is the resolver for the searchGoodsReceipts field.
+func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -51,7 +71,26 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
+	return r.GoodsReceipts.Search(ctx, businessYear, productCode, productName,
+		receivedFrom, receivedTo, sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// SearchBankStatements is the resolver for the searchBankStatements field.
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, documentNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// BankStatementInvoicePayments is the resolver for the bankStatementInvoicePayments field.
+func (r *queryResolver) BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error) {
+	return r.Invoices.BankStatementPayments(ctx, businessYear, invoiceNumbers)
 }
 
 // BankAccounts is the resolver for the bankAccounts field.
@@ -69,9 +108,19 @@ func (r *queryResolver) BankStatement(ctx context.Context, businessYear string, 
 	return r.BankStatements.GetByNumber(ctx, businessYear, statementNumber)
 }
 
+// BankStatementNumberByDate is the resolver for the bankStatementNumberByDate field.
+func (r *queryResolver) BankStatementNumberByDate(ctx context.Context, businessYear string, statementDate time.Time, direction model.BankStatementDateDirection) (*int, error) {
+	return r.BankStatements.NumberByDate(ctx, businessYear, statementDate, string(direction))
+}
+
 // LatestBankStatementNumber is the resolver for the latestBankStatementNumber field.
 func (r *queryResolver) LatestBankStatementNumber(ctx context.Context, businessYear string, bankAccount *string) (*int, error) {
 	return r.BankStatements.LatestNumber(ctx, businessYear, bankAccount)
+}
+
+// MissingBankStatementDates is the resolver for the missingBankStatementDates field.
+func (r *queryResolver) MissingBankStatementDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error) {
+	return r.BankStatements.ListMissingDates(ctx, businessYear)
 }
 
 // BusinessYear is the resolver for the businessYear field.
@@ -201,6 +250,25 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 		resultPageSize = *pageSize
 	}
 	return r.Products.Search(ctx, businessYear, productCode, productName, similarName, sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// SearchInventoryItems is the resolver for the searchInventoryItems field.
+func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.InventoryItems.Search(ctx, businessYear, productCode, productName, similarName,
+		sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// InventoryItem is the resolver for the inventoryItem field.
+func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
+	return r.InventoryItems.GetByCode(ctx, businessYear, productCode)
 }
 
 // ProductInvoiceCounts is the resolver for the productInvoiceCounts field.

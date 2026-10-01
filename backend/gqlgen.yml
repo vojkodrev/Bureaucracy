@@ -39,6 +39,12 @@ models:
   BankStatementPage:
     model:
       - bureaucracy/backend.BankStatementPage
+  BankStatementInvoicePayment:
+    model:
+      - bureaucracy/backend.BankStatementInvoicePayment
+  MissingBankStatementDate:
+    model:
+      - bureaucracy/backend.MissingBankStatementDate
   Customer:
     model:
       - bureaucracy/backend.Customer
@@ -63,6 +69,27 @@ models:
   InvoiceTextTemplate:
     model:
       - bureaucracy/backend.InvoiceTextTemplate
+  InventoryItem:
+    model:
+      - bureaucracy/backend.InventoryItem
+  InventoryItemPage:
+    model:
+      - bureaucracy/backend.InventoryItemPage
+  GoodsReceipt:
+    model:
+      - bureaucracy/backend.GoodsReceipt
+  GoodsReceiptItem:
+    model:
+      - bureaucracy/backend.GoodsReceiptItem
+  GoodsReceiptItemPhoto:
+    model:
+      - bureaucracy/backend.GoodsReceiptItemPhoto
+  GoodsReceiptPage:
+    model:
+      - bureaucracy/backend.GoodsReceiptPage
+  Storage:
+    model:
+      - bureaucracy/backend.Storage
   PriceQuote:
     model:
       - bureaucracy/backend.PriceQuote

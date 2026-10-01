@@ -26,6 +26,7 @@ func NewHTTPServer(
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
+	invoiceHalcomHandler *InvoiceHalcomHandler,
 	priceQuotePrintHandler *PriceQuotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceReminderHandler *InvoiceReminderHandler,
@@ -34,6 +35,7 @@ func NewHTTPServer(
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
+	fileHandler *FileHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -60,6 +62,7 @@ func NewHTTPServer(
 	})
 	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
 	router.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
+	router.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
 	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
 	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	router.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
@@ -67,7 +70,10 @@ func NewHTTPServer(
 	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
 	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	router.POST("/api/exports/accounting/email", accountingExportHandler.Send)
 	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
+	router.POST("/api/file", fileHandler.UploadImage)
+	router.GET("/api/file/:fileId", fileHandler.Display)
 
 	return &HTTPServer{
 		config: config,

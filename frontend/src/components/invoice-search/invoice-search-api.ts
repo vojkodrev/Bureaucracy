@@ -235,6 +235,8 @@ export function invoiceRemindersPdfUrl(search: InvoiceSearchCriteria): string {
     }
     url.pathname = '/api/invoices/reminders/pdf'
     url.search = invoiceSearchToParams(reminderSearch).toString()
+    if (search.reminderCustomerCode) url.searchParams.set('reminderCustomerCode', search.reminderCustomerCode)
+    if (search.reminderCustomerName) url.searchParams.set('reminderCustomerName', search.reminderCustomerName)
     url.searchParams.set('businessYear', getSelectedBusinessYear())
     url.searchParams.set('_', String(Date.now()))
     url.hash = ''

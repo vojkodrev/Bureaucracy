@@ -3,6 +3,10 @@
 package model
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
@@ -43,6 +47,32 @@ type CustomerInput struct {
 	Bic                *string  `json:"bic,omitempty"`
 	PaymentTerm        *int     `json:"paymentTerm,omitempty"`
 	Discount           *float64 `json:"discount,omitempty"`
+}
+
+type GoodsReceiptInput struct {
+	ID            *int                     `json:"id,omitempty"`
+	ReceiptNumber string                   `json:"receiptNumber"`
+	ReceiptDate   time.Time                `json:"receiptDate"`
+	Storage       *string                  `json:"storage,omitempty"`
+	ReceivedBy    string                   `json:"receivedBy"`
+	Items         []*GoodsReceiptItemInput `json:"items"`
+}
+
+type GoodsReceiptItemInput struct {
+	ID           *int     `json:"id,omitempty"`
+	ProductCode  string   `json:"productCode"`
+	ProductName  *string  `json:"productName,omitempty"`
+	Unit         *string  `json:"unit,omitempty"`
+	Quantity     float64  `json:"quantity"`
+	PhotoFileIds []string `json:"photoFileIds"`
+}
+
+type InventoryItemInput struct {
+	ID                *int     `json:"id,omitempty"`
+	ProductCode       string   `json:"productCode"`
+	Name              *string  `json:"name,omitempty"`
+	Unit              *string  `json:"unit,omitempty"`
+	MinimumStockLevel *float64 `json:"minimumStockLevel,omitempty"`
 }
 
 type InvoiceInput struct {
@@ -115,4 +145,59 @@ type ProductInput struct {
 }
 
 type Query struct {
+}
+
+type BankStatementDateDirection string
+
+const (
+	BankStatementDateDirectionPrevious BankStatementDateDirection = "PREVIOUS"
+	BankStatementDateDirectionNext     BankStatementDateDirection = "NEXT"
+)
+
+var AllBankStatementDateDirection = []BankStatementDateDirection{
+	BankStatementDateDirectionPrevious,
+	BankStatementDateDirectionNext,
+}
+
+func (e BankStatementDateDirection) IsValid() bool {
+	switch e {
+	case BankStatementDateDirectionPrevious, BankStatementDateDirectionNext:
+		return true
+	}
+	return false
+}
+
+func (e BankStatementDateDirection) String() string {
+	return string(e)
+}
+
+func (e *BankStatementDateDirection) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BankStatementDateDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BankStatementDateDirection", str)
+	}
+	return nil
+}
+
+func (e BankStatementDateDirection) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *BankStatementDateDirection) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e BankStatementDateDirection) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

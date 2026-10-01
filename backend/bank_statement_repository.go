@@ -86,6 +86,110 @@ func (repository *BankStatementRepository) ExistsOnDate(ctx context.Context, bus
 	return exists, nil
 }
 
+func (repository *BankStatementRepository) NumberByDate(ctx context.Context, businessYear string, statementDate time.Time, direction string) (*int, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	comparison, ordering := "", ""
+	switch direction {
+	case "PREVIOUS":
+		comparison, ordering = "<", "DESC"
+	case "NEXT":
+		comparison, ordering = ">", "ASC"
+	default:
+		return nil, fmt.Errorf("direction must be PREVIOUS or NEXT")
+	}
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	var number int
+	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+		SELECT TOP 1 CAST(Stevilka AS int)
+		FROM [%s].[dbo].[BankaZRSaldo]
+		WHERE CAST(Datum AS date) %s CAST(@statementDate AS date)
+		  AND ISNULL(Deleted, 0) = 0
+		ORDER BY Datum %s, RecNo %s`, databaseName, comparison, ordering, ordering),
+		sql.Named("statementDate", statementDate)).Scan(&number)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement number by date: %w", err)
+	}
+	return &number, nil
+}
+
+func (repository *BankStatementRepository) ListMissingDates(ctx context.Context, businessYear string) ([]*MissingBankStatementDate, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	var calendarYear int
+	err := repository.database.QueryRowContext(ctx, `
+		SELECT LetoPoslovanja
+		FROM [Birokrat].[dbo].[PoslovnaLeta]
+		WHERE Oznaka = @businessYear`,
+		sql.Named("businessYear", businessYear),
+	).Scan(&calendarYear)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("business year %s was not found", businessYear)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get bank statement calendar year: %w", err)
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		WITH DateBounds AS (
+			SELECT
+				DATEFROMPARTS(@calendarYear, 1, 1) AS YearStart,
+				CASE
+					WHEN DATEFROMPARTS(@calendarYear, 12, 31) < DATEADD(day, -1, CAST(GETDATE() AS date))
+						THEN DATEFROMPARTS(@calendarYear, 12, 31)
+					ELSE DATEADD(day, -1, CAST(GETDATE() AS date))
+				END AS LastExpectedDate
+		),
+		CalendarDates AS (
+			SELECT YearStart AS MissingDate, LastExpectedDate
+			FROM DateBounds
+			WHERE YearStart <= LastExpectedDate
+			UNION ALL
+			SELECT DATEADD(day, 1, MissingDate), LastExpectedDate
+			FROM CalendarDates
+			WHERE MissingDate < LastExpectedDate
+		)
+		SELECT
+			MissingDate,
+			CASE WHEN DATEDIFF(day, '19000101', MissingDate) %% 7 IN (5, 6)
+				THEN 1 ELSE 0 END AS IsWeekend
+		FROM CalendarDates
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM [%s].[dbo].[BankaZRSaldo] statementRow
+			WHERE CAST(statementRow.Datum AS date) = MissingDate
+			  AND ISNULL(statementRow.Deleted, 0) = 0
+		)
+		ORDER BY MissingDate DESC
+		OPTION (MAXRECURSION 366)`, databaseName),
+		sql.Named("calendarYear", calendarYear),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list missing bank statement dates: %w", err)
+	}
+	defer rows.Close()
+
+	missingDates := make([]*MissingBankStatementDate, 0)
+	for rows.Next() {
+		missingDate := &MissingBankStatementDate{}
+		if err := rows.Scan(&missingDate.Date, &missingDate.IsWeekend); err != nil {
+			return nil, fmt.Errorf("scan missing bank statement date: %w", err)
+		}
+		missingDates = append(missingDates, missingDate)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read missing bank statement dates: %w", err)
+	}
+	return missingDates, nil
+}
+
 func (repository *BankStatementRepository) GetByNumber(ctx context.Context, businessYear string, number int) (*BankStatement, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
@@ -306,46 +410,6 @@ func paidInvoiceNumbers(ctx context.Context, tx *sql.Tx, databaseName string, st
 	return invoiceNumbers, nil
 }
 
-func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, invoiceNumbers []string) error {
-	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
-		SET DatumPlacila=NULL, PlacanoSIT=NULL
-		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
-	for _, invoiceNumber := range invoiceNumbers {
-		if _, err := tx.ExecContext(ctx, query, sql.Named("invoiceNumber", invoiceNumber)); err != nil {
-			return fmt.Errorf("clear paid invoice %q: %w", invoiceNumber, err)
-		}
-	}
-	return nil
-}
-
-// updatePaidInvoices synchronizes incoming bank statement entries with issued
-// invoices. An unmatched document number is allowed because bank statements can
-// also contain transactions that do not belong to an invoice.
-func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
-	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	query := fmt.Sprintf(`UPDATE [%s].[dbo].[Racuni]
-		SET DatumPlacila=@paymentDate, PlacanoSIT=@paidAmount
-		WHERE LTRIM(RTRIM(Stevilka))=@invoiceNumber`, databaseName)
-
-	for _, entry := range entries {
-		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
-			continue
-		}
-		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
-		if invoiceNumber == "" {
-			continue
-		}
-		if _, err := tx.ExecContext(ctx, query,
-			sql.Named("paymentDate", paymentDate),
-			sql.Named("paidAmount", *entry.Inflow),
-			sql.Named("invoiceNumber", invoiceNumber)); err != nil {
-			return fmt.Errorf("update paid invoice %q: %w", invoiceNumber, err)
-		}
-	}
-	return nil
-}
-
 func sumEntryAmounts(entries []*model.BankStatementEntryInput, outflow bool) float64 {
 	total := 0.0
 	for _, entry := range entries {
@@ -489,6 +553,7 @@ func (repository *BankStatementRepository) Search(
 	dateFrom *time.Time,
 	dateTo *time.Time,
 	statementNumber *int,
+	documentNumber *string,
 	bankAccount *string,
 	customerID *string,
 	customerName *string,
@@ -526,13 +591,16 @@ func (repository *BankStatementRepository) Search(
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
+		sql.Named("documentNumber", optionalLikePattern(documentNumber)),
 		sql.Named("bankAccount", bankAccountValue),
 		sql.Named("customerID", optionalLikePattern(customerID)),
 		sql.Named("customerName", optionalLikePattern(customerName)),
 	}
 	transactionFilter := `
 		(@dateFrom IS NULL OR transactionRow.Datum >= @dateFrom)
-		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))
+		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))`
+	statementMatchFilter := transactionFilter + `
+		AND (@documentNumber = '' OR transactionRow.Stevilka LIKE @documentNumber ESCAPE '\')
 		AND (@customerID = '' OR transactionRow.SifraPartnerja LIKE @customerID ESCAPE '\')
 		AND (@customerName = '' OR transactionRow.ImePartnerja LIKE @customerName ESCAPE '\')`
 
@@ -549,7 +617,7 @@ func (repository *BankStatementRepository) Search(
 			WHERE transactionRow.Banka = statementRow.Racun
 			  AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 			  AND %s
-		  )`, databaseName, databaseName, transactionFilter), arguments...).Scan(&totalCount)
+		  )`, databaseName, databaseName, statementMatchFilter), arguments...).Scan(&totalCount)
 	if err != nil {
 		return nil, fmt.Errorf("count bank statements: %w", err)
 	}
@@ -597,7 +665,7 @@ func (repository *BankStatementRepository) Search(
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
 		WHERE %s
 		ORDER BY %s, transactionRow.RecNo`, databaseName, databaseName,
-		transactionFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
+		statementMatchFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
 	if err != nil {
 		return nil, fmt.Errorf("search bank statements: %w", err)
 	}

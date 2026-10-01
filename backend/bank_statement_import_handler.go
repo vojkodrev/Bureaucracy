@@ -329,6 +329,7 @@ func camtRemittanceDetails(transaction camtTransaction) (*string, *string) {
 		}
 	}
 	reference = normalizeBankStatementReference(reference)
+	reference = truncateRunes(reference, maxBankStatementReferenceLength)
 	var referenceValue, purposeValue *string
 	if reference != "" {
 		referenceValue = &reference

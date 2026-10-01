@@ -7,9 +7,9 @@ import BankStatementSummary from "./BankStatementSummary";
 import StatementTransactions from "./StatementTransactions";
 import UnsavedBankStatementAlerts from "./UnsavedBankStatementAlerts";
 import { useBankStatementDraft } from "./hooks/useBankStatementDraft";
+import { useBankStatementDateNavigation } from "./hooks/useBankStatementDateNavigation";
 import { useBankStatementKeyboardShortcuts } from "./hooks/useBankStatementKeyboardShortcuts";
 import { useBankStatementLoader } from "./hooks/useBankStatementLoader";
-import { useBankStatementNumberNavigation } from "./hooks/useBankStatementNumberNavigation";
 import { useBankStatementRevert } from "./hooks/useBankStatementRevert";
 import { useBankStatementSave } from "./hooks/useBankStatementSave";
 import { useUnsavedBankStatementGuard } from "./hooks/useUnsavedBankStatementGuard";
@@ -30,7 +30,11 @@ function BankStatementPage() {
         setCleanField: draftState.setCleanField,
         disallowNavigation: guard.disallowNavigation,
     });
-    const navigation = useBankStatementNumberNavigation(routeStatementNumber, navigate);
+    const navigation = useBankStatementDateNavigation(
+        draft.statementDate,
+        routeStatementNumber,
+        navigate,
+    );
     const save = useBankStatementSave({
         statementId: loader.statementId,
         draft,
@@ -56,7 +60,7 @@ function BankStatementPage() {
         <div className="max-w-5xl p-4">
             <BankStatementErrors
                 loadError={loader.error}
-                navigationError={navigation.latestStatementNumberError}
+                navigationError={navigation.error}
                 nextNumberError={loader.requestErrors.nextStatementNumber ?? null}
                 latestNumberError={save.latestNumberError}
                 saveError={save.saveError}
@@ -64,13 +68,13 @@ function BankStatementPage() {
             <BankStatementMenu
                 canSave={save.canSave && !save.isSaving}
                 canRevert={revert.canRevert}
-                canNavigatePrevious={navigation.canNavigatePrevious}
-                canNavigateNext={navigation.canNavigateNext}
+                canNavigatePreviousDate={navigation.canNavigate}
+                canNavigateNextDate={navigation.canNavigate}
                 isSaving={save.isSaving}
                 onSave={() => { void save.requestSave(); }}
                 onRevert={revert.requestRevert}
-                onNavigatePrevious={navigation.navigatePrevious}
-                onNavigateNext={navigation.navigateNext}
+                onNavigatePreviousDate={navigation.navigatePreviousDate}
+                onNavigateNextDate={navigation.navigateNextDate}
             />
             <BankStatementGeneralInformation
                 statementNumber={draft.statementNumber}

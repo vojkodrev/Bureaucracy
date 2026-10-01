@@ -10,7 +10,6 @@ import {
 
 type InvoiceSearchMenuProps = {
     reportDisabled?: boolean
-    remindersDisabled?: boolean
     onPrintReport: () => void
     onPrintReminders: () => void
     onEmailReminders: () => void
@@ -18,7 +17,6 @@ type InvoiceSearchMenuProps = {
 
 function InvoiceSearchMenu({
     reportDisabled = false,
-    remindersDisabled = false,
     onPrintReport,
     onPrintReminders,
     onEmailReminders,
@@ -38,11 +36,11 @@ function InvoiceSearchMenu({
             <MenubarMenu>
                 <MenubarTrigger>Reminders</MenubarTrigger>
                 <MenubarContent>
-                    <MenubarItem disabled={remindersDisabled} onClick={onPrintReminders}>
+                    <MenubarItem onClick={onPrintReminders}>
                         <Printer />
                         Print
                     </MenubarItem>
-                    <MenubarItem disabled={remindersDisabled} onClick={onEmailReminders}>
+                    <MenubarItem onClick={onEmailReminders}>
                         <Mail />
                         Email
                     </MenubarItem>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { toast } from '@/lib/toast'
 import { downloadInvoiceXml } from '../invoice-api'
 
 type Options = {
@@ -21,6 +22,11 @@ export function useInvoiceXmlExport({ invoiceNumber, canExport, canSave }: Optio
         if (isExporting) return
         setIsExporting(true)
         setExportError(null)
+        toast.add({
+            title: 'XML export requested',
+            description: 'The invoice XML downloads automatically when ready.',
+            type: 'info',
+        })
         try {
             await downloadInvoiceXml(invoiceNumber.trim(), getSelectedBusinessYear())
         } catch (error) {

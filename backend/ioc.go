@@ -8,18 +8,24 @@ func CoreProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(NewAppConfig),
 		fx.Provide(NewDatabase),
+		fx.Provide(NewDatabaseMigrator),
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewBankStatementRepository),
 		fx.Provide(NewBankStatementImportHandler),
 		fx.Provide(NewCountryRepository),
 		fx.Provide(NewCustomerRepository),
 		fx.Provide(NewInvoiceRepository),
+		fx.Provide(NewInventoryItemRepository),
+		fx.Provide(NewGoodsReceiptRepository),
+		fx.Provide(NewFileHandler),
 		fx.Provide(NewPriceQuoteRepository),
 		fx.Provide(NewHTMLPDFRenderer),
 		fx.Provide(NewInvoicePrintGenerator),
 		fx.Provide(NewInvoicePrintHandler),
 		fx.Provide(NewInvoiceXMLGenerator),
 		fx.Provide(NewInvoiceXMLHandler),
+		fx.Provide(NewInvoiceHalcomGenerator),
+		fx.Provide(NewInvoiceHalcomHandler),
 		fx.Provide(NewPriceQuotePrintGenerator),
 		fx.Provide(NewPriceQuotePrintHandler),
 		fx.Provide(NewInvoiceReportGenerator),
@@ -45,6 +51,7 @@ func CoreProviders() fx.Option {
 func CoreInvocations() fx.Option {
 	return fx.Options(
 		fx.Invoke(RegisterDatabaseLifecycle),
+		fx.Invoke(RegisterDatabaseMigrationLifecycle),
 		fx.Invoke(RegisterApplicationLifecycle),
 		fx.Invoke(RegisterHTTPServerLifecycle),
 	)

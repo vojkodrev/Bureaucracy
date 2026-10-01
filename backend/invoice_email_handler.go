@@ -36,7 +36,7 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 	if customer != nil {
 		storedRecipient = trimmedString(customer.Email)
 	}
-	sendDocumentEmail(context, handler.sender, request, invoicePDFFilename(invoice, year), pdf, storedRecipient)
+	sendDocumentEmail(context, handler.sender, request, EmailAttachment{Filename: invoicePDFFilename(invoice, year), ContentType: "application/pdf", Data: pdf}, storedRecipient)
 }
 
 func (handler *InvoiceEmailHandler) loadInvoice(context *gin.Context) (*Invoice, *Customer, int, bool) {

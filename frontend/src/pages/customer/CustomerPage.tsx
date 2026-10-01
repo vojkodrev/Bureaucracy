@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import CountryComboboxField from '@/components/CountryComboboxField'
+import DuplicateIdentifierAlert from '@/components/DuplicateIdentifierAlert'
 import ErrorAlert from '@/components/ErrorAlert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -105,13 +106,18 @@ function CustomerPage() {
     const { customerId: routeCustomerId } = useParams()
     const navigate = useNavigate()
     const allowNextNavigationRef = useRef(false)
+    const preserveDuplicateRef = useRef(false)
     const [customerRecordId, setCustomerRecordId] = useState<number | null>(null)
     const [draft, setDraft] = useState<CustomerDraft>(() => customerDraft())
     const [cleanDraft, setCleanDraft] = useState(JSON.stringify(customerDraft()))
     const [reloadVersion, setReloadVersion] = useState(0)
     const [isSaving, setIsSaving] = useState(false)
+    const [isDuplicating, setIsDuplicating] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
+    const [duplicateError, setDuplicateError] = useState<string | null>(null)
     const [confirmingRevert, setConfirmingRevert] = useState(false)
+    const [confirmingDuplicate, setConfirmingDuplicate] = useState(false)
+    const [duplicateIdWarning, setDuplicateIdWarning] = useState(false)
     const requestKey = `${routeCustomerId ?? ''}:${reloadVersion}`
     const [loadResult, setLoadResult] = useState<LoadResult>({ requestKey: '__initial__', error: null })
     const isLoading = Boolean(routeCustomerId) && loadResult.requestKey !== requestKey
@@ -119,7 +125,7 @@ function CustomerPage() {
     const hasUnsavedChanges = JSON.stringify(draft) !== cleanDraft
     const canSave = Boolean(draft.customerId.trim() && draft.name.trim()) &&
         isOptionalIntegerInRange(draft.paymentTerm, 0, 32767) &&
-        isOptionalNumberInRange(draft.discount, 0, 100) && !isLoading && !loadError
+        isOptionalNumberInRange(draft.discount, 0, 100) && !isLoading && !loadError && !isDuplicating
     const blocker = useBlocker(({ currentLocation, nextLocation }) =>
         !allowNextNavigationRef.current && hasUnsavedChanges &&
         (currentLocation.pathname !== nextLocation.pathname ||
@@ -128,6 +134,12 @@ function CustomerPage() {
 
     useEffect(() => {
         if (!routeCustomerId) {
+            if (preserveDuplicateRef.current) {
+                preserveDuplicateRef.current = false
+                setLoadResult({ requestKey, error: null })
+                allowNextNavigationRef.current = false
+                return
+            }
             const emptyDraft = customerDraft()
             setCustomerRecordId(null)
             setDraft(emptyDraft)
@@ -178,7 +190,23 @@ function CustomerPage() {
         const isCreating = customerRecordId == null
         setIsSaving(true)
         setSaveError(null)
+        setDuplicateError(null)
         try {
+            if (isCreating) {
+                const response = await fetch(graphqlUrl, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: customerQuery, variables: {
+                        businessYear: getSelectedBusinessYear(), customerId: draft.customerId.trim(),
+                    }}),
+                })
+                if (!response.ok) throw new Error(`Checking customer ID failed (${response.status})`)
+                const result = await response.json() as CustomerResponse
+                if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+                if (result.data?.customer) {
+                    setDuplicateIdWarning(true)
+                    return
+                }
+            }
             const response = await fetch(graphqlUrl, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -229,6 +257,7 @@ function CustomerPage() {
     const performRevert = () => {
         setConfirmingRevert(false)
         setSaveError(null)
+        setDuplicateError(null)
         if (routeCustomerId) {
             setReloadVersion((version) => version + 1)
         } else {
@@ -243,6 +272,42 @@ function CustomerPage() {
                 : 'The new customer form was cleared.',
             type: 'success',
         })
+    }
+
+    const performDuplicate = async () => {
+        if (customerRecordId == null || isDuplicating) return
+        setConfirmingDuplicate(false)
+        setIsDuplicating(true)
+        setDuplicateError(null)
+        try {
+            const nextCustomerId = await fetchNextCustomerId()
+            setCustomerRecordId(null)
+            setDraft((current) => ({ ...current, customerId: nextCustomerId }))
+            preserveDuplicateRef.current = true
+            allowNextNavigationRef.current = true
+            navigate('/customer')
+            toast.add({
+                title: 'Customer duplicated',
+                description: `Customer ID ${nextCustomerId} has been assigned to the new unsaved copy. ` +
+                    'You can review and edit it before saving.',
+                type: 'info',
+            })
+        } catch (requestError: unknown) {
+            setDuplicateError(requestError instanceof Error
+                ? requestError.message
+                : 'Duplicating customer failed')
+        } finally {
+            setIsDuplicating(false)
+        }
+    }
+
+    const duplicateCustomer = () => {
+        if (customerRecordId == null || isDuplicating) return
+        if (hasUnsavedChanges) {
+            setConfirmingDuplicate(true)
+            return
+        }
+        void performDuplicate()
     }
 
     const onSaveShortcut = useEffectEvent(() => { void saveCustomer() })
@@ -265,7 +330,7 @@ function CustomerPage() {
 
     return (
         <div className="max-w-5xl p-4">
-            {(loadError || saveError) && (
+            {(loadError || saveError || duplicateError) && (
                 <div className="mb-6 space-y-2">
                     {loadError && (
                         <ErrorAlert
@@ -281,9 +346,28 @@ function CustomerPage() {
                             error={saveError}
                         />
                     )}
+                    {duplicateError && (
+                        <ErrorAlert
+                            title="Customer could not be duplicated"
+                            description="The new customer copy could not be prepared."
+                            error={duplicateError}
+                        />
+                    )}
                 </div>
             )}
-            <CustomerMenu canSave={canSave} canRevert={hasUnsavedChanges} isSaving={isSaving} onSave={() => void saveCustomer()} onRevert={() => setConfirmingRevert(true)} />
+            <CustomerMenu
+                canSave={canSave}
+                canRevert={hasUnsavedChanges && !isDuplicating}
+                canDuplicate={customerRecordId != null && !isLoading && !isSaving}
+                isSaving={isSaving}
+                isDuplicating={isDuplicating}
+                onSave={() => void saveCustomer()}
+                onRevert={() => setConfirmingRevert(true)}
+                onDuplicate={duplicateCustomer}
+            />
+            <DuplicateIdentifierAlert open={duplicateIdWarning}
+                recordName="customer" identifierLabel="Customer ID"
+                identifier={draft.customerId.trim()} onOpenChange={setDuplicateIdWarning} />
             <UnsavedCustomerAlert
                 open={blocker.state === 'blocked'}
                 onOpenChange={(open) => { if (!open && blocker.state === 'blocked') blocker.reset() }}
@@ -295,6 +379,15 @@ function CustomerPage() {
                 }}
             />
             <UnsavedCustomerAlert open={confirmingRevert} onOpenChange={setConfirmingRevert} onDiscard={performRevert} actionLabel="Discard and revert" />
+            <UnsavedCustomerAlert
+                open={confirmingDuplicate}
+                onOpenChange={setConfirmingDuplicate}
+                onDiscard={() => { void performDuplicate() }}
+                title="Duplicate with unsaved changes?"
+                description="Your changes have not been saved to the original customer. The new duplicate will be created from the values currently shown."
+                actionLabel="Duplicate anyway"
+                actionVariant="default"
+            />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <div className="space-y-6">
                     <Card>

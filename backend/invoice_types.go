@@ -15,6 +15,7 @@ type Invoice struct {
 	CustomerPostalCode         *string        `json:"customerPostalCode"`
 	CustomerCity               *string        `json:"customerCity"`
 	CustomerCountry            *string        `json:"customerCountry"`
+	CustomerCountryName        *string        `json:"-"`
 	CustomerTaxID              *string        `json:"customerTaxId"`
 	CustomerRegistrationNumber *string        `json:"customerRegistrationNumber"`
 	CustomerIBAN               *string        `json:"customerIban"`
@@ -79,4 +80,10 @@ type InvoiceCustomerSummaryPage struct {
 type InvoiceTextTemplate struct {
 	IntroductoryText *string `json:"introductoryText"`
 	ClosingText      *string `json:"closingText"`
+}
+
+type BankStatementInvoicePayment struct {
+	InvoiceNumber string     `json:"invoiceNumber"`
+	PaymentDate   *time.Time `json:"paymentDate"`
+	PaidAmount    *float64   `json:"paidAmount"`
 }

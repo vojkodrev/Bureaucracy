@@ -27,6 +27,14 @@ const saveProductMutation = `
     }
 `
 
+const productInvoiceCountQuery = `
+    query ProductInvoiceCount($businessYear: String!, $productCodes: [String!]!) {
+        productInvoiceCounts(businessYear: $businessYear, productCodes: $productCodes) {
+            productCode invoiceCount
+        }
+    }
+`
+
 export async function fetchProduct(productCode: string, signal?: AbortSignal): Promise<Product> {
     const result = await postGraphql<{ data?: { product: Product | null }; errors?: { message: string }[] }>(
         productQuery,
@@ -35,6 +43,13 @@ export async function fetchProduct(productCode: string, signal?: AbortSignal): P
     )
     if (!result.data?.product) throw new Error(`Product ${productCode} was not found`)
     return result.data.product
+}
+
+export async function fetchProductExists(productCode: string): Promise<boolean> {
+    const result = await postGraphql<{ data?: { product: Pick<Product, 'id'> | null } }>(
+        productQuery, { businessYear: getSelectedBusinessYear(), productCode },
+    )
+    return result.data?.product != null
 }
 
 export async function fetchNextProductCode(signal?: AbortSignal): Promise<string> {
@@ -52,4 +67,15 @@ export async function postSaveProduct(product: Record<string, unknown>): Promise
     }>(saveProductMutation, { businessYear: getSelectedBusinessYear(), product })
     if (!result.data?.saveProduct) throw new Error('Saving product returned no product')
     return result.data.saveProduct
+}
+
+export async function fetchProductInvoiceCount(productCode: string): Promise<number> {
+    const result = await postGraphql<{
+        data?: { productInvoiceCounts: { productCode: string, invoiceCount: number }[] }
+        errors?: { message: string }[]
+    }>(productInvoiceCountQuery, {
+        businessYear: getSelectedBusinessYear(),
+        productCodes: [productCode],
+    })
+    return result.data?.productInvoiceCounts[0]?.invoiceCount ?? 0
 }

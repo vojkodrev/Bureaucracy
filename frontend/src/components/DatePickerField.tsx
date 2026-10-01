@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { CalendarIcon, XIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -13,6 +14,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover'
+import { dateForInput } from '@/lib/dates'
 
 type DatePickerFieldProps = {
     date: Date | undefined
@@ -20,6 +22,12 @@ type DatePickerFieldProps = {
     label: string
     name: string
     onSelect: (date: Date | undefined) => void
+    action?: {
+        icon: ReactNode
+        label: string
+        disabled?: boolean
+        onClick: () => void
+    }
 }
 
 function DatePickerField({
@@ -28,6 +36,7 @@ function DatePickerField({
     label,
     name,
     onSelect,
+    action,
 }: DatePickerFieldProps) {
     return (
         <Field>
@@ -57,22 +66,35 @@ function DatePickerField({
                         />
                     </PopoverContent>
                 </Popover>
-                {date && (
+                {(date || action) && (
                     <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                            size="icon-xs"
-                            aria-label={`Clear ${label.toLowerCase()}`}
-                            onClick={() => onSelect(undefined)}
-                        >
-                            <XIcon />
-                        </InputGroupButton>
+                        {action && (
+                            <InputGroupButton
+                                size="icon-xs"
+                                aria-label={action.label}
+                                title={action.label}
+                                disabled={action.disabled}
+                                onClick={action.onClick}
+                            >
+                                {action.icon}
+                            </InputGroupButton>
+                        )}
+                        {date && (
+                            <InputGroupButton
+                                size="icon-xs"
+                                aria-label={`Clear ${label.toLowerCase()}`}
+                                onClick={() => onSelect(undefined)}
+                            >
+                                <XIcon />
+                            </InputGroupButton>
+                        )}
                     </InputGroupAddon>
                 )}
             </InputGroup>
             <input
                 type="hidden"
                 name={name}
-                value={date ? format(date, 'yyyy-MM-dd') : ''}
+                value={date ? dateForInput(date) : ''}
             />
         </Field>
     )

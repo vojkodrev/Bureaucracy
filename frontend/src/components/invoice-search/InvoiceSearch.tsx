@@ -1,7 +1,6 @@
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
-import InvoiceSearchMenu from '@/pages/invoice/InvoiceSearchMenu'
 import { ComponentMode } from '@/lib/component-mode'
-import type { Invoice } from '@/lib/invoice-types'
+import type { Invoice, InvoiceCustomerSummary } from '@/lib/invoice-types'
 import { useInvoiceSearchPrint } from './hooks/useInvoiceSearchPrint'
 import { useInvoiceRemindersEmail } from './hooks/useInvoiceRemindersEmail'
 import { useInvoiceSearchResults } from './hooks/useInvoiceSearchResults'
@@ -9,9 +8,11 @@ import { useInvoiceSearchSelection } from './hooks/useInvoiceSearchSelection'
 import { useInvoiceSearchState } from './hooks/useInvoiceSearchState'
 import InvoiceSearchErrors from './InvoiceSearchErrors'
 import InvoiceSearchForm from './InvoiceSearchForm'
+import InvoiceSearchMenu from './InvoiceSearchMenu'
 import InvoiceSearchResults from './InvoiceSearchResults'
 import InvoiceSearchResultsByCustomer from './InvoiceSearchResultsByCustomer'
 import InvoiceSearchSummary from './InvoiceSearchSummary'
+import UnavailableRemindersAlert from './UnavailableRemindersAlert'
 import type { PaymentStatus } from './types'
 
 type InvoiceSearchProps = {
@@ -39,16 +40,30 @@ function InvoiceSearch({
     )
     const { selectedInvoiceNumber, selectInvoice, clearSelection } =
         useInvoiceSearchSelection(onInvoiceSelect)
-    const { canPrint, canPrintReminders, printReport, printReminders, printError } =
-        useInvoiceSearchPrint({
-            search,
-            hasResults: invoices.length > 0,
-            isLoading,
-            hasError: Boolean(error),
-            customerSummaryCount: customerSummaryPage?.customerSummaries.length ?? 0,
-            keyboardShortcutEnabled: mode === ComponentMode.Page,
-        })
-    const remindersEmail = useInvoiceRemindersEmail(search, customerSummaryPage)
+    const print = useInvoiceSearchPrint({
+        search,
+        hasResults: invoices.length > 0,
+        isLoading,
+        hasError: Boolean(error),
+        customerSummaryCount: customerSummaryPage?.customerSummaries.length ?? 0,
+        keyboardShortcutEnabled: mode === ComponentMode.Page,
+    })
+    const remindersEmail = useInvoiceRemindersEmail(
+        search,
+        customerSummaryPage,
+        print.canPrintReminders,
+        print.showEmailRemindersUnavailable,
+    )
+
+    function customerReminderSearch(customer: InvoiceCustomerSummary) {
+        return {
+            ...search,
+            customerId: customer.customerCode ?? '',
+            customerName: customer.customerCode ? '' : customer.customerName ?? '',
+            reminderCustomerCode: customer.customerCode ?? undefined,
+            reminderCustomerName: customer.customerCode ? undefined : customer.customerName ?? undefined,
+        }
+    }
 
     function clearSearchAndSelection() {
         clearSelection()
@@ -57,16 +72,20 @@ function InvoiceSearch({
 
     return (
         <div className="p-4">
-            <InvoiceSearchErrors printError={printError} searchError={error} />
+            <InvoiceSearchErrors printError={print.printError} searchError={error} />
             {mode === ComponentMode.Page && (
                 <InvoiceSearchMenu
-                    reportDisabled={!canPrint}
-                    remindersDisabled={!canPrintReminders}
-                    onPrintReport={printReport}
-                    onPrintReminders={printReminders}
+                    reportDisabled={!print.canPrint}
+                    onPrintReport={print.printReport}
+                    onPrintReminders={() => print.printReminders()}
                     onEmailReminders={remindersEmail.openDialog}
                 />
             )}
+            <UnavailableRemindersAlert
+                action={print.unavailableRemindersAction}
+                description={print.unavailableRemindersDescription}
+                onOpenChange={(open) => { if (!open) print.closeUnavailableRemindersAlert() }}
+            />
             <EmailDocumentDialog
                 open={remindersEmail.dialogOpen}
                 documentName="reminders"
@@ -105,6 +124,8 @@ function InvoiceSearch({
             {!error && search.resultsView === 'customer' && (
                 <InvoiceSearchResultsByCustomer
                     summaryPage={customerSummaryPage}
+                    onPrintReminders={(customer) => print.printReminders(customerReminderSearch(customer))}
+                    onEmailReminders={(customer) => remindersEmail.openCustomerDialog(customer, customerReminderSearch(customer))}
                     isLoading={isLoading}
                     mode={mode}
                     selectedInvoiceNumber={selectedInvoiceNumber}

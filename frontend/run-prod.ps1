@@ -5,6 +5,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+& npm.cmd install --prefix $PSScriptRoot
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 & npm.cmd run build --prefix $PSScriptRoot
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
