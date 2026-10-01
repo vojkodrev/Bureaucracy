@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import CountryComboboxField from '@/components/CountryComboboxField'
 import DuplicateIdentifierAlert from '@/components/DuplicateIdentifierAlert'
@@ -62,7 +63,6 @@ const saveCustomerMutation = `
         saveCustomer(businessYear: $businessYear, customer: $customer) { ${customerFields} }
     }
 `
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 function customerDraft(customer?: Customer | null): CustomerDraft {
     return {
@@ -91,14 +91,9 @@ function isOptionalIntegerInRange(value: string, minimum: number, maximum: numbe
 }
 
 async function fetchNextCustomerId(signal?: AbortSignal): Promise<string> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: latestCustomerQuery, variables: { businessYear: getSelectedBusinessYear() } }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Loading latest customer failed (${response.status})`)
-    const result = await response.json() as LatestCustomerResponse
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    const result = await postGraphql<LatestCustomerResponse>(latestCustomerQuery, {
+        businessYear: getSelectedBusinessYear(),
+    }, signal)
     return nextPaddedNumber(result.data?.searchCustomers.customers[0]?.customerId, 4)
 }
 
@@ -159,14 +154,9 @@ function CustomerPage() {
         }
 
         const abortController = new AbortController()
-        void fetch(graphqlUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: customerQuery, variables: { businessYear: getSelectedBusinessYear(), customerId: routeCustomerId } }),
-            signal: abortController.signal,
-        }).then(async (response) => {
-            if (!response.ok) throw new Error(`Loading customer failed (${response.status})`)
-            const result = await response.json() as CustomerResponse
-            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+        void postGraphql<CustomerResponse>(customerQuery, {
+            businessYear: getSelectedBusinessYear(), customerId: routeCustomerId,
+        }, abortController.signal).then((result) => {
             if (!result.data?.customer) throw new Error(`Customer ${routeCustomerId} was not found`)
             const loadedDraft = customerDraft(result.data.customer)
             setCustomerRecordId(result.data.customer.id)
@@ -193,43 +183,28 @@ function CustomerPage() {
         setDuplicateError(null)
         try {
             if (isCreating) {
-                const response = await fetch(graphqlUrl, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: customerQuery, variables: {
-                        businessYear: getSelectedBusinessYear(), customerId: draft.customerId.trim(),
-                    }}),
+                const result = await postGraphql<CustomerResponse>(customerQuery, {
+                    businessYear: getSelectedBusinessYear(), customerId: draft.customerId.trim(),
                 })
-                if (!response.ok) throw new Error(`Checking customer ID failed (${response.status})`)
-                const result = await response.json() as CustomerResponse
-                if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
                 if (result.data?.customer) {
                     setDuplicateIdWarning(true)
                     return
                 }
             }
-            const response = await fetch(graphqlUrl, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: saveCustomerMutation,
-                    variables: {
-                        businessYear: getSelectedBusinessYear(),
-                        customer: {
-                            id: customerRecordId, customerId: draft.customerId.trim(),
-                            name: emptyToNull(draft.name), address: emptyToNull(draft.address),
-                            postalCode: emptyToNull(draft.postalCode), city: emptyToNull(draft.city),
-                            country: emptyToNull(draft.country), contact: emptyToNull(draft.contact),
-                            email: emptyToNull(draft.email), phone: emptyToNull(draft.phone),
-                            taxNumber: emptyToNull(draft.taxNumber),
-                            registrationNumber: emptyToNull(draft.registrationNumber),
-                            iban: emptyToNull(draft.iban), bic: emptyToNull(draft.bic),
-                            paymentTerm: numberOrNull(draft.paymentTerm), discount: numberOrNull(draft.discount),
-                        },
-                    },
-                }),
+            const result = await postGraphql<SaveCustomerResponse>(saveCustomerMutation, {
+                businessYear: getSelectedBusinessYear(),
+                customer: {
+                    id: customerRecordId, customerId: draft.customerId.trim(),
+                    name: emptyToNull(draft.name), address: emptyToNull(draft.address),
+                    postalCode: emptyToNull(draft.postalCode), city: emptyToNull(draft.city),
+                    country: emptyToNull(draft.country), contact: emptyToNull(draft.contact),
+                    email: emptyToNull(draft.email), phone: emptyToNull(draft.phone),
+                    taxNumber: emptyToNull(draft.taxNumber),
+                    registrationNumber: emptyToNull(draft.registrationNumber),
+                    iban: emptyToNull(draft.iban), bic: emptyToNull(draft.bic),
+                    paymentTerm: numberOrNull(draft.paymentTerm), discount: numberOrNull(draft.discount),
+                },
             })
-            if (!response.ok) throw new Error(`Saving customer failed (${response.status})`)
-            const result = await response.json() as SaveCustomerResponse
-            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
             if (!result.data?.saveCustomer) throw new Error('Saving customer returned no customer')
             const savedCustomer = result.data.saveCustomer
             const savedDraft = customerDraft(savedCustomer)

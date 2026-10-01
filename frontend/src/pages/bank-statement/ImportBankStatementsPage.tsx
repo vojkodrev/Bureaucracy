@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { apiFetch } from '@/lib/auth'
 import { FileCode2, Trash2, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
@@ -66,7 +67,7 @@ function ImportBankStatementsPage() {
             const form = new FormData()
             form.set('businessYear', getSelectedBusinessYear())
             files.forEach((file) => form.append('files', file, file.name))
-            const response = await fetch(importUrl(), { method: 'POST', body: form })
+            const response = await apiFetch(importUrl(), { method: 'POST', body: form })
             const body = await response.json().catch(() => null) as {
                 results?: ImportResult[]
                 error?: string

@@ -27,6 +27,7 @@ import {
     ProductSearchPage,
 } from "./pages";
 import "./index.css";
+import { initializeAuth } from "./lib/auth.ts";
 
 const router = createBrowserRouter([
     {
@@ -75,9 +76,16 @@ const router = createBrowserRouter([
     },
 ]);
 
-createRoot(document.getElementById("root")).render(
-    <Suspense fallback={null}>
-        <RouterProvider router={router} />
-        <Toaster />
-    </Suspense>,
-);
+initializeAuth()
+    .then(() => createRoot(document.getElementById("root")).render(
+        <Suspense fallback={null}>
+            <RouterProvider router={router} />
+            <Toaster />
+        </Suspense>,
+    ))
+    .catch((error) => createRoot(document.getElementById("root")).render(
+        <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+            <h1>Sign-in failed</h1>
+            <p>{error instanceof Error ? error.message : "Authentication failed."}</p>
+        </main>,
+    ));

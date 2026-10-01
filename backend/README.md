@@ -10,6 +10,12 @@ The backend exposes BIRO225 invoices through an English GraphQL API.
 Open the GraphQL playground at <http://localhost:8080/> or send requests to
 `http://localhost:8080/graphql`.
 
+All routes except `GET /health` require a Keycloak access token in the
+`Authorization: Bearer <token>` header. Configure the Keycloak issuer and the
+allowed public client with `KEYCLOAK_URL`, `KEYCLOAK_REALM`, and
+`KEYCLOAK_CLIENT_ID`. The backend verifies the token signature against the
+realm JWKS as well as its issuer, expiry, and intended client.
+
 Invoice PDFs are served as inline documents from
 `GET /api/invoices/:invoiceNumber/pdf`. The placeholder implementation does
 not query the database yet.

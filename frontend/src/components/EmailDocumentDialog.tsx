@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import { FileText, Paperclip, Trash2 } from 'lucide-react'
 import ErrorAlert from '@/components/ErrorAlert'
 import SaveCustomerEmailAlert from '@/components/SaveCustomerEmailAlert'
@@ -33,7 +34,6 @@ type Props = {
     onSend: (fields: DocumentEmailFields) => Promise<void>
 }
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const defaultBcc = 'drevi.napkins@gmail.com'
 const acceptedTypes = '.pdf,.jpg,.jpeg,.png,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx'
 const customerEmailQuery = `
@@ -79,21 +79,11 @@ function EmailDocumentDialog({
         setError(null); setAttachments([])
         if (!customerId.trim()) { setStoredRecipient(defaultRecipient); setLoading(false); return }
         setLoading(true)
-        void fetch(graphqlUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: customerEmailQuery,
-                variables: {
-                    businessYear: getSelectedBusinessYear(),
-                    customerId: customerId.trim(),
-                },
-            }),
-            signal: controller.signal,
-        })
-            .then(async (response) => {
-                if (!response.ok) throw new Error(`Loading customer email failed (${response.status})`)
-                const result = await response.json() as CustomerEmailResponse
-                if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+        void postGraphql<CustomerEmailResponse>(customerEmailQuery, {
+            businessYear: getSelectedBusinessYear(),
+            customerId: customerId.trim(),
+        }, controller.signal)
+            .then((result) => {
                 const email = result.data?.customer?.email?.trim() ?? ''
                 setStoredRecipient(email); setRecipient(email)
             })

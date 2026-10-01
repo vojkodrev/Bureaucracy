@@ -5,7 +5,7 @@ export async function postGraphql<T>(
     variables?: Record<string, unknown>,
     signal?: AbortSignal,
 ): Promise<T> {
-    const response = await fetch(graphqlUrl, {
+    const response = await apiFetch(graphqlUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, variables }),
@@ -16,3 +16,4 @@ export async function postGraphql<T>(
     if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
     return result
 }
+import { apiFetch } from './auth'

@@ -1,4 +1,6 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { apiFetch } from '@/lib/auth'
+import { postGraphql } from '@/lib/graphql'
 import { optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
 import type { InvoiceCustomerSummaryPage, InvoicePage } from '@/lib/invoice-types'
@@ -135,38 +137,24 @@ export async function fetchInvoiceSearch(
     signal?: AbortSignal,
 ): Promise<InvoicePage | null> {
     const groupByCustomer = search.resultsView === 'customer'
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query: searchInvoicesQuery,
-            variables: {
-                businessYear: getSelectedBusinessYear(),
-                invoiceNumber: optionalFilter(search.invoiceNumber),
-                customerId: optionalFilter(search.customerId),
-                customerName: optionalFilter(search.customerName),
-                productCode: optionalFilter(search.productCode),
-                productName: optionalFilter(search.productName),
-                issuedFrom: optionalDate(search.from),
-                issuedTo: optionalDate(search.to),
-                paymentStatus: search.paymentStatus,
-                sortBy: groupByCustomer ? 'customer' : search.sortBy || null,
-                sortDirection: groupByCustomer ? 'asc' : search.sortDirection || null,
-                page: positiveInteger(search.page, defaultPage),
-                pageSize: Math.min(
-                    positiveInteger(search.pageSize, defaultPageSize),
-                    maximumPageSize,
-                ),
-            },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Invoice search failed (${response.status})`)
-
-    const result = (await response.json()) as SearchInvoicesResponse
-    if (result.errors?.length) {
-        throw new Error(result.errors.map(({ message }) => message).join(', '))
-    }
+    const result = await postGraphql<SearchInvoicesResponse>(searchInvoicesQuery, {
+        businessYear: getSelectedBusinessYear(),
+        invoiceNumber: optionalFilter(search.invoiceNumber),
+        customerId: optionalFilter(search.customerId),
+        customerName: optionalFilter(search.customerName),
+        productCode: optionalFilter(search.productCode),
+        productName: optionalFilter(search.productName),
+        issuedFrom: optionalDate(search.from),
+        issuedTo: optionalDate(search.to),
+        paymentStatus: search.paymentStatus,
+        sortBy: groupByCustomer ? 'customer' : search.sortBy || null,
+        sortDirection: groupByCustomer ? 'asc' : search.sortDirection || null,
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(
+            positiveInteger(search.pageSize, defaultPageSize),
+            maximumPageSize,
+        ),
+    }, signal)
     return result.data?.searchInvoices ?? null
 }
 
@@ -174,38 +162,24 @@ export async function fetchInvoiceSearchByCustomer(
     search: InvoiceSearchCriteria,
     signal?: AbortSignal,
 ): Promise<InvoiceCustomerSummaryPage | null> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query: searchInvoicesByCustomerQuery,
-            variables: {
-                businessYear: getSelectedBusinessYear(),
-                invoiceNumber: optionalFilter(search.invoiceNumber),
-                customerId: optionalFilter(search.customerId),
-                customerName: optionalFilter(search.customerName),
-                productCode: optionalFilter(search.productCode),
-                productName: optionalFilter(search.productName),
-                issuedFrom: optionalDate(search.from),
-                issuedTo: optionalDate(search.to),
-                paymentStatus: search.paymentStatus,
-                sortBy: 'customer',
-                sortDirection: 'asc',
-                page: positiveInteger(search.page, defaultPage),
-                pageSize: Math.min(
-                    positiveInteger(search.pageSize, defaultPageSize),
-                    maximumPageSize,
-                ),
-            },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Invoice search failed (${response.status})`)
-
-    const result = (await response.json()) as SearchInvoicesByCustomerResponse
-    if (result.errors?.length) {
-        throw new Error(result.errors.map(({ message }) => message).join(', '))
-    }
+    const result = await postGraphql<SearchInvoicesByCustomerResponse>(searchInvoicesByCustomerQuery, {
+        businessYear: getSelectedBusinessYear(),
+        invoiceNumber: optionalFilter(search.invoiceNumber),
+        customerId: optionalFilter(search.customerId),
+        customerName: optionalFilter(search.customerName),
+        productCode: optionalFilter(search.productCode),
+        productName: optionalFilter(search.productName),
+        issuedFrom: optionalDate(search.from),
+        issuedTo: optionalDate(search.to),
+        paymentStatus: search.paymentStatus,
+        sortBy: 'customer',
+        sortDirection: 'asc',
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(
+            positiveInteger(search.pageSize, defaultPageSize),
+            maximumPageSize,
+        ),
+    }, signal)
     return result.data?.searchInvoicesByCustomer ?? null
 }
 
@@ -256,7 +230,7 @@ export async function sendInvoiceRemindersEmail(
     form.set('subject', fields.subject)
     form.set('message', fields.message)
     fields.attachments.forEach((file) => form.append('attachments', file, file.name))
-    const response = await fetch(url, { method: 'POST', body: form })
+    const response = await apiFetch(url, { method: 'POST', body: form })
     const result = await response.json() as { error?: string }
     if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
 }

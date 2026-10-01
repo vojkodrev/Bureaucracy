@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { postGraphql } from '@/lib/graphql'
 import { optionalFilter } from '@/lib/filters'
 import type { InventoryItemPage } from '@/lib/inventory-item-types'
 import {
@@ -44,38 +45,23 @@ const query = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
-
 export async function fetchInventoryItemSearch(
     search: InventoryItemSearchCriteria,
     similarName: string | undefined,
     signal?: AbortSignal,
 ): Promise<InventoryItemPage | null> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query,
-            variables: {
-                businessYear: getSelectedBusinessYear(),
-                productCode: optionalFilter(search.productCode),
-                productName: optionalFilter(search.productName),
-                similarName: optionalFilter(similarName ?? ''),
-                sortBy: search.sortBy || null,
-                sortDirection: search.sortDirection || null,
-                page: positiveInteger(search.page, defaultPage),
-                pageSize: Math.min(
-                    positiveInteger(search.pageSize, defaultPageSize),
-                    maximumPageSize,
-                ),
-            },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Inventory item search failed (${response.status})`)
-    const result = (await response.json()) as SearchInventoryItemsResponse
-    if (result.errors?.length) {
-        throw new Error(result.errors.map(({ message }) => message).join(', '))
-    }
+    const result = await postGraphql<SearchInventoryItemsResponse>(query, {
+        businessYear: getSelectedBusinessYear(),
+        productCode: optionalFilter(search.productCode),
+        productName: optionalFilter(search.productName),
+        similarName: optionalFilter(similarName ?? ''),
+        sortBy: search.sortBy || null,
+        sortDirection: search.sortDirection || null,
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(
+            positiveInteger(search.pageSize, defaultPageSize),
+            maximumPageSize,
+        ),
+    }, signal)
     return result.data?.searchInventoryItems ?? null
 }

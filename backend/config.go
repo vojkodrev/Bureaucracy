@@ -27,6 +27,9 @@ type AppConfig struct {
 	SMTPPassword                string
 	SMTPFromAddress             string
 	SMTPSecurity                string
+	KeycloakURL                 string
+	KeycloakRealm               string
+	KeycloakClientID            string
 }
 
 func NewAppConfig() *AppConfig {
@@ -50,6 +53,9 @@ func NewAppConfig() *AppConfig {
 		SMTPPassword:                os.Getenv("SMTP_PASSWORD"),
 		SMTPFromAddress:             os.Getenv("SMTP_FROM_ADDRESS"),
 		SMTPSecurity:                strings.ToLower(envOrDefault("SMTP_SECURITY", "starttls")),
+		KeycloakURL:                 strings.TrimRight(envOrDefault("KEYCLOAK_URL", "http://localhost:8180"), "/"),
+		KeycloakRealm:               envOrDefault("KEYCLOAK_REALM", "bureaucracy"),
+		KeycloakClientID:            envOrDefault("KEYCLOAK_CLIENT_ID", "bureaucracy-frontend"),
 	}
 }
 

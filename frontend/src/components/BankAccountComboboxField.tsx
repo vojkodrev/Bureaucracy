@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import {
     Combobox,
     ComboboxContent,
@@ -31,7 +32,6 @@ type BankAccountComboboxFieldProps = {
     onDefaultChange?: (code: string) => void
 }
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const bankAccountsQuery = `
     query BankAccounts($businessYear: String!) {
         bankAccounts(businessYear: $businessYear) { id code name accountNumber }
@@ -55,15 +55,11 @@ function BankAccountComboboxField({ id, label, value, onChange, selectFirstByDef
 
     useEffect(() => {
         const abortController = new AbortController()
-        void fetch(graphqlUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: bankAccountsQuery, variables: { businessYear: getSelectedBusinessYear() } }),
-            signal: abortController.signal,
-        }).then(async (response) => {
-            if (!response.ok) throw new Error(`Loading bank accounts failed (${response.status})`)
-            const result = (await response.json()) as BankAccountsResponse
-            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+        void postGraphql<BankAccountsResponse>(
+            bankAccountsQuery,
+            { businessYear: getSelectedBusinessYear() },
+            abortController.signal,
+        ).then((result) => {
             const bankAccounts = result.data?.bankAccounts ?? []
             setAccounts(bankAccounts)
             selectDefaultAccount(bankAccounts)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { getSelectedBusinessYear } from '@/lib/business-year'
@@ -6,7 +7,6 @@ import { getSelectedBusinessYear } from '@/lib/business-year'
 export type BankTransactionType = { id: number; code: number | null; name: string | null; direction: string | null }
 type Response = { data?: { bankTransactionTypes: BankTransactionType[] }; errors?: { message: string }[] }
 type Props = { id: string; label: string; value: number | null; onChange: (value: BankTransactionType | null) => void }
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const query = `query BankTransactionTypes($businessYear: String!) { bankTransactionTypes(businessYear: $businessYear) { id code name direction } }`
 
 function BankTransactionTypeComboboxField({ id, label, value, onChange }: Props) {
@@ -14,11 +14,12 @@ function BankTransactionTypeComboboxField({ id, label, value, onChange }: Props)
     const [error, setError] = useState<string | null>(null)
     useEffect(() => {
         const controller = new AbortController()
-        void fetch(graphqlUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, variables: { businessYear: getSelectedBusinessYear() } }), signal: controller.signal })
-            .then(async (response) => {
-                if (!response.ok) throw new Error(`Loading transaction types failed (${response.status})`)
-                const result = await response.json() as Response
-                if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+        void postGraphql<Response>(
+            query,
+            { businessYear: getSelectedBusinessYear() },
+            controller.signal,
+        )
+            .then((result) => {
                 setItems(result.data?.bankTransactionTypes ?? [])
             }).catch((requestError: unknown) => {
                 if (requestError instanceof DOMException && requestError.name === 'AbortError') return

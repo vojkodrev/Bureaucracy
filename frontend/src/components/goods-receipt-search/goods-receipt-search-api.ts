@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { postGraphql } from '@/lib/graphql'
 import { optionalDate } from '@/lib/dates'
 import { optionalFilter } from '@/lib/filters'
 import type { GoodsReceiptPage } from '@/lib/goods-receipt-types'
@@ -50,27 +51,16 @@ const query = `
 `
 
 export async function fetchGoodsReceiptSearch(search: GoodsReceiptSearchCriteria, signal?: AbortSignal) {
-    const response = await fetch(import.meta.env.VITE_GRAPHQL_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query,
-            variables: {
-                businessYear: getSelectedBusinessYear(),
-                productCode: optionalFilter(search.productCode),
-                productName: optionalFilter(search.productName),
-                receivedFrom: optionalDate(search.from),
-                receivedTo: optionalDate(search.to),
-                sortBy: search.sortBy || null,
-                sortDirection: search.sortDirection || null,
-                page: positiveInteger(search.page, defaultPage),
-                pageSize: Math.min(positiveInteger(search.pageSize, defaultPageSize), maximumPageSize),
-            },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Goods receipt search failed (${response.status})`)
-    const result = await response.json() as Response
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    const result = await postGraphql<Response>(query, {
+        businessYear: getSelectedBusinessYear(),
+        productCode: optionalFilter(search.productCode),
+        productName: optionalFilter(search.productName),
+        receivedFrom: optionalDate(search.from),
+        receivedTo: optionalDate(search.to),
+        sortBy: search.sortBy || null,
+        sortDirection: search.sortDirection || null,
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(positiveInteger(search.pageSize, defaultPageSize), maximumPageSize),
+    }, signal)
     return result.data?.searchGoodsReceipts ?? null
 }

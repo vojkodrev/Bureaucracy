@@ -1,7 +1,6 @@
 import { getSelectedBusinessYear } from './business-year'
+import { postGraphql } from './graphql'
 import type { BusinessYearResponse } from './business-year-types'
-
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 const businessYearQuery = `
     query BusinessYear($code: String!) {
@@ -16,16 +15,7 @@ const currentBusinessYearQuery = `
 `
 
 async function request<T>(query: string, variables?: Record<string, unknown>, signal?: AbortSignal) {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Loading business year failed (${response.status})`)
-    const result = await response.json() as T & { errors?: { message: string }[] }
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
-    return result
+    return postGraphql<T>(query, variables, signal)
 }
 
 export async function fetchBusinessYear(

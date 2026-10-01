@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiFetch } from '@/lib/auth'
 import type { FormEvent } from 'react'
 import { Download, Mail } from 'lucide-react'
 import ErrorAlert from '@/components/ErrorAlert'
@@ -60,7 +61,7 @@ function ExportDataPage() {
         setIsExporting(true)
         setError(null)
         try {
-            const response = await fetch(exportUrl(selectedMonth.value, year))
+            const response = await apiFetch(exportUrl(selectedMonth.value, year))
             if (!response.ok) {
                 const body = await response.json().catch(() => null) as { error?: string } | null
                 throw new Error(body?.error ?? `Export failed (${response.status})`)

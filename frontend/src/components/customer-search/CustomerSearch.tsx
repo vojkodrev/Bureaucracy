@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import type { SubmitEvent, SyntheticEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
@@ -116,7 +117,6 @@ const searchCustomersQuery = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const emptyCustomers: Customer[] = []
 
 function searchFormFromParams(searchParams: URLSearchParams): SearchForm {
@@ -195,36 +195,19 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
     useEffect(() => {
         const abortController = new AbortController()
 
-        void fetch(graphqlUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: searchCustomersQuery,
-                variables: {
-                    businessYear: getSelectedBusinessYear(),
-                    customerId: optionalFilter(activeSearch.customerId),
-                    customerName: optionalFilter(activeSearch.customerName),
-                    sortBy: activeSearch.sortBy || null,
-                    sortDirection: activeSearch.sortDirection || null,
-                    page: positiveInteger(activeSearch.page, defaultPage),
-                    pageSize: Math.min(
-                        positiveInteger(activeSearch.pageSize, defaultPageSize),
-                        maximumPageSize,
-                    ),
-                },
-            }),
-            signal: abortController.signal,
-        })
-            .then(async (response) => {
-                if (!response.ok) {
-                    throw new Error(`Customer search failed (${response.status})`)
-                }
-
-                const result = (await response.json()) as SearchCustomersResponse
-                if (result.errors?.length) {
-                    throw new Error(result.errors.map(({ message }) => message).join(', '))
-                }
-
+        void postGraphql<SearchCustomersResponse>(searchCustomersQuery, {
+            businessYear: getSelectedBusinessYear(),
+            customerId: optionalFilter(activeSearch.customerId),
+            customerName: optionalFilter(activeSearch.customerName),
+            sortBy: activeSearch.sortBy || null,
+            sortDirection: activeSearch.sortDirection || null,
+            page: positiveInteger(activeSearch.page, defaultPage),
+            pageSize: Math.min(
+                positiveInteger(activeSearch.pageSize, defaultPageSize),
+                maximumPageSize,
+            ),
+        }, abortController.signal)
+            .then((result) => {
                 setSearchResult({
                     searchKey,
                     customerPage: result.data?.searchCustomers ?? null,

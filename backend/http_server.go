@@ -51,29 +51,32 @@ func NewHTTPServer(
 		ginCors.New(ginCors.Config{
 			AllowOrigins: config.AllowedOrigins,
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
-			AllowHeaders: []string{"Content-Type"},
+			AllowHeaders: []string{"Content-Type", "Authorization"},
 		}),
 	)
-	router.GET("/graphql", gin.WrapH(graphqlHandler))
-	router.POST("/graphql", gin.WrapH(graphqlHandler))
-	router.GET("/", gin.WrapH(playgroundHandler))
 	router.GET("/health", func(context *gin.Context) {
 		context.Status(http.StatusNoContent)
 	})
-	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
-	router.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
-	router.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
-	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
-	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
-	router.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
-	router.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
-	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
-	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
-	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
-	router.POST("/api/exports/accounting/email", accountingExportHandler.Send)
-	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
-	router.POST("/api/file", fileHandler.UploadImage)
-	router.GET("/api/file/:fileId", fileHandler.Display)
+
+	protected := router.Group("/")
+	protected.Use(NewAuthMiddleware(config))
+	protected.GET("/graphql", gin.WrapH(graphqlHandler))
+	protected.POST("/graphql", gin.WrapH(graphqlHandler))
+	protected.GET("/", gin.WrapH(playgroundHandler))
+	protected.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	protected.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
+	protected.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
+	protected.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
+	protected.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
+	protected.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
+	protected.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
+	protected.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
+	protected.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
+	protected.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	protected.POST("/api/exports/accounting/email", accountingExportHandler.Send)
+	protected.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
+	protected.POST("/api/file", fileHandler.UploadImage)
+	protected.GET("/api/file/:fileId", fileHandler.Display)
 
 	return &HTTPServer{
 		config: config,

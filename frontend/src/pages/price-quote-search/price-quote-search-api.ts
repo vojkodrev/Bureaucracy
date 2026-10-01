@@ -5,6 +5,8 @@ import type { PriceQuotePage, PriceQuoteSearchCriteria } from './types'
 import type { PriceQuote } from './types'
 import { nextPaddedNumber } from '@/lib/numbers'
 
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+
 const query = `
     query SearchPriceQuotes($businessYear: String!, $quoteNumber: String, $customerId: String,
         $customerName: String, $productCode: String, $productName: String,
@@ -20,31 +22,23 @@ const query = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const optional = (value: string) => value || null
 
 export async function fetchPriceQuotes(
     search: PriceQuoteSearchCriteria,
     signal?: AbortSignal,
 ): Promise<PriceQuotePage> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
-        body: JSON.stringify({ query, variables: {
-            businessYear: getSelectedBusinessYear(),
-            quoteNumber: optional(search.quoteNumber), customerId: optional(search.customerId),
-            customerName: optional(search.customerName), productCode: optional(search.productCode),
-            productName: optional(search.productName), issuedFrom: optional(search.from), issuedTo: optional(search.to),
-            sortBy: optional(search.sortBy), sortDirection: optional(search.sortDirection),
-            page: positiveInteger(search.page, defaultPage),
-            pageSize: Math.min(positiveInteger(search.pageSize, defaultPageSize), maximumPageSize),
-        }}),
-    })
-    if (!response.ok) throw new Error(`Price quote search failed (${response.status})`)
-    const result = await response.json() as {
+    const result = await postGraphql<{
         data?: { searchPriceQuotes: PriceQuotePage }
-        errors?: { message: string }[]
-    }
-    if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+    }>(query, {
+        businessYear: getSelectedBusinessYear(),
+        quoteNumber: optional(search.quoteNumber), customerId: optional(search.customerId),
+        customerName: optional(search.customerName), productCode: optional(search.productCode),
+        productName: optional(search.productName), issuedFrom: optional(search.from), issuedTo: optional(search.to),
+        sortBy: optional(search.sortBy), sortDirection: optional(search.sortDirection),
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(positiveInteger(search.pageSize, defaultPageSize), maximumPageSize),
+    }, signal)
     if (!result.data) throw new Error('Price quote search returned no data')
     return result.data.searchPriceQuotes
 }

@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { apiFetch } from '@/lib/auth'
 import { postGraphql } from '@/lib/graphql'
 import type { GoodsReceipt, Storage } from '@/lib/goods-receipt-types'
 import { nextPaddedNumber } from '@/lib/numbers'
@@ -22,7 +23,7 @@ export function goodsReceiptPhotoUrl(fileId: string) {
 export async function uploadGoodsReceiptPhoto(file: File) {
     const body = new FormData()
     body.append('file', file)
-    const response = await fetch(fileApiUrl(), { method: 'POST', body })
+    const response = await apiFetch(fileApiUrl(), { method: 'POST', body })
     const result = await response.json().catch(() => ({})) as { fileId?: string; error?: string }
     if (!response.ok || !result.fileId) throw new Error(result.error ?? `Photo upload failed (${response.status})`)
     return { fileId: result.fileId }
