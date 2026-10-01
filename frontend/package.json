@@ -19,6 +19,7 @@
         "date-fns": "^4.4.0",
         "embla-carousel-react": "^8.6.0",
         "embla-carousel-wheel-gestures": "^8.1.0",
+        "keycloak-js": "^26.2.4",
         "lucide-react": "^1.39.0",
         "react": "^19.2.8",
         "react-day-picker": "^10.0.1",

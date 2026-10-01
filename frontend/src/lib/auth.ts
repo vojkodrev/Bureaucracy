@@ -1,9 +1,4 @@
-type Tokens = {
-    access_token: string
-    refresh_token?: string
-    id_token?: string
-    expires_in: number
-}
+import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js'
 
 export type AuthUser = {
     name: string
@@ -11,166 +6,55 @@ export type AuthUser = {
     picture?: string
 }
 
-type RealmAccess = {
-    roles?: string[]
+type UserClaims = KeycloakTokenParsed & {
+    name?: string
+    preferred_username?: string
+    email?: string
+    picture?: string
 }
 
-const keycloakUrl = (import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180').replace(/\/$/, '')
-const realm = import.meta.env.VITE_KEYCLOAK_REALM || 'bureaucracy'
-const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'bureaucracy-frontend'
-const tokenKey = 'bureaucracy.auth.tokens'
-const stateKey = 'bureaucracy.auth.state'
-const verifierKey = 'bureaucracy.auth.verifier'
-const returnUrlKey = 'bureaucracy.auth.returnUrl'
-let tokens: Tokens | null = readTokens()
-let refreshPromise: Promise<string> | null = null
+const keycloak = new Keycloak({
+    url: (import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180').replace(/\/$/, ''),
+    realm: import.meta.env.VITE_KEYCLOAK_REALM || 'bureaucracy',
+    clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'bureaucracy-frontend',
+})
 
-function endpoint(path: string) {
-    return `${keycloakUrl}/realms/${encodeURIComponent(realm)}/protocol/openid-connect/${path}`
+// Remove credentials left in session storage by the previous custom OIDC client.
+sessionStorage.removeItem('bureaucracy.auth.tokens')
+sessionStorage.removeItem('bureaucracy.auth.state')
+sessionStorage.removeItem('bureaucracy.auth.verifier')
+sessionStorage.removeItem('bureaucracy.auth.returnUrl')
+
+async function login(): Promise<never> {
+    await keycloak.login({ redirectUri: window.location.href })
+    throw new Error('The sign-in redirect did not start.')
 }
 
-function callbackUrl() {
-    return `${window.location.origin}${window.location.pathname}`
-}
+async function accessToken(forceRefresh = false): Promise<string> {
+    if (!keycloak.authenticated) return login()
 
-function readTokens(): Tokens | null {
     try {
-        return JSON.parse(sessionStorage.getItem(tokenKey) ?? 'null') as Tokens | null
+        await keycloak.updateToken(forceRefresh ? -1 : 30)
     } catch {
-        return null
+        return login()
     }
-}
 
-function saveTokens(value: Tokens) {
-    tokens = value
-    sessionStorage.setItem(tokenKey, JSON.stringify(value))
-}
-
-function tokenExpiresSoon(token: string, seconds = 30) {
-    try {
-        const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-        const payload = JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '='))) as { exp?: number }
-        return !payload.exp || payload.exp <= Date.now() / 1000 + seconds
-    } catch {
-        return true
-    }
-}
-
-function tokenPayload<T>(token: string): T | null {
-    try {
-        const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-        return JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '='))) as T
-    } catch {
-        return null
-    }
-}
-
-function randomValue() {
-    const bytes = crypto.getRandomValues(new Uint8Array(32))
-    return base64Url(bytes)
-}
-
-function base64Url(bytes: Uint8Array) {
-    let binary = ''
-    bytes.forEach((byte) => { binary += String.fromCharCode(byte) })
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-async function challenge(verifier: string) {
-    return base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))))
-}
-
-async function redirectToLogin(): Promise<never> {
-    const state = randomValue()
-    const verifier = randomValue()
-    sessionStorage.setItem(stateKey, state)
-    sessionStorage.setItem(verifierKey, verifier)
-    sessionStorage.setItem(returnUrlKey, window.location.href)
-    const url = new URL(endpoint('auth'))
-    url.search = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: callbackUrl(),
-        response_type: 'code',
-        scope: 'openid profile email',
-        state,
-        code_challenge: await challenge(verifier),
-        code_challenge_method: 'S256',
-    }).toString()
-    window.location.replace(url)
-    return new Promise(() => undefined)
-}
-
-async function exchange(parameters: URLSearchParams) {
-    const state = parameters.get('state')
-    const verifier = sessionStorage.getItem(verifierKey)
-    if (!state || state !== sessionStorage.getItem(stateKey) || !verifier) {
-        throw new Error('The login response could not be verified.')
-    }
-    const response = await fetch(endpoint('token'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: clientId,
-            redirect_uri: callbackUrl(),
-            code: parameters.get('code') ?? '',
-            code_verifier: verifier,
-        }),
-    })
-    if (!response.ok) throw new Error(`Login failed (${response.status}).`)
-    saveTokens(await response.json() as Tokens)
-    sessionStorage.removeItem(stateKey)
-    sessionStorage.removeItem(verifierKey)
-    const destination = sessionStorage.getItem(returnUrlKey) ?? callbackUrl()
-    sessionStorage.removeItem(returnUrlKey)
-    window.history.replaceState(null, '', destination)
-}
-
-async function accessToken(): Promise<string> {
-    if (tokens?.access_token && !tokenExpiresSoon(tokens.access_token)) return tokens.access_token
-    if (!tokens?.refresh_token) return redirectToLogin()
-    refreshPromise ??= refreshToken().finally(() => { refreshPromise = null })
-    return refreshPromise
-}
-
-async function refreshToken() {
-    const response = await fetch(endpoint('token'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: clientId,
-            refresh_token: tokens?.refresh_token ?? '',
-        }),
-    })
-    if (!response.ok) {
-        sessionStorage.removeItem(tokenKey)
-        tokens = null
-        return redirectToLogin()
-    }
-    const next = await response.json() as Tokens
-    if (!next.refresh_token && tokens?.refresh_token) next.refresh_token = tokens.refresh_token
-    if (!next.id_token && tokens?.id_token) next.id_token = tokens.id_token
-    saveTokens(next)
-    return next.access_token
+    if (!keycloak.token) return login()
+    return keycloak.token
 }
 
 export async function initializeAuth() {
-    const parameters = new URLSearchParams(window.location.search)
-    if (parameters.has('error')) throw new Error(parameters.get('error_description') ?? 'Login was cancelled.')
-    if (parameters.has('code')) await exchange(parameters)
-    await accessToken()
+    const authenticated = await keycloak.init({
+        onLoad: 'login-required',
+        flow: 'standard',
+        pkceMethod: 'S256',
+        scope: 'profile email',
+    })
+    if (!authenticated) await login()
 }
 
 export function getAuthUser(): AuthUser {
-    const claims = tokens?.access_token
-        ? tokenPayload<{
-            name?: string
-            preferred_username?: string
-            email?: string
-            picture?: string
-        }>(tokens.access_token)
-        : null
+    const claims = keycloak.tokenParsed as UserClaims | undefined
     return {
         name: claims?.name || claims?.preferred_username || 'Signed-in user',
         email: claims?.email || '',
@@ -179,10 +63,7 @@ export function getAuthUser(): AuthUser {
 }
 
 export function hasRealmRole(role: string) {
-    const claims = tokens?.access_token
-        ? tokenPayload<{ realm_access?: RealmAccess }>(tokens.access_token)
-        : null
-    return claims?.realm_access?.roles?.includes(role) ?? false
+    return keycloak.hasRealmRole(role)
 }
 
 export function isStorageOnlyUser() {
@@ -190,14 +71,7 @@ export function isStorageOnlyUser() {
 }
 
 export function logout() {
-    const idToken = tokens?.id_token
-    tokens = null
-    sessionStorage.removeItem(tokenKey)
-    const url = new URL(endpoint('logout'))
-    url.searchParams.set('client_id', clientId)
-    url.searchParams.set('post_logout_redirect_uri', window.location.origin)
-    if (idToken) url.searchParams.set('id_token_hint', idToken)
-    window.location.assign(url)
+    return keycloak.logout({ redirectUri: window.location.origin })
 }
 
 export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
@@ -206,16 +80,15 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
     if (new URL(request.url, window.location.href).origin !== apiOrigin) {
         throw new Error('apiFetch only accepts requests to the configured backend origin.')
     }
-    const send = async () => {
+
+    const send = async (forceRefresh = false) => {
         const headers = new Headers(request.headers)
-        headers.set('Authorization', `Bearer ${await accessToken()}`)
+        headers.set('Authorization', `Bearer ${await accessToken(forceRefresh)}`)
         return fetch(new Request(request.clone(), { headers }))
     }
+
     let response = await send()
-    if (response.status === 401 && tokens?.refresh_token) {
-        tokens.access_token = ''
-        response = await send()
-    }
+    if (response.status === 401) response = await send(true)
     return response
 }
 
