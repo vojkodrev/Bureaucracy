@@ -1,7 +1,14 @@
 type Tokens = {
     access_token: string
     refresh_token?: string
+    id_token?: string
     expires_in: number
+}
+
+export type AuthUser = {
+    name: string
+    email: string
+    picture?: string
 }
 
 const keycloakUrl = (import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180').replace(/\/$/, '')
@@ -45,6 +52,15 @@ function tokenExpiresSoon(token: string, seconds = 30) {
     }
 }
 
+function tokenPayload<T>(token: string): T | null {
+    try {
+        const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+        return JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '='))) as T
+    } catch {
+        return null
+    }
+}
+
 function randomValue() {
     const bytes = crypto.getRandomValues(new Uint8Array(32))
     return base64Url(bytes)
@@ -71,7 +87,7 @@ async function redirectToLogin(): Promise<never> {
         client_id: clientId,
         redirect_uri: callbackUrl(),
         response_type: 'code',
-        scope: 'openid',
+        scope: 'openid profile email',
         state,
         code_challenge: await challenge(verifier),
         code_challenge_method: 'S256',
@@ -130,6 +146,7 @@ async function refreshToken() {
     }
     const next = await response.json() as Tokens
     if (!next.refresh_token && tokens?.refresh_token) next.refresh_token = tokens.refresh_token
+    if (!next.id_token && tokens?.id_token) next.id_token = tokens.id_token
     saveTokens(next)
     return next.access_token
 }
@@ -139,6 +156,33 @@ export async function initializeAuth() {
     if (parameters.has('error')) throw new Error(parameters.get('error_description') ?? 'Login was cancelled.')
     if (parameters.has('code')) await exchange(parameters)
     await accessToken()
+}
+
+export function getAuthUser(): AuthUser {
+    const claims = tokens?.access_token
+        ? tokenPayload<{
+            name?: string
+            preferred_username?: string
+            email?: string
+            picture?: string
+        }>(tokens.access_token)
+        : null
+    return {
+        name: claims?.name || claims?.preferred_username || 'Signed-in user',
+        email: claims?.email || '',
+        picture: claims?.picture,
+    }
+}
+
+export function logout() {
+    const idToken = tokens?.id_token
+    tokens = null
+    sessionStorage.removeItem(tokenKey)
+    const url = new URL(endpoint('logout'))
+    url.searchParams.set('client_id', clientId)
+    url.searchParams.set('post_logout_redirect_uri', window.location.origin)
+    if (idToken) url.searchParams.set('id_token_hint', idToken)
+    window.location.assign(url)
 }
 
 export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {

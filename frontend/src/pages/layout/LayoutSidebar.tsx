@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Collapsible } from "@base-ui/react/collapsible";
 import {
     CalendarRange,
+    ChevronsUpDown,
     ChevronRight,
     FileDown,
     FileText,
     Landmark,
+    LogOut,
     PackageCheck,
     PackageSearch,
     Plus,
@@ -19,6 +21,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -31,6 +34,16 @@ import {
     SidebarMenuSubItem,
     SidebarRail,
 } from "@/components/ui/sidebar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getAuthUser, logout } from "@/lib/auth";
 
 type Section = {
     key: string;
@@ -140,6 +153,12 @@ export default function LayoutSidebar({
         sections.find((section) => sectionIsActive(section, pathname))?.key ??
         null;
     const [openMenu, setOpenMenu] = useState<string | null>(activeSection);
+    const user = getAuthUser();
+    const initials = user.name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("");
 
     useEffect(() => {
         if (activeSection) setOpenMenu(activeSection);
@@ -335,6 +354,82 @@ export default function LayoutSidebar({
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                render={
+                                    <SidebarMenuButton
+                                        size="lg"
+                                        tooltip={user.name}
+                                        className="cursor-pointer data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground"
+                                    />
+                                }
+                            >
+                                {user.picture ? (
+                                    <img
+                                        src={user.picture}
+                                        alt=""
+                                        className="size-8 rounded-lg object-cover"
+                                    />
+                                ) : (
+                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
+                                        {initials || "U"}
+                                    </span>
+                                )}
+                                <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                                    <span className="truncate font-medium">
+                                        {user.name}
+                                    </span>
+                                    {user.email && (
+                                        <span className="truncate text-xs text-muted-foreground">
+                                            {user.email}
+                                        </span>
+                                    )}
+                                </span>
+                                <ChevronsUpDown className="ml-auto" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                side="top"
+                                align="start"
+                                className="min-w-56"
+                            >
+                                <DropdownMenuGroup>
+                                    <DropdownMenuLabel className="flex items-center gap-2 p-2 font-normal">
+                                        {user.picture ? (
+                                            <img
+                                                src={user.picture}
+                                                alt=""
+                                                className="size-8 rounded-lg object-cover"
+                                            />
+                                        ) : (
+                                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
+                                                {initials || "U"}
+                                            </span>
+                                        )}
+                                        <span className="grid min-w-0 flex-1 leading-tight">
+                                            <span className="truncate font-medium text-foreground">
+                                                {user.name}
+                                            </span>
+                                            {user.email && (
+                                                <span className="truncate text-xs">
+                                                    {user.email}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </DropdownMenuLabel>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={logout}>
+                                    <LogOut />
+                                    Log out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
             <SidebarRail />
         </Sidebar>
     );
