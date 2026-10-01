@@ -45,6 +45,11 @@ coverage.*
 *.publishsettings
 *.pubxml.user
 
+# Local Keycloak runtime
+keycloak/server/
+keycloak/data/
+keycloak/logs/
+
 # Operating-system files
 .DS_Store
 Thumbs.db
