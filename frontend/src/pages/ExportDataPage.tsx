@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Mail } from 'lucide-react'
 import ErrorAlert from '@/components/ErrorAlert'
+import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import {
@@ -13,6 +14,8 @@ import {
 } from '@/components/ui/combobox'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { sendAccountingExportEmail } from '@/lib/document-email'
+import { toast } from '@/lib/toast'
 
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const monthNames = [
@@ -44,6 +47,7 @@ function ExportDataPage() {
     const [month, setMonth] = useState<(typeof months)[number] | null>(months[previousMonth.getMonth()])
     const [year, setYear] = useState(String(previousMonth.getFullYear()))
     const [isExporting, setIsExporting] = useState(false)
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     async function exportData(event: FormEvent<HTMLFormElement>) {
@@ -132,14 +136,44 @@ function ExportDataPage() {
                             </div>
                         </FieldGroup>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="gap-2">
                         <Button type="submit" disabled={isExporting}>
                             <Download />
                             {isExporting ? 'Exporting…' : 'Export'}
                         </Button>
+                        <Button type="button" variant="outline" onClick={() => {
+                            if (!month) { setError('Month is required'); return }
+                            setError(null)
+                            setEmailDialogOpen(true)
+                        }}>
+                            <Mail />
+                            Send email
+                        </Button>
                     </CardFooter>
                 </Card>
             </form>
+            <EmailDocumentDialog
+                open={emailDialogOpen}
+                documentName="accounting export"
+                generatedFileType="text file"
+                customerId=""
+                customerName=""
+                businessYear={null}
+                defaultRecipient="slavica.mijatovic@numeris.si"
+                allowCustomerEmailSave={false}
+                defaultSubject={`Drevi d.o.o. - Računovodski izvoz ${month?.label ?? ''} ${year}`}
+                defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo računovodski izvoz za ${month?.label ?? ''} ${year}.\n\nLep pozdrav, Drevi d.o.o.`}
+                onSend={async (fields) => {
+                    if (!month) throw new Error('Month is required')
+                    await sendAccountingExportEmail(month.value, year, fields)
+                    toast.add({
+                        title: 'Accounting export emailed',
+                        description: `The accounting export was sent to ${fields.recipient}.`,
+                        type: 'success',
+                    })
+                }}
+                onOpenChange={setEmailDialogOpen}
+            />
         </div>
     )
 }

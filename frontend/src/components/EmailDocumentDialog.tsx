@@ -26,6 +26,9 @@ type Props = {
     businessYear: number | null
     defaultSubject: string
     defaultMessage: string
+    defaultRecipient?: string
+    generatedFileType?: string
+    allowCustomerEmailSave?: boolean
     onOpenChange: (open: boolean) => void
     onSend: (fields: DocumentEmailFields) => Promise<void>
 }
@@ -47,6 +50,9 @@ function EmailDocumentDialog({
     businessYear,
     defaultSubject,
     defaultMessage,
+    defaultRecipient = '',
+    generatedFileType = 'PDF',
+    allowCustomerEmailSave = true,
     onOpenChange,
     onSend,
 }: Props) {
@@ -66,12 +72,12 @@ function EmailDocumentDialog({
         if (!open) return
         const controller = new AbortController()
         setStoredRecipient('')
-        setRecipient('')
+        setRecipient(defaultRecipient)
         setBcc(defaultBcc)
         setSubject(defaultSubject)
         setMessage(defaultMessage)
         setError(null); setAttachments([])
-        if (!customerId.trim()) { setLoading(false); return }
+        if (!customerId.trim()) { setStoredRecipient(defaultRecipient); setLoading(false); return }
         setLoading(true)
         void fetch(graphqlUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -102,7 +108,7 @@ function EmailDocumentDialog({
             })
             .finally(() => { if (!controller.signal.aborted) setLoading(false) })
         return () => controller.abort()
-    }, [businessYear, customerId, defaultMessage, defaultSubject, open])
+    }, [businessYear, customerId, defaultMessage, defaultRecipient, defaultSubject, open])
 
     const addAttachments = (files: FileList | null) => {
         if (!files) return
@@ -125,7 +131,7 @@ function EmailDocumentDialog({
             await onSend({ recipient: recipient.trim(), bcc: bcc.trim(),
                 subject: subject.trim(), message: message.trim(), attachments })
             onOpenChange(false)
-            if (customerId.trim() &&
+            if (allowCustomerEmailSave && customerId.trim() &&
                 recipient.trim().toLowerCase() !== storedRecipient.trim().toLowerCase()) {
                 setCustomerEmailToSave(recipient.trim())
             }
@@ -141,7 +147,7 @@ function EmailDocumentDialog({
                 <DialogHeader>
                     <DialogTitle>Email {documentName}</DialogTitle>
                     <DialogDescription>
-                        The generated {documentName} PDF is always included.
+                        The generated {documentName} {generatedFileType} is always included.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -163,7 +169,7 @@ function EmailDocumentDialog({
                             placeholder="customer@example.com"
                         />
                     </Field>
-                    {!loading && !storedRecipient && (
+                    {!loading && customerId.trim() && !storedRecipient && (
                         <p className="text-sm text-muted-foreground">
                             No email is stored for this customer. Enter a recipient manually.
                         </p>
@@ -205,7 +211,7 @@ function EmailDocumentDialog({
                         <div className="flex items-center gap-2 rounded-lg border p-2 text-sm">
                             <FileText className="size-4" />
                             <span className="min-w-0 flex-1 truncate">
-                                Generated {documentName} PDF
+                                Generated {documentName} {generatedFileType}
                             </span>
                             <span className="text-xs text-muted-foreground">Required</span>
                         </div>
@@ -263,12 +269,12 @@ function EmailDocumentDialog({
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-        <SaveCustomerEmailAlert
+        {allowCustomerEmailSave && <SaveCustomerEmailAlert
             email={customerEmailToSave}
             customerId={customerId}
             customerName={customerName}
             onOpenChange={(next) => { if (!next) setCustomerEmailToSave(null) }}
-        />
+        />}
         </>
     )
 }

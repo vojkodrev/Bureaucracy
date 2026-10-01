@@ -81,8 +81,8 @@ func parseDocumentEmailRequest(context *gin.Context) (*documentEmailRequest, boo
 	return request, true
 }
 
-func sendDocumentEmail(context *gin.Context, sender EmailSender, request *documentEmailRequest, pdfFilename string, pdf []byte, storedRecipient string) {
-	attachments := append([]EmailAttachment{{Filename: pdfFilename, ContentType: "application/pdf", Data: pdf}}, request.attachments...)
+func sendDocumentEmail(context *gin.Context, sender EmailSender, request *documentEmailRequest, document EmailAttachment, storedRecipient string) {
+	attachments := append([]EmailAttachment{document}, request.attachments...)
 	if err := sender.Send(context.Request.Context(), EmailMessage{To: request.recipient, BCC: request.bcc, Subject: request.subject, Body: request.message, Attachments: attachments}); err != nil {
 		context.JSON(http.StatusBadGateway, gin.H{"error": "the email could not be delivered; check the mail configuration and try again"})
 		return

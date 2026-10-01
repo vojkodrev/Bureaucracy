@@ -70,6 +70,7 @@ func NewHTTPServer(
 	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
 	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
 	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	router.POST("/api/exports/accounting/email", accountingExportHandler.Send)
 	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 	router.POST("/api/file", fileHandler.UploadImage)
 	router.GET("/api/file/:fileId", fileHandler.Display)

@@ -37,7 +37,7 @@ func (handler *PriceQuoteEmailHandler) Send(context *gin.Context) {
 	if customer != nil {
 		storedRecipient = trimmedString(customer.Email)
 	}
-	sendDocumentEmail(context, handler.sender, request, priceQuotePDFFilename(quote, year), pdf, storedRecipient)
+	sendDocumentEmail(context, handler.sender, request, EmailAttachment{Filename: priceQuotePDFFilename(quote, year), ContentType: "application/pdf", Data: pdf}, storedRecipient)
 }
 
 func (handler *PriceQuoteEmailHandler) loadPriceQuote(context *gin.Context) (*PriceQuote, *Customer, int, bool) {

@@ -30,3 +30,23 @@ export async function sendDocumentEmail(
     const result = await response.json() as ErrorResponse
     if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
 }
+
+export async function sendAccountingExportEmail(
+    month: string,
+    year: string,
+    fields: DocumentEmailFields,
+): Promise<void> {
+    const url = new URL(graphqlUrl)
+    url.pathname = '/api/exports/accounting/email'
+    url.search = new URLSearchParams({ month, year }).toString()
+    url.hash = ''
+    const form = new FormData()
+    form.set('recipient', fields.recipient)
+    form.set('bcc', fields.bcc)
+    form.set('subject', fields.subject)
+    form.set('message', fields.message)
+    fields.attachments.forEach((file) => form.append('attachments', file, file.name))
+    const response = await fetch(url, { method: 'POST', body: form })
+    const result = await response.json() as ErrorResponse
+    if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
+}
