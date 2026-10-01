@@ -15,9 +15,21 @@ if (-not $java) {
     throw 'Java was not found. Install OpenJDK 25 first: choco install temurin25 -y'
 }
 
-$javaVersionOutput = & $java.Source -version 2>&1
-if ($LASTEXITCODE -ne 0 -or ($javaVersionOutput -join "`n") -notmatch 'version "25(?:\.|\")') {
-    throw "Keycloak requires the configured OpenJDK 25 installation. Found: $($javaVersionOutput -join ' ')"
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    # `java -version` writes its normal output to stderr. Do not let the script's
+    # global Stop preference turn that output into a terminating PowerShell error.
+    $ErrorActionPreference = 'Continue'
+    $javaVersionOutput = @(& $java.Source -version 2>&1)
+    $javaExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+}
+
+$javaVersionText = ($javaVersionOutput | ForEach-Object { $_.ToString() }) -join "`n"
+if ($javaExitCode -ne 0 -or $javaVersionText -notmatch 'version "25(?:\.|\")') {
+    throw "Keycloak requires the configured OpenJDK 25 installation. Found: $($javaVersionText -replace "`r?`n", ' ')"
 }
 
 $scriptDir = $PSScriptRoot
