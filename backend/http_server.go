@@ -23,6 +23,7 @@ type HTTPServer struct {
 
 func NewHTTPServer(
 	config *AppConfig,
+	authMiddleware *AuthMiddleware,
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
@@ -60,7 +61,7 @@ func NewHTTPServer(
 	})
 
 	protected := router.Group("/")
-	protected.Use(NewAuthMiddleware(config))
+	protected.Use(authMiddleware.Handle)
 	protected.GET("/graphql", gin.WrapH(graphqlHandler))
 	protected.POST("/graphql", gin.WrapH(graphqlHandler))
 

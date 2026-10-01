@@ -7,6 +7,7 @@ import "go.uber.org/fx"
 func CoreProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(NewAppConfig),
+		fx.Provide(NewAuthMiddleware),
 		fx.Provide(NewDatabase),
 		fx.Provide(NewDatabaseMigrator),
 		fx.Provide(NewBusinessYearRepository),
