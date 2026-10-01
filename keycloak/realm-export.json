@@ -8,8 +8,8 @@
   "roles": {
     "realm": [
       {
-        "name": "bureaucracy-user",
-        "description": "May use the Bureaucracy application"
+        "name": "bureaucracy-storage",
+        "description": "May manage Bureaucracy storage and inventory"
       },
       {
         "name": "bureaucracy-admin",
