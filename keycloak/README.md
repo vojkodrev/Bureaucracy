@@ -1,13 +1,14 @@
 # Keycloak
 
-This directory contains the reproducible Windows setup for the Bureaucracy
-Keycloak server. The downloaded server and all credentials remain local and are
-excluded from Git.
+This directory contains the reproducible Windows and macOS setup for the
+Bureaucracy Keycloak server. The downloaded server and all credentials remain
+local and are excluded from Git.
 
 ## Prerequisites
 
-- Windows PowerShell 5.1 or PowerShell 7
-- OpenJDK 25 (`choco install temurin25 -y` from an elevated shell)
+- Windows PowerShell 5.1 or PowerShell 7, or macOS with Bash
+- OpenJDK 25 (`choco install temurin25 -y` on Windows, or
+  `brew install openjdk@25` on macOS)
 - Microsoft SQL Server reachable from this machine
 
 ## Prepare SQL Server
@@ -32,6 +33,12 @@ From the repository root:
 .\keycloak\install.ps1
 ```
 
+On macOS:
+
+```bash
+./keycloak/install.sh
+```
+
 The installer downloads the pinned Keycloak ZIP, verifies its SHA-256 checksum,
 extracts it to `keycloak\server`, copies the committed configuration, and builds
 an optimized MSSQL server. It also creates `keycloak\.env` from the example.
@@ -46,6 +53,12 @@ certificate and you accept that tradeoff.
 
 ```powershell
 .\keycloak\run-prod.ps1
+```
+
+On macOS:
+
+```bash
+./keycloak/run-prod.sh
 ```
 
 Keycloak listens on HTTP port 8180 by default. The initial start imports the
@@ -66,6 +79,8 @@ The following files are committed:
 - `realm-export.json`
 - `install.ps1`
 - `run-prod.ps1`
+- `install.sh`
+- `run-prod.sh`
 
 The local `.env`, downloaded `server`, runtime `data`, and `logs` are ignored.
 Never commit database passwords or the bootstrap administrator password.
