@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency } from '@/lib/formatters'
+import { isStorageOnlyUser } from '@/lib/auth'
 import type { Product, ProductPage } from '@/lib/product-types'
 import { productSortColumns } from './product-search-columns'
 import type { ProductSearchForm, ProductSortColumn } from './types'
@@ -57,7 +58,9 @@ function ProductSearchResults({
         ? Math.min(productPage.page * productPage.pageSize, productPage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
-    const columnCount = showInvoiceCount ? 8 : 7
+    const showPricing = !isStorageOnlyUser()
+    const visibleColumns = productSortColumns.filter(({ containsPricing }) => showPricing || !containsPricing)
+    const columnCount = visibleColumns.length + (showInvoiceCount ? 1 : 0)
 
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
@@ -76,7 +79,7 @@ function ProductSearchResults({
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {productSortColumns.map(({ key, label, alignRight }) => (
+                        {visibleColumns.map(({ key, label, alignRight }) => (
                             <SortableTableHead
                                 key={key}
                                 label={label}
@@ -139,20 +142,20 @@ function ProductSearchResults({
                             </TableCell>
                             <TableCell>{product.name ?? '—'}</TableCell>
                             <TableCell>{product.unit ?? '—'}</TableCell>
-                            <TableCell className="text-right">
+                            {showPricing && <TableCell className="text-right">
                                 {product.netPrice == null
                                     ? '—'
                                     : formatCurrency(product.netPrice)}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </TableCell>}
+                            {showPricing && <TableCell className="text-right">
                                 {product.grossPrice == null
                                     ? '—'
                                     : formatCurrency(product.grossPrice)}
-                            </TableCell>
-                            <TableCell>{product.taxCode ?? '—'}</TableCell>
-                            <TableCell className="text-right">
+                            </TableCell>}
+                            {showPricing && <TableCell>{product.taxCode ?? '—'}</TableCell>}
+                            {showPricing && <TableCell className="text-right">
                                 {product.taxRate == null ? '—' : `${product.taxRate}%`}
-                            </TableCell>
+                            </TableCell>}
                             {showInvoiceCount && (
                                 <TableCell className="text-right">
                                     {invoiceCountsLoading

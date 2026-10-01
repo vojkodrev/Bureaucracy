@@ -11,6 +11,10 @@ export type AuthUser = {
     picture?: string
 }
 
+type RealmAccess = {
+    roles?: string[]
+}
+
 const keycloakUrl = (import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180').replace(/\/$/, '')
 const realm = import.meta.env.VITE_KEYCLOAK_REALM || 'bureaucracy'
 const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'bureaucracy-frontend'
@@ -172,6 +176,17 @@ export function getAuthUser(): AuthUser {
         email: claims?.email || '',
         picture: claims?.picture,
     }
+}
+
+export function hasRealmRole(role: string) {
+    const claims = tokens?.access_token
+        ? tokenPayload<{ realm_access?: RealmAccess }>(tokens.access_token)
+        : null
+    return claims?.realm_access?.roles?.includes(role) ?? false
+}
+
+export function isStorageOnlyUser() {
+    return hasRealmRole('bureaucracy-storage') && !hasRealmRole('bureaucracy-admin')
 }
 
 export function logout() {

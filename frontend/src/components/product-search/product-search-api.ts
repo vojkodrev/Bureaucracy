@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { isStorageOnlyUser } from '@/lib/auth'
 import { postGraphql } from '@/lib/graphql'
 import { optionalFilter } from '@/lib/filters'
 import {
@@ -22,7 +23,9 @@ type ProductInvoiceCountsResponse = {
     errors?: { message: string }[]
 }
 
-const searchProductsQuery = `
+function searchProductsQuery() {
+    const pricingFields = isStorageOnlyUser() ? '' : 'netPrice grossPrice taxRate taxCode'
+    return `
     query SearchProducts(
         $businessYear: String!
         $productCode: String
@@ -48,10 +51,7 @@ const searchProductsQuery = `
                 productCode
                 name
                 unit
-                netPrice
-                grossPrice
-                taxRate
-                taxCode
+                ${pricingFields}
             }
             totalCount
             page
@@ -60,6 +60,7 @@ const searchProductsQuery = `
         }
     }
 `
+}
 
 const productInvoiceCountsQuery = `
     query ProductInvoiceCounts($businessYear: String!, $productCodes: [String!]!) {
@@ -75,7 +76,7 @@ export async function fetchProductSearch(
     similarName: string | undefined,
     signal?: AbortSignal,
 ): Promise<ProductPage | null> {
-    const result = await postGraphql<SearchProductsResponse>(searchProductsQuery, {
+    const result = await postGraphql<SearchProductsResponse>(searchProductsQuery(), {
         businessYear: getSelectedBusinessYear(),
         productCode: optionalFilter(search.productCode),
         productName: optionalFilter(search.productName),

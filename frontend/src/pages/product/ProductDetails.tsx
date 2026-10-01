@@ -9,6 +9,7 @@ type Props = {
     onProductCodeChange: (value: string) => void
     onNameChange: (value: string) => void
     onUnitChange: (value: string) => void
+    readOnly?: boolean
 }
 
 function ProductDetails({
@@ -18,6 +19,7 @@ function ProductDetails({
     onProductCodeChange,
     onNameChange,
     onUnitChange,
+    readOnly = false,
 }: Props) {
     return (
         <Card>
@@ -28,17 +30,17 @@ function ProductDetails({
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="product-code">Product code</FieldLabel>
-                        <Input id="product-code" maxLength={25} required value={productCode}
+                        <Input id="product-code" maxLength={25} required value={productCode} disabled={readOnly}
                             onChange={(event) => onProductCodeChange(event.target.value)} />
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="product-name">Name</FieldLabel>
-                        <Input id="product-name" maxLength={100} required value={name}
+                        <Input id="product-name" maxLength={100} required value={name} disabled={readOnly}
                             onChange={(event) => onNameChange(event.target.value)} />
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="product-unit">Unit</FieldLabel>
-                        <Input id="product-unit" maxLength={10} value={unit}
+                        <Input id="product-unit" maxLength={10} value={unit} disabled={readOnly}
                             onChange={(event) => onUnitChange(event.target.value)} />
                     </Field>
                 </FieldGroup>

@@ -27,12 +27,21 @@ import {
     ProductSearchPage,
 } from "./pages";
 import "./index.css";
-import { initializeAuth } from "./lib/auth.ts";
+import { initializeAuth, isStorageOnlyUser } from "./lib/auth.ts";
+
+function HomeRedirect() {
+    return (
+        <Navigate
+            to={isStorageOnlyUser() ? "/inventory-items/search" : "/invoices/search"}
+            replace
+        />
+    );
+}
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <Navigate to="/invoices/search" replace />,
+        element: <HomeRedirect />,
     },
     {
         element: <LayoutPage />,

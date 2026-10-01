@@ -29,7 +29,12 @@ type tokenClaims struct {
 	AuthorizedParty string          `json:"azp"`
 	ExpiresAt       int64           `json:"exp"`
 	NotBefore       int64           `json:"nbf"`
+	RealmAccess     struct {
+		Roles []string `json:"roles"`
+	} `json:"realm_access"`
 }
+
+type tokenClaimsContextKey struct{}
 
 type jwkSet struct {
 	Keys []struct {
@@ -59,48 +64,53 @@ func NewAuthMiddleware(config *AppConfig) gin.HandlerFunc {
 			return
 		}
 
-		if err := validateAccessToken(c.Request.Context(), token, issuer, config.KeycloakClientID, cache); err != nil {
+		claims, err := validateAccessToken(c.Request.Context(), token, issuer, config.KeycloakClientID, cache)
+		if err != nil {
 			c.Header("WWW-Authenticate", `Bearer realm="`+config.KeycloakRealm+`"`)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid bearer token"})
 			return
 		}
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), tokenClaimsContextKey{}, claims))
 		c.Next()
 	}
 }
 
-func validateAccessToken(ctx context.Context, token, issuer, clientID string, cache *keyCache) error {
+func validateAccessToken(ctx context.Context, token, issuer, clientID string, cache *keyCache) (*tokenClaims, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return errors.New("malformed JWT")
+		return nil, errors.New("malformed JWT")
 	}
 	var header tokenHeader
 	if err := decodeJWTPart(parts[0], &header); err != nil {
-		return err
+		return nil, err
 	}
 	if header.Algorithm != "RS256" || header.KeyID == "" {
-		return errors.New("unsupported JWT header")
+		return nil, errors.New("unsupported JWT header")
 	}
 	var claims tokenClaims
 	if err := decodeJWTPart(parts[1], &claims); err != nil {
-		return err
+		return nil, err
 	}
 	now := time.Now().Unix()
 	if claims.Issuer != issuer || claims.ExpiresAt <= now || (claims.NotBefore != 0 && claims.NotBefore > now+30) {
-		return errors.New("invalid token claims")
+		return nil, errors.New("invalid token claims")
 	}
 	if claims.AuthorizedParty != clientID && !audienceContains(claims.Audience, clientID) {
-		return errors.New("token was issued to another client")
+		return nil, errors.New("token was issued to another client")
 	}
 	key, err := cache.get(ctx, issuer+"/protocol/openid-connect/certs", header.KeyID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
-		return err
+		return nil, err
 	}
 	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
-	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature)
+	if err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature); err != nil {
+		return nil, err
+	}
+	return &claims, nil
 }
 
 func decodeJWTPart(part string, destination any) error {

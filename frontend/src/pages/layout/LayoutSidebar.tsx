@@ -43,7 +43,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getAuthUser, logout } from "@/lib/auth";
+import { getAuthUser, isStorageOnlyUser, logout } from "@/lib/auth";
 
 type Section = {
     key: string;
@@ -154,6 +154,17 @@ export default function LayoutSidebar({
         null;
     const [openMenu, setOpenMenu] = useState<string | null>(activeSection);
     const user = getAuthUser();
+    const storageOnly = isStorageOnlyUser();
+    const visibleGroups = storageOnly
+        ? sectionGroups
+            .map((group) => ({
+                ...group,
+                sectionKeys: group.sectionKeys.filter((key) =>
+                    ["products", "inventory-items", "goods-receipts"].includes(key),
+                ),
+            }))
+            .filter((group) => group.sectionKeys.length > 0)
+        : sectionGroups;
     const initials = user.name
         .split(/\s+/)
         .slice(0, 2)
@@ -172,7 +183,7 @@ export default function LayoutSidebar({
                         <SidebarMenuButton
                             size="lg"
                             tooltip="Bureaucracy"
-                            render={<NavLink to="/invoices/search" />}
+                            render={<NavLink to={storageOnly ? "/inventory-items/search" : "/invoices/search"} />}
                         >
                             <img
                                 src="/favicon.svg"
@@ -185,7 +196,7 @@ export default function LayoutSidebar({
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                {sectionGroups.map((group) => (
+                {visibleGroups.map((group) => (
                     <SidebarGroup key={group.label}>
                         <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
                         <SidebarGroupContent>
@@ -256,7 +267,7 @@ export default function LayoutSidebar({
                                                     <span>Search</span>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
-                                            {section.entityPath && (
+                                            {section.entityPath && !(storageOnly && section.key === "products") && (
                                                 <SidebarMenuSubItem>
                                                     <SidebarMenuSubButton
                                                         isActive={
@@ -320,7 +331,7 @@ export default function LayoutSidebar({
                                     </Collapsible.Root>
                                     );
                                 })}
-                                {group.label === "Accounting" && (
+                                {!storageOnly && group.label === "Accounting" && (
                                     <SidebarMenuItem>
                                         <SidebarMenuButton
                                             isActive={pathname === "/export"}
@@ -336,7 +347,7 @@ export default function LayoutSidebar({
                         </SidebarGroupContent>
                     </SidebarGroup>
                 ))}
-                <SidebarGroup>
+                {!storageOnly && <SidebarGroup>
                     <SidebarGroupLabel>Administration</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
@@ -352,7 +363,7 @@ export default function LayoutSidebar({
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
-                </SidebarGroup>
+                </SidebarGroup>}
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>

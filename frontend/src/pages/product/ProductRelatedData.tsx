@@ -8,6 +8,7 @@ import {
     AccordionTrigger,
 } from '@/components/ui/accordion'
 import { ComponentMode } from '@/lib/component-mode'
+import { isStorageOnlyUser } from '@/lib/auth'
 
 type Props = {
     productId: number | null
@@ -27,6 +28,7 @@ function ProductRelatedData({
     onInvoiceSelect,
 }: Props) {
     if (productId == null || hasUnsavedChanges || !productName.trim()) return null
+    const storageOnly = isStorageOnlyUser()
 
     return (
         <Accordion className="mt-6">
@@ -36,7 +38,7 @@ function ProductRelatedData({
                     <ProductSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
-                        showInvoiceCount
+                        showInvoiceCount={!storageOnly}
                         similarName={productName}
                         onProductSelect={(product) => {
                             if (product.productCode) onProductSelect(product.productCode)
@@ -54,7 +56,7 @@ function ProductRelatedData({
                     />
                 </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="invoices">
+            {!storageOnly && <AccordionItem value="invoices">
                 <AccordionTrigger>Invoices</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InvoiceSearch
@@ -66,7 +68,7 @@ function ProductRelatedData({
                         onInvoiceSelect={(invoice) => onInvoiceSelect(invoice.invoiceNumber)}
                     />
                 </AccordionContent>
-            </AccordionItem>
+            </AccordionItem>}
         </Accordion>
     )
 }

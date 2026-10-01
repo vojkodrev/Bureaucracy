@@ -42,6 +42,7 @@ func NewHTTPServer(
 	}
 
 	graphqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
+	graphqlHandler.AroundFields(AuthorizeGraphQLField)
 	playgroundHandler := playground.Handler("BIRO225 GraphQL", "/graphql")
 
 	router := gin.New()
@@ -62,21 +63,27 @@ func NewHTTPServer(
 	protected.Use(NewAuthMiddleware(config))
 	protected.GET("/graphql", gin.WrapH(graphqlHandler))
 	protected.POST("/graphql", gin.WrapH(graphqlHandler))
-	protected.GET("/", gin.WrapH(playgroundHandler))
-	protected.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
-	protected.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
-	protected.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
-	protected.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
-	protected.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
-	protected.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
-	protected.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
-	protected.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
-	protected.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
-	protected.GET("/api/exports/accounting", accountingExportHandler.Handle)
-	protected.POST("/api/exports/accounting/email", accountingExportHandler.Send)
-	protected.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
-	protected.POST("/api/file", fileHandler.UploadImage)
-	protected.GET("/api/file/:fileId", fileHandler.Display)
+
+	storage := protected.Group("/")
+	storage.Use(RequireAnyRole(adminRole, storageRole))
+	storage.POST("/api/file", fileHandler.UploadImage)
+	storage.GET("/api/file/:fileId", fileHandler.Display)
+
+	admin := protected.Group("/")
+	admin.Use(RequireAnyRole(adminRole))
+	admin.GET("/", gin.WrapH(playgroundHandler))
+	admin.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	admin.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
+	admin.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
+	admin.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
+	admin.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
+	admin.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
+	admin.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
+	admin.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
+	admin.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
+	admin.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	admin.POST("/api/exports/accounting/email", accountingExportHandler.Send)
+	admin.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 
 	return &HTTPServer{
 		config: config,

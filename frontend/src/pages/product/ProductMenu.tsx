@@ -19,6 +19,7 @@ type ProductMenuProps = {
     onDuplicate: () => void
     canCreateInventoryItem?: boolean
     onCreateInventoryItem?: () => void
+    readOnly?: boolean
 }
 
 function ProductMenu({
@@ -32,16 +33,17 @@ function ProductMenu({
     onDuplicate,
     canCreateInventoryItem = false,
     onCreateInventoryItem,
+    readOnly = false,
 }: ProductMenuProps) {
     return (
         <Menubar className="mb-6 w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent className="w-max">
-                    <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
+                    {!readOnly && <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
                         <MenubarShortcut>Ctrl+S</MenubarShortcut>
-                    </MenubarItem>
+                    </MenubarItem>}
                     {onCreateInventoryItem && (
                         <MenubarItem
                             className="whitespace-nowrap"
@@ -53,7 +55,7 @@ function ProductMenu({
                     )}
                 </MenubarContent>
             </MenubarMenu>
-            <MenubarMenu>
+            {!readOnly && <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
                 <MenubarContent>
                     <MenubarItem disabled={!canRevert || isSaving} onClick={onRevert}>
@@ -63,7 +65,7 @@ function ProductMenu({
                         <Copy />{isDuplicating ? 'Duplicating…' : 'Duplicate'}
                     </MenubarItem>
                 </MenubarContent>
-            </MenubarMenu>
+            </MenubarMenu>}
         </Menubar>
     )
 }
