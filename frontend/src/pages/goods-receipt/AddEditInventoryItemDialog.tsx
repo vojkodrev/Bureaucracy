@@ -50,6 +50,7 @@ export default function AddEditInventoryItemDialog({
     const [isUploading, setIsUploading] = useState(false);
     const [photoError, setPhotoError] = useState<string | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const cameraInput = useRef<HTMLInputElement>(null);
     const wheelGesturesPlugin = useMemo(() => WheelGesturesPlugin(), []);
@@ -177,16 +178,23 @@ export default function AddEditInventoryItemDialog({
                                     <div className="p-1">
                                         <Card className="overflow-hidden py-0">
                                             <CardContent className="relative aspect-square p-0">
-                                                <img
-                                                    src={goodsReceiptPhotoUrl(photo.fileId)}
-                                                    alt="Goods receipt item"
-                                                    className="h-full w-full object-cover"
-                                                />
+                                                <button
+                                                    type="button"
+                                                    className="h-full w-full cursor-zoom-in"
+                                                    aria-label="View photo"
+                                                    onClick={() => setPreviewPhotoId(photo.fileId)}
+                                                >
+                                                    <img
+                                                        src={goodsReceiptPhotoUrl(photo.fileId)}
+                                                        alt="Goods receipt item"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </button>
                                                 <Button
                                                     type="button"
-                                                    variant="destructive"
+                                                    variant="outline"
                                                     size="icon-xs"
-                                                    className="absolute right-2 top-2"
+                                                    className="absolute right-2 top-2 z-10"
                                                     aria-label="Remove photo"
                                                     onClick={() => removePhoto(photo.fileId)}
                                                 >
@@ -266,6 +274,28 @@ export default function AddEditInventoryItemDialog({
                         }}
                     />
                 )}
+                <Dialog
+                    open={previewPhotoId != null}
+                    onOpenChange={(open) => {
+                        if (!open) setPreviewPhotoId(null);
+                    }}
+                >
+                    <DialogContent className="max-h-[calc(100vh-2rem)] sm:max-w-[calc(100%-2rem)]">
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>Photo preview</DialogTitle>
+                            <DialogDescription>
+                                Large preview of the goods receipt item photo.
+                            </DialogDescription>
+                        </DialogHeader>
+                        {previewPhotoId && (
+                            <img
+                                src={goodsReceiptPhotoUrl(previewPhotoId)}
+                                alt="Goods receipt item preview"
+                                className="h-[calc(100vh-6rem)] w-full object-contain"
+                            />
+                        )}
+                    </DialogContent>
+                </Dialog>
             </DialogContent>
         </Dialog>
     );
