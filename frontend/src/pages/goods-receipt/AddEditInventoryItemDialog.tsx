@@ -3,6 +3,7 @@ import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
 import InventoryItemPickerField from
     "@/components/inventory-item-search/InventoryItemPickerField";
+import AuthenticatedImage from "@/components/AuthenticatedImage";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -184,7 +185,7 @@ export default function AddEditInventoryItemDialog({
                                                     aria-label="View photo"
                                                     onClick={() => setPreviewPhotoId(photo.fileId)}
                                                 >
-                                                    <img
+                                                    <AuthenticatedImage
                                                         src={goodsReceiptPhotoUrl(photo.fileId)}
                                                         alt="Goods receipt item"
                                                         className="h-full w-full object-cover"
@@ -288,7 +289,7 @@ export default function AddEditInventoryItemDialog({
                             </DialogDescription>
                         </DialogHeader>
                         {previewPhotoId && (
-                            <img
+                            <AuthenticatedImage
                                 src={goodsReceiptPhotoUrl(previewPhotoId)}
                                 alt="Goods receipt item preview"
                                 className="h-[calc(100vh-6rem)] w-full object-contain"

@@ -432,6 +432,10 @@ type Query {
 
   goodsReceipt(businessYear: String!, receiptNumber: String!): GoodsReceipt
   goodsReceiptStorages(businessYear: String!): [Storage!]!
+  latestInventoryItemPhotos(
+    businessYear: String!
+    productCode: String!
+  ): [GoodsReceiptItemPhoto!]!
 
   searchGoodsReceipts(
     businessYear: String!
