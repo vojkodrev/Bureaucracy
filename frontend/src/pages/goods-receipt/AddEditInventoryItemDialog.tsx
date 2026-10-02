@@ -93,7 +93,8 @@ export default function AddEditInventoryItemDialog({
     };
 
     return (
-        <Dialog open onOpenChange={onOpenChange}>
+        <>
+            <Dialog open onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
                 className="max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto overscroll-contain sm:max-w-4xl"
@@ -278,29 +279,30 @@ export default function AddEditInventoryItemDialog({
                         }}
                     />
                 )}
-                <Dialog
-                    open={previewPhotoId != null}
-                    onOpenChange={(open) => {
-                        if (!open) setPreviewPhotoId(null);
-                    }}
-                >
-                    <DialogContent className="max-h-[calc(100vh-2rem)] sm:max-w-[calc(100%-2rem)]">
-                        <DialogHeader className="sr-only">
-                            <DialogTitle>Photo preview</DialogTitle>
-                            <DialogDescription>
-                                Large preview of the goods receipt item photo.
-                            </DialogDescription>
-                        </DialogHeader>
-                        {previewPhotoId && (
-                            <AuthenticatedImage
-                                src={goodsReceiptPhotoUrl(previewPhotoId)}
-                                alt="Goods receipt item preview"
-                                className="h-[calc(100vh-6rem)] w-full object-contain"
-                            />
-                        )}
-                    </DialogContent>
-                </Dialog>
             </DialogContent>
-        </Dialog>
+            </Dialog>
+            <Dialog
+                open={previewPhotoId != null}
+                onOpenChange={(open) => {
+                    if (!open) setPreviewPhotoId(null);
+                }}
+            >
+                <DialogContent className="h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-none place-items-center p-2 sm:max-w-none">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Photo preview</DialogTitle>
+                        <DialogDescription>
+                            Large preview of the goods receipt item photo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {previewPhotoId && (
+                        <AuthenticatedImage
+                            src={goodsReceiptPhotoUrl(previewPhotoId)}
+                            alt="Goods receipt item preview"
+                            className="absolute inset-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] object-contain"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
