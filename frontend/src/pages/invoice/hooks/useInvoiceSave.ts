@@ -55,7 +55,13 @@ export function useInvoiceSave({
                         id: item.id > 0 ? item.id : null, sequence: index + 1,
                         productCode: item.productCode?.trim() ?? '',
                         taxCode: item.taxCode?.trim() ?? '', quantity: item.quantity,
-                        discount: item.discount, netAmount: item.netAmount, grossAmount: item.grossAmount,
+                        discount: item.discount,
+                        // RacuniSpecifikacija stores the amount before discount. Keeping the
+                        // original amount is essential for reconstructing the unit price when
+                        // the discount is 100%.
+                        netAmount: item.unitPrice == null || item.quantity == null
+                            ? null : item.unitPrice * item.quantity,
+                        grossAmount: item.grossAmount,
                     })),
                 },
             })

@@ -339,7 +339,11 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 	goodsAmount, amount := 0.0, 0.0
 	for _, item := range input.Items {
 		if item.NetAmount != nil {
-			goodsAmount += *item.NetAmount
+			discount := 0.0
+			if item.Discount != nil {
+				discount = *item.Discount
+			}
+			goodsAmount += *item.NetAmount * (1 - discount/100)
 		}
 		if item.GrossAmount != nil {
 			amount += *item.GrossAmount
@@ -496,10 +500,11 @@ func (repository *InvoiceRepository) getItems(
 			rs.SifraDavka,
 			CAST(COALESCE(pd.Procent, a.Davek) AS float),
 			rs.ZnesekBrezDavka / NULLIF(rs.Kolicina, 0),
-			(rs.Znesek - rs.ZnesekBrezDavka) / NULLIF(rs.Kolicina, 0),
+			(rs.ZnesekBrezDavka / NULLIF(rs.Kolicina, 0)) *
+				(CAST(COALESCE(pd.Procent, a.Davek) AS float) / 100),
 			rs.Kolicina,
 			CAST(rs.Rabat AS float),
-			rs.ZnesekBrezDavka,
+			rs.ZnesekBrezDavka * (1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100),
 			rs.Znesek
 		FROM [%s].[dbo].[RacuniSpecifikacija] rs
 		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel

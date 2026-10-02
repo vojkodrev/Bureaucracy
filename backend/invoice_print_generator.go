@@ -207,10 +207,8 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 		grossAmount := float64OrZero(item.GrossAmount)
 		discount := float64OrZero(item.Discount)
 		discountedUnitPrice := divide(netAmount, quantity)
-		originalNetAmount := netAmount
-		if discount > 0 && discount < 100 {
-			originalNetAmount = netAmount / (1 - discount/100)
-		}
+		unitPrice := float64OrZero(item.UnitPrice)
+		originalNetAmount := unitPrice * quantity
 		rate := float64OrZero(item.TaxRate)
 		group := taxGroups[rate]
 		taxGroups[rate] = [2]float64{group[0] + netAmount, group[1] + grossAmount - netAmount}
@@ -224,7 +222,7 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 			Description:      strings.TrimSpace(trimmedString(item.ProductName)),
 			Quantity:         formatQuantity(quantity),
 			Unit:             trimmedString(item.Unit),
-			UnitPrice:        formatMoneyAmount(divide(originalNetAmount, quantity)),
+			UnitPrice:        formatMoneyAmount(unitPrice),
 			Discount:         formatPercentage(discount),
 			DiscountAmount:   formatMoneyAmount(originalNetAmount - netAmount),
 			DiscountedPrice:  formatMoneyAmount(discountedUnitPrice),
