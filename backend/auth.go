@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -36,7 +40,11 @@ type AuthMiddleware struct {
 func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddleware, error) {
 	issuer := config.KeycloakURL + "/realms/" + config.KeycloakRealm
 	jwksURL := issuer + "/protocol/openid-connect/certs"
-	httpClient := jwkfetch.WrapHTTPClientDefaults(&http.Client{Timeout: 5 * time.Second})
+	httpClient, err := keycloakHTTPClient(config.KeycloakCACertFile)
+	if err != nil {
+		return nil, err
+	}
+	httpClient = jwkfetch.WrapHTTPClientDefaults(httpClient)
 	cache, err := jwkfetch.NewCache(
 		context.Background(),
 		httprc.NewClient(),
@@ -65,6 +73,29 @@ func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddlewa
 		realm:    config.KeycloakRealm,
 		clientID: config.KeycloakClientID,
 		keys:     keys,
+	}, nil
+}
+
+func keycloakHTTPClient(caCertFile string) (*http.Client, error) {
+	caCertificate, err := os.ReadFile(caCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("read Keycloak CA certificate: %w", err)
+	}
+
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil || rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	if !rootCAs.AppendCertsFromPEM(caCertificate) {
+		return nil, errors.New("Keycloak CA certificate does not contain a valid PEM certificate")
+	}
+
+	return &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    rootCAs,
+		}},
 	}, nil
 }
 

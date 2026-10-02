@@ -30,6 +30,9 @@ type AppConfig struct {
 	KeycloakURL                 string
 	KeycloakRealm               string
 	KeycloakClientID            string
+	KeycloakCACertFile          string
+	TLSCertFile                 string
+	TLSKeyFile                  string
 }
 
 func NewAppConfig() *AppConfig {
@@ -39,7 +42,7 @@ func NewAppConfig() *AppConfig {
 		Environment:                 envOrDefault("APP_ENV", "development"),
 		Name:                        envOrDefault("APP_NAME", "bureaucracy-backend"),
 		Port:                        envOrDefault("PORT", "8080"),
-		AllowedOrigins:              strings.Split(envOrDefault("CORS_ALLOWED_ORIGIN", "http://localhost:5173,http://drevi-pc:4173"), ","),
+		AllowedOrigins:              strings.Split(envOrDefault("CORS_ALLOWED_ORIGIN", "https://localhost:5173,https://localhost:4173,https://drevi-pc:4173"), ","),
 		MSSQLHost:                   envOrDefault("MSSQL_HOST", "localhost"),
 		MSSQLPort:                   envOrDefault("MSSQL_PORT", "1433"),
 		MSSQLDatabase:               envOrDefault("MSSQL_DATABASE", "master"),
@@ -53,9 +56,12 @@ func NewAppConfig() *AppConfig {
 		SMTPPassword:                os.Getenv("SMTP_PASSWORD"),
 		SMTPFromAddress:             os.Getenv("SMTP_FROM_ADDRESS"),
 		SMTPSecurity:                strings.ToLower(envOrDefault("SMTP_SECURITY", "starttls")),
-		KeycloakURL:                 strings.TrimRight(envOrDefault("KEYCLOAK_URL", "http://localhost:8180"), "/"),
+		KeycloakURL:                 strings.TrimRight(envOrDefault("KEYCLOAK_URL", "https://localhost:8180"), "/"),
 		KeycloakRealm:               envOrDefault("KEYCLOAK_REALM", "bureaucracy"),
 		KeycloakClientID:            envOrDefault("KEYCLOAK_CLIENT_ID", "bureaucracy-frontend"),
+		KeycloakCACertFile:          envOrDefault("KEYCLOAK_CA_CERT_FILE", "../certs/bureaucracy-ca.crt"),
+		TLSCertFile:                 envOrDefault("TLS_CERT_FILE", "../certs/bureaucracy.crt"),
+		TLSKeyFile:                  envOrDefault("TLS_KEY_FILE", "../certs/bureaucracy.key"),
 	}
 }
 

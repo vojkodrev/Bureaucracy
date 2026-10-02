@@ -7,8 +7,10 @@ The backend exposes BIRO225 invoices through an English GraphQL API.
 ./run-dev.sh
 ```
 
-Open the GraphQL playground at <http://localhost:8080/> or send requests to
-`http://localhost:8080/graphql`.
+Generate the repository-wide development certificate with `../certs/generate.sh`
+(or `..\certs\generate.ps1` on Windows), trust `bureaucracy-ca.crt`, and then
+open the GraphQL playground at <https://localhost:8080/> or send requests to
+`https://localhost:8080/graphql`.
 
 All routes except `GET /health` require a Keycloak access token in the
 `Authorization: Bearer <token>` header. Configure the Keycloak issuer and the

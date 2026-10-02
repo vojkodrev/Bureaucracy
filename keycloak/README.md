@@ -43,8 +43,10 @@ The installer downloads the pinned Keycloak ZIP, verifies its SHA-256 checksum,
 extracts it to `keycloak\server`, copies the committed configuration, and builds
 an optimized MSSQL server. It also creates `keycloak\.env` from the example.
 
-Edit `.env` before the first start. In particular, replace both placeholder
-passwords and set `KC_HOSTNAME` to the URL that clients use over the VPN.
+Generate the shared HTTPS certificate with `..\certs\generate.ps1` on Windows
+or `../certs/generate.sh` on macOS, then trust `bureaucracy-ca.crt` on each
+client. Edit `.env` before the first start. In particular, replace both placeholder
+passwords and set `KC_HOSTNAME` to the HTTPS URL that clients use over the VPN.
 `KC_DB_URL_PROPERTIES` enables SQL Server transport encryption; only change
 `trustServerCertificate` to `true` when the server uses an otherwise untrusted
 certificate and you accept that tradeoff.
@@ -61,10 +63,14 @@ On macOS:
 ./keycloak/run-prod.sh
 ```
 
-Keycloak listens on HTTP port 8180 by default. The initial start imports the
+Keycloak listens on HTTPS port 8180 by default. The initial start imports the
 `bureaucracy` realm and its public `bureaucracy-frontend` client. Imports do not
 overwrite an existing realm; later configuration changes should be made through
 the Admin Console or an explicit migration process.
+
+For an already-imported realm, update the `bureaucracy-frontend` client's valid
+redirect URIs and web origins from `http://` to the matching `https://` entries;
+editing `realm-export.json` only affects a new realm import.
 
 The committed realm allows the hostnames currently used by the frontend. Update
 the redirect URIs and web origins before installation if VPN clients use a

@@ -6,6 +6,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 KEYCLOAK_COMMAND="$SERVER_DIR/bin/kc.sh"
 ENVIRONMENT_FILE="$SCRIPT_DIR/.env"
+CERT_DIR="$SCRIPT_DIR/../certs"
+
+if [[ ! -f "$CERT_DIR/bureaucracy.crt" || ! -f "$CERT_DIR/bureaucracy.key" ]]; then
+    echo "HTTPS certificates are missing. Run certs/generate.sh first." >&2
+    exit 1
+fi
 
 if [[ ! -x "$KEYCLOAK_COMMAND" ]]; then
     echo "Keycloak is not installed. Run keycloak/install.sh first." >&2

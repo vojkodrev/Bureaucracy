@@ -10,6 +10,13 @@ $scriptDir = $PSScriptRoot
 $serverDir = Join-Path $scriptDir 'server'
 $keycloakCommand = Join-Path $serverDir 'bin\kc.bat'
 $environmentFile = Join-Path $scriptDir '.env'
+$certDir = Join-Path $scriptDir '..\certs'
+
+foreach ($name in @('bureaucracy.crt', 'bureaucracy.key')) {
+    if (-not (Test-Path (Join-Path $certDir $name))) {
+        throw 'HTTPS certificates are missing. Run certs\generate.ps1 first.'
+    }
+}
 
 if (-not (Test-Path $keycloakCommand)) {
     throw 'Keycloak is not installed. Run keycloak\install.ps1 first.'

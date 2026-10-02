@@ -108,11 +108,11 @@ func RegisterHTTPServerLifecycle(lifecycle fx.Lifecycle, server *HTTPServer) {
 			}
 
 			go func() {
-				if err := server.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					slog.Error("HTTP server stopped unexpectedly", "error", err)
+				if err := server.server.ServeTLS(listener, server.config.TLSCertFile, server.config.TLSKeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					slog.Error("HTTPS server stopped unexpectedly", "error", err)
 				}
 			}()
-			slog.Info("HTTP server listening", "url", "http://localhost:"+server.config.Port)
+			slog.Info("HTTPS server listening", "url", "https://localhost:"+server.config.Port)
 			return nil
 		},
 		OnStop: server.server.Shutdown,

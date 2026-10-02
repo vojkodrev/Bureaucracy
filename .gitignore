@@ -41,6 +41,10 @@ coverage.*
 .env
 .env.*
 !.env.example
+certs/*.crt
+certs/*.key
+certs/*.srl
+certs/*.cnf
 *.pfx
 *.publishsettings
 *.pubxml.user

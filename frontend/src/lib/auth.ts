@@ -14,7 +14,7 @@ type UserClaims = KeycloakTokenParsed & {
 }
 
 const keycloak = new Keycloak({
-    url: (import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180').replace(/\/$/, ''),
+    url: (import.meta.env.VITE_KEYCLOAK_URL || 'https://localhost:8180').replace(/\/$/, ''),
     realm: import.meta.env.VITE_KEYCLOAK_REALM || 'bureaucracy',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'bureaucracy-frontend',
 })
