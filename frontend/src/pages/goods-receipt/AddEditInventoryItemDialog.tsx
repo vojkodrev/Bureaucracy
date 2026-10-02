@@ -94,7 +94,10 @@ export default function AddEditInventoryItemDialog({
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent showCloseButton={false} className="sm:max-w-4xl">
+            <DialogContent
+                showCloseButton={false}
+                className="max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto overscroll-contain sm:max-w-4xl"
+            >
                 <DialogHeader>
                     <DialogTitle>
                         {item ? "Edit stock item" : "Add stock item"}
@@ -147,7 +150,7 @@ export default function AddEditInventoryItemDialog({
                         />
                     </Field>
                 </div>
-                <Field>
+                <Field className="min-w-0">
                     <FieldLabel>Photos</FieldLabel>
                     <input
                         ref={fileInput}
@@ -168,13 +171,13 @@ export default function AddEditInventoryItemDialog({
                     <Carousel
                         opts={{ align: "start" }}
                         plugins={[wheelGesturesPlugin]}
-                        className="w-full"
+                        className="min-w-0 w-full"
                     >
                         <CarouselContent>
                             {photos.map((photo) => (
                                 <CarouselItem
                                     key={photo.fileId}
-                                    className="basis-[48%] md:basis-[30%]"
+                                    className="basis-32 sm:basis-[48%] md:basis-[30%]"
                                 >
                                     <div className="p-1">
                                         <Card className="overflow-hidden py-0">
@@ -206,7 +209,7 @@ export default function AddEditInventoryItemDialog({
                                     </div>
                                 </CarouselItem>
                             ))}
-                            <CarouselItem className="basis-[48%] md:basis-[30%]">
+                            <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
                                 <div className="p-1">
                                     <Card className="py-0">
                                         <CardContent className="aspect-square p-0">
@@ -226,7 +229,7 @@ export default function AddEditInventoryItemDialog({
                                     </Card>
                                 </div>
                             </CarouselItem>
-                            <CarouselItem className="basis-[48%] md:basis-[30%]">
+                            <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
                                 <div className="p-1">
                                     <Card className="py-0">
                                         <CardContent className="aspect-square p-0">
