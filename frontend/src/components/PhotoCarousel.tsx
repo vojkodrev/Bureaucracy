@@ -51,13 +51,13 @@ export default function PhotoCarousel({
                 plugins={[wheelGesturesPlugin]}
                 className="min-w-0 w-full"
             >
-                <CarouselContent>
+                <CarouselContent className="-ml-2 sm:-ml-4">
                     {photos.map((photo) => (
                         <CarouselItem
                             key={photo.id}
-                            className="basis-32 sm:basis-[48%] md:basis-[30%]"
+                            className="basis-40 pl-2 sm:basis-[48%] sm:pl-4 md:basis-[30%]"
                         >
-                            <div className="p-1">
+                            <div className="p-0.5 sm:p-1">
                                 <Card className="aspect-square overflow-hidden py-0">
                                     <CardContent className="relative h-full min-h-0 p-0">
                                         <button
@@ -91,8 +91,8 @@ export default function PhotoCarousel({
                     ))}
                     {showPhotoActions && (
                         <>
-                            <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
-                                <div className="p-1">
+                            <CarouselItem className="basis-40 pl-2 sm:basis-[48%] sm:pl-4 md:basis-[30%]">
+                                <div className="p-0.5 sm:p-1">
                                     <Card className="aspect-square py-0">
                                         <CardContent className="h-full min-h-0 p-0">
                                             <Button
@@ -111,8 +111,8 @@ export default function PhotoCarousel({
                                     </Card>
                                 </div>
                             </CarouselItem>
-                            <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
-                                <div className="p-1">
+                            <CarouselItem className="basis-40 pl-2 sm:basis-[48%] sm:pl-4 md:basis-[30%]">
+                                <div className="p-0.5 sm:p-1">
                                     <Card className="aspect-square py-0">
                                         <CardContent className="h-full min-h-0 p-0">
                                             <Button
