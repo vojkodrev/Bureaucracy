@@ -15,6 +15,7 @@ export type GoodsReceiptDraft = {
 
 export function goodsReceiptDraft(
     receipt?: GoodsReceipt | null,
+    defaultReceivedBy = "",
 ): GoodsReceiptDraft {
     return {
         receiptNumber: receipt?.receiptNumber ?? "",
@@ -22,15 +23,17 @@ export function goodsReceiptDraft(
             ? dateFromSearchValue(receipt.receiptDate.slice(0, 10))
             : new Date(),
         storage: receipt?.storage ?? "",
-        receivedBy: receipt?.receivedBy ?? "",
+        receivedBy: receipt?.receivedBy ?? defaultReceivedBy,
         items: receipt?.items ?? [],
     };
 }
 
-export function useGoodsReceiptDraft() {
-    const [draft, setDraft] = useState<GoodsReceiptDraft>(goodsReceiptDraft);
+export function useGoodsReceiptDraft(defaultReceivedBy = "") {
+    const [draft, setDraft] = useState<GoodsReceiptDraft>(() =>
+        goodsReceiptDraft(undefined, defaultReceivedBy)
+    );
     const [cleanDraft, setCleanDraft] = useState(() =>
-        JSON.stringify(goodsReceiptDraft()),
+        JSON.stringify(goodsReceiptDraft(undefined, defaultReceivedBy)),
     );
     const serialized = useMemo(() => JSON.stringify(draft), [draft]);
 
