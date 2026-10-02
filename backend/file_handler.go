@@ -20,7 +20,7 @@ import (
 const (
 	maxImageUploadSize = 20 << 20
 	maxImagePixels     = 40_000_000
-	maxImageDimension  = 1920
+	maxImageDimension  = 2560
 )
 
 type FileHandler struct{ database *sql.DB }
@@ -103,14 +103,15 @@ func prepareImage(upload []byte) ([]byte, int, int, error) {
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf("could not decode the uploaded image")
 	}
+	// Limit storage size while retaining enough detail for text in photos.
 	bounds := photo.Bounds()
 	if bounds.Dx() > maxImageDimension || bounds.Dy() > maxImageDimension {
 		photo = imaging.Fit(photo, maxImageDimension, maxImageDimension, imaging.Lanczos)
+		bounds = photo.Bounds()
 	}
-	bounds = photo.Bounds()
 	var encoded bytes.Buffer
 	if err := webp.Encode(&encoded, photo, &webp.EncoderOptions{
-		Quality: 82, Method: 4, Preset: webp.PresetPhoto, UseSharpYUV: true,
+		Quality: 85, Method: 4, Preset: webp.PresetPhoto, UseSharpYUV: true,
 	}); err != nil {
 		return nil, 0, 0, fmt.Errorf("could not encode the uploaded image")
 	}
