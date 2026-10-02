@@ -17,6 +17,9 @@ All routes except `GET /health` require a Keycloak access token in the
 allowed public client with `KEYCLOAK_URL`, `KEYCLOAK_REALM`, and
 `KEYCLOAK_CLIENT_ID`. The backend verifies the token signature against the
 realm JWKS as well as its issuer, expiry, and intended client.
+During startup, the backend waits for the realm's signing keys, retrying failed
+fetches every two seconds with a five-second timeout per attempt. Keycloak,
+the backend, and the frontend can be launched together with `../run-prod.ps1`.
 
 Invoice PDFs are served as inline documents from
 `GET /api/invoices/:invoiceNumber/pdf`. The placeholder implementation does

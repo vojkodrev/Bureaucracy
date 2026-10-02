@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"slices"
@@ -55,9 +56,11 @@ func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddlewa
 		return nil, err
 	}
 
-	registrationContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := cache.Register(registrationContext, jwksURL, jwkfetch.WithConstantInterval(15*time.Minute)); err != nil {
+	if err := cache.Register(context.Background(), jwksURL, jwkfetch.WithConstantInterval(15*time.Minute), jwkfetch.WithWaitReady(false)); err != nil {
+		_ = cache.Shutdown(context.Background())
+		return nil, err
+	}
+	if err := waitForKeycloakKeys(context.Background(), cache, jwksURL, 2*time.Second); err != nil {
 		_ = cache.Shutdown(context.Background())
 		return nil, err
 	}
@@ -74,6 +77,25 @@ func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddlewa
 		clientID: config.KeycloakClientID,
 		keys:     keys,
 	}, nil
+}
+
+func waitForKeycloakKeys(ctx context.Context, cache *jwkfetch.Cache, jwksURL string, retryInterval time.Duration) error {
+	for {
+		attemptContext, cancel := context.WithTimeout(ctx, 5*time.Second)
+		_, err := cache.Refresh(attemptContext, jwksURL)
+		cancel()
+		if err == nil {
+			return nil
+		}
+		log.Printf("Waiting for Keycloak signing keys; retrying in %s: %v", retryInterval, err)
+		timer := time.NewTimer(retryInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
 }
 
 func keycloakHTTPClient(caCertFile string) (*http.Client, error) {
