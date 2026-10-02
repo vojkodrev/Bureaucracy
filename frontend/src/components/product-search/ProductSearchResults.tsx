@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import SearchResultCell from '@/components/SearchResultCell'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import {
@@ -76,7 +76,7 @@ function ProductSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         {visibleColumns.map(({ key, label, alignRight }) => (
@@ -94,7 +94,7 @@ function ProductSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && !products.length && (
                         <TableRow>
                             <TableCell
                                 colSpan={columnCount}
@@ -114,11 +114,11 @@ function ProductSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && products.map((product) => (
+                    {products.map((product) => (
                         <TableRow
                             key={product.id}
                             data-state={selectedProductId === product.id ? 'selected' : undefined}
-                            className="relative cursor-pointer"
+                            className="cursor-pointer"
                             tabIndex={isPageMode ? undefined : 0}
                             onClick={isPageMode ? undefined : () => onProductSelect(product)}
                             onKeyDown={isPageMode
@@ -130,34 +130,42 @@ function ProductSearchResults({
                                     }
                                 }}
                         >
-                            <TableCell className="font-medium">
-                                {isPageMode && product.productCode && (
-                                    <Link
-                                        to={`/product/${encodeURIComponent(product.productCode)}`}
-                                        aria-label={`Open product ${product.productCode}`}
-                                        className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                    />
-                                )}
+                            <SearchResultCell
+                                primary
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                                className="font-medium"
+                            >
                                 {product.productCode ?? '—'}
-                            </TableCell>
-                            <TableCell>{product.name ?? '—'}</TableCell>
-                            <TableCell>{product.unit ?? '—'}</TableCell>
-                            {showPricing && <TableCell className="text-right">
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                            >{product.name ?? '—'}</SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                            >{product.unit ?? '—'}</SearchResultCell>
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.netPrice == null
                                     ? '—'
                                     : formatCurrency(product.netPrice)}
-                            </TableCell>}
-                            {showPricing && <TableCell className="text-right">
+                            </SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.grossPrice == null
                                     ? '—'
                                     : formatCurrency(product.grossPrice)}
-                            </TableCell>}
-                            {showPricing && <TableCell>{product.taxCode ?? '—'}</TableCell>}
-                            {showPricing && <TableCell className="text-right">
+                            </SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`}>{product.taxCode ?? '—'}</SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.taxRate == null ? '—' : `${product.taxRate}%`}
-                            </TableCell>}
+                            </SearchResultCell>}
                             {showInvoiceCount && (
-                                <TableCell className="text-right">
+                                <SearchResultCell
+                                    to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                    linkLabel={`Open product ${product.productCode}`}
+                                    className="text-right"
+                                >
                                     {invoiceCountsLoading
                                         ? '…'
                                         : invoiceCountsError
@@ -165,7 +173,7 @@ function ProductSearchResults({
                                             : product.productCode
                                                 ? invoiceCounts[product.productCode] ?? 0
                                                 : 0}
-                                </TableCell>
+                                </SearchResultCell>
                             )}
                         </TableRow>
                     ))}

@@ -1,5 +1,5 @@
+import SearchResultCell from '@/components/SearchResultCell'
 import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/formatters'
 import { ComponentMode } from '@/lib/component-mode'
@@ -20,7 +20,7 @@ export default function GoodsReceiptSearchResultGroup({
     return (
         <Fragment>
             <TableRow
-                className="relative cursor-pointer bg-muted/60 font-semibold"
+                className="cursor-pointer bg-muted/60 font-semibold"
                 tabIndex={isPageMode ? undefined : 0}
                 onClick={isPageMode ? undefined : () => onGoodsReceiptSelect?.(receipt)}
                 onKeyDown={isPageMode ? undefined : (event) => {
@@ -30,19 +30,22 @@ export default function GoodsReceiptSearchResultGroup({
                     }
                 }}
             >
-                <TableCell>
-                    {isPageMode && (
-                        <Link
-                            to={`/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}`}
-                            aria-label={`Open goods receipt ${receipt.receiptNumber}`}
-                            className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                        />
-                    )}
+                <SearchResultCell
+                    primary
+                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
+                >
                     Goods receipt {receipt.receiptNumber || '—'}
-                </TableCell>
-                <TableCell>{formatDate(receipt.receiptDate)}</TableCell>
-                <TableCell>{receipt.receivedBy || '—'}</TableCell>
-                <TableCell />
+                </SearchResultCell>
+                <SearchResultCell
+                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
+                >{formatDate(receipt.receiptDate)}</SearchResultCell>
+                <SearchResultCell
+                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
+                >{receipt.receivedBy || '—'}</SearchResultCell>
+                <SearchResultCell to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined} linkLabel={`Open goods receipt ${receipt.receiptNumber}`} />
             </TableRow>
             {receipt.items.map((item) => (
                 <TableRow key={item.id}>

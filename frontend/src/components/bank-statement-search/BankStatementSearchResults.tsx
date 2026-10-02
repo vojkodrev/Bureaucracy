@@ -54,7 +54,7 @@ function BankStatementSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         <SortableTableHead
@@ -70,7 +70,7 @@ function BankStatementSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && !groups.length && (
                         <TableRow>
                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                 Loading bank statements…
@@ -84,7 +84,7 @@ function BankStatementSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && groups.map((entries) => (
+                    {groups.map((entries) => (
                         <BankStatementSearchResultGroup
                             key={entries[0].statementId}
                             entries={entries}

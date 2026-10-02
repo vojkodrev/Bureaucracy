@@ -1,3 +1,4 @@
+import SearchResultCell from '@/components/SearchResultCell'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import {
@@ -8,7 +9,6 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { formatCurrency, formatDate } from '@/lib/formatters'
-import { Link } from 'react-router-dom'
 import type {
     PriceQuotePage,
     PriceQuoteSearchCriteria,
@@ -62,7 +62,7 @@ export default function PriceQuoteSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={loading}>
                 <TableHeader>
                     <TableRow>
                         {priceQuoteSortColumns.map((column) => (
@@ -81,7 +81,7 @@ export default function PriceQuoteSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {loading && (
+                    {loading && !result?.priceQuotes.length && (
                         <TableRow>
                             <TableCell
                                 colSpan={5}
@@ -101,25 +101,37 @@ export default function PriceQuoteSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!loading && result?.priceQuotes.map((quote) => (
-                        <TableRow key={quote.id} className="relative">
-                            <TableCell className="font-medium">
-                                <Link to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
-                                    className="absolute inset-0 rounded focus-visible:outline-2
-                                        focus-visible:outline-offset-[-2px]
-                                        focus-visible:outline-ring"
-                                    aria-label={`Open price quote ${quote.quoteNumber}`}
-                                />
+                    {result?.priceQuotes.map((quote) => (
+                        <TableRow key={quote.id} className="cursor-pointer">
+                            <SearchResultCell
+                                primary
+                                to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                linkLabel={`Open price quote ${quote.quoteNumber}`}
+                                className="font-medium"
+                            >
                                 {quote.quoteNumber}
-                            </TableCell>
-                            <TableCell>
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                linkLabel={`Open price quote ${quote.quoteNumber}`}
+                            >
                                 {quote.customerName ?? quote.customerCode ?? '—'}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                linkLabel={`Open price quote ${quote.quoteNumber}`}
+                                className="text-right"
+                            >
                                 {formatCurrency(quote.amount ?? 0)}
-                            </TableCell>
-                            <TableCell>{formatDate(quote.issueDate)}</TableCell>
-                            <TableCell>{formatDate(quote.dueDate)}</TableCell>
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                linkLabel={`Open price quote ${quote.quoteNumber}`}
+                            >{formatDate(quote.issueDate)}</SearchResultCell>
+                            <SearchResultCell
+                                to={`/price-quote/${encodeURIComponent(quote.quoteNumber)}`}
+                                linkLabel={`Open price quote ${quote.quoteNumber}`}
+                            >{formatDate(quote.dueDate)}</SearchResultCell>
                         </TableRow>
                     ))}
                 </TableBody>

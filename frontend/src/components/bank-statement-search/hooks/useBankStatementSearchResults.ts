@@ -19,7 +19,7 @@ export function useBankStatementSearchResults(
         error: null,
     })
     const isLoading = result.searchKey !== searchKey
-    const statementPage = isLoading ? null : result.statementPage
+    const statementPage = result.statementPage
     const error = isLoading ? null : result.error
     const groups = useMemo(() => {
         const grouped = new Map<number, BankStatementEntry[]>()

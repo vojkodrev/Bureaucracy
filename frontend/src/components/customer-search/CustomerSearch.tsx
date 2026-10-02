@@ -1,7 +1,8 @@
+import SearchResultCell from '@/components/SearchResultCell'
 import { useEffect, useMemo, useState } from 'react'
 import { postGraphql } from '@/lib/graphql'
 import type { SubmitEvent, SyntheticEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
@@ -178,7 +179,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
         error: null,
     })
     const isLoading = searchResult.searchKey !== searchKey
-    const customerPage = isLoading ? null : searchResult.customerPage
+    const customerPage = searchResult.customerPage
     const customers = customerPage?.customers ?? emptyCustomers
     const error = isLoading ? null : searchResult.error
     const firstCustomer =
@@ -378,7 +379,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                         onPageSizeChange={changePageSize}
                     />
                 )}
-                <Table>
+                <Table aria-busy={isLoading}>
                     <TableHeader>
                         <TableRow>
                             {customerSortColumns.map(({ key, label }) => (
@@ -394,7 +395,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading && (
+                        {isLoading && !customers.length && (
                             <TableRow>
                                 <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                                     Loading customers…
@@ -408,8 +409,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {!isLoading &&
-                            !error &&
+                        {!error &&
                             customers.map((customer) => {
                                 const isPageMode = mode === ComponentMode.Page
 
@@ -421,7 +421,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                                 ? 'selected'
                                                 : undefined
                                         }
-                                        className="relative cursor-pointer"
+                                        className="cursor-pointer"
                                         tabIndex={isPageMode ? undefined : 0}
                                         onClick={isPageMode
                                             ? undefined
@@ -435,27 +435,46 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                                 }
                                             }}
                                     >
-                                        <TableCell className="font-medium">
-                                            {isPageMode && customer.customerId && (
-                                                <Link
-                                                    to={`/customer/${encodeURIComponent(customer.customerId)}`}
-                                                    aria-label={`Open customer ${customer.customerId}`}
-                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                                />
-                                            )}
+                                        <SearchResultCell
+                                            primary
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                            className="font-medium"
+                                        >
                                             {customer.customerId ?? '—'}
-                                        </TableCell>
-                                        <TableCell>{customer.name ?? '—'}</TableCell>
-                                        <TableCell>{customer.address ?? '—'}</TableCell>
-                                        <TableCell>
+                                        </SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.name ?? '—'}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.address ?? '—'}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >
                                             {[customer.postalCode, customer.city]
                                                 .filter(Boolean)
                                                 .join(' ') || '—'}
-                                        </TableCell>
-                                        <TableCell>{customer.contact ?? '—'}</TableCell>
-                                        <TableCell>{customer.email ?? '—'}</TableCell>
-                                        <TableCell>{customer.phone ?? '—'}</TableCell>
-                                        <TableCell>{customer.taxNumber ?? '—'}</TableCell>
+                                        </SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.contact ?? '—'}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.email ?? '—'}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.phone ?? '—'}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            linkLabel={`Open customer ${customer.customerId}`}
+                                        >{customer.taxNumber ?? '—'}</SearchResultCell>
                                     </TableRow>
                                 )
                             })}

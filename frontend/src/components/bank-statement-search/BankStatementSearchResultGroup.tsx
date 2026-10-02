@@ -1,3 +1,4 @@
+import SearchResultCell from '@/components/SearchResultCell'
 import { Fragment } from 'react'
 import { AlertTriangleIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -26,17 +27,16 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
 
     return (
         <Fragment>
-            <TableRow className="relative cursor-pointer bg-muted/60">
-                <TableCell colSpan={6} className="font-semibold">
-                    {statement.statementNumber != null && (
-                        <Link
-                            to={`/bank-statement/${statement.statementNumber}`}
-                            aria-label={`Open bank statement ${statement.statementNumber}`}
-                            className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                        />
-                    )}
+            <TableRow className="cursor-pointer bg-muted/60">
+                <SearchResultCell
+                    primary
+                    to={statement.statementNumber != null ? `/bank-statement/${statement.statementNumber}` : undefined}
+                    linkLabel={`Open bank statement ${statement.statementNumber}`}
+                    colSpan={6}
+                    className="font-semibold"
+                >
                     Statement {statement.statementNumber ?? '—'}
-                </TableCell>
+                </SearchResultCell>
             </TableRow>
             {entries.map((entry) => {
                 const invoicePayment = entry.documentNumber

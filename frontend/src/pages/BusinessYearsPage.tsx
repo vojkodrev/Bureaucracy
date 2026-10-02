@@ -114,7 +114,7 @@ function BusinessYearsPage() {
     const [selectedBusinessYear, setSelectedBusinessYearState] =
         useState(getSelectedBusinessYear)
     const isLoading = result.requestKey !== requestKey
-    const businessYearPage = isLoading ? null : result.businessYearPage
+    const businessYearPage = result.businessYearPage
     const businessYears = businessYearPage?.businessYears ?? []
     const error = isLoading ? null : result.error
     const firstBusinessYear =
@@ -230,7 +230,7 @@ function BusinessYearsPage() {
             {selectedBusinessYear && (
                 <div className="mb-8 max-w-sm">
                     <h2 className="mb-2 text-sm font-medium">Summary</h2>
-                    <Table>
+                    <Table aria-busy={isLoading}>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
@@ -263,7 +263,7 @@ function BusinessYearsPage() {
                     />
                 )}
 
-                <Table>
+                <Table aria-busy={isLoading}>
                     <TableHeader>
                         <TableRow>
                             {businessYearSortColumns.map(({ key, label }) => (
@@ -279,7 +279,7 @@ function BusinessYearsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading && (
+                        {isLoading && !businessYears.length && (
                             <TableRow>
                                 <TableCell
                                     colSpan={4}
@@ -299,8 +299,7 @@ function BusinessYearsPage() {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {!isLoading &&
-                            !error &&
+                        {!error &&
                             businessYears.map((businessYear, index) => (
                                 <TableRow
                                     key={`${businessYear.code ?? 'business-year'}-${businessYear.year ?? index}`}

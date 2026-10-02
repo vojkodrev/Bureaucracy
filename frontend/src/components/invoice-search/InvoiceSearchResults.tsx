@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import {
@@ -14,6 +13,7 @@ import type { Invoice, InvoicePage } from '@/lib/invoice-types'
 import type { InvoiceSearchCriteria, InvoiceSortColumn } from './types'
 import { invoiceSortColumns } from './types'
 import InvoicePaymentDate from './InvoicePaymentDate'
+import SearchResultCell from '@/components/SearchResultCell'
 
 type InvoiceSearchResultsProps = {
     invoicePage: InvoicePage | null
@@ -73,7 +73,7 @@ function InvoiceSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         {invoiceSortColumns.map((sortBy) => (
@@ -88,7 +88,7 @@ function InvoiceSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && invoices.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                 Loading invoices…
@@ -102,13 +102,13 @@ function InvoiceSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && invoices.map((invoice) => (
+                    {invoices.map((invoice) => (
                         <TableRow
                             key={invoice.invoiceNumber}
                             data-state={selectedInvoiceNumber === invoice.invoiceNumber
                                 ? 'selected'
                                 : undefined}
-                            className="relative cursor-pointer"
+                            className="cursor-pointer"
                             tabIndex={isPageMode ? undefined : 0}
                             onClick={isPageMode ? undefined : () => onInvoiceSelect(invoice)}
                             onKeyDown={isPageMode
@@ -120,32 +120,45 @@ function InvoiceSearchResults({
                                     }
                                 }}
                         >
-                            <TableCell className="font-medium">
-                                {isPageMode && (
-                                    <Link
-                                        to={`/invoice/${encodeURIComponent(invoice.invoiceNumber)}`}
-                                        aria-label={`Open invoice ${invoice.invoiceNumber}`}
-                                        className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                    />
-                                )}
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`} primary
+                                className="font-medium"
+                            >
                                 {invoice.invoiceNumber}
-                            </TableCell>
-                            <TableCell>
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                            >
                                 {invoice.customerName ?? invoice.customerCode ?? '—'}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                className="text-right"
+                            >
                                 {formatCurrency(invoice.amount ?? 0)}
-                            </TableCell>
-                            <TableCell>{formatDate(invoice.issueDate)}</TableCell>
-                            <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                            <TableCell>
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                            >{formatDate(invoice.issueDate)}</SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                            >{formatDate(invoice.dueDate)}</SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                            >
                                 <InvoicePaymentDate
                                     invoiceNumber={invoice.invoiceNumber}
                                     amount={invoice.amount}
                                     paidAmount={invoice.paidAmount}
                                     paymentDate={invoice.paymentDate}
                                 />
-                            </TableCell>
+                            </SearchResultCell>
                         </TableRow>
                     ))}
                 </TableBody>

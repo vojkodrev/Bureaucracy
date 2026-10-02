@@ -18,5 +18,5 @@ export function useGoodsReceiptSearchResults(search: GoodsReceiptSearchCriteria,
             })
         return () => controller.abort()
     }, [search, searchKey])
-    return { page: isLoading ? null : result.page, isLoading, error: isLoading ? null : result.error }
+    return { page: result.page, isLoading, error: isLoading ? null : result.error }
 }
