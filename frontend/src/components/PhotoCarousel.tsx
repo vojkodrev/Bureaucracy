@@ -58,18 +58,18 @@ export default function PhotoCarousel({
                             className="basis-32 sm:basis-[48%] md:basis-[30%]"
                         >
                             <div className="p-1">
-                                <Card className="overflow-hidden py-0">
-                                    <CardContent className="relative aspect-square p-0">
+                                <Card className="aspect-square overflow-hidden py-0">
+                                    <CardContent className="relative h-full min-h-0 p-0">
                                         <button
                                             type="button"
-                                            className="h-full w-full cursor-zoom-in"
+                                            className="absolute inset-0 block cursor-zoom-in overflow-hidden"
                                             aria-label="View photo"
                                             onClick={() => setPreviewPhotoId(photo.id)}
                                         >
                                             <AuthenticatedImage
                                                 src={photo.src}
                                                 alt={photo.alt}
-                                                className="h-full w-full object-cover"
+                                                className="block h-full w-full object-cover object-center"
                                             />
                                         </button>
                                         {onRemovePhoto && (
@@ -93,8 +93,8 @@ export default function PhotoCarousel({
                         <>
                             <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
                                 <div className="p-1">
-                                    <Card className="py-0">
-                                        <CardContent className="aspect-square p-0">
+                                    <Card className="aspect-square py-0">
+                                        <CardContent className="h-full min-h-0 p-0">
                                             <Button
                                                 type="button"
                                                 variant="ghost"
@@ -113,8 +113,8 @@ export default function PhotoCarousel({
                             </CarouselItem>
                             <CarouselItem className="basis-32 sm:basis-[48%] md:basis-[30%]">
                                 <div className="p-1">
-                                    <Card className="py-0">
-                                        <CardContent className="aspect-square p-0">
+                                    <Card className="aspect-square py-0">
+                                        <CardContent className="h-full min-h-0 p-0">
                                             <Button
                                                 type="button"
                                                 variant="ghost"
