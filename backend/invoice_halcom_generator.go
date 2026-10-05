@@ -126,7 +126,7 @@ func (generator *InvoiceHalcomGenerator) Generate(ctx context.Context, invoice *
 	if err != nil {
 		return nil, err
 	}
-	baseFilename := documentID + "_" + documentID
+	baseFilename := fmt.Sprintf("racun-%s-%d", safeFilenamePart(invoice.InvoiceNumber, "invoice"), businessYear)
 	envelopeXML, err := generateHalcomEnvelope(invoice, businessYear, documentID, baseFilename+".xml", baseFilename+".pdf", time.Now())
 	if err != nil {
 		return nil, err
