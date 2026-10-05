@@ -276,6 +276,11 @@ func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, 
 	return r.InventoryItems.GetByCode(ctx, businessYear, productCode)
 }
 
+// InventoryItemGoodsReceiptCounts is the resolver for the inventoryItemGoodsReceiptCounts field.
+func (r *queryResolver) InventoryItemGoodsReceiptCounts(ctx context.Context, businessYear string, productCodes []string) ([]*InventoryItemGoodsReceiptCount, error) {
+	return r.GoodsReceipts.ItemCounts(ctx, businessYear, productCodes)
+}
+
 // ProductInvoiceCounts is the resolver for the productInvoiceCounts field.
 func (r *queryResolver) ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error) {
 	return r.Products.InvoiceCounts(ctx, businessYear, productCodes)

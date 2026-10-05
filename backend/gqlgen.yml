@@ -75,6 +75,9 @@ models:
   InventoryItemPage:
     model:
       - bureaucracy/backend.InventoryItemPage
+  InventoryItemGoodsReceiptCount:
+    model:
+      - bureaucracy/backend.InventoryItemGoodsReceiptCount
   GoodsReceipt:
     model:
       - bureaucracy/backend.GoodsReceipt

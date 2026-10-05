@@ -15,3 +15,8 @@ type InventoryItemPage struct {
 	PageSize   int              `json:"pageSize"`
 	TotalPages int              `json:"totalPages"`
 }
+
+type InventoryItemGoodsReceiptCount struct {
+	ProductCode       string `json:"productCode"`
+	GoodsReceiptCount int    `json:"goodsReceiptCount"`
+}

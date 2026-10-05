@@ -351,6 +351,11 @@ type InventoryItem {
   minimumStockLevel: Float
 }
 
+type InventoryItemGoodsReceiptCount {
+  productCode: String!
+  goodsReceiptCount: Int!
+}
+
 type InventoryItemPage {
   items: [InventoryItem!]!
   totalCount: Int!
@@ -594,6 +599,11 @@ type Query {
   ): InventoryItemPage!
 
   inventoryItem(businessYear: String!, productCode: String!): InventoryItem
+
+  inventoryItemGoodsReceiptCounts(
+    businessYear: String!
+    productCodes: [String!]!
+  ): [InventoryItemGoodsReceiptCount!]!
 
   productInvoiceCounts(
     businessYear: String!

@@ -19,6 +19,72 @@ func NewGoodsReceiptRepository(database *sql.DB) *GoodsReceiptRepository {
 	return &GoodsReceiptRepository{database: database}
 }
 
+func (repository *GoodsReceiptRepository) ItemCounts(
+	ctx context.Context,
+	businessYear string,
+	productCodes []string,
+) ([]*InventoryItemGoodsReceiptCount, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+
+	uniqueCodes := make([]string, 0, len(productCodes))
+	seenCodes := make(map[string]struct{}, len(productCodes))
+	for _, productCode := range productCodes {
+		productCode = strings.TrimSpace(productCode)
+		if productCode == "" {
+			continue
+		}
+		if _, exists := seenCodes[productCode]; exists {
+			continue
+		}
+		seenCodes[productCode] = struct{}{}
+		uniqueCodes = append(uniqueCodes, productCode)
+	}
+	if len(uniqueCodes) == 0 {
+		return []*InventoryItemGoodsReceiptCount{}, nil
+	}
+	if len(uniqueCodes) > 10000 {
+		return nil, fmt.Errorf("productCodes must contain at most 10000 values")
+	}
+
+	parameters := make([]string, len(uniqueCodes))
+	arguments := make([]any, len(uniqueCodes))
+	for index, productCode := range uniqueCodes {
+		parameterName := fmt.Sprintf("productCode%d", index)
+		parameters[index] = "@" + parameterName
+		arguments[index] = sql.Named(parameterName, productCode)
+	}
+
+	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT ds.Artikel, COUNT(DISTINCT d.RecNo)
+		FROM [%s].[dbo].[DobavaSpecifikacija] ds
+		INNER JOIN [%s].[dbo].[Dobava] d
+			ON d.Stevilka = ds.Stevilka
+			AND ISNULL(d.MPO, '') = ISNULL(ds.MPO, '')
+		WHERE ds.Artikel IN (%s)
+		  AND ISNULL(ds.Deleted, 0) = 0
+		GROUP BY ds.Artikel`, receiptDatabase, receiptDatabase, strings.Join(parameters, ", ")), arguments...)
+	if err != nil {
+		return nil, fmt.Errorf("count inventory item goods receipts: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make([]*InventoryItemGoodsReceiptCount, 0, len(uniqueCodes))
+	for rows.Next() {
+		count := &InventoryItemGoodsReceiptCount{}
+		if err := rows.Scan(&count.ProductCode, &count.GoodsReceiptCount); err != nil {
+			return nil, fmt.Errorf("scan inventory item goods receipt count: %w", err)
+		}
+		counts = append(counts, count)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read inventory item goods receipt counts: %w", err)
+	}
+	return counts, nil
+}
+
 func (repository *GoodsReceiptRepository) Search(
 	ctx context.Context,
 	businessYear string,

@@ -10,6 +10,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ComponentMode } from "@/lib/component-mode";
+import { isStorageOnlyUser } from "@/lib/auth";
 
 type Props = {
     itemId: number | null;
@@ -33,6 +34,7 @@ export default function InventoryItemRelatedData({
     onGoodsReceiptSelect,
 }: Props) {
     if (itemId == null || hasUnsavedChanges || !name.trim()) return null;
+    const storageOnly = isStorageOnlyUser();
     return (
         <Accordion className="mt-6" defaultValue={["stock-summary"]}>
             <AccordionItem value="stock-summary">
@@ -56,6 +58,7 @@ export default function InventoryItemRelatedData({
                     <InventoryItemSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
+                        showGoodsReceiptCount
                         similarName={name}
                         onInventoryItemSelect={(item) => {
                             if (item.productCode)
@@ -85,6 +88,7 @@ export default function InventoryItemRelatedData({
                     <ProductSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
+                        showInvoiceCount={!storageOnly}
                         similarName={name}
                         onProductSelect={(product) => {
                             if (product.productCode)
