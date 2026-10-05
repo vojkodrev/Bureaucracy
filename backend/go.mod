@@ -6,7 +6,6 @@ require (
 	github.com/99designs/gqlgen v0.17.94
 	github.com/chromedp/cdproto v0.0.0-20260714215040-dc233986426f
 	github.com/chromedp/chromedp v0.16.0
-	github.com/deepteams/webp v1.2.8
 	github.com/disintegration/imaging v1.6.2
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0

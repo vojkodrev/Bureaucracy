@@ -28,7 +28,11 @@ export default function CameraCaptureDialog({
     useEffect(() => {
         let active = true;
         void navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" } },
+            video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 4096 },
+                height: { ideal: 3072 },
+            },
             audio: false,
         }).then((cameraStream) => {
             if (!active) {
