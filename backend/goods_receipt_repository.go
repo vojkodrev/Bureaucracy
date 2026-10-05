@@ -227,6 +227,72 @@ func (repository *GoodsReceiptRepository) loadItemPhotos(ctx context.Context, bu
 	return nil
 }
 
+func (repository *GoodsReceiptRepository) LatestInventoryItemPhotos(
+	ctx context.Context,
+	businessYear string,
+	productCode string,
+) ([]*GoodsReceiptItemPhoto, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	productCode = strings.TrimSpace(productCode)
+	if productCode == "" {
+		return nil, fmt.Errorf("productCode is required")
+	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
+	}
+	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		WITH LatestReceipt AS (
+			SELECT TOP (1) d.Stevilka, d.MPO
+			FROM [Bureaucracy].[dbo].[goods_receipt_item_photos] candidatePhoto
+			INNER JOIN [%s].[dbo].[DobavaSpecifikacija] candidateItem
+				ON candidateItem.RecNo = candidatePhoto.goods_receipt_item_id
+			INNER JOIN [%s].[dbo].[Dobava] d
+				ON d.Stevilka = candidateItem.Stevilka
+				AND ISNULL(d.MPO, '') = ISNULL(candidateItem.MPO, '')
+			WHERE candidatePhoto.business_year_id = @businessYearID
+			  AND ISNULL(candidateItem.Deleted, 0) = 0
+			  AND candidateItem.Artikel = @productCode
+			  AND candidateItem.Kolicina > 0
+			ORDER BY d.Datum DESC, d.RecNo DESC
+		)
+		SELECT CONVERT(nvarchar(36), photo.file_id)
+		FROM LatestReceipt receipt
+		INNER JOIN [%s].[dbo].[DobavaSpecifikacija] item
+			ON item.Stevilka = receipt.Stevilka
+			AND ISNULL(item.MPO, '') = ISNULL(receipt.MPO, '')
+		INNER JOIN [Bureaucracy].[dbo].[goods_receipt_item_photos] photo
+			ON photo.business_year_id = @businessYearID
+			AND photo.goods_receipt_item_id = item.RecNo
+		WHERE ISNULL(item.Deleted, 0) = 0
+		  AND item.Artikel = @productCode
+		  AND item.Kolicina > 0
+		ORDER BY photo.created_at, photo.file_id`,
+		receiptDatabase, receiptDatabase, receiptDatabase),
+		sql.Named("businessYearID", businessYearID),
+		sql.Named("productCode", productCode))
+	if err != nil {
+		return nil, fmt.Errorf("get latest inventory item photos: %w", err)
+	}
+	defer rows.Close()
+
+	photos := make([]*GoodsReceiptItemPhoto, 0)
+	for rows.Next() {
+		photo := &GoodsReceiptItemPhoto{}
+		if err := rows.Scan(&photo.FileID); err != nil {
+			return nil, fmt.Errorf("scan latest inventory item photo: %w", err)
+		}
+		photos = append(photos, photo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read latest inventory item photos: %w", err)
+	}
+	return photos, nil
+}
+
 func (repository *GoodsReceiptRepository) ListStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")

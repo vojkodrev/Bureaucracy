@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import {
     Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput,
     ComboboxItem, ComboboxList,
@@ -15,7 +16,6 @@ type CountryComboboxFieldProps = {
     onChange: (code: string) => void
 }
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const countriesQuery = `
     query Countries($businessYear: String!) {
         countries(businessYear: $businessYear) { id code name }
@@ -28,14 +28,9 @@ function CountryComboboxField({ id, label, value, onChange }: CountryComboboxFie
 
     useEffect(() => {
         const abortController = new AbortController()
-        void fetch(graphqlUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: countriesQuery, variables: { businessYear: getSelectedBusinessYear() } }),
-            signal: abortController.signal,
-        }).then(async (response) => {
-            if (!response.ok) throw new Error(`Loading countries failed (${response.status})`)
-            const result = await response.json() as CountriesResponse
-            if (result.errors?.length) throw new Error(result.errors.map(({ message }) => message).join(', '))
+        void postGraphql<CountriesResponse>(countriesQuery, {
+            businessYear: getSelectedBusinessYear(),
+        }, abortController.signal).then((result) => {
             setCountries(result.data?.countries ?? [])
         }).catch((requestError: unknown) => {
             if (requestError instanceof DOMException && requestError.name === 'AbortError') return

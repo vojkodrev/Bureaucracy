@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/jpeg"
 	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
 
-	"github.com/deepteams/webp"
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,7 +20,10 @@ import (
 const (
 	maxImageUploadSize = 20 << 20
 	maxImagePixels     = 40_000_000
-	maxImageDimension  = 1920
+	maxImageDimension  = 2560
+	targetImageSize    = 770 << 10
+	minJPEGQuality     = 82
+	maxJPEGQuality     = 95
 )
 
 type FileHandler struct{ database *sql.DB }
@@ -60,13 +63,13 @@ func (handler *FileHandler) UploadImage(context *gin.Context) {
 		(id,original_filename,content_type,byte_size,file_data)
 		VALUES (@id,@originalFilename,@contentType,@byteSize,@fileData)`,
 		sql.Named("id", fileID), sql.Named("originalFilename", originalFilename),
-		sql.Named("contentType", "image/webp"), sql.Named("byteSize", len(encoded)),
+		sql.Named("contentType", "image/jpeg"), sql.Named("byteSize", len(encoded)),
 		sql.Named("fileData", encoded))
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "Could not store file"})
 		return
 	}
-	context.JSON(http.StatusCreated, gin.H{"fileId": fileID.String(), "contentType": "image/webp", "width": width, "height": height})
+	context.JSON(http.StatusCreated, gin.H{"fileId": fileID.String(), "contentType": "image/jpeg", "width": width, "height": height})
 }
 
 func (handler *FileHandler) Display(context *gin.Context) {
@@ -103,16 +106,46 @@ func prepareImage(upload []byte) ([]byte, int, int, error) {
 	if err != nil {
 		return nil, 0, 0, fmt.Errorf("could not decode the uploaded image")
 	}
+	// Limit storage size while retaining enough detail for text in photos.
 	bounds := photo.Bounds()
 	if bounds.Dx() > maxImageDimension || bounds.Dy() > maxImageDimension {
 		photo = imaging.Fit(photo, maxImageDimension, maxImageDimension, imaging.Lanczos)
+		bounds = photo.Bounds()
 	}
-	bounds = photo.Bounds()
-	var encoded bytes.Buffer
-	if err := webp.Encode(&encoded, photo, &webp.EncoderOptions{
-		Quality: 82, Method: 4, Preset: webp.PresetPhoto, UseSharpYUV: true,
-	}); err != nil {
+	encoded, err := encodeJPEGNearTarget(photo, targetImageSize)
+	if err != nil {
 		return nil, 0, 0, fmt.Errorf("could not encode the uploaded image")
 	}
-	return encoded.Bytes(), bounds.Dx(), bounds.Dy(), nil
+	return encoded, bounds.Dx(), bounds.Dy(), nil
+}
+
+// encodeJPEGNearTarget keeps the highest JPEG quality that fits the target.
+// Quality never drops below minJPEGQuality so small document text remains
+// readable, even when that means the result is larger than the target.
+func encodeJPEGNearTarget(photo image.Image, targetSize int) ([]byte, error) {
+	var best []byte
+	low, high := minJPEGQuality, maxJPEGQuality
+	for low <= high {
+		quality := (low + high) / 2
+		var encoded bytes.Buffer
+		if err := jpeg.Encode(&encoded, photo, &jpeg.Options{Quality: quality}); err != nil {
+			return nil, err
+		}
+		data := encoded.Bytes()
+		if len(data) <= targetSize {
+			best = append(best[:0], data...)
+			low = quality + 1
+		} else {
+			high = quality - 1
+		}
+	}
+	if best != nil {
+		return best, nil
+	}
+
+	var encoded bytes.Buffer
+	if err := jpeg.Encode(&encoded, photo, &jpeg.Options{Quality: minJPEGQuality}); err != nil {
+		return nil, err
+	}
+	return encoded.Bytes(), nil
 }

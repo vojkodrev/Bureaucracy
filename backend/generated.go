@@ -347,6 +347,7 @@ type ComplexityRoot struct {
 		Invoice                      func(childComplexity int, businessYear string, invoiceNumber string) int
 		InvoiceTextTemplate          func(childComplexity int, businessYear string) int
 		LatestBankStatementNumber    func(childComplexity int, businessYear string, bankAccount *string) int
+		LatestInventoryItemPhotos    func(childComplexity int, businessYear string, productCode string) int
 		MissingBankStatementDates    func(childComplexity int, businessYear string) int
 		PriceQuote                   func(childComplexity int, businessYear string, quoteNumber string) int
 		PriceQuoteTextTemplate       func(childComplexity int, businessYear string) int
@@ -392,6 +393,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GoodsReceipt(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error)
 	GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error)
+	LatestInventoryItemPhotos(ctx context.Context, businessYear string, productCode string) ([]*GoodsReceiptItemPhoto, error)
 	SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error)
 	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error)
@@ -1877,6 +1879,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.LatestBankStatementNumber(childComplexity, args["businessYear"].(string), args["bankAccount"].(*string)), true
+	case "Query.latestInventoryItemPhotos":
+		if e.ComplexityRoot.Query.LatestInventoryItemPhotos == nil {
+			break
+		}
+
+		args, err := ec.field_Query_latestInventoryItemPhotos_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.LatestInventoryItemPhotos(childComplexity, args["businessYear"].(string), args["productCode"].(string)), true
 	case "Query.missingBankStatementDates":
 		if e.ComplexityRoot.Query.MissingBankStatementDates == nil {
 			break
@@ -3378,6 +3391,28 @@ func (ec *executionContext) field_Query_latestBankStatementNumber_args(ctx conte
 		return nil, err
 	}
 	args["bankAccount"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_latestInventoryItemPhotos_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg1
 	return args, nil
 }
 
@@ -9221,6 +9256,50 @@ func (ec *executionContext) fieldContext_Query_goodsReceiptStorages(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_latestInventoryItemPhotos(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_latestInventoryItemPhotos(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().LatestInventoryItemPhotos(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*GoodsReceiptItemPhoto) graphql.Marshaler {
+			return ec.marshalNGoodsReceiptItemPhoto2ᚕᚖbureaucracyᚋbackendᚐGoodsReceiptItemPhotoᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_latestInventoryItemPhotos(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_GoodsReceiptItemPhoto(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_latestInventoryItemPhotos_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_searchGoodsReceipts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -14732,6 +14811,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_goodsReceiptStorages(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "latestInventoryItemPhotos":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_latestInventoryItemPhotos(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

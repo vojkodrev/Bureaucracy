@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import SearchResultCell from '@/components/SearchResultCell'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency } from '@/lib/formatters'
+import { isStorageOnlyUser } from '@/lib/auth'
 import type { Product, ProductPage } from '@/lib/product-types'
 import { productSortColumns } from './product-search-columns'
 import type { ProductSearchForm, ProductSortColumn } from './types'
@@ -57,7 +58,9 @@ function ProductSearchResults({
         ? Math.min(productPage.page * productPage.pageSize, productPage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
-    const columnCount = showInvoiceCount ? 8 : 7
+    const showPricing = !isStorageOnlyUser()
+    const visibleColumns = productSortColumns.filter(({ containsPricing }) => showPricing || !containsPricing)
+    const columnCount = visibleColumns.length + (showInvoiceCount ? 1 : 0)
 
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
@@ -73,10 +76,10 @@ function ProductSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
-                        {productSortColumns.map(({ key, label, alignRight }) => (
+                        {visibleColumns.map(({ key, label, alignRight }) => (
                             <SortableTableHead
                                 key={key}
                                 label={label}
@@ -91,7 +94,7 @@ function ProductSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && !products.length && (
                         <TableRow>
                             <TableCell
                                 colSpan={columnCount}
@@ -111,11 +114,11 @@ function ProductSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && products.map((product) => (
+                    {products.map((product) => (
                         <TableRow
                             key={product.id}
                             data-state={selectedProductId === product.id ? 'selected' : undefined}
-                            className="relative cursor-pointer"
+                            className="cursor-pointer"
                             tabIndex={isPageMode ? undefined : 0}
                             onClick={isPageMode ? undefined : () => onProductSelect(product)}
                             onKeyDown={isPageMode
@@ -127,34 +130,42 @@ function ProductSearchResults({
                                     }
                                 }}
                         >
-                            <TableCell className="font-medium">
-                                {isPageMode && product.productCode && (
-                                    <Link
-                                        to={`/product/${encodeURIComponent(product.productCode)}`}
-                                        aria-label={`Open product ${product.productCode}`}
-                                        className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                    />
-                                )}
+                            <SearchResultCell
+                                primary
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                                className="font-medium"
+                            >
                                 {product.productCode ?? '—'}
-                            </TableCell>
-                            <TableCell>{product.name ?? '—'}</TableCell>
-                            <TableCell>{product.unit ?? '—'}</TableCell>
-                            <TableCell className="text-right">
+                            </SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                            >{product.name ?? '—'}</SearchResultCell>
+                            <SearchResultCell
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                            >{product.unit ?? '—'}</SearchResultCell>
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.netPrice == null
                                     ? '—'
                                     : formatCurrency(product.netPrice)}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.grossPrice == null
                                     ? '—'
                                     : formatCurrency(product.grossPrice)}
-                            </TableCell>
-                            <TableCell>{product.taxCode ?? '—'}</TableCell>
-                            <TableCell className="text-right">
+                            </SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`}>{product.taxCode ?? '—'}</SearchResultCell>}
+                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.taxRate == null ? '—' : `${product.taxRate}%`}
-                            </TableCell>
+                            </SearchResultCell>}
                             {showInvoiceCount && (
-                                <TableCell className="text-right">
+                                <SearchResultCell
+                                    to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                    linkLabel={`Open product ${product.productCode}`}
+                                    className="text-right"
+                                >
                                     {invoiceCountsLoading
                                         ? '…'
                                         : invoiceCountsError
@@ -162,7 +173,7 @@ function ProductSearchResults({
                                             : product.productCode
                                                 ? invoiceCounts[product.productCode] ?? 0
                                                 : 0}
-                                </TableCell>
+                                </SearchResultCell>
                             )}
                         </TableRow>
                     ))}

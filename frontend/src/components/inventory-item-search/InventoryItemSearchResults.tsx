@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import SearchResultCell from '@/components/SearchResultCell'
 import Pager from "@/components/Pager";
 import SortableTableHead from "@/components/SortableTableHead";
 import {
@@ -67,7 +67,7 @@ export default function InventoryItemSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         {inventoryItemSortColumns.map(
@@ -88,7 +88,7 @@ export default function InventoryItemSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && !items.length && (
                         <TableRow>
                             <TableCell
                                 colSpan={4}
@@ -108,11 +108,10 @@ export default function InventoryItemSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading &&
-                        items.map((item) => (
+                    {items.map((item) => (
                             <TableRow
                                 key={item.id}
-                                className="relative cursor-pointer"
+                                className="cursor-pointer"
                                 tabIndex={isPageMode ? undefined : 0}
                                 onClick={isPageMode ? undefined : () => onInventoryItemSelect?.(item)}
                                 onKeyDown={isPageMode ? undefined : (event) => {
@@ -122,24 +121,31 @@ export default function InventoryItemSearchResults({
                                     }
                                 }}
                             >
-                                <TableCell className="font-medium">
-                                    {isPageMode &&
-                                        item.productCode && (
-                                            <Link
-                                                to={`/inventory-item/${encodeURIComponent(item.productCode)}`}
-                                                aria-label={`Open inventory item ${item.productCode}`}
-                                                className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                            />
-                                        )}
+                                <SearchResultCell
+                                    primary
+                                    to={isPageMode && item.productCode ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined}
+                                    linkLabel={`Open inventory item ${item.productCode}`}
+                                    className="font-medium"
+                                >
                                     {item.productCode ?? "—"}
-                                </TableCell>
-                                <TableCell>{item.name ?? "—"}</TableCell>
-                                <TableCell>{item.unit ?? "—"}</TableCell>
-                                <TableCell className="text-right tabular-nums">
+                                </SearchResultCell>
+                                <SearchResultCell
+                                    to={isPageMode && item.productCode ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined}
+                                    linkLabel={`Open inventory item ${item.productCode}`}
+                                >{item.name ?? "—"}</SearchResultCell>
+                                <SearchResultCell
+                                    to={isPageMode && item.productCode ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined}
+                                    linkLabel={`Open inventory item ${item.productCode}`}
+                                >{item.unit ?? "—"}</SearchResultCell>
+                                <SearchResultCell
+                                    to={isPageMode && item.productCode ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined}
+                                    linkLabel={`Open inventory item ${item.productCode}`}
+                                    className="text-right tabular-nums"
+                                >
                                     {item.minimumStockLevel?.toLocaleString(
                                         "en-IE",
                                     ) ?? "—"}
-                                </TableCell>
+                                </SearchResultCell>
                             </TableRow>
                         ))}
                 </TableBody>

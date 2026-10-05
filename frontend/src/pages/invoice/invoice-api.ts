@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { apiFetch } from '@/lib/auth'
 import { postGraphql } from '@/lib/graphql'
 import type { InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { nextPaddedNumber } from '@/lib/numbers'
@@ -127,7 +128,7 @@ function invoiceHalcomUrl(invoiceNumber: string, businessYear: string): string {
 }
 
 async function downloadInvoiceFile(url: string, fallbackFilename: string, exportName: string) {
-    const response = await fetch(url)
+    const response = await apiFetch(url)
     if (!response.ok) {
         const body = await response.json().catch(() => null) as { error?: string } | null
         throw new Error(body?.error ?? `${exportName} export failed (${response.status})`)

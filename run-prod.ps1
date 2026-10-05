@@ -5,8 +5,10 @@ $ErrorActionPreference = 'Stop'
 
 $backendDir = Join-Path $PSScriptRoot 'backend'
 $frontendDir = Join-Path $PSScriptRoot 'frontend'
+$keycloakDir = Join-Path $PSScriptRoot 'keycloak'
 $backendScript = Join-Path $backendDir 'run-prod.ps1'
 $frontendScript = Join-Path $frontendDir 'run-prod.ps1'
+$keycloakScript = Join-Path $keycloakDir 'run-prod.ps1'
 
 $shell = Get-Command pwsh.exe -ErrorAction SilentlyContinue
 if (-not $shell) {
@@ -15,17 +17,19 @@ if (-not $shell) {
 
 $terminal = Get-Command wt.exe -ErrorAction SilentlyContinue
 if ($terminal) {
-    # Keep both services visible in one Windows Terminal window, similar to tmux panes.
+    # Keep all services visible in one Windows Terminal window, similar to tmux panes.
     & $terminal.Source -w new `
         new-tab --title 'Backend' --startingDirectory $backendDir `
         $shell.Source -NoExit -ExecutionPolicy Bypass -File $backendScript `; `
         split-pane --vertical --size 0.5 --title 'Frontend' --startingDirectory $frontendDir `
-        $shell.Source -NoExit -ExecutionPolicy Bypass -File $frontendScript
+        $shell.Source -NoExit -ExecutionPolicy Bypass -File $frontendScript `; `
+        split-pane --horizontal --size 0.5 --title 'Keycloak' --startingDirectory $keycloakDir `
+        $shell.Source -NoExit -ExecutionPolicy Bypass -File $keycloakScript
 
     exit $LASTEXITCODE
 }
 
-Write-Warning 'Windows Terminal (wt.exe) was not found. Opening two PowerShell windows instead.'
+Write-Warning 'Windows Terminal (wt.exe) was not found. Opening three PowerShell windows instead.'
 
 Start-Process -FilePath $shell.Source -WorkingDirectory $backendDir -ArgumentList @(
     '-NoExit'
@@ -37,4 +41,10 @@ Start-Process -FilePath $shell.Source -WorkingDirectory $frontendDir -ArgumentLi
     '-NoExit'
     '-ExecutionPolicy', 'Bypass'
     '-File', $frontendScript
+)
+
+Start-Process -FilePath $shell.Source -WorkingDirectory $keycloakDir -ArgumentList @(
+    '-NoExit'
+    '-ExecutionPolicy', 'Bypass'
+    '-File', $keycloakScript
 )

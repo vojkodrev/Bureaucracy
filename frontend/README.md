@@ -1,16 +1,17 @@
-# React + Vite
+# Bureaucracy frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Copy `.env.example` to `.env.local` when the frontend, backend, or Keycloak
+servers use different URLs. The app uses Keycloak's Authorization Code flow
+with PKCE and redirects unauthenticated visitors to the `bureaucracy` realm.
+API requests carry the access token in the `Authorization` header; tokens are
+never placed in application URLs.
 
-Currently, two official plugins are available:
+The Keycloak client must allow the frontend origin and redirect paths. The
+committed `keycloak/realm-export.json` already includes the local development
+and preview URLs.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Both the Vite development server and production preview server use the shared
+certificate under `../certs`. Generate it with `../certs/generate.sh` (or
+`..\certs\generate.ps1` on Windows) and trust `bureaucracy-ca.crt` before opening
+the application. Development uses <https://localhost:5173>; production preview
+uses <https://drevi-pc:4173> by default.

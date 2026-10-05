@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { priceQuotePdfUrl } from '@/pages/price-quote-search/price-quote-search-api'
+import { openAuthenticatedUrl } from '@/lib/auth'
 
 type Options = {
     priceQuoteId: number | null
@@ -23,18 +24,17 @@ export function usePriceQuotePrint({
     const canRequestPrint = Boolean(quoteNumber.trim()) && !isLoading &&
         !loadError && !isSaving && !isDuplicating
 
-    const printPriceQuote = () => {
+    const printPriceQuote = async () => {
         if (!canPrint) {
             if (canSave) setConfirmingPrint(true)
             return
         }
-        const pdfTab = window.open(priceQuotePdfUrl(quoteNumber.trim()), '_blank')
-        if (!pdfTab) {
-            setPrintError('Allow pop-ups to open the price quote PDF.')
-            return
+        try {
+            await openAuthenticatedUrl(priceQuotePdfUrl(quoteNumber.trim()))
+            setPrintError(null)
+        } catch (error) {
+            setPrintError(error instanceof Error ? error.message : 'Could not open the price quote PDF.')
         }
-        pdfTab.opener = null
-        setPrintError(null)
     }
 
     return {

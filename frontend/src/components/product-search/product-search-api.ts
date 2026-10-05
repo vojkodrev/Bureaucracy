@@ -1,4 +1,6 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { isStorageOnlyUser } from '@/lib/auth'
+import { postGraphql } from '@/lib/graphql'
 import { optionalFilter } from '@/lib/filters'
 import {
     defaultPage,
@@ -21,7 +23,9 @@ type ProductInvoiceCountsResponse = {
     errors?: { message: string }[]
 }
 
-const searchProductsQuery = `
+function searchProductsQuery() {
+    const pricingFields = isStorageOnlyUser() ? '' : 'netPrice grossPrice taxRate taxCode'
+    return `
     query SearchProducts(
         $businessYear: String!
         $productCode: String
@@ -47,10 +51,7 @@ const searchProductsQuery = `
                 productCode
                 name
                 unit
-                netPrice
-                grossPrice
-                taxRate
-                taxCode
+                ${pricingFields}
             }
             totalCount
             page
@@ -59,6 +60,7 @@ const searchProductsQuery = `
         }
     }
 `
+}
 
 const productInvoiceCountsQuery = `
     query ProductInvoiceCounts($businessYear: String!, $productCodes: [String!]!) {
@@ -69,40 +71,24 @@ const productInvoiceCountsQuery = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
-
 export async function fetchProductSearch(
     search: ProductSearchForm,
     similarName: string | undefined,
     signal?: AbortSignal,
 ): Promise<ProductPage | null> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query: searchProductsQuery,
-            variables: {
-                businessYear: getSelectedBusinessYear(),
-                productCode: optionalFilter(search.productCode),
-                productName: optionalFilter(search.productName),
-                similarName: optionalFilter(similarName ?? ''),
-                sortBy: search.sortBy || null,
-                sortDirection: search.sortDirection || null,
-                page: positiveInteger(search.page, defaultPage),
-                pageSize: Math.min(
-                    positiveInteger(search.pageSize, defaultPageSize),
-                    maximumPageSize,
-                ),
-            },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Product search failed (${response.status})`)
-
-    const result = (await response.json()) as SearchProductsResponse
-    if (result.errors?.length) {
-        throw new Error(result.errors.map(({ message }) => message).join(', '))
-    }
+    const result = await postGraphql<SearchProductsResponse>(searchProductsQuery(), {
+        businessYear: getSelectedBusinessYear(),
+        productCode: optionalFilter(search.productCode),
+        productName: optionalFilter(search.productName),
+        similarName: optionalFilter(similarName ?? ''),
+        sortBy: search.sortBy || null,
+        sortDirection: search.sortDirection || null,
+        page: positiveInteger(search.page, defaultPage),
+        pageSize: Math.min(
+            positiveInteger(search.pageSize, defaultPageSize),
+            maximumPageSize,
+        ),
+    }, signal)
     return result.data?.searchProducts ?? null
 }
 
@@ -110,21 +96,9 @@ export async function fetchProductInvoiceCounts(
     productCodes: string[],
     signal?: AbortSignal,
 ): Promise<Record<string, number>> {
-    const response = await fetch(graphqlUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            query: productInvoiceCountsQuery,
-            variables: { businessYear: getSelectedBusinessYear(), productCodes },
-        }),
-        signal,
-    })
-    if (!response.ok) throw new Error(`Product invoice counts failed (${response.status})`)
-
-    const result = (await response.json()) as ProductInvoiceCountsResponse
-    if (result.errors?.length) {
-        throw new Error(result.errors.map(({ message }) => message).join(', '))
-    }
+    const result = await postGraphql<ProductInvoiceCountsResponse>(productInvoiceCountsQuery, {
+        businessYear: getSelectedBusinessYear(), productCodes,
+    }, signal)
     return Object.fromEntries(
         (result.data?.productInvoiceCounts ?? []).map(
             ({ productCode, invoiceCount }) => [productCode, invoiceCount],

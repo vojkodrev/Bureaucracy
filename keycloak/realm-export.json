@@ -1,0 +1,45 @@
+{
+  "realm": "bureaucracy",
+  "enabled": true,
+  "displayName": "Bureaucracy",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "bureaucracy-storage",
+        "description": "May manage Bureaucracy storage and inventory"
+      },
+      {
+        "name": "bureaucracy-admin",
+        "description": "May administer the Bureaucracy application"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bureaucracy-frontend",
+      "name": "Bureaucracy frontend",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://localhost:5173/*",
+        "https://localhost:4173/*",
+        "https://drevi-pc:4173/*"
+      ],
+      "webOrigins": [
+        "https://localhost:5173",
+        "https://localhost:4173",
+        "https://drevi-pc:4173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

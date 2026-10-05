@@ -252,19 +252,19 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 		if item == nil {
 			continue
 		}
-		quantity, itemNet, itemGross, rate := float64OrZero(item.Quantity), float64OrZero(item.NetAmount), float64OrZero(item.GrossAmount), float64OrZero(item.TaxRate)
-		group := taxGroups[rate]
-		taxGroups[rate] = [2]float64{group[0] + itemNet, group[1] + itemGross - itemNet}
+		amounts := calculateInvoiceItemAmounts(item)
+		group := taxGroups[amounts.TaxRate]
+		taxGroups[amounts.TaxRate] = [2]float64{group[0] + amounts.NetAmount, group[1] + amounts.GrossAmount - amounts.NetAmount}
 		line := eslogLine{
 			Line: eslogLineNumber{Value: fmt.Sprintf("%d", index+1)}, Description: eslogDescription{Format: "F", Text: trimmedString(item.ProductName)},
-			Quantity: eslogQuantity{Qualifier: "47", Value: fmt.Sprintf("%.2f", quantity), Unit: unitCode(item.Unit)},
-			Amounts:  []eslogAmountGroup{newEslogAmountGroup("203", itemNet), newEslogAmountGroup("38", itemGross)},
+			Quantity: eslogQuantity{Qualifier: "47", Value: fmt.Sprintf("%.2f", amounts.Quantity), Unit: unitCode(item.Unit)},
+			Amounts:  []eslogAmountGroup{newEslogAmountGroup("203", amounts.NetAmount), newEslogAmountGroup("38", amounts.GrossAmount)},
 			Prices: []eslogPriceGroup{
-				{Price: eslogPrice{Qualifier: "AAB", Value: fmt.Sprintf("%.4f", divide(itemNet, quantity))}},
-				{Price: eslogPrice{Qualifier: "AAA", Value: fmt.Sprintf("%.4f", divide(itemNet, quantity))}},
+				{Price: eslogPrice{Qualifier: "AAB", Value: fmt.Sprintf("%.4f", amounts.UnitPrice)}},
+				{Price: eslogPrice{Qualifier: "AAA", Value: fmt.Sprintf("%.4f", amounts.DiscountedUnitPrice)}},
 			},
-			Tax:       newEslogTaxGroup(rate, itemNet, itemGross-itemNet),
-			Allowance: newEslogLineAllowance(float64OrZero(item.Discount), itemNet),
+			Tax:       newEslogTaxGroup(amounts.TaxRate, amounts.NetAmount, amounts.GrossAmount-amounts.NetAmount),
+			Allowance: newEslogLineAllowance(amounts.Discount, amounts.DiscountAmount, amounts.OriginalNetAmount),
 		}
 		if code := trimmedString(item.ProductCode); code != "" {
 			line.Product = &eslogProduct{Function: "5", Code: code, CodeType: "SA"}
@@ -336,11 +336,11 @@ func newEslogAllowanceGroup(net float64) eslogAllowanceGroup {
 	}
 }
 
-func newEslogLineAllowance(discount, net float64) eslogLineAllowance {
+func newEslogLineAllowance(discount, amount, basis float64) eslogLineAllowance {
 	return eslogLineAllowance{
 		Allowance:  eslogAllowance{Indicator: "A"},
 		Percentage: eslogPercentageGroup{Percentage: eslogPercentage{Qualifier: "1", Value: fmt.Sprintf("%.2f", discount)}},
-		Amounts:    []eslogAmountGroup{newEslogAmountGroup("204", 0), newEslogAmountGroup("25", net)},
+		Amounts:    []eslogAmountGroup{newEslogAmountGroup("204", amount), newEslogAmountGroup("25", basis)},
 	}
 }
 

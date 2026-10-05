@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import { useSearchParams } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
@@ -49,11 +50,11 @@ const businessYearSortColumns: {
     key: BusinessYearSortColumn
     label: string
 }[] = [
-    { key: 'code', label: 'Code' },
-    { key: 'description', label: 'Description' },
-    { key: 'year', label: 'Business year' },
-    { key: 'derivedFrom', label: 'Derived from' },
-]
+        { key: 'code', label: 'Code' },
+        { key: 'description', label: 'Description' },
+        { key: 'year', label: 'Business year' },
+        { key: 'derivedFrom', label: 'Derived from' },
+    ]
 
 const businessYearsQuery = `
     query BusinessYears(
@@ -82,7 +83,6 @@ const businessYearsQuery = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 function BusinessYearsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -114,7 +114,7 @@ function BusinessYearsPage() {
     const [selectedBusinessYear, setSelectedBusinessYearState] =
         useState(getSelectedBusinessYear)
     const isLoading = result.requestKey !== requestKey
-    const businessYearPage = isLoading ? null : result.businessYearPage
+    const businessYearPage = result.businessYearPage
     const businessYears = businessYearPage?.businessYears ?? []
     const error = isLoading ? null : result.error
     const firstBusinessYear =
@@ -123,45 +123,21 @@ function BusinessYearsPage() {
             : 0
     const lastBusinessYear = businessYearPage
         ? Math.min(
-              businessYearPage.page * businessYearPage.pageSize,
-              businessYearPage.totalCount,
-          )
+            businessYearPage.page * businessYearPage.pageSize,
+            businessYearPage.totalCount,
+        )
         : 0
 
     useEffect(() => {
         const abortController = new AbortController()
 
-        void fetch(graphqlUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: businessYearsQuery,
-                variables: {
-                    sortBy: activeSortBy || null,
-                    sortDirection: activeSortDirection || null,
-                    page: requestedPage,
-                    pageSize: requestedPageSize,
-                },
-            }),
-            signal: abortController.signal,
-        })
-            .then(async (response) => {
-                if (!response.ok) {
-                    throw new Error(
-                        `Loading business years failed (${response.status})`,
-                    )
-                }
-
-                const responseBody =
-                    (await response.json()) as BusinessYearsResponse
-                if (responseBody.errors?.length) {
-                    throw new Error(
-                        responseBody.errors
-                            .map(({ message }) => message)
-                            .join(', '),
-                    )
-                }
-
+        void postGraphql<BusinessYearsResponse>(businessYearsQuery, {
+            sortBy: activeSortBy || null,
+            sortDirection: activeSortDirection || null,
+            page: requestedPage,
+            pageSize: requestedPageSize,
+        }, abortController.signal)
+            .then((responseBody) => {
                 setResult({
                     requestKey,
                     businessYearPage:
@@ -254,7 +230,7 @@ function BusinessYearsPage() {
             {selectedBusinessYear && (
                 <div className="mb-8 max-w-sm">
                     <h2 className="mb-2 text-sm font-medium">Summary</h2>
-                    <Table>
+                    <Table aria-busy={isLoading}>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
@@ -274,96 +250,95 @@ function BusinessYearsPage() {
             )}
 
             {!error && <>
-            {businessYearPage && (
-                <Pager
-                    firstItem={firstBusinessYear}
-                    lastItem={lastBusinessYear}
-                    page={businessYearPage.page}
-                    pageSize={businessYearPage.pageSize}
-                    totalItems={businessYearPage.totalCount}
-                    totalPages={businessYearPage.totalPages}
-                    onPageChange={changePage}
-                    onPageSizeChange={changePageSize}
-                />
-            )}
+                {businessYearPage && (
+                    <Pager
+                        firstItem={firstBusinessYear}
+                        lastItem={lastBusinessYear}
+                        page={businessYearPage.page}
+                        pageSize={businessYearPage.pageSize}
+                        totalItems={businessYearPage.totalCount}
+                        totalPages={businessYearPage.totalPages}
+                        onPageChange={changePage}
+                        onPageSizeChange={changePageSize}
+                    />
+                )}
 
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {businessYearSortColumns.map(({ key, label }) => (
-                            <SortableTableHead
-                                key={key}
-                                label={label}
-                                direction={activeSortBy === key
-                                    ? activeSortDirection
-                                    : ''}
-                                onSort={() => changeSort(key)}
-                            />
-                        ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {isLoading && (
+                <Table aria-busy={isLoading}>
+                    <TableHeader>
                         <TableRow>
-                            <TableCell
-                                colSpan={4}
-                                className="h-24 text-center text-muted-foreground"
-                            >
-                                Loading business years…
-                            </TableCell>
+                            {businessYearSortColumns.map(({ key, label }) => (
+                                <SortableTableHead
+                                    key={key}
+                                    label={label}
+                                    direction={activeSortBy === key
+                                        ? activeSortDirection
+                                        : ''}
+                                    onSort={() => changeSort(key)}
+                                />
+                            ))}
                         </TableRow>
-                    )}
-                    {!isLoading && !error && businessYears.length === 0 && (
-                        <TableRow>
-                            <TableCell
-                                colSpan={4}
-                                className="h-24 text-center text-muted-foreground"
-                            >
-                                No business years found.
-                            </TableCell>
-                        </TableRow>
-                    )}
-                    {!isLoading &&
-                        !error &&
-                        businessYears.map((businessYear, index) => (
-                            <TableRow
-                                key={`${businessYear.code ?? 'business-year'}-${businessYear.year ?? index}`}
-                                aria-selected={
-                                    businessYear.code === selectedBusinessYear
-                                }
-                                className={
-                                    businessYear.code
-                                        ? 'cursor-pointer aria-selected:bg-muted'
-                                        : undefined
-                                }
-                                tabIndex={businessYear.code ? 0 : undefined}
-                                onClick={() => selectBusinessYear(businessYear)}
-                                onKeyDown={(event) => {
-                                    if (
-                                        event.key === 'Enter' ||
-                                        event.key === ' '
-                                    ) {
-                                        event.preventDefault()
-                                        selectBusinessYear(businessYear)
-                                    }
-                                }}
-                            >
-                                <TableCell className="font-medium">
-                                    {businessYear.code ?? '—'}
-                                </TableCell>
-                                <TableCell>
-                                    {businessYear.description ?? '—'}
-                                </TableCell>
-                                <TableCell>
-                                    {businessYear.year ?? '—'}
-                                </TableCell>
-                                <TableCell>
-                                    {businessYear.derivedFrom ?? '—'}
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && !businessYears.length && (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={4}
+                                    className="h-24 text-center text-muted-foreground"
+                                >
+                                    Loading business years…
                                 </TableCell>
                             </TableRow>
-                        ))}
-                </TableBody>
-            </Table>
+                        )}
+                        {!isLoading && !error && businessYears.length === 0 && (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={4}
+                                    className="h-24 text-center text-muted-foreground"
+                                >
+                                    No business years found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!error &&
+                            businessYears.map((businessYear, index) => (
+                                <TableRow
+                                    key={`${businessYear.code ?? 'business-year'}-${businessYear.year ?? index}`}
+                                    aria-selected={
+                                        businessYear.code === selectedBusinessYear
+                                    }
+                                    className={
+                                        businessYear.code
+                                            ? 'cursor-pointer aria-selected:bg-muted'
+                                            : undefined
+                                    }
+                                    tabIndex={businessYear.code ? 0 : undefined}
+                                    onClick={() => selectBusinessYear(businessYear)}
+                                    onKeyDown={(event) => {
+                                        if (
+                                            event.key === 'Enter' ||
+                                            event.key === ' '
+                                        ) {
+                                            event.preventDefault()
+                                            selectBusinessYear(businessYear)
+                                        }
+                                    }}
+                                >
+                                    <TableCell className="font-medium">
+                                        {businessYear.code ?? '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {businessYear.description ?? '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {businessYear.year ?? '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {businessYear.derivedFrom ?? '—'}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                    </TableBody>
+                </Table>
             </>}
         </div>
     )

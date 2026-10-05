@@ -2,6 +2,7 @@ import InventoryItemSearch from "@/components/inventory-item-search/InventoryIte
 import ProductSearch from "@/components/product-search/ProductSearch";
 import GoodsReceiptSearch from "@/components/goods-receipt-search/GoodsReceiptSearch";
 import InventoryItemStockSummary from "./InventoryItemStockSummary";
+import InventoryItemPhotos from "./InventoryItemPhotos";
 import {
     Accordion,
     AccordionContent,
@@ -41,6 +42,12 @@ export default function InventoryItemRelatedData({
                         productCode={productCode}
                         unit={unit}
                     />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="photos">
+                <AccordionTrigger>Photos</AccordionTrigger>
+                <AccordionContent keepMounted>
+                    <InventoryItemPhotos productCode={productCode} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="similar-inventory-items">

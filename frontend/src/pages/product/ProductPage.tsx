@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import DuplicateIdentifierAlert from '@/components/DuplicateIdentifierAlert'
+import { isStorageOnlyUser } from '@/lib/auth'
 import ProductDetails from './ProductDetails'
 import ProductErrors from './ProductErrors'
 import ProductMenu from './ProductMenu'
@@ -19,6 +20,7 @@ function ProductPage() {
     const { productCode: routeProductCode } = useParams()
     const navigate = useNavigate()
     const draftState = useProductDraft()
+    const storageOnly = isStorageOnlyUser()
     const { draft, setDraft, setField } = draftState
     const guard = useUnsavedProductGuard(draftState.hasUnsavedChanges)
     const loader = useProductLoader({
@@ -45,13 +47,14 @@ function ProductPage() {
         clearDuplicateError: () => duplicate.setDuplicateError(null),
         replaceDraft: setDraft, markClean: draftState.markClean, reload: loader.reload,
     })
-    useProductKeyboardShortcuts(() => { void save.requestSave() })
+    useProductKeyboardShortcuts(() => { if (!storageOnly) void save.requestSave() })
 
     return (
         <div className="max-w-5xl p-4">
             <ProductErrors loadError={loader.error}
                 saveError={save.saveError ?? duplicate.duplicateError} />
             <ProductMenu
+                readOnly={storageOnly}
                 canSave={save.canSave}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.productId != null && !loader.isLoading && !save.isSaving}
@@ -94,17 +97,18 @@ function ProductPage() {
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <ProductDetails productCode={draft.productCode} name={draft.name} unit={draft.unit}
+                    readOnly={storageOnly}
                     onProductCodeChange={(value) => setField('productCode', value)}
                     onNameChange={(value) => setField('name', value)}
                     onUnitChange={(value) => setField('unit', value)} />
-                <ProductPricing netPrice={draft.netPrice} grossPrice={draftState.grossPrice}
+                {!storageOnly && <ProductPricing netPrice={draft.netPrice} grossPrice={draftState.grossPrice}
                     taxRate={draft.taxRate} taxCode={draft.taxCode}
                     onNetPriceChange={(value) => setField('netPrice', value)}
                     onTaxChange={(code, rate) => setDraft((current) => ({
                         ...current,
                         taxCode: code,
                         taxRate: rate == null ? '' : String(rate),
-                    }))} />
+                    }))} />}
             </div>
             <ProductRelatedData
                 productId={loader.productId}

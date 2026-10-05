@@ -34,8 +34,11 @@ function Pager({
     const selectedPageSize = pageSizes.includes(pageSize) ? pageSize : pageSizes[0]
 
     return (
-        <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <span className="whitespace-nowrap text-sm text-muted-foreground">Rows per page</span>
+        <div className="mb-2 flex flex-nowrap items-center justify-end gap-1 sm:gap-2">
+            <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
+                <span className="sm:hidden">Rows</span>
+                <span className="hidden sm:inline">Rows per page</span>
+            </span>
             <Combobox
                 items={pageSizes}
                 value={selectedPageSize}
@@ -45,7 +48,7 @@ function Pager({
             >
                 <ComboboxInput
                     aria-label="Rows per page"
-                    className="w-36 shrink-0"
+                    className="w-26 shrink-0 sm:w-36"
                 />
                 <ComboboxContent className="w-36 min-w-36">
                     <ComboboxList>
@@ -57,29 +60,31 @@ function Pager({
                     </ComboboxList>
                 </ComboboxContent>
             </Combobox>
-            <span className="whitespace-nowrap text-sm text-muted-foreground tabular-nums">
+            <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums sm:text-sm">
                 {firstItem}–{lastItem} of {totalItems}
             </span>
-            <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                aria-label="Previous page"
-                disabled={page <= 1}
-                onClick={() => onPageChange(page - 1)}
-            >
-                <ChevronLeft />
-            </Button>
-            <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                aria-label="Next page"
-                disabled={page >= totalPages}
-                onClick={() => onPageChange(page + 1)}
-            >
-                <ChevronRight />
-            </Button>
+            <div className="flex shrink-0 gap-1 sm:gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Previous page"
+                    disabled={page <= 1}
+                    onClick={() => onPageChange(page - 1)}
+                >
+                    <ChevronLeft />
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Next page"
+                    disabled={page >= totalPages}
+                    onClick={() => onPageChange(page + 1)}
+                >
+                    <ChevronRight />
+                </Button>
+            </div>
         </div>
     )
 }

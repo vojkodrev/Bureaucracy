@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { postGraphql } from '@/lib/graphql'
 import ErrorAlert from '@/components/ErrorAlert'
 import {
     AlertDialog,
@@ -39,7 +40,6 @@ const updateCustomerEmailMutation = `
     }
 `
 
-const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 export default function SaveCustomerEmailAlert({
     email,
@@ -56,21 +56,10 @@ export default function SaveCustomerEmailAlert({
         setError(null)
         try {
             const businessYear = getSelectedBusinessYear()
-            const response = await fetch(graphqlUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: updateCustomerEmailMutation,
-                    variables: { businessYear, customerId, email },
-                }),
-            })
-            if (!response.ok) {
-                throw new Error(`Saving customer email failed (${response.status})`)
-            }
-            const result = await response.json() as UpdateCustomerEmailResponse
-            if (result.errors?.length) {
-                throw new Error(result.errors.map(({ message }) => message).join(', '))
-            }
+            const result = await postGraphql<UpdateCustomerEmailResponse>(
+                updateCustomerEmailMutation,
+                { businessYear, customerId, email },
+            )
             if (!result.data?.updateCustomerEmail) {
                 throw new Error('Saving customer email returned no customer')
             }

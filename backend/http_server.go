@@ -23,6 +23,7 @@ type HTTPServer struct {
 
 func NewHTTPServer(
 	config *AppConfig,
+	authMiddleware *AuthMiddleware,
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
@@ -42,6 +43,7 @@ func NewHTTPServer(
 	}
 
 	graphqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
+	graphqlHandler.AroundFields(AuthorizeGraphQLField)
 	playgroundHandler := playground.Handler("BIRO225 GraphQL", "/graphql")
 
 	router := gin.New()
@@ -51,29 +53,38 @@ func NewHTTPServer(
 		ginCors.New(ginCors.Config{
 			AllowOrigins: config.AllowedOrigins,
 			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
-			AllowHeaders: []string{"Content-Type"},
+			AllowHeaders: []string{"Content-Type", "Authorization"},
 		}),
 	)
-	router.GET("/graphql", gin.WrapH(graphqlHandler))
-	router.POST("/graphql", gin.WrapH(graphqlHandler))
-	router.GET("/", gin.WrapH(playgroundHandler))
 	router.GET("/health", func(context *gin.Context) {
 		context.Status(http.StatusNoContent)
 	})
-	router.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
-	router.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
-	router.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
-	router.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
-	router.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
-	router.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
-	router.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
-	router.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
-	router.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
-	router.GET("/api/exports/accounting", accountingExportHandler.Handle)
-	router.POST("/api/exports/accounting/email", accountingExportHandler.Send)
-	router.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
-	router.POST("/api/file", fileHandler.UploadImage)
-	router.GET("/api/file/:fileId", fileHandler.Display)
+
+	protected := router.Group("/")
+	protected.Use(authMiddleware.Handle)
+	protected.GET("/graphql", gin.WrapH(graphqlHandler))
+	protected.POST("/graphql", gin.WrapH(graphqlHandler))
+
+	storage := protected.Group("/")
+	storage.Use(RequireAnyRole(adminRole, storageRole))
+	storage.POST("/api/file", fileHandler.UploadImage)
+	storage.GET("/api/file/:fileId", fileHandler.Display)
+
+	admin := protected.Group("/")
+	admin.Use(RequireAnyRole(adminRole))
+	admin.GET("/", gin.WrapH(playgroundHandler))
+	admin.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	admin.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
+	admin.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
+	admin.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
+	admin.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
+	admin.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
+	admin.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)
+	admin.POST("/api/invoices/:invoiceNumber/email", invoiceEmailHandler.Send)
+	admin.POST("/api/price-quotes/:quoteNumber/email", priceQuoteEmailHandler.Send)
+	admin.GET("/api/exports/accounting", accountingExportHandler.Handle)
+	admin.POST("/api/exports/accounting/email", accountingExportHandler.Send)
+	admin.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
 
 	return &HTTPServer{
 		config: config,
@@ -97,11 +108,11 @@ func RegisterHTTPServerLifecycle(lifecycle fx.Lifecycle, server *HTTPServer) {
 			}
 
 			go func() {
-				if err := server.server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					slog.Error("HTTP server stopped unexpectedly", "error", err)
+				if err := server.server.ServeTLS(listener, server.config.TLSCertFile, server.config.TLSKeyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					slog.Error("HTTPS server stopped unexpectedly", "error", err)
 				}
 			}()
-			slog.Info("HTTP server listening", "url", "http://localhost:"+server.config.Port)
+			slog.Info("HTTPS server listening", "url", "https://localhost:"+server.config.Port)
 			return nil
 		},
 		OnStop: server.server.Shutdown,

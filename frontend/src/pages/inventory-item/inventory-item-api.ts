@@ -1,6 +1,7 @@
 import { getSelectedBusinessYear } from "@/lib/business-year";
 import { postGraphql } from "@/lib/graphql";
 import type { InventoryItem } from "@/lib/inventory-item-types";
+import type { GoodsReceiptItemPhoto } from "@/lib/goods-receipt-types";
 import { nextPaddedNumber } from "@/lib/numbers";
 
 const fields = "id productCode name unit minimumStockLevel";
@@ -9,6 +10,33 @@ export type InventoryItemStock = {
     storage: string | null;
     quantity: number;
 };
+
+export type InventoryItemPhotoSource = {
+    photos: GoodsReceiptItemPhoto[];
+};
+
+export async function fetchLatestInventoryItemPhotos(
+    productCode: string,
+    signal?: AbortSignal,
+): Promise<InventoryItemPhotoSource | null> {
+    const result = await postGraphql<{
+        data?: { latestInventoryItemPhotos: GoodsReceiptItemPhoto[] };
+    }>(
+        `query LatestInventoryItemPhotos(
+            $businessYear: String!
+            $productCode: String!
+        ) {
+            latestInventoryItemPhotos(
+                businessYear: $businessYear
+                productCode: $productCode
+            ) { fileId }
+        }`,
+        { businessYear: getSelectedBusinessYear(), productCode },
+        signal,
+    );
+    const photos = result.data?.latestInventoryItemPhotos ?? [];
+    return photos.length > 0 ? { photos } : null;
+}
 
 export async function fetchInventoryItem(
     productCode: string,

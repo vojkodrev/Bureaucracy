@@ -2,7 +2,6 @@ import { Mail, MoreHorizontal, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
 import Pager from '@/components/Pager'
 import {
     Table,
@@ -16,6 +15,7 @@ import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoiceCustomerSummary, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 import InvoicePaymentDate from './InvoicePaymentDate'
+import SearchResultCell from '@/components/SearchResultCell'
 
 type InvoiceSearchResultsByCustomerProps = {
     onPrintReminders: (customer: InvoiceCustomerSummary) => void
@@ -63,7 +63,7 @@ function InvoiceSearchResultsByCustomer({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Invoice number</TableHead>
@@ -75,7 +75,7 @@ function InvoiceSearchResultsByCustomer({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && customerSummaries.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                 Loading invoices…
@@ -89,7 +89,7 @@ function InvoiceSearchResultsByCustomer({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && customerSummaries.map((summary) => {
+                    {customerSummaries.map((summary) => {
                         const customerKey = `${summary.customerCode ?? ''}:${summary.customerName ?? ''}`
                         const totals = [
                             ['Total paid', summary.totalPaid],
@@ -106,7 +106,7 @@ function InvoiceSearchResultsByCustomer({
                                         data-state={selectedInvoiceNumber === invoice.invoiceNumber
                                             ? 'selected'
                                             : undefined}
-                                        className="relative cursor-pointer"
+                                        className="cursor-pointer"
                                         tabIndex={isPageMode ? undefined : 0}
                                         onClick={isPageMode
                                             ? undefined
@@ -120,25 +120,38 @@ function InvoiceSearchResultsByCustomer({
                                                 }
                                             }}
                                     >
-                                        <TableCell className="font-medium">
-                                            {isPageMode && (
-                                                <Link
-                                                    to={`/invoice/${encodeURIComponent(invoice.invoiceNumber)}`}
-                                                    aria-label={`Open invoice ${invoice.invoiceNumber}`}
-                                                    className="absolute inset-0 z-10 rounded focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
-                                                />
-                                            )}
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`} primary
+                                            className="font-medium"
+                                        >
                                             {invoice.invoiceNumber}
-                                        </TableCell>
-                                        <TableCell>
+                                        </SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                        >
                                             {invoice.customerName ?? invoice.customerCode ?? '—'}
-                                        </TableCell>
-                                        <TableCell className="text-right tabular-nums">
+                                        </SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                            className="text-right tabular-nums"
+                                        >
                                             {formatCurrency(invoice.amount ?? 0)}
-                                        </TableCell>
-                                        <TableCell>{formatDate(invoice.issueDate)}</TableCell>
-                                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                                        <TableCell>
+                                        </SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                        >{formatDate(invoice.issueDate)}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                        >{formatDate(invoice.dueDate)}</SearchResultCell>
+                                        <SearchResultCell
+                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            linkLabel={`Open invoice ${invoice.invoiceNumber}`}
+                                        >
                                             <div className="flex items-center justify-between gap-2">
                                                 <InvoicePaymentDate
                                                     invoiceNumber={invoice.invoiceNumber}
@@ -162,7 +175,7 @@ function InvoiceSearchResultsByCustomer({
                                                     </DropdownMenu>
                                                 )}
                                             </div>
-                                        </TableCell>
+                                        </SearchResultCell>
                                     </TableRow>
                                 ))}
                                 {totals.map(([label, amount], index) => (

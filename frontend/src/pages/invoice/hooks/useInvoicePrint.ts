@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { invoicePdfUrl } from '../invoice-api'
+import { openAuthenticatedUrl } from '@/lib/auth'
 
 type Options = {
     invoiceId: number | null
@@ -24,20 +25,17 @@ export function useInvoicePrint({
     const canRequestPrint = Boolean(invoiceNumber.trim()) && !isLoading &&
         !loadError && !isSaving && !isDuplicating
 
-    const printInvoice = () => {
+    const printInvoice = async () => {
         if (!canPrint) {
             if (canSave) setConfirmingPrint(true)
             return
         }
-        const pdfTab = window.open(
-            invoicePdfUrl(invoiceNumber.trim(), getSelectedBusinessYear()), '_blank',
-        )
-        if (!pdfTab) {
-            setPrintError('Allow pop-ups to open the invoice PDF.')
-            return
+        try {
+            await openAuthenticatedUrl(invoicePdfUrl(invoiceNumber.trim(), getSelectedBusinessYear()))
+            setPrintError(null)
+        } catch (error) {
+            setPrintError(error instanceof Error ? error.message : 'Could not open the invoice PDF.')
         }
-        pdfTab.opener = null
-        setPrintError(null)
     }
 
     return {

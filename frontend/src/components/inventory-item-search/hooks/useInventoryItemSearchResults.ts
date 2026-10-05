@@ -20,7 +20,7 @@ export function useInventoryItemSearchResults(
         searchKey: '__initial__', itemPage: null, error: null,
     })
     const isLoading = result.searchKey !== searchKey
-    const itemPage = isLoading ? null : result.itemPage
+    const itemPage = result.itemPage
     const items = itemPage?.items ?? emptyItems
     const error = isLoading ? null : result.error
 

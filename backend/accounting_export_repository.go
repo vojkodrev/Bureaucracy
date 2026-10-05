@@ -60,21 +60,26 @@ func (repository *AccountingExportRepository) List(
 			rac.DatumZapadlosti,
 			rac.Stevilka,
 			rac.Znesek,
-			(rac.Znesek / 1.22) * 0.22,
-			rac.Znesek / 1.22,
+			SUM(racspec.Znesek - amounts.ItemNet) OVER (PARTITION BY rac.Stevilka),
+			SUM(amounts.ItemNet) OVER (PARTITION BY rac.Stevilka),
 			racspec.Znesek,
-			(racspec.ZnesekBrezDavka - (racspec.ZnesekBrezDavka * (racspec.Rabat / 100))) * 0.22,
-			racspec.ZnesekBrezDavka - (racspec.ZnesekBrezDavka * (racspec.Rabat / 100)),
+			racspec.Znesek - amounts.ItemNet,
+			amounts.ItemNet,
 			art.Opis,
 			par.IDStevilka,
 			rac.ImePartnerja,
 			racspec.Artikel
 		FROM [%s].[dbo].[Racuni] rac
-		LEFT JOIN [%s].[dbo].[RacuniSpecifikacija] racspec ON racspec.Stevilka = rac.Stevilka
+		LEFT JOIN [%s].[dbo].[RacuniSpecifikacija] racspec
+			ON racspec.Stevilka = rac.Stevilka AND ISNULL(racspec.Deleted, 0) = 0
+		OUTER APPLY (
+			SELECT racspec.ZnesekBrezDavka *
+				(1 - COALESCE(CAST(racspec.Rabat AS float), 0) / 100) AS ItemNet
+		) amounts
 		LEFT JOIN [%s].[dbo].[Partner] par ON rac.SifraPartnerja = par.Sifra
 		LEFT JOIN [%s].[dbo].[Artikel] art ON art.Artikel = racspec.Artikel
 		WHERE rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to
-		ORDER BY rac.Stevilka`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
+		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
 		sql.Named("from", from),
 		sql.Named("to", to),
 	)

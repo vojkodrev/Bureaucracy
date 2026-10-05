@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
+import { getAuthUser } from "@/lib/auth";
 import GoodsReceiptErrors from "./GoodsReceiptErrors";
 import GoodsReceiptGeneralInformation from
     "./GoodsReceiptGeneralInformation";
@@ -19,12 +20,14 @@ import { useUnsavedGoodsReceiptGuard } from
 export default function GoodsReceiptPage() {
     const { receiptNumber } = useParams();
     const navigate = useNavigate();
-    const draftState = useGoodsReceiptDraft();
+    const receivedBy = getAuthUser().name;
+    const draftState = useGoodsReceiptDraft(receivedBy);
     const guard = useUnsavedGoodsReceiptGuard(
         draftState.hasUnsavedChanges,
     );
     const loader = useGoodsReceiptLoader(
         receiptNumber,
+        receivedBy,
         draftState.setDraft,
         draftState.markClean,
         guard.disallowNavigation,

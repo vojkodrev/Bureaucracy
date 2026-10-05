@@ -52,7 +52,7 @@ export default function GoodsReceiptSearchResults({
                     onPageSizeChange={onPageSizeChange}
                 />
             )}
-            <Table>
+            <Table aria-busy={isLoading}>
                 <TableHeader>
                     <TableRow>
                         <SortableTableHead
@@ -88,7 +88,7 @@ export default function GoodsReceiptSearchResults({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading && (
+                    {isLoading && !page?.goodsReceipts.length && (
                         <TableRow>
                             <TableCell
                                 colSpan={4}
@@ -108,7 +108,7 @@ export default function GoodsReceiptSearchResults({
                             </TableCell>
                         </TableRow>
                     )}
-                    {!isLoading && page?.goodsReceipts.map((receipt) => (
+                    {page?.goodsReceipts.map((receipt) => (
                         <GoodsReceiptSearchResultGroup
                             key={receipt.id}
                             receipt={receipt}

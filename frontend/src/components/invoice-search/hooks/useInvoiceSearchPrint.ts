@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { invoiceRemindersPdfUrl, invoiceReportPdfUrl } from '../invoice-search-api'
 import type { InvoiceSearchCriteria } from '../types'
+import { openAuthenticatedUrl } from '@/lib/auth'
 
 type Options = {
     search: InvoiceSearchCriteria
@@ -40,28 +41,26 @@ export function useInvoiceSearchPrint({
         return 'The search must match exactly one customer. Refine the customer filter and try again.'
     })()
 
-    const printReport = () => {
+    const printReport = async () => {
         if (!canPrint) return
-        const pdfTab = window.open(invoiceReportPdfUrl(search), '_blank')
-        if (!pdfTab) {
-            setPrintError('Allow pop-ups to open the invoice report PDF.')
-            return
+        try {
+            await openAuthenticatedUrl(invoiceReportPdfUrl(search))
+            setPrintError(null)
+        } catch (error) {
+            setPrintError(error instanceof Error ? error.message : 'Could not open the invoice report PDF.')
         }
-        pdfTab.opener = null
-        setPrintError(null)
     }
-    const printReminders = (customerSearch?: InvoiceSearchCriteria) => {
+    const printReminders = async (customerSearch?: InvoiceSearchCriteria) => {
         if (!customerSearch && !canPrintReminders) {
             setUnavailableRemindersAction('print')
             return
         }
-        const pdfTab = window.open(invoiceRemindersPdfUrl(customerSearch ?? search), '_blank')
-        if (!pdfTab) {
-            setPrintError('Allow pop-ups to open the reminders PDF.')
-            return
+        try {
+            await openAuthenticatedUrl(invoiceRemindersPdfUrl(customerSearch ?? search))
+            setPrintError(null)
+        } catch (error) {
+            setPrintError(error instanceof Error ? error.message : 'Could not open the reminders PDF.')
         }
-        pdfTab.opener = null
-        setPrintError(null)
     }
     const onPrintShortcut = useEffectEvent(printReport)
 

@@ -10,6 +10,7 @@ import {
 
 export function useGoodsReceiptLoader(
     routeReceiptNumber: string | undefined,
+    defaultReceivedBy: string,
     replaceDraft: (draft: GoodsReceiptDraft) => void,
     markClean: (draft: GoodsReceiptDraft) => void,
     disallowNavigation: () => void,
@@ -36,7 +37,7 @@ export function useGoodsReceiptLoader(
                 setResult({ key, error: null });
                 return;
             }
-            const next = goodsReceiptDraft();
+            const next = goodsReceiptDraft(undefined, defaultReceivedBy);
             setReceiptId(null);
             replace(next);
             clean(next);
@@ -81,7 +82,7 @@ export function useGoodsReceiptLoader(
                 });
             });
         return () => controller.abort();
-    }, [key, routeReceiptNumber]);
+    }, [key, routeReceiptNumber, defaultReceivedBy]);
 
     return {
         receiptId,

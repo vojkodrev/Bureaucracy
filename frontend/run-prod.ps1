@@ -5,6 +5,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$certDir = Join-Path $PSScriptRoot '..\certs'
+foreach ($name in @('bureaucracy.crt', 'bureaucracy.key')) {
+    if (-not (Test-Path (Join-Path $certDir $name))) {
+        throw 'HTTPS certificates are missing. Run certs\generate.ps1 first.'
+    }
+}
+
 & npm.cmd install --prefix $PSScriptRoot
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
@@ -15,5 +22,5 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-& npm.cmd run preview --prefix $PSScriptRoot -- --host 0.0.0.0 @RemainingArgs
+& npm.cmd run preview --prefix $PSScriptRoot -- @RemainingArgs
 exit $LASTEXITCODE

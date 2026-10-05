@@ -1,15 +1,19 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { isStorageOnlyUser } from '@/lib/auth'
 import { postGraphql } from '@/lib/graphql'
 import type { Product } from '@/lib/product-types'
 import { nextPaddedNumber } from '@/lib/numbers'
 
-const productQuery = `
+function productQuery() {
+    const pricingFields = isStorageOnlyUser() ? '' : 'netPrice grossPrice taxRate taxCode'
+    return `
     query Product($businessYear: String!, $productCode: String!) {
         product(businessYear: $businessYear, productCode: $productCode) {
-            id productCode name barcode unit netPrice grossPrice taxRate taxCode
+            id productCode name barcode unit ${pricingFields}
         }
     }
 `
+}
 
 const latestProductQuery = `
     query LatestProduct($businessYear: String!) {
@@ -37,7 +41,7 @@ const productInvoiceCountQuery = `
 
 export async function fetchProduct(productCode: string, signal?: AbortSignal): Promise<Product> {
     const result = await postGraphql<{ data?: { product: Product | null }; errors?: { message: string }[] }>(
-        productQuery,
+        productQuery(),
         { businessYear: getSelectedBusinessYear(), productCode },
         signal,
     )
@@ -47,7 +51,7 @@ export async function fetchProduct(productCode: string, signal?: AbortSignal): P
 
 export async function fetchProductExists(productCode: string): Promise<boolean> {
     const result = await postGraphql<{ data?: { product: Pick<Product, 'id'> | null } }>(
-        productQuery, { businessYear: getSelectedBusinessYear(), productCode },
+        productQuery(), { businessYear: getSelectedBusinessYear(), productCode },
     )
     return result.data?.product != null
 }

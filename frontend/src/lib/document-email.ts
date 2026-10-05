@@ -1,4 +1,5 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
+import { apiFetch } from '@/lib/auth'
 
 export type DocumentEmailFields = {
     recipient: string
@@ -26,7 +27,7 @@ export async function sendDocumentEmail(
     form.set('subject', fields.subject)
     form.set('message', fields.message)
     fields.attachments.forEach((file) => form.append('attachments', file, file.name))
-    const response = await fetch(url, { method: 'POST', body: form })
+    const response = await apiFetch(url, { method: 'POST', body: form })
     const result = await response.json() as ErrorResponse
     if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
 }
@@ -46,7 +47,7 @@ export async function sendAccountingExportEmail(
     form.set('subject', fields.subject)
     form.set('message', fields.message)
     fields.attachments.forEach((file) => form.append('attachments', file, file.name))
-    const response = await fetch(url, { method: 'POST', body: form })
+    const response = await apiFetch(url, { method: 'POST', body: form })
     const result = await response.json() as ErrorResponse
     if (!response.ok) throw new Error(result.error || `Sending email failed (${response.status})`)
 }

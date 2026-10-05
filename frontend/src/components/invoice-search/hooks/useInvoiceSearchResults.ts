@@ -24,8 +24,9 @@ export function useInvoiceSearchResults(search: InvoiceSearchCriteria, searchKey
         error: null,
     })
     const isLoading = result.searchKey !== searchKey
-    const invoicePage = isLoading ? null : result.invoicePage
-    const customerSummaryPage = isLoading ? null : result.customerSummaryPage
+    // Keep the table height stable while refreshing, so sorting does not clamp the scroll position.
+    const invoicePage = result.invoicePage
+    const customerSummaryPage = result.customerSummaryPage
     const invoices = invoicePage?.invoices
         ?? customerSummaryPage?.customerSummaries.flatMap(({ invoices }) => invoices)
         ?? emptyInvoices

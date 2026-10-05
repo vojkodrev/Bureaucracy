@@ -22,7 +22,7 @@ export function useProductSearchResults(
         error: null,
     })
     const isLoading = result.searchKey !== searchKey
-    const productPage = isLoading ? null : result.productPage
+    const productPage = result.productPage
     const products = productPage?.products ?? emptyProducts
     const error = isLoading ? null : result.error
 
