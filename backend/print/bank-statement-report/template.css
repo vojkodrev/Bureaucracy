@@ -1,0 +1,34 @@
+@page {
+    size: A4 landscape;
+    margin: 10mm 12mm 12mm;
+    @bottom-right {
+        content: "Stran " counter(page) " / " counter(pages);
+        font: 8pt Arial, sans-serif;
+        color: #555;
+    }
+}
+
+html, body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+body { font-size: 8pt; }
+header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 5mm; }
+h1 { margin: 0 0 1mm; font-size: 16pt; }
+header p { margin: 0; }
+.generated { color: #555; font-size: 7pt; }
+.transactions { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.transactions thead { display: table-header-group; }
+.transactions tr { break-inside: avoid; }
+.transactions th, .transactions td { padding: 1.4mm 1.8mm; border: 0.2mm solid #777; vertical-align: middle; white-space: nowrap; }
+.transactions th { background: #eee; font-size: 7pt; line-height: 1.1; text-align: left; white-space: nowrap; }
+.transactions th:nth-child(1) { width: 9%; }
+.transactions th:nth-child(2) { width: 20%; }
+.transactions th:nth-child(3) { width: 44%; }
+.transactions th:nth-child(4) { width: 17%; }
+.transactions th:nth-child(5) { width: 10%; }
+.transactions td:nth-child(3) { white-space: normal; overflow-wrap: anywhere; }
+.number { text-align: right !important; }
+.empty { height: 18mm; color: #666; text-align: center; }
+.summary { width: 72mm; margin: 5mm 0 0 auto; break-inside: avoid; }
+.summary h2 { margin: 0; padding: 1.5mm 2mm; border-bottom: 0.3mm solid #111; font-size: 9pt; }
+.summary dl { display: grid; grid-template-columns: 1fr 30mm; margin: 0; }
+.summary dt, .summary dd { margin: 0; padding: 1.2mm 2mm; border-bottom: 0.2mm solid #bbb; }
+.summary dd { font-weight: 700; text-align: right; }

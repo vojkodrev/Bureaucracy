@@ -8,6 +8,8 @@ import { useBankStatementSearchResults } from '@/components/bank-statement-searc
 import { useBankStatementSearchState } from '@/components/bank-statement-search/hooks/useBankStatementSearchState'
 import { useMissingBankStatementDates } from '@/components/bank-statement-search/hooks/useMissingBankStatementDates'
 import { useBankStatementInvoicePayments } from '@/components/bank-statement-search/hooks/useBankStatementInvoicePayments'
+import BankStatementSearchMenu from '@/components/bank-statement-search/BankStatementSearchMenu'
+import { useBankStatementSearchPrint } from '@/components/bank-statement-search/hooks/useBankStatementSearchPrint'
 
 function BankStatementSearchPage() {
     const searchState = useBankStatementSearchState()
@@ -18,12 +20,24 @@ function BankStatementSearchPage() {
     )
     const missingStatements = useMissingBankStatementDates()
     const invoicePayments = useBankStatementInvoicePayments(statementPage, searchKey)
+    const print = useBankStatementSearchPrint({
+        search,
+        hasOutflows: statementPage?.entries.some((entry) => (entry.outflow ?? 0) > 0) ?? false,
+        isLoading,
+        hasError: Boolean(error),
+    })
     const errors: BankStatementSearchError[] = [
         [
             'search',
             'Bank statements could not be loaded',
             'The bank statement search could not be completed.',
             error,
+        ],
+        [
+            'print',
+            'Bank statement report could not be printed',
+            'The outflow report PDF could not be opened.',
+            print.printError,
         ],
         [
             'invoice-payments',
@@ -42,6 +56,10 @@ function BankStatementSearchPage() {
     return (
         <div className="p-4">
             <BankStatementSearchErrors errors={errors} />
+            <BankStatementSearchMenu
+                reportDisabled={!print.canPrint}
+                onPrintReport={print.printReport}
+            />
             <MissingBankStatementsAlert missingDates={missingStatements.missingDates} />
             <InvoicePaymentMismatchAlert
                 entries={statementPage?.entries ?? []}
