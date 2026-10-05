@@ -64,11 +64,15 @@ func (generator *BankStatementReportGenerator) Generate(
 		if entry == nil || entry.Outflow == nil || *entry.Outflow <= 0 {
 			continue
 		}
+		recipientReference := trimmedString(entry.Reference)
+		if recipientReference == "" {
+			recipientReference = trimmedString(entry.Purpose)
+		}
 		rows = append(rows, bankStatementReportRow{
 			Date:               formatDocumentDate(entry.PaymentDate),
 			OurReference:       trimmedString(entry.EndToEndID),
 			CounterpartyName:   trimmedString(entry.CustomerName),
-			RecipientReference: trimmedString(entry.Reference),
+			RecipientReference: recipientReference,
 			Amount:             formatMoneyAmount(*entry.Outflow),
 		})
 		total += *entry.Outflow
