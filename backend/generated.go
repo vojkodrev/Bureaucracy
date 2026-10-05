@@ -57,6 +57,7 @@ type ComplexityRoot struct {
 		CustomerID        func(childComplexity int) int
 		CustomerName      func(childComplexity int) int
 		DocumentNumber    func(childComplexity int) int
+		EndToEndID        func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Inflow            func(childComplexity int) int
 		Outflow           func(childComplexity int) int
@@ -516,6 +517,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BankStatementEntry.DocumentNumber(childComplexity), true
+	case "BankStatementEntry.endToEndId":
+		if e.ComplexityRoot.BankStatementEntry.EndToEndID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BankStatementEntry.EndToEndID(childComplexity), true
 	case "BankStatementEntry.id":
 		if e.ComplexityRoot.BankStatementEntry.ID == nil {
 			break
@@ -2246,6 +2253,8 @@ func (ec *executionContext) childFields_BankStatementEntry(ctx context.Context, 
 		return ec.fieldContext_BankStatementEntry_documentNumber(ctx, field)
 	case "reference":
 		return ec.fieldContext_BankStatementEntry_reference(ctx, field)
+	case "endToEndId":
+		return ec.fieldContext_BankStatementEntry_endToEndId(ctx, field)
 	case "purpose":
 		return ec.fieldContext_BankStatementEntry_purpose(ctx, field)
 	}
@@ -4777,6 +4786,29 @@ func (ec *executionContext) _BankStatementEntry_reference(ctx context.Context, f
 	)
 }
 func (ec *executionContext) fieldContext_BankStatementEntry_reference(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _BankStatementEntry_endToEndId(ctx context.Context, field graphql.CollectedField, obj *BankStatementEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_BankStatementEntry_endToEndId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EndToEndID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_BankStatementEntry_endToEndId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("BankStatementEntry", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
@@ -11781,7 +11813,7 @@ func (ec *executionContext) unmarshalInputBankStatementEntryInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "customerId", "customerName", "transactionTypeId", "outflow", "inflow", "documentNumber", "reference", "purpose"}
+	fieldsInOrder := [...]string{"id", "customerId", "customerName", "transactionTypeId", "outflow", "inflow", "documentNumber", "reference", "endToEndId", "purpose"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11844,6 +11876,13 @@ func (ec *executionContext) unmarshalInputBankStatementEntryInput(ctx context.Co
 				return it, err
 			}
 			it.Reference = data
+		case "endToEndId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endToEndId"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EndToEndID = data
 		case "purpose":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("purpose"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -12897,6 +12936,11 @@ func (ec *executionContext) _BankStatementEntry(ctx context.Context, sel ast.Sel
 			}
 		case "reference":
 			out.Values[i] = ec._BankStatementEntry_reference(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "endToEndId":
+			out.Values[i] = ec._BankStatementEntry_endToEndId(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

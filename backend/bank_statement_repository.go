@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -198,8 +199,12 @@ func (repository *BankStatementRepository) GetByNumber(ctx context.Context, busi
 		return nil, fmt.Errorf("statementNumber must be positive")
 	}
 	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
+	}
 	statement := &BankStatement{}
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
+	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT RecNo, Stevilka, Datum, Racun
 		FROM [%s].[dbo].[BankaZRSaldo]
 		WHERE Stevilka = @number AND ISNULL(Deleted, 0) = 0`, databaseName), sql.Named("number", number)).Scan(
@@ -215,14 +220,17 @@ func (repository *BankStatementRepository) GetByNumber(ctx context.Context, busi
 		SELECT transactionRow.RecNo, transactionRow.Datum, transactionRow.SifraPartnerja,
 			transactionRow.ImePartnerja, transactionType.IME, transactionRow.VrstaDogodka,
 			transactionRow.VBreme, transactionRow.VDobro, transactionRow.Stevilka,
-			transactionRow.Sklic, transactionRow.Opomba
+			transactionRow.Sklic, transactionDetails.end_to_end_id, transactionRow.Opomba
 		FROM [%s].[dbo].[BankaZR] transactionRow
 		LEFT JOIN [%s].[dbo].[BankaZRVD] transactionType
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
+		LEFT JOIN [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
+		  ON transactionDetails.business_year_id = @businessYearID
+		 AND transactionDetails.bank_statement_transaction_id = transactionRow.RecNo
 		WHERE transactionRow.Banka = @bankAccount
 		  AND CAST(transactionRow.Datum AS date) = CAST(@statementDate AS date)
 		ORDER BY transactionRow.RecNo`, databaseName, databaseName),
-		sql.Named("bankAccount", statement.BankAccount), sql.Named("statementDate", statement.StatementDate))
+		sql.Named("businessYearID", businessYearID), sql.Named("bankAccount", statement.BankAccount), sql.Named("statementDate", statement.StatementDate))
 	if err != nil {
 		return nil, fmt.Errorf("get bank statement entries: %w", err)
 	}
@@ -232,7 +240,7 @@ func (repository *BankStatementRepository) GetByNumber(ctx context.Context, busi
 		entry := &BankStatementEntry{StatementID: statement.ID, StatementNumber: statement.StatementNumber}
 		if err := rows.Scan(&entry.ID, &entry.PaymentDate, &entry.CustomerID, &entry.CustomerName,
 			&entry.TransactionType, &entry.TransactionTypeID, &entry.Outflow, &entry.Inflow,
-			&entry.DocumentNumber, &entry.Reference, &entry.Purpose); err != nil {
+			&entry.DocumentNumber, &entry.Reference, &entry.EndToEndID, &entry.Purpose); err != nil {
 			return nil, fmt.Errorf("scan bank statement entry: %w", err)
 		}
 		statement.Entries = append(statement.Entries, entry)
@@ -254,6 +262,10 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	if input.BankAccount == "" {
 		return nil, fmt.Errorf("bankAccount is required")
 	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
+	}
 	if isIBAN(input.BankAccount) {
 		account, accountErr := repository.EnsureAccount(ctx, businessYear, input.BankAccount)
 		if accountErr != nil {
@@ -274,6 +286,17 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 				entry.Reference = nil
 			} else {
 				entry.Reference = &reference
+			}
+		}
+		if entry.EndToEndID != nil {
+			endToEndId := strings.TrimSpace(*entry.EndToEndID)
+			if utf8.RuneCountInString(endToEndId) > maxBankStatementEndToEndIDLength {
+				return nil, fmt.Errorf("entry %d end-to-end ID must be at most %d characters", index+1, maxBankStatementEndToEndIDLength)
+			}
+			if endToEndId == "" {
+				entry.EndToEndID = nil
+			} else {
+				entry.EndToEndID = &endToEndId
 			}
 		}
 		outflow, inflow := 0.0, 0.0
@@ -363,8 +386,38 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 		if _, err = tx.ExecContext(ctx, "INSERT INTO #SavedBankEntries (RecNo) VALUES (@id)", sql.Named("id", entryID)); err != nil {
 			return nil, err
 		}
+		if entry.EndToEndID == nil {
+			if _, err = tx.ExecContext(ctx, `DELETE FROM [Bureaucracy].[dbo].[bank_statement_transaction_details]
+				WHERE business_year_id=@businessYearID AND bank_statement_transaction_id=@entryID`,
+				sql.Named("businessYearID", businessYearID), sql.Named("entryID", entryID)); err != nil {
+				return nil, fmt.Errorf("remove bank statement entry end-to-end ID: %w", err)
+			}
+		} else {
+			if _, err = tx.ExecContext(ctx, `MERGE [Bureaucracy].[dbo].[bank_statement_transaction_details] AS target
+				USING (SELECT @businessYearID AS business_year_id, @entryID AS bank_statement_transaction_id) AS source
+				ON target.business_year_id=source.business_year_id
+				AND target.bank_statement_transaction_id=source.bank_statement_transaction_id
+				WHEN MATCHED THEN UPDATE SET end_to_end_id=@endToEndId, updated_at=SYSUTCDATETIME()
+				WHEN NOT MATCHED THEN INSERT (business_year_id,bank_statement_transaction_id,end_to_end_id)
+				VALUES (@businessYearID,@entryID,@endToEndId);`,
+				sql.Named("businessYearID", businessYearID), sql.Named("entryID", entryID), sql.Named("endToEndId", entry.EndToEndID)); err != nil {
+				return nil, fmt.Errorf("save bank statement entry end-to-end ID: %w", err)
+			}
+		}
 	}
 	if oldDate != nil && oldAccount != nil {
+		_, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE transactionDetails
+			FROM [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
+			INNER JOIN [%s].[dbo].[BankaZR] transactionRow
+			  ON transactionRow.RecNo=transactionDetails.bank_statement_transaction_id
+			WHERE transactionDetails.business_year_id=@businessYearID
+			  AND transactionRow.Banka=@oldAccount
+			  AND CAST(transactionRow.Datum AS date)=CAST(@oldDate AS date)
+			  AND NOT EXISTS (SELECT 1 FROM #SavedBankEntries saved WHERE saved.RecNo=transactionRow.RecNo)`, databaseName),
+			sql.Named("businessYearID", businessYearID), sql.Named("oldAccount", oldAccount), sql.Named("oldDate", oldDate))
+		if err != nil {
+			return nil, fmt.Errorf("remove stale bank statement entry references: %w", err)
+		}
 		_, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE transactionRow FROM [%s].[dbo].[BankaZR] transactionRow
 			WHERE transactionRow.Banka=@oldAccount AND CAST(transactionRow.Datum AS date)=CAST(@oldDate AS date)
 			AND NOT EXISTS (SELECT 1 FROM #SavedBankEntries saved WHERE saved.RecNo=transactionRow.RecNo)`, databaseName),
@@ -583,11 +636,16 @@ func (repository *BankStatementRepository) Search(
 	}
 
 	databaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid business year ID: %w", err)
+	}
 	bankAccountValue := ""
 	if bankAccount != nil {
 		bankAccountValue = strings.TrimSpace(*bankAccount)
 	}
 	arguments := []any{
+		sql.Named("businessYearID", businessYearID),
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
@@ -656,6 +714,7 @@ func (repository *BankStatementRepository) Search(
 			transactionRow.VDobro,
 			transactionRow.Stevilka,
 			transactionRow.Sklic,
+			transactionDetails.end_to_end_id,
 			transactionRow.Opomba
 		FROM PagedStatements statementRow
 		JOIN [%s].[dbo].[BankaZR] transactionRow
@@ -663,6 +722,9 @@ func (repository *BankStatementRepository) Search(
 		 AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 		LEFT JOIN [%s].[dbo].[BankaZRVD] transactionType
 		  ON transactionType.NumSifra = transactionRow.VrstaDogodka
+		LEFT JOIN [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
+		  ON transactionDetails.business_year_id = @businessYearID
+		 AND transactionDetails.bank_statement_transaction_id = transactionRow.RecNo
 		WHERE %s
 		ORDER BY %s, transactionRow.RecNo`, databaseName, databaseName,
 		statementMatchFilter, orderBy, databaseName, databaseName, transactionFilter, orderBy), queryArguments...)
@@ -687,6 +749,7 @@ func (repository *BankStatementRepository) Search(
 			&entry.Inflow,
 			&entry.DocumentNumber,
 			&entry.Reference,
+			&entry.EndToEndID,
 			&entry.Purpose,
 		); err != nil {
 			return nil, fmt.Errorf("scan bank statement entry: %w", err)

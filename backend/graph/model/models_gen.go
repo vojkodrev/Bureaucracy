@@ -19,6 +19,7 @@ type BankStatementEntryInput struct {
 	Inflow            *float64 `json:"inflow,omitempty"`
 	DocumentNumber    *string  `json:"documentNumber,omitempty"`
 	Reference         *string  `json:"reference,omitempty"`
+	EndToEndID        *string  `json:"endToEndId,omitempty"`
 	Purpose           *string  `json:"purpose,omitempty"`
 }
 

@@ -66,6 +66,7 @@ type BankStatementEntry {
   inflow: Float
   documentNumber: String
   reference: String
+  endToEndId: String
   purpose: String
 }
 
@@ -99,6 +100,7 @@ input BankStatementEntryInput {
   inflow: Float
   documentNumber: String
   reference: String
+  endToEndId: String
   purpose: String
 }
 

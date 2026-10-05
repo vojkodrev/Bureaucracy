@@ -8,6 +8,7 @@ import (
 
 const (
 	maxBankStatementCustomerNameLength = 60
+	maxBankStatementEndToEndIDLength   = 35
 	maxBankStatementReferenceLength    = 13
 )
 
@@ -48,6 +49,7 @@ type BankStatementEntry struct {
 	Inflow            *float64   `json:"inflow"`
 	DocumentNumber    *string    `json:"documentNumber"`
 	Reference         *string    `json:"reference"`
+	EndToEndID        *string    `json:"endToEndId"`
 	Purpose           *string    `json:"purpose"`
 }
 
