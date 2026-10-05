@@ -202,16 +202,9 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 		if item == nil {
 			continue
 		}
-		quantity := float64OrZero(item.Quantity)
-		netAmount := float64OrZero(item.NetAmount)
-		grossAmount := float64OrZero(item.GrossAmount)
-		discount := float64OrZero(item.Discount)
-		discountedUnitPrice := divide(netAmount, quantity)
-		unitPrice := float64OrZero(item.UnitPrice)
-		originalNetAmount := unitPrice * quantity
-		rate := float64OrZero(item.TaxRate)
-		group := taxGroups[rate]
-		taxGroups[rate] = [2]float64{group[0] + netAmount, group[1] + grossAmount - netAmount}
+		amounts := calculateInvoiceItemAmounts(item)
+		group := taxGroups[amounts.TaxRate]
+		taxGroups[amounts.TaxRate] = [2]float64{group[0] + amounts.NetAmount, group[1] + amounts.GrossAmount - amounts.NetAmount}
 
 		sequence := index + 1
 		if item.Sequence != nil {
@@ -220,15 +213,15 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 		printItems = append(printItems, invoicePrintItem{
 			Sequence:         fmt.Sprintf("%d", sequence),
 			Description:      strings.TrimSpace(trimmedString(item.ProductName)),
-			Quantity:         formatQuantity(quantity),
+			Quantity:         formatQuantity(amounts.Quantity),
 			Unit:             trimmedString(item.Unit),
-			UnitPrice:        formatMoneyAmount(unitPrice),
-			Discount:         formatPercentage(discount),
-			DiscountAmount:   formatMoneyAmount(originalNetAmount - netAmount),
-			DiscountedPrice:  formatMoneyAmount(discountedUnitPrice),
-			TaxRate:          formatPercentage(rate),
-			UnitPriceWithTax: formatMoneyAmount(divide(grossAmount, quantity)),
-			NetAmount:        formatMoneyAmount(netAmount),
+			UnitPrice:        formatMoneyAmount(amounts.UnitPrice),
+			Discount:         formatPercentage(amounts.Discount),
+			DiscountAmount:   formatMoneyAmount(amounts.DiscountAmount),
+			DiscountedPrice:  formatMoneyAmount(amounts.DiscountedUnitPrice),
+			TaxRate:          formatPercentage(amounts.TaxRate),
+			UnitPriceWithTax: formatMoneyAmount(divide(amounts.GrossAmount, amounts.Quantity)),
+			NetAmount:        formatMoneyAmount(amounts.NetAmount),
 		})
 	}
 

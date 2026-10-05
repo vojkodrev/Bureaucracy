@@ -97,8 +97,11 @@ func (repository *PriceQuoteRepository) getItems(
 		SELECT ps.RecNo, ps.Zaporedje, ps.Artikel, a.Opis, a.Enota, ps.SifraDavka,
 			CAST(COALESCE(pd.Procent, a.Davek) AS float),
 			ps.ZnesekBrezDavka / NULLIF(ps.Kolicina, 0),
-			(ps.Znesek - ps.ZnesekBrezDavka) / NULLIF(ps.Kolicina, 0),
-			ps.Kolicina, CAST(ps.Rabat AS float), ps.ZnesekBrezDavka, ps.Znesek
+			(ps.ZnesekBrezDavka / NULLIF(ps.Kolicina, 0)) *
+				(CAST(COALESCE(pd.Procent, a.Davek) AS float) / 100),
+			ps.Kolicina, CAST(ps.Rabat AS float),
+			ps.ZnesekBrezDavka * (1 - COALESCE(CAST(ps.Rabat AS float), 0) / 100),
+			ps.Znesek
 		FROM [%s].[dbo].[PredracuniSpecifikacija] ps
 		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = ps.Artikel
 		LEFT JOIN [%s].[dbo].[PrometniDavek] pd ON pd.Sifra = ps.SifraDavka
