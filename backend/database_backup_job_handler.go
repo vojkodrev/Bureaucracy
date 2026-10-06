@@ -15,7 +15,7 @@ type DatabaseBackupJobHandler struct {
 }
 
 func NewDatabaseBackupJobHandler(database *sql.DB, config *AppConfig) *DatabaseBackupJobHandler {
-	return &DatabaseBackupJobHandler{database: database, backupFolder: config.MSSQLBackupFolder}
+	return &DatabaseBackupJobHandler{database: database, backupFolder: normalizePlatformPath(config.MSSQLBackupFolder)}
 }
 
 func (handler *DatabaseBackupJobHandler) Name() string {
@@ -79,16 +79,16 @@ EXEC sys.sp_executesql
 
 func (handler *DatabaseBackupJobHandler) ensureBackupFolder(ctx context.Context) error {
 	if _, err := handler.database.ExecContext(ctx, `
-DECLARE @file_exists int = 0;
-DECLARE @parent_directory_exists int = 0;
-DECLARE @is_directory int = 0;
-EXEC master.dbo.xp_fileexist
-    @backup_folder,
-    @file_exists OUTPUT,
-    @parent_directory_exists OUTPUT,
-    @is_directory OUTPUT;
+CREATE TABLE #backup_path_info (
+    file_exists int,
+    is_directory int,
+    parent_directory_exists int
+);
 
-IF @is_directory = 0
+INSERT INTO #backup_path_info
+EXEC master.dbo.xp_fileexist @backup_folder;
+
+IF NOT EXISTS (SELECT 1 FROM #backup_path_info WHERE is_directory = 1)
     EXEC master.dbo.xp_create_subdir @backup_folder;`,
 		sql.Named("backup_folder", handler.backupFolder),
 	); err != nil {

@@ -35,9 +35,26 @@ func safeUploadFilename(value string) string {
 // syntax of the configured path, rather than the OS running the backend. This
 // matters when SQL Server is hosted on a different operating system.
 func joinPlatformPath(folder, filename string) string {
-	folder = strings.TrimSpace(folder)
+	folder = normalizePlatformPath(folder)
 	if windowsAbsolutePathPattern.MatchString(folder) || strings.HasPrefix(folder, `\\`) {
 		return strings.TrimRight(folder, `\/`) + `\` + filename
 	}
 	return path.Join(folder, filename)
+}
+
+func normalizePlatformPath(value string) string {
+	value = strings.TrimSpace(value)
+	if !windowsAbsolutePathPattern.MatchString(value) && !strings.HasPrefix(value, `\\`) {
+		return value
+	}
+
+	prefix := ""
+	if strings.HasPrefix(value, `\\`) {
+		prefix = `\\`
+		value = strings.TrimLeft(value, `\`)
+	}
+	for strings.Contains(value, `\\`) {
+		value = strings.ReplaceAll(value, `\\`, `\`)
+	}
+	return prefix + value
 }
