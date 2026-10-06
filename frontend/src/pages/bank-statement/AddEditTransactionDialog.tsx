@@ -55,6 +55,7 @@ function AddEditTransactionDialog({
         entry?.documentNumber ?? "",
     );
     const [reference, setReference] = useState(entry?.reference ?? "");
+    const [endToEndId, setEndToEndId] = useState(entry?.endToEndId ?? "");
     const [purpose, setPurpose] = useState(entry?.purpose ?? "");
     const outflowValue = numberOrNull(outflow);
     const inflowValue = numberOrNull(inflow);
@@ -77,6 +78,7 @@ function AddEditTransactionDialog({
             inflow: inflowValue,
             documentNumber: documentNumber.trim() || null,
             reference: reference.trim() || null,
+            endToEndId: endToEndId.trim() || null,
             purpose: purpose.trim() || null,
         });
     return (
@@ -150,6 +152,17 @@ function AddEditTransactionDialog({
                             maxLength={13}
                             value={reference}
                             onChange={(event) => setReference(event.target.value)}
+                        />
+                    </Field>
+                    <Field>
+                        <FieldLabel htmlFor="transaction-end-to-end-id">
+                            End-to-end ID
+                        </FieldLabel>
+                        <Input
+                            id="transaction-end-to-end-id"
+                            maxLength={35}
+                            value={endToEndId}
+                            onChange={(event) => setEndToEndId(event.target.value)}
                         />
                     </Field>
                     <Field className="sm:col-span-2">

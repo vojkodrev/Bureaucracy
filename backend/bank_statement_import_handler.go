@@ -45,6 +45,9 @@ type camtEntry struct {
 }
 
 type camtTransaction struct {
+	References struct {
+		EndToEndID string `xml:"EndToEndId"`
+	} `xml:"Refs"`
 	AmountDetails struct {
 		TransactionAmount struct {
 			Amount string `xml:"Amt"`
@@ -291,6 +294,9 @@ func parseCamtEntry(source camtEntry) ([]*model.BankStatementEntryInput, error) 
 			entry.CustomerName = &name
 		}
 		reference, purpose := camtRemittanceDetails(transaction)
+		if direction == "DBIT" {
+			entry.EndToEndID = camtEndToEndID(transaction.References.EndToEndID)
+		}
 		entry.Reference = reference
 		entry.Purpose = purpose
 		if direction == "CRDT" {
@@ -301,6 +307,15 @@ func parseCamtEntry(source camtEntry) ([]*model.BankStatementEntryInput, error) 
 		entries = append(entries, entry)
 	}
 	return entries, nil
+}
+
+func camtEndToEndID(value string) *string {
+	endToEndID := strings.TrimSpace(value)
+	if endToEndID == "" || strings.EqualFold(endToEndID, "NOTPROVIDED") {
+		return nil
+	}
+	endToEndID = truncateRunes(endToEndID, maxBankStatementEndToEndIDLength)
+	return &endToEndID
 }
 
 func camtRemittanceDetails(transaction camtTransaction) (*string, *string) {

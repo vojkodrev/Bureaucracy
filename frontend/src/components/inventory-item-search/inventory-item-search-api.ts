@@ -15,6 +15,16 @@ type SearchInventoryItemsResponse = {
     errors?: { message: string }[]
 }
 
+type InventoryItemGoodsReceiptCountsResponse = {
+    data?: {
+        inventoryItemGoodsReceiptCounts: {
+            productCode: string
+            goodsReceiptCount: number
+        }[]
+    }
+    errors?: { message: string }[]
+}
+
 const query = `
     query SearchInventoryItems(
         $businessYear: String!
@@ -64,4 +74,29 @@ export async function fetchInventoryItemSearch(
         ),
     }, signal)
     return result.data?.searchInventoryItems ?? null
+}
+
+const inventoryItemGoodsReceiptCountsQuery = `
+    query InventoryItemGoodsReceiptCounts($businessYear: String!, $productCodes: [String!]!) {
+        inventoryItemGoodsReceiptCounts(businessYear: $businessYear, productCodes: $productCodes) {
+            productCode
+            goodsReceiptCount
+        }
+    }
+`
+
+export async function fetchInventoryItemGoodsReceiptCounts(
+    productCodes: string[],
+    signal?: AbortSignal,
+): Promise<Record<string, number>> {
+    const result = await postGraphql<InventoryItemGoodsReceiptCountsResponse>(
+        inventoryItemGoodsReceiptCountsQuery,
+        { businessYear: getSelectedBusinessYear(), productCodes },
+        signal,
+    )
+    return Object.fromEntries(
+        (result.data?.inventoryItemGoodsReceiptCounts ?? []).map(
+            ({ productCode, goodsReceiptCount }) => [productCode, goodsReceiptCount],
+        ),
+    )
 }

@@ -9,7 +9,7 @@ const bankStatementQuery = `
             id statementNumber statementDate bankAccount
             entries {
                 id statementId statementNumber paymentDate customerId customerName
-                transactionType transactionTypeId outflow inflow documentNumber reference purpose
+                transactionType transactionTypeId outflow inflow documentNumber reference endToEndId purpose
             }
         }
     }
@@ -41,7 +41,7 @@ const saveBankStatementMutation = `
             id statementNumber statementDate bankAccount
             entries {
                 id statementId statementNumber paymentDate customerId customerName
-                transactionType transactionTypeId outflow inflow documentNumber reference purpose
+                transactionType transactionTypeId outflow inflow documentNumber reference endToEndId purpose
             }
         }
     }

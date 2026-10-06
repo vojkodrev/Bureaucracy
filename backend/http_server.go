@@ -36,6 +36,7 @@ func NewHTTPServer(
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
+	bankStatementReportHandler *BankStatementReportHandler,
 	fileHandler *FileHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
@@ -85,6 +86,7 @@ func NewHTTPServer(
 	admin.GET("/api/exports/accounting", accountingExportHandler.Handle)
 	admin.POST("/api/exports/accounting/email", accountingExportHandler.Send)
 	admin.POST("/api/bank-statements/import", bankStatementImportHandler.Handle)
+	admin.GET("/api/bank-statements/report/pdf", bankStatementReportHandler.Handle)
 
 	return &HTTPServer{
 		config: config,

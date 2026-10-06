@@ -5,6 +5,9 @@ import { optionalFilter } from '@/lib/filters'
 import { postGraphql } from '@/lib/graphql'
 import { defaultPage, defaultPageSize, maximumPageSize, positiveInteger } from '@/lib/pagination'
 import type { BankStatementSearchCriteria } from './types'
+import { bankStatementSearchToParams } from './bank-statement-search-params'
+
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 type SearchBankStatementsResponse = {
     data?: { searchBankStatements: BankStatementPage }
@@ -127,4 +130,14 @@ export async function fetchBankStatementInvoicePayments(
         signal,
     )
     return result.data?.bankStatementInvoicePayments ?? []
+}
+
+export function bankStatementReportPdfUrl(search: BankStatementSearchCriteria): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = '/api/bank-statements/report/pdf'
+    url.search = bankStatementSearchToParams(search).toString()
+    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.searchParams.set('_', String(Date.now()))
+    url.hash = ''
+    return url.toString()
 }

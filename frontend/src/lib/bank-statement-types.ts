@@ -11,6 +11,7 @@ export type BankStatementEntry = {
     inflow: number | null
     documentNumber: string | null
     reference: string | null
+    endToEndId: string | null
     purpose: string | null
 }
 

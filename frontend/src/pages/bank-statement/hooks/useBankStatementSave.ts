@@ -55,6 +55,7 @@ export function useBankStatementSave({
                     inflow: entry.inflow,
                     documentNumber: entry.documentNumber,
                     reference: entry.reference,
+                    endToEndId: entry.endToEndId,
                     purpose: entry.purpose,
                 })),
             });

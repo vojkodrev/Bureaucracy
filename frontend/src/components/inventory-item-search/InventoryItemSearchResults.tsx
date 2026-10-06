@@ -5,6 +5,7 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
@@ -26,6 +27,10 @@ type Props = {
     isLoading: boolean;
     mode: ComponentMode;
     showSearchFields: boolean;
+    showGoodsReceiptCount: boolean;
+    goodsReceiptCounts: Record<string, number>;
+    goodsReceiptCountsLoading: boolean;
+    goodsReceiptCountsError: boolean;
     onPageChange: (page: number) => void;
     onPageSizeChange: (pageSize: number) => void;
     onSort: (sortBy: InventoryItemSortColumn) => void;
@@ -39,6 +44,10 @@ export default function InventoryItemSearchResults({
     isLoading,
     mode,
     showSearchFields,
+    showGoodsReceiptCount,
+    goodsReceiptCounts,
+    goodsReceiptCountsLoading,
+    goodsReceiptCountsError,
     onPageChange,
     onPageSizeChange,
     onSort,
@@ -52,6 +61,8 @@ export default function InventoryItemSearchResults({
         ? Math.min(itemPage.page * itemPage.pageSize, itemPage.totalCount)
         : 0;
     const isPageMode = mode === ComponentMode.Page;
+    const columnCount = inventoryItemSortColumns.length +
+        (showGoodsReceiptCount ? 1 : 0);
 
     return (
         <div className={showSearchFields ? "mt-8" : undefined}>
@@ -85,13 +96,18 @@ export default function InventoryItemSearchResults({
                                 />
                             ),
                         )}
+                        {showGoodsReceiptCount && (
+                            <TableHead className="text-right">
+                                Goods receipts
+                            </TableHead>
+                        )}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isLoading && !items.length && (
                         <TableRow>
                             <TableCell
-                                colSpan={4}
+                                colSpan={columnCount}
                                 className="h-24 text-center text-muted-foreground"
                             >
                                 Loading inventory items…
@@ -101,7 +117,7 @@ export default function InventoryItemSearchResults({
                     {!isLoading && items.length === 0 && (
                         <TableRow>
                             <TableCell
-                                colSpan={4}
+                                colSpan={columnCount}
                                 className="h-24 text-center text-muted-foreground"
                             >
                                 No inventory items found.
@@ -146,6 +162,21 @@ export default function InventoryItemSearchResults({
                                         "en-IE",
                                     ) ?? "—"}
                                 </SearchResultCell>
+                                {showGoodsReceiptCount && (
+                                    <SearchResultCell
+                                        to={isPageMode && item.productCode ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined}
+                                        linkLabel={`Open inventory item ${item.productCode}`}
+                                        className="text-right tabular-nums"
+                                    >
+                                        {goodsReceiptCountsLoading
+                                            ? "…"
+                                            : goodsReceiptCountsError
+                                              ? "—"
+                                              : item.productCode
+                                                ? goodsReceiptCounts[item.productCode] ?? 0
+                                                : 0}
+                                    </SearchResultCell>
+                                )}
                             </TableRow>
                         ))}
                 </TableBody>
