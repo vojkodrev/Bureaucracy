@@ -10,6 +10,8 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewAuthMiddleware),
 		fx.Provide(NewDatabase),
 		fx.Provide(NewDatabaseMigrator),
+		fx.Provide(NewDatabaseBackupJobHandler),
+		fx.Provide(NewCronServer),
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewBankStatementRepository),
 		fx.Provide(NewBankStatementImportHandler),
@@ -55,6 +57,7 @@ func CoreInvocations() fx.Option {
 	return fx.Options(
 		fx.Invoke(RegisterDatabaseLifecycle),
 		fx.Invoke(RegisterDatabaseMigrationLifecycle),
+		fx.Invoke(RegisterCronServerLifecycle),
 		fx.Invoke(RegisterApplicationLifecycle),
 		fx.Invoke(RegisterHTTPServerLifecycle),
 	)

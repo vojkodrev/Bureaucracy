@@ -226,6 +226,7 @@ func parseBankStatementXML(data []byte, filename string, fileIndex int) ([]parse
 		return nil, fmt.Errorf("no ISO 20022 bank statement was found")
 	}
 	statements := make([]parsedBankStatement, 0, len(document.Statements))
+	var statementDate string
 	for statementIndex, source := range document.Statements {
 		date := strings.TrimSpace(source.CreationDate)
 		for _, balance := range source.Balances {
@@ -239,6 +240,11 @@ func parseBankStatementXML(data []byte, filename string, fileIndex int) ([]parse
 		}
 		if _, err := time.Parse("2006-01-02", date); err != nil {
 			return nil, fmt.Errorf("statement date is missing or invalid")
+		}
+		if statementDate == "" {
+			statementDate = date
+		} else if date != statementDate {
+			return nil, fmt.Errorf("bank statement contains multiple dates (%s and %s)", statementDate, date)
 		}
 		iban := normalizeBankAccountNumber(source.Account.IBAN)
 		if !isIBAN(iban) {
