@@ -31,6 +31,16 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
     const hiddenDateCount = missingDates.length - visibleDates.length
     const displayedDates = showHiddenDates ? missingDates : visibleDates
 
+    const updateHiddenDates = (nextHiddenDates: Set<string>) => {
+        setHiddenDates(nextHiddenDates)
+
+        try {
+            localStorage.setItem(hiddenDatesStorageKey, JSON.stringify([...nextHiddenDates]))
+        } catch {
+            // The dates still stay hidden until the page is refreshed when storage is unavailable.
+        }
+    }
+
     const toggleDateVisibility = (date: string) => {
         const nextHiddenDates = new Set(hiddenDates)
         if (nextHiddenDates.has(date)) {
@@ -38,13 +48,16 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
         } else {
             nextHiddenDates.add(date)
         }
-        setHiddenDates(nextHiddenDates)
+        updateHiddenDates(nextHiddenDates)
+    }
 
-        try {
-            localStorage.setItem(hiddenDatesStorageKey, JSON.stringify([...nextHiddenDates]))
-        } catch {
-            // The date still stays hidden until the page is refreshed when storage is unavailable.
-        }
+    const hideAllDates = () => {
+        updateHiddenDates(new Set([
+            ...hiddenDates,
+            ...missingDates.map((missingDate) => missingDate.date),
+        ]))
+        setShowHiddenDates(false)
+        setExpanded(false)
     }
 
     if (dismissed || missingDates.length === 0) return null
@@ -89,6 +102,21 @@ function MissingBankStatementsAlert({ missingDates }: MissingBankStatementsAlert
                         {showHiddenDates
                             ? `Show only visible dates (${hiddenDateCount} hidden)`
                             : `Show all dates (${hiddenDateCount} hidden)`}
+                    </Button>
+                )}
+                {visibleDates.length > 0 && (
+                    <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0"
+                        onClick={(event) => {
+                            event.stopPropagation()
+                            hideAllDates()
+                        }}
+                        onKeyDown={(event) => event.stopPropagation()}
+                    >
+                        Hide all dates
                     </Button>
                 )}
             </AlertTitle>
