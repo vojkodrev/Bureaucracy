@@ -22,6 +22,7 @@ type AppConfig struct {
 	MSSQLEncrypt                string
 	MSSQLTrustServerCertificate string
 	MSSQLBackupFolder           string
+	CronEnabled                 bool
 	SMTPHost                    string
 	SMTPPort                    string
 	SMTPUsername                string
@@ -52,6 +53,7 @@ func NewAppConfig() *AppConfig {
 		MSSQLEncrypt:                envOrDefault("MSSQL_ENCRYPT", "true"),
 		MSSQLTrustServerCertificate: envOrDefault("MSSQL_TRUST_SERVER_CERTIFICATE", "false"),
 		MSSQLBackupFolder:           strings.TrimSpace(os.Getenv("MSSQL_BACKUP_FOLDER")),
+		CronEnabled:                 strings.EqualFold(strings.TrimSpace(envOrDefault("CRON_ENABLED", "false")), "true"),
 		SMTPHost:                    os.Getenv("SMTP_HOST"),
 		SMTPPort:                    envOrDefault("SMTP_PORT", "587"),
 		SMTPUsername:                os.Getenv("SMTP_USERNAME"),

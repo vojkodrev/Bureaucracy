@@ -11,6 +11,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewDatabase),
 		fx.Provide(NewDatabaseMigrator),
 		fx.Provide(NewDatabaseBackupJobHandler),
+		fx.Provide(NewFileStorageCleanupJobHandler),
 		fx.Provide(NewCronServer),
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewBankStatementRepository),
