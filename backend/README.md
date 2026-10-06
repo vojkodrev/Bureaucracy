@@ -21,6 +21,17 @@ During startup, the backend waits for the realm's signing keys, retrying failed
 fetches every two seconds with a five-second timeout per attempt. Keycloak,
 the backend, and the frontend can be launched together with `../run-prod.ps1`.
 
+Scheduled jobs are defined in `cron_jobs.csv`. The database backup job runs
+every day at 03:00 in the backend process's local timezone. Set
+`MSSQL_BACKUP_FOLDER` to a directory that the SQL Server service can write to,
+such as `/var/opt/mssql/backups` on Linux or macOS-hosted containers, or
+`H:\backups` on Windows. Because `BACKUP DATABASE` runs on SQL Server, this path
+refers to the SQL Server host or container, not necessarily the backend host.
+The job asks SQL Server to create the directory when it does not exist. Each
+online, non-system database is written to `<database-name>.bak`. Daily backups
+are appended as separate backup sets, allowing a specific backup position to be
+selected during restore.
+
 Invoice PDFs are served as inline documents from
 `GET /api/invoices/:invoiceNumber/pdf`. The placeholder implementation does
 not query the database yet.
