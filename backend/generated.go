@@ -360,7 +360,7 @@ type ComplexityRoot struct {
 		PriceQuoteTextTemplate          func(childComplexity int, businessYear string) int
 		Product                         func(childComplexity int, businessYear string, productCode string) int
 		ProductInvoiceCounts            func(childComplexity int, businessYear string, productCodes []string) int
-		SearchBankStatements            func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchBankStatements            func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, reference *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers                 func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchGoodsReceipts             func(childComplexity int, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInventoryItems            func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -402,7 +402,7 @@ type QueryResolver interface {
 	GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error)
 	LatestInventoryItemPhotos(ctx context.Context, businessYear string, productCode string) ([]*GoodsReceiptItemPhoto, error)
 	SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error)
-	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
+	SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, reference *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error)
 	BankStatementInvoicePayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error)
 	BankAccounts(ctx context.Context, businessYear string) ([]*BankAccount, error)
 	BankTransactionTypes(ctx context.Context, businessYear string) ([]*BankTransactionType, error)
@@ -1993,7 +1993,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["documentNumber"].(*string), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["documentNumber"].(*string), args["reference"].(*string), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchCustomers":
 		if e.ComplexityRoot.Query.SearchCustomers == nil {
 			break
@@ -3625,62 +3625,70 @@ func (ec *executionContext) field_Query_searchBankStatements_args(ctx context.Co
 		return nil, err
 	}
 	args["documentNumber"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "bankAccount",
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "reference",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["bankAccount"] = arg5
-	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+	args["reference"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "bankAccount",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerId"] = arg6
-	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+	args["bankAccount"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerName"] = arg7
-	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+	args["customerId"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortBy"] = arg8
-	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+	args["customerName"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortDirection"] = arg9
-	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["sortBy"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg10
-	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg11
+	args["pageSize"] = arg12
 	return args, nil
 }
 
@@ -9495,7 +9503,7 @@ func (ec *executionContext) _Query_searchBankStatements(ctx context.Context, fie
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["documentNumber"].(*string), fc.Args["bankAccount"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+			return ec.Resolvers.Query().SearchBankStatements(ctx, fc.Args["businessYear"].(string), fc.Args["dateFrom"].(*time.Time), fc.Args["dateTo"].(*time.Time), fc.Args["statementNumber"].(*int), fc.Args["documentNumber"].(*string), fc.Args["reference"].(*string), fc.Args["bankAccount"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *BankStatementPage) graphql.Marshaler {

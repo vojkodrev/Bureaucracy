@@ -607,6 +607,7 @@ func (repository *BankStatementRepository) Search(
 	dateTo *time.Time,
 	statementNumber *int,
 	documentNumber *string,
+	reference *string,
 	bankAccount *string,
 	customerID *string,
 	customerName *string,
@@ -650,6 +651,7 @@ func (repository *BankStatementRepository) Search(
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
 		sql.Named("documentNumber", optionalLikePattern(documentNumber)),
+		sql.Named("reference", optionalLikePattern(reference)),
 		sql.Named("bankAccount", bankAccountValue),
 		sql.Named("customerID", optionalLikePattern(customerID)),
 		sql.Named("customerName", optionalLikePattern(customerName)),
@@ -659,6 +661,9 @@ func (repository *BankStatementRepository) Search(
 		AND (@dateTo IS NULL OR transactionRow.Datum < DATEADD(day, 1, @dateTo))`
 	statementMatchFilter := transactionFilter + `
 		AND (@documentNumber = '' OR transactionRow.Stevilka LIKE @documentNumber ESCAPE '\')
+		AND (@reference = '' OR transactionRow.Sklic LIKE @reference ESCAPE '\'
+			OR transactionDetails.end_to_end_id LIKE @reference ESCAPE '\'
+			OR transactionRow.Opomba LIKE @reference ESCAPE '\')
 		AND (@customerID = '' OR transactionRow.SifraPartnerja LIKE @customerID ESCAPE '\')
 		AND (@customerName = '' OR transactionRow.ImePartnerja LIKE @customerName ESCAPE '\')`
 
@@ -672,6 +677,9 @@ func (repository *BankStatementRepository) Search(
 		  AND EXISTS (
 			SELECT 1
 			FROM [%s].[dbo].[BankaZR] transactionRow
+			LEFT JOIN [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
+			  ON transactionDetails.business_year_id = @businessYearID
+			 AND transactionDetails.bank_statement_transaction_id = transactionRow.RecNo
 			WHERE transactionRow.Banka = statementRow.Racun
 			  AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 			  AND %s
@@ -694,6 +702,9 @@ func (repository *BankStatementRepository) Search(
 			  AND EXISTS (
 				SELECT 1
 				FROM [%s].[dbo].[BankaZR] transactionRow
+				LEFT JOIN [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
+				  ON transactionDetails.business_year_id = @businessYearID
+				 AND transactionDetails.bank_statement_transaction_id = transactionRow.RecNo
 				WHERE transactionRow.Banka = statementRow.Racun
 				  AND CAST(transactionRow.Datum AS date) = CAST(statementRow.Datum AS date)
 				  AND %s

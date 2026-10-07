@@ -462,6 +462,7 @@ type Query {
     dateTo: Time
     statementNumber: Int
     documentNumber: String
+    reference: String
     bankAccount: String
     customerId: String
     customerName: String
