@@ -69,7 +69,8 @@ export default function PhotoCarousel({
                                             <AuthenticatedImage
                                                 src={photo.src}
                                                 alt={photo.alt}
-                                                className="block h-full w-full object-cover object-center"
+                                                decoding="async"
+                                                className="block h-full w-full transform-gpu object-cover object-center [backface-visibility:hidden] [image-rendering:auto]"
                                             />
                                         </button>
                                         {onRemovePhoto && (
