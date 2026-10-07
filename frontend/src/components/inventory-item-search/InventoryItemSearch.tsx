@@ -5,7 +5,8 @@ import { useInventoryItemGoodsReceiptCounts } from "./hooks/useInventoryItemGood
 import { useInventoryItemSearchResults } from "./hooks/useInventoryItemSearchResults";
 import { useInventoryItemSearchState } from "./hooks/useInventoryItemSearchState";
 import InventoryItemSearchForm from "./InventoryItemSearchForm";
-import InventoryItemSearchResults from "./InventoryItemSearchResults";
+import InventoryItemListResults from "./InventoryItemListResults";
+import InventoryItemLowStockResults from "./InventoryItemLowStockResults";
 
 type InventoryItemSearchProps = {
     mode: ComponentMode;
@@ -50,12 +51,13 @@ export default function InventoryItemSearch({
                 <InventoryItemSearchForm
                     key={searchKey}
                     search={search}
+                    showResultsView={mode === ComponentMode.Page}
                     onSubmit={searchState.updateSearch}
                     onReset={searchState.clearSearch}
                 />
             )}
-            {!error && (
-                <InventoryItemSearchResults
+            {!error && search.resultsView === "itemList" && (
+                <InventoryItemListResults
                     search={search}
                     itemPage={itemPage}
                     items={items}
@@ -66,6 +68,22 @@ export default function InventoryItemSearch({
                     goodsReceiptCounts={goodsReceiptCounts.counts}
                     goodsReceiptCountsLoading={goodsReceiptCounts.isLoading}
                     goodsReceiptCountsError={goodsReceiptCounts.error}
+                    onPageChange={(page) =>
+                        searchState.changePage(page, itemPage?.pageSize)
+                    }
+                    onPageSizeChange={searchState.changePageSize}
+                    onSort={searchState.changeSort}
+                    onInventoryItemSelect={onInventoryItemSelect}
+                />
+            )}
+            {!error && search.resultsView === "lowStock" && (
+                <InventoryItemLowStockResults
+                    search={search}
+                    itemPage={itemPage}
+                    items={items}
+                    isLoading={isLoading}
+                    mode={mode}
+                    showSearchFields={showSearchFields}
                     onPageChange={(page) =>
                         searchState.changePage(page, itemPage?.pageSize)
                     }

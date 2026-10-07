@@ -133,6 +133,109 @@ func (repository *InventoryItemRepository) Search(
 	)
 }
 
+// SearchLowStock returns items whose stock is below the configured
+// minimum or no more than 20 percent above it. Items without a positive minimum are omitted.
+func (repository *InventoryItemRepository) SearchLowStock(
+	ctx context.Context,
+	businessYear string,
+	productCode *string,
+	productName *string,
+	sortBy *string,
+	sortDirection *string,
+	page int,
+	pageSize int,
+) (*InventoryItemPage, error) {
+	if !businessYearPattern.MatchString(businessYear) {
+		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	if page < 1 {
+		return nil, fmt.Errorf("page must be at least 1")
+	}
+	if pageSize < 1 || pageSize > 10000 {
+		return nil, fmt.Errorf("pageSize must be between 1 and 10000")
+	}
+	orderBy, err := inventoryItemOrderBy(sortBy, sortDirection)
+	if err != nil {
+		return nil, err
+	}
+	return repository.searchLowStockInventoryItems(
+		ctx, fmt.Sprintf("BIRO%s3", businessYear), fmt.Sprintf("BIRO%s5", businessYear),
+		productCode, productName, orderBy, page, pageSize,
+	)
+}
+
+func (repository *InventoryItemRepository) searchLowStockInventoryItems(
+	ctx context.Context,
+	inventoryDatabase string,
+	receiptDatabase string,
+	productCode *string,
+	productName *string,
+	orderBy string,
+	page int,
+	pageSize int,
+) (*InventoryItemPage, error) {
+	arguments := []any{
+		sql.Named("productCode", optionalLikePattern(productCode)),
+		sql.Named("productName", optionalLikePattern(productName)),
+	}
+	fromAndFilters := fmt.Sprintf(`
+		FROM [%s].[dbo].[ArtikelNabava] inventory
+		LEFT JOIN (
+			SELECT item.Artikel AS ProductCode, SUM(COALESCE(item.Kolicina, 0)) AS CurrentStock
+			FROM [%s].[dbo].[DobavaSpecifikacija] item
+			INNER JOIN [%s].[dbo].[Dobava] receipt
+				ON receipt.Stevilka = item.Stevilka
+				AND ISNULL(receipt.MPO, '') = ISNULL(item.MPO, '')
+			WHERE ISNULL(item.Deleted, 0) = 0
+			GROUP BY item.Artikel
+		) stock ON stock.ProductCode = inventory.Artikel
+		WHERE (@productCode = '' OR inventory.Artikel LIKE @productCode ESCAPE '\')
+		  AND (@productName = '' OR inventory.Opis LIKE @productName ESCAPE '\')
+		  AND inventory.MinimalnaZaloga > 0
+		  AND COALESCE(stock.CurrentStock, 0) <= inventory.MinimalnaZaloga * 1.2`,
+		inventoryDatabase, receiptDatabase, receiptDatabase)
+
+	var totalCount int
+	if err := repository.database.QueryRowContext(ctx,
+		"SELECT COUNT(*) "+fromAndFilters, arguments...).Scan(&totalCount); err != nil {
+		return nil, fmt.Errorf("count inventory items near minimum stock: %w", err)
+	}
+
+	arguments = append(arguments,
+		sql.Named("offset", (page-1)*pageSize),
+		sql.Named("pageSize", pageSize),
+	)
+	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
+		SELECT inventory.RecNo, inventory.Artikel, inventory.Opis, inventory.Enota,
+		       inventory.MinimalnaZaloga, COALESCE(stock.CurrentStock, 0)
+		%s
+		ORDER BY %s
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, fromAndFilters, orderBy), arguments...)
+	if err != nil {
+		return nil, fmt.Errorf("search inventory items near minimum stock: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]*InventoryItem, 0)
+	for rows.Next() {
+		item := &InventoryItem{}
+		if err := rows.Scan(&item.ID, &item.ProductCode, &item.Name, &item.Unit,
+			&item.MinimumStockLevel, &item.CurrentStock); err != nil {
+			return nil, fmt.Errorf("scan inventory item near minimum stock: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read inventory items near minimum stock: %w", err)
+	}
+	totalPages := 0
+	if totalCount > 0 {
+		totalPages = (totalCount + pageSize - 1) / pageSize
+	}
+	return &InventoryItemPage{Items: items, TotalCount: totalCount, Page: page,
+		PageSize: pageSize, TotalPages: totalPages}, nil
+}
+
 func (repository *InventoryItemRepository) searchInventoryItemsNormally(
 	ctx context.Context,
 	databaseName string,

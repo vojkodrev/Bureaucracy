@@ -170,6 +170,7 @@ type ComplexityRoot struct {
 	}
 
 	InventoryItem struct {
+		CurrentStock      func(childComplexity int) int
 		ID                func(childComplexity int) int
 		MinimumStockLevel func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -366,6 +367,7 @@ type ComplexityRoot struct {
 		SearchInventoryItems            func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices                  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoicesByCustomer        func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchLowStockInventoryItems    func(childComplexity int, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchPriceQuotes               func(childComplexity int, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchProducts                  func(childComplexity int, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		TaxCodes                        func(childComplexity int, businessYear string) int
@@ -426,6 +428,7 @@ type QueryResolver interface {
 	SearchPriceQuotes(ctx context.Context, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*PriceQuotePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
 	SearchInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error)
+	SearchLowStockInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error)
 	InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error)
 	InventoryItemGoodsReceiptCounts(ctx context.Context, businessYear string, productCodes []string) ([]*InventoryItemGoodsReceiptCount, error)
 	ProductInvoiceCounts(ctx context.Context, businessYear string, productCodes []string) ([]*ProductInvoiceCount, error)
@@ -981,6 +984,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.GoodsReceiptPage.TotalPages(childComplexity), true
 
+	case "InventoryItem.currentStock":
+		if e.ComplexityRoot.InventoryItem.CurrentStock == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InventoryItem.CurrentStock(childComplexity), true
 	case "InventoryItem.id":
 		if e.ComplexityRoot.InventoryItem.ID == nil {
 			break
@@ -2049,6 +2058,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SearchInvoicesByCustomer(childComplexity, args["businessYear"].(string), args["invoiceNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["paymentStatus"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.searchLowStockInventoryItems":
+		if e.ComplexityRoot.Query.SearchLowStockInventoryItems == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchLowStockInventoryItems_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SearchLowStockInventoryItems(childComplexity, args["businessYear"].(string), args["productCode"].(*string), args["productName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchPriceQuotes":
 		if e.ComplexityRoot.Query.SearchPriceQuotes == nil {
 			break
@@ -2502,6 +2522,8 @@ func (ec *executionContext) childFields_InventoryItem(ctx context.Context, field
 		return ec.fieldContext_InventoryItem_unit(ctx, field)
 	case "minimumStockLevel":
 		return ec.fieldContext_InventoryItem_minimumStockLevel(ctx, field)
+	case "currentStock":
+		return ec.fieldContext_InventoryItem_currentStock(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type InventoryItem", field.Name)
 }
@@ -4119,6 +4141,68 @@ func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context,
 		return nil, err
 	}
 	args["pageSize"] = arg12
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchLowStockInventoryItems_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg6
 	return args, nil
 }
 
@@ -6521,6 +6605,29 @@ func (ec *executionContext) _InventoryItem_minimumStockLevel(ctx context.Context
 	)
 }
 func (ec *executionContext) fieldContext_InventoryItem_minimumStockLevel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InventoryItem", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _InventoryItem_currentStock(ctx context.Context, field graphql.CollectedField, obj *InventoryItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InventoryItem_currentStock(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CurrentStock, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InventoryItem_currentStock(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("InventoryItem", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
@@ -10537,6 +10644,50 @@ func (ec *executionContext) fieldContext_Query_searchInventoryItems(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_searchLowStockInventoryItems(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_searchLowStockInventoryItems(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SearchLowStockInventoryItems(ctx, fc.Args["businessYear"].(string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *InventoryItemPage) graphql.Marshaler {
+			return ec.marshalNInventoryItemPage2ᚖbureaucracyᚋbackendᚐInventoryItemPage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_searchLowStockInventoryItems(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InventoryItemPage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchLowStockInventoryItems_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_inventoryItem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -13879,6 +14030,11 @@ func (ec *executionContext) _InventoryItem(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "currentStock":
+			out.Values[i] = ec._InventoryItem_currentStock(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15631,6 +15787,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchInventoryItems(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchLowStockInventoryItems":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchLowStockInventoryItems(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

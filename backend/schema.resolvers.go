@@ -271,6 +271,20 @@ func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear s
 		sortBy, sortDirection, resultPage, resultPageSize)
 }
 
+// SearchLowStockInventoryItems is the resolver for the searchLowStockInventoryItems field.
+func (r *queryResolver) SearchLowStockInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.InventoryItems.SearchLowStock(ctx, businessYear, productCode, productName,
+		sortBy, sortDirection, resultPage, resultPageSize)
+}
+
 // InventoryItem is the resolver for the inventoryItem field.
 func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
 	return r.InventoryItems.GetByCode(ctx, businessYear, productCode)

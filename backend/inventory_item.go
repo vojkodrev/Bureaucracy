@@ -6,6 +6,7 @@ type InventoryItem struct {
 	Name              *string  `json:"name"`
 	Unit              *string  `json:"unit"`
 	MinimumStockLevel *float64 `json:"minimumStockLevel"`
+	CurrentStock      *float64 `json:"currentStock"`
 }
 
 type InventoryItemPage struct {
