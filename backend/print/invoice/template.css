@@ -19,62 +19,13 @@ main {
     padding: 7.92mm 21.78mm 7.92mm 17.82mm;
 }
 
-.document-header {
-    box-sizing: border-box;
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    width: 100%;
-    height: 26.46mm;
-}
-
-.company-details {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 6mm;
-    font-size: 2.7mm;
-    line-height: 1.08;
-    text-align: left;
-}
-
-.company-address,
-.company-contact {
-    display: flex;
-    flex-direction: column;
-}
-
-.company-address strong {
-    font-weight: 400;
-}
-
-.company-contact strong {
-    margin-top: 0.5mm;
-    font-size: 3mm;
-}
-
-.company-logo {
-    display: block;
-    width: auto;
-    height: 26.46mm;
-    object-fit: contain;
-}
-
 .invoice-overview {
     display: flex;
     align-items: stretch;
-    justify-content: space-between;
-    margin-top: 15.88mm;
+    justify-content: flex-end;
+    min-height: 26.46mm;
+    margin-top: 42.34mm;
     font-size: 4mm;
-}
-
-.customer-address {
-    display: flex;
-    flex-direction: column;
-    width: 70mm;
-    margin: 0;
-    font-style: normal;
-    line-height: 1.25;
 }
 
 .invoice-details {

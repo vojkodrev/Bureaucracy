@@ -7,29 +7,9 @@
 </head>
 <body>
     <main>
-        <header class="document-header">
-            <div class="company-details">
-                <div>
-                    DREVI d.o.o.<br>
-                    Ob železnici 16<br>
-                    1000&nbsp;&nbsp;LJUBLJANA
-                </div>
-                <div>
-                    email: drevi@siol.net&nbsp;&nbsp;&nbsp; www.drevi.si<br>
-                    MATIČNA ŠT: 5314518&nbsp;&nbsp; ID.ŠT.: SI35954086<br>
-                    VLOŽNA ŠT: 1/3514/00<br>
-                    <strong>TRR: SI56 0400 0027 8805 004</strong>
-                </div>
-            </div>
-            <img class="company-logo" src="{{.Logo}}" alt="DREVI logo">
-        </header>
+        {{template "document-header" .Header}}
 
         <section class="overview">
-            <address>
-                <span>{{.Document.Customer.Name}}</span>
-                <span>{{.Document.Customer.Address}}</span>
-                <span class="location">{{.Document.Customer.Location}}</span>
-            </address>
             <div class="details">
                 <strong>Predračun :</strong>
                 <strong>{{.Document.InvoiceNumber}}</strong>

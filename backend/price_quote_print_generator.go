@@ -23,7 +23,7 @@ type PriceQuotePrintGenerator struct {
 }
 
 func NewPriceQuotePrintGenerator(pdfRenderer *HTMLPDFRenderer) (*PriceQuotePrintGenerator, error) {
-	tmpl, err := template.New("price-quote").Parse(priceQuoteHTMLTemplate)
+	tmpl, err := template.New("price-quote").Parse(documentHeaderHTMLTemplate + priceQuoteHTMLTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse price quote print template: %w", err)
 	}
@@ -78,12 +78,12 @@ func (generator *PriceQuotePrintGenerator) Generate(
 	err = generator.template.Execute(&rendered, struct {
 		CSS       template.CSS
 		Document  invoicePrintDocument
-		Logo      template.URL
+		Header    documentPrintHeader
 		Signature template.URL
 		PaymentQR template.URL
 	}{
-		CSS: template.CSS(priceQuoteCSSTemplate), Document: printDocument,
-		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+		CSS: template.CSS(documentHeaderCSSTemplate + priceQuoteCSSTemplate), Document: printDocument,
+		Header:    documentPrintHeader{Customer: printDocument.Customer, Logo: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo))},
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
 		PaymentQR: template.URL(printDocument.PaymentQRCode),
 	})

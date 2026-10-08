@@ -13,8 +13,7 @@ import (
 
 type invoiceReminderDocument struct {
 	CustomerName string
-	Address      string
-	Location     string
+	Header       documentPrintHeader
 	BusinessYear int
 	GeneratedAt  string
 	Invoices     []invoiceReminderRow
@@ -46,7 +45,7 @@ type InvoiceReminderGenerator struct {
 }
 
 func NewInvoiceReminderGenerator(pdfRenderer *HTMLPDFRenderer) (*InvoiceReminderGenerator, error) {
-	tmpl, err := template.New("invoice-reminder").Parse(invoiceReminderHTMLTemplate)
+	tmpl, err := template.New("invoice-reminder").Parse(documentHeaderHTMLTemplate + invoiceReminderHTMLTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse invoice reminder print template: %w", err)
 	}
@@ -88,7 +87,10 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 		}
 		documents = append(documents, invoiceReminderDocument{
 			CustomerName: trimmedString(first.CustomerName),
-			Address:      trimmedString(first.CustomerAddress), Location: customerLocation(first.CustomerPostalCode, first.CustomerCity),
+			Header: documentPrintHeader{
+				Customer: invoicePrintCustomer{Name: trimmedString(first.CustomerName), Address: trimmedString(first.CustomerAddress), Location: customerLocation(first.CustomerPostalCode, first.CustomerCity)},
+				Logo:     template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(invoiceReminderLogo)),
+			},
 			BusinessYear: businessYear, GeneratedAt: now.Format("2.1.2006"), Invoices: rows,
 			Total: formatMoneyAmount(total),
 		})
@@ -103,11 +105,9 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 		Title     string
 		CSS       template.CSS
 		Documents []invoiceReminderDocument
-		Logo      template.URL
 		Signature template.URL
 	}{
-		Title: title, CSS: template.CSS(invoiceReminderCSSTemplate), Documents: documents,
-		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(invoiceReminderLogo)),
+		Title: title, CSS: template.CSS(documentHeaderCSSTemplate + invoiceReminderCSSTemplate), Documents: documents,
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(invoiceReminderSignature)),
 	}); err != nil {
 		return nil, fmt.Errorf("render invoice reminder HTML: %w", err)
