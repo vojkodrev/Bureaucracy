@@ -31,3 +31,10 @@ On macOS or Linux, run `./install.sh`, copy and edit `.env`, then run
 
 Successful training writes a versioned model set under `models` and atomically
 updates `models/active.json`.
+
+Completed cutoff snapshots and their typed feature rows are cached in
+`Bureaucracy.dbo.purchase_prediction_training_snapshots` and
+`Bureaucracy.dbo.purchase_prediction_training_rows`. Training loads compatible
+snapshots from MSSQL and builds only missing cutoffs. Each newly built cutoff
+is committed immediately, so an interrupted run resumes from its last completed
+cutoff. Apply the backend database migrations before training.
