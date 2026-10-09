@@ -32,12 +32,16 @@ DECLARE RestoreCursor CURSOR LOCAL FAST_FORWARD FOR
 SELECT LEFT(FileName, LEN(FileName) - 4)
 FROM #BackupFiles
 WHERE IsFile = 1
-  AND FileName LIKE N'BIRO[0-9]%.bak'
+  AND (
+      FileName LIKE N'BIRO0[2-9][0-9].bak'
+      OR FileName LIKE N'BIRO1[0-9][0-9].bak'
+  )
   AND SUBSTRING(
         LEFT(FileName, LEN(FileName) - 4),
         5,
         128
       ) NOT LIKE N'%[^0-9]%'
+  AND DB_ID(LEFT(FileName, LEN(FileName) - 4)) IS NULL
 ORDER BY FileName;
 
 OPEN RestoreCursor;
@@ -57,8 +61,8 @@ BEGIN
     /*
       This assumes the logical names follow the convention shown:
 
-          BIRO201
-          BIRO201_log
+          BIRO020
+          BIRO020_log
     */
     SET @Sql =
         N'RESTORE DATABASE ' + QUOTENAME(@DatabaseName) + N'

@@ -25,7 +25,7 @@ type InventoryItemGoodsReceiptCountsResponse = {
     errors?: { message: string }[]
 }
 
-const query = `
+const itemListQuery = `
     query SearchInventoryItems(
         $businessYear: String!
         $productCode: String
@@ -46,7 +46,35 @@ const query = `
             page: $page
             pageSize: $pageSize
         ) {
-            items { id productCode name unit minimumStockLevel }
+            items { id productCode name unit minimumStockLevel currentStock }
+            totalCount
+            page
+            pageSize
+            totalPages
+        }
+    }
+`
+
+const lowStockQuery = `
+    query SearchLowStockInventoryItems(
+        $businessYear: String!
+        $productCode: String
+        $productName: String
+        $sortBy: String
+        $sortDirection: String
+        $page: Int
+        $pageSize: Int
+    ) {
+        searchInventoryItems: searchLowStockInventoryItems(
+            businessYear: $businessYear
+            productCode: $productCode
+            productName: $productName
+            sortBy: $sortBy
+            sortDirection: $sortDirection
+            page: $page
+            pageSize: $pageSize
+        ) {
+            items { id productCode name unit minimumStockLevel currentStock }
             totalCount
             page
             pageSize
@@ -60,11 +88,37 @@ export async function fetchInventoryItemSearch(
     similarName: string | undefined,
     signal?: AbortSignal,
 ): Promise<InventoryItemPage | null> {
-    const result = await postGraphql<SearchInventoryItemsResponse>(query, {
+    if (search.resultsView === 'lowStock') {
+        return fetchLowStockInventoryItemSearch(search, signal)
+    }
+    const result = await postGraphql<SearchInventoryItemsResponse>(
+        itemListQuery,
+        {
+            ...searchVariables(search),
+            similarName: optionalFilter(similarName ?? ''),
+        },
+        signal,
+    )
+    return result.data?.searchInventoryItems ?? null
+}
+
+async function fetchLowStockInventoryItemSearch(
+    search: InventoryItemSearchCriteria,
+    signal?: AbortSignal,
+): Promise<InventoryItemPage | null> {
+    const result = await postGraphql<SearchInventoryItemsResponse>(
+        lowStockQuery,
+        searchVariables(search),
+        signal,
+    )
+    return result.data?.searchInventoryItems ?? null
+}
+
+function searchVariables(search: InventoryItemSearchCriteria) {
+    return {
         businessYear: getSelectedBusinessYear(),
         productCode: optionalFilter(search.productCode),
         productName: optionalFilter(search.productName),
-        similarName: optionalFilter(similarName ?? ''),
         sortBy: search.sortBy || null,
         sortDirection: search.sortDirection || null,
         page: positiveInteger(search.page, defaultPage),
@@ -72,8 +126,7 @@ export async function fetchInventoryItemSearch(
             positiveInteger(search.pageSize, defaultPageSize),
             maximumPageSize,
         ),
-    }, signal)
-    return result.data?.searchInventoryItems ?? null
+    }
 }
 
 const inventoryItemGoodsReceiptCountsQuery = `

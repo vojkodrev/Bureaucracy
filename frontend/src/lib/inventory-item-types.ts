@@ -4,6 +4,7 @@ export type InventoryItem = {
     name: string | null
     unit: string | null
     minimumStockLevel: number | null
+    currentStock: number | null
 }
 
 export type InventoryItemPage = {

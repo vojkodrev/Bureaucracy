@@ -65,7 +65,7 @@ func (handler *BankStatementReportHandler) Handle(context *gin.Context) {
 
 	statementPage, err := handler.statements.Search(
 		context.Request.Context(), businessYear, dateFrom, dateTo, statementNumber,
-		optionalQuery(context.Query("documentNumber")), optionalQuery(context.Query("bankAccount")),
+		optionalQuery(context.Query("documentNumber")), optionalQuery(context.Query("reference")), optionalQuery(context.Query("bankAccount")),
 		optionalQuery(context.Query("customerId")), optionalQuery(context.Query("customerName")),
 		optionalQuery(context.Query("sortBy")), optionalQuery(context.Query("sortDirection")),
 		page, pageSize,

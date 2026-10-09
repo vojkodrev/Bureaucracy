@@ -7,6 +7,7 @@ export type InventoryItemSortColumn =
 export type InventoryItemSearchCriteria = {
     productCode: string
     productName: string
+    resultsView: 'itemList' | 'lowStock'
     page: string
     pageSize: string
     sortBy: InventoryItemSortColumn | ''

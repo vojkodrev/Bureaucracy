@@ -37,6 +37,7 @@ function BankStatementSearchForm({
             to: String(formData.get('to') ?? ''),
             statementNumber: String(formData.get('statementNumber') ?? '').trim(),
             documentNumber: String(formData.get('documentNumber') ?? '').trim(),
+            reference: String(formData.get('reference') ?? '').trim(),
             bankAccount,
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
@@ -78,6 +79,18 @@ function BankStatementSearchForm({
                                     type="search"
                                     name="documentNumber"
                                     defaultValue={search.documentNumber}
+                                    autoComplete="off"
+                                />
+                            </Field>
+                        </div>
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <Field>
+                                <FieldLabel htmlFor="reference">Reference</FieldLabel>
+                                <Input
+                                    id="reference"
+                                    type="search"
+                                    name="reference"
+                                    defaultValue={search.reference}
                                     autoComplete="off"
                                 />
                             </Field>

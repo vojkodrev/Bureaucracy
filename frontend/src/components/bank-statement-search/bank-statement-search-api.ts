@@ -24,6 +24,7 @@ const searchBankStatementsQuery = `
         $dateTo: Time
         $statementNumber: Int
         $documentNumber: String
+        $reference: String
         $bankAccount: String
         $customerId: String
         $customerName: String
@@ -38,6 +39,7 @@ const searchBankStatementsQuery = `
             dateTo: $dateTo
             statementNumber: $statementNumber
             documentNumber: $documentNumber
+            reference: $reference
             bankAccount: $bankAccount
             customerId: $customerId
             customerName: $customerName
@@ -95,6 +97,7 @@ export async function fetchBankStatementSearch(
         dateTo: optionalDate(search.to),
         statementNumber: optionalStatementNumber(search.statementNumber),
         documentNumber: optionalFilter(search.documentNumber),
+        reference: optionalFilter(search.reference),
         bankAccount: optionalFilter(search.bankAccount),
         customerId: optionalFilter(search.customerId),
         customerName: optionalFilter(search.customerName),

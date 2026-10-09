@@ -80,7 +80,7 @@ type InvoicePrintGenerator struct {
 }
 
 func NewInvoicePrintGenerator(pdfRenderer *HTMLPDFRenderer) (*InvoicePrintGenerator, error) {
-	tmpl, err := template.New("invoice").Parse(htmlTemplate)
+	tmpl, err := template.New("invoice").Parse(documentHeaderHTMLTemplate + htmlTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse invoice print template: %w", err)
 	}
@@ -153,13 +153,13 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if err := generator.template.Execute(&renderedHTML, struct {
 		CSS       template.CSS
 		Document  invoicePrintDocument
-		Logo      template.URL
+		Header    documentPrintHeader
 		Signature template.URL
 		PaymentQR template.URL
 	}{
-		CSS:       template.CSS(cssTemplate),
+		CSS:       template.CSS(documentHeaderCSSTemplate + cssTemplate),
 		Document:  printDocument,
-		Logo:      template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo)),
+		Header:    documentPrintHeader{Customer: printDocument.Customer, Logo: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo))},
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
 		PaymentQR: template.URL(printDocument.PaymentQRCode),
 	}); err != nil {

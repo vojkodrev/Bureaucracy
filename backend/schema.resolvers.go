@@ -81,7 +81,7 @@ func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear st
 }
 
 // SearchBankStatements is the resolver for the searchBankStatements field.
-func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
+func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, reference *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BankStatementPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -90,7 +90,7 @@ func (r *queryResolver) SearchBankStatements(ctx context.Context, businessYear s
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, documentNumber, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
+	return r.BankStatements.Search(ctx, businessYear, dateFrom, dateTo, statementNumber, documentNumber, reference, bankAccount, customerID, customerName, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // BankStatementInvoicePayments is the resolver for the bankStatementInvoicePayments field.
@@ -268,6 +268,20 @@ func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear s
 		resultPageSize = *pageSize
 	}
 	return r.InventoryItems.Search(ctx, businessYear, productCode, productName, similarName,
+		sortBy, sortDirection, resultPage, resultPageSize)
+}
+
+// SearchLowStockInventoryItems is the resolver for the searchLowStockInventoryItems field.
+func (r *queryResolver) SearchLowStockInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.InventoryItems.SearchLowStock(ctx, businessYear, productCode, productName,
 		sortBy, sortDirection, resultPage, resultPageSize)
 }
 

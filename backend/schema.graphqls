@@ -349,6 +349,7 @@ type InventoryItem {
   name: String
   unit: String
   minimumStockLevel: Float
+  currentStock: Float
 }
 
 type InventoryItemGoodsReceiptCount {
@@ -462,6 +463,7 @@ type Query {
     dateTo: Time
     statementNumber: Int
     documentNumber: String
+    reference: String
     bankAccount: String
     customerId: String
     customerName: String
@@ -592,6 +594,16 @@ type Query {
     productCode: String
     productName: String
     similarName: String
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): InventoryItemPage!
+
+  searchLowStockInventoryItems(
+    businessYear: String!
+    productCode: String
+    productName: String
     sortBy: String
     sortDirection: String
     page: Int = 1

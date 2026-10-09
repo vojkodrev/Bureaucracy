@@ -19,44 +19,12 @@ main {
     padding: 8mm 22mm 8mm 18mm;
 }
 
-.document-header {
-    display: flex;
-    justify-content: space-between;
-    height: 27mm;
-    font-size: 2.7mm;
-    line-height: 1.12;
-}
-
-.company-details {
-    display: flex;
-    flex-direction: column;
-    gap: 6mm;
-}
-
-.company-logo {
-    width: auto;
-    height: 26mm;
-    object-fit: contain;
-}
-
 .overview {
     display: flex;
     align-items: stretch;
-    justify-content: space-between;
-    margin-top: 16mm;
-}
-
-.overview address {
-    display: flex;
-    flex-direction: column;
-    width: 80mm;
-    font-size: 4mm;
-    font-style: normal;
-    line-height: 1.25;
-}
-
-.overview .location {
-    margin-top: 5mm;
+    justify-content: flex-end;
+    min-height: 20mm;
+    margin-top: 43mm;
 }
 
 .details {

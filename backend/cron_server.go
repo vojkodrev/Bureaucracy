@@ -35,14 +35,18 @@ type CronServer struct {
 	jobCount  int
 }
 
-func NewCronServer(databaseBackupHandler *DatabaseBackupJobHandler) (*CronServer, error) {
+func NewCronServer(
+	databaseBackupHandler *DatabaseBackupJobHandler,
+	fileStorageCleanupHandler *FileStorageCleanupJobHandler,
+) (*CronServer, error) {
 	jobs, err := loadCronJobConfig(cronJobsConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	handlers := map[string]CronJobHandler{
-		databaseBackupHandler.Name(): databaseBackupHandler,
+		databaseBackupHandler.Name():     databaseBackupHandler,
+		fileStorageCleanupHandler.Name(): fileStorageCleanupHandler,
 	}
 	jobContext, cancel := context.WithCancel(context.Background())
 	scheduler := cron.New(cron.WithChain(
@@ -72,7 +76,12 @@ func NewCronServer(databaseBackupHandler *DatabaseBackupJobHandler) (*CronServer
 	return &CronServer{scheduler: scheduler, cancel: cancel, jobCount: len(jobs)}, nil
 }
 
-func RegisterCronServerLifecycle(lifecycle fx.Lifecycle, server *CronServer) {
+func RegisterCronServerLifecycle(lifecycle fx.Lifecycle, server *CronServer, config *AppConfig) {
+	if !config.CronEnabled {
+		slog.Info("cron server disabled")
+		return
+	}
+
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			server.scheduler.Start()
