@@ -8,7 +8,10 @@ DECLARE @Sql nvarchar(max);
 DECLARE DatabaseCursor CURSOR LOCAL FAST_FORWARD FOR
 SELECT name
 FROM sys.databases
-WHERE name LIKE N'BIRO[0-9]%'
+WHERE (
+      name LIKE N'BIRO0[2-9][0-9]'
+      OR name LIKE N'BIRO1[0-9][0-9]'
+  )
   AND SUBSTRING(name, 5, 128) NOT LIKE N'%[^0-9]%'
   AND state_desc = N'ONLINE'
   AND source_database_id IS NULL

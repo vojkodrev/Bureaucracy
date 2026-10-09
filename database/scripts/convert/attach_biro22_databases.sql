@@ -34,7 +34,10 @@ SELECT
     FileName
 FROM #DatabaseFiles
 WHERE IsFile = 1
-  AND FileName LIKE N'BIRO22[0-9]%.mdf'
+  AND (
+      FileName LIKE N'BIRO0[2-9][0-9].mdf'
+      OR FileName LIKE N'BIRO1[0-9][0-9].mdf'
+  )
   AND SUBSTRING(
         LEFT(FileName, LEN(FileName) - 4),
         5,
