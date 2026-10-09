@@ -1,5 +1,5 @@
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -30,7 +30,7 @@ class TrainingDatasetBuilder:
         label_end = min(self._config.training_end_date or latest_date, latest_date)
         first_date = events["service_date"].min().date()
         cutoff = first_date + relativedelta(months=self._config.warmup_months)
-        final_cutoff = label_end - pd.Timedelta(days=max(self.horizons))
+        final_cutoff = label_end - timedelta(days=max(self.horizons))
         rows: list[dict[str, object]] = []
         all_pair_groups = {
             key: value
@@ -39,7 +39,7 @@ class TrainingDatasetBuilder:
             )
         }
 
-        while pd.Timestamp(cutoff) <= final_cutoff:
+        while cutoff <= final_cutoff:
             self._logger.info("Building training snapshot for cutoff %s", cutoff)
             history = events[events["service_date"] <= pd.Timestamp(cutoff)]
             invoice_history = purchase_lines[
@@ -88,7 +88,7 @@ class TrainingDatasetBuilder:
                     )
                 rows.append(row)
 
-            cutoff += pd.Timedelta(days=self._config.cutoff_interval_days)
+            cutoff += timedelta(days=self._config.cutoff_interval_days)
 
         dataset = pd.DataFrame(rows)
         if dataset.empty:
