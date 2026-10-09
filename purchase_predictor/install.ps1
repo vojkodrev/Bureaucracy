@@ -17,5 +17,4 @@ if (-not (Test-Path $Python)) {
 
 Write-Host "Installation complete."
 Write-Host "Copy .env.example to .env, set the MSSQL values, then run:"
-Write-Host ".\.venv\Scripts\python.exe main.py train"
-
+Write-Host ".\train.ps1"

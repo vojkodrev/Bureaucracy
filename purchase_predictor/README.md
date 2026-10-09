@@ -23,8 +23,11 @@ Copy-Item .env.example .env
 Edit `.env`, then train:
 
 ```powershell
-.\.venv\Scripts\python.exe main.py train
+.\train.ps1
 ```
+
+On macOS or Linux, run `./install.sh`, copy and edit `.env`, then run
+`./train.sh`.
 
 Successful training writes a versioned model set under `models` and atomically
 updates `models/active.json`.
