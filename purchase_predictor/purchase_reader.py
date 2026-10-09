@@ -24,9 +24,17 @@ class MssqlPurchaseReader:
             for code, year in self._read_business_years(connection, start_date, end_date):
                 database = self._invoice_database(code)
                 self._logger.info("Reading purchases from %s for business year %s", database, year)
-                purchases.extend(
-                    self._read_database(connection, database, start_date, end_date)
-                )
+                try:
+                    purchases.extend(
+                        self._read_database(connection, database, start_date, end_date)
+                    )
+                except pyodbc.Error as error:
+                    self._logger.warning(
+                        "Skipping purchases from %s for business year %s: %s",
+                        database,
+                        year,
+                        error,
+                    )
 
         purchases.sort(key=lambda item: item.service_date)
         self._logger.info("Read %d purchase lines", len(purchases))
