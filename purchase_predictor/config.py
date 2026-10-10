@@ -42,7 +42,11 @@ class AppConfig:
     @classmethod
     def from_environment(cls) -> "AppConfig":
         app_directory = Path(__file__).resolve().parent
-        load_dotenv(app_directory / ".env")
+        load_dotenv(
+            app_directory / ".env",
+            override=os.getenv("PURCHASE_PREDICTOR_LOAD_DOTENV_OVERRIDE", "").lower()
+            == "true",
+        )
 
         model_directory = Path(os.getenv("MODEL_DIRECTORY", "models"))
         if not model_directory.is_absolute():

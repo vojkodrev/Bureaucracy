@@ -23,6 +23,8 @@ type AppConfig struct {
 	MSSQLTrustServerCertificate string
 	MSSQLBackupFolder           string
 	CronEnabled                 bool
+	PurchasePredictorDirectory  string
+	PurchasePredictorPython     string
 	SMTPHost                    string
 	SMTPPort                    string
 	SMTPUsername                string
@@ -54,6 +56,8 @@ func NewAppConfig() *AppConfig {
 		MSSQLTrustServerCertificate: envOrDefault("MSSQL_TRUST_SERVER_CERTIFICATE", "false"),
 		MSSQLBackupFolder:           strings.TrimSpace(os.Getenv("MSSQL_BACKUP_FOLDER")),
 		CronEnabled:                 strings.EqualFold(strings.TrimSpace(envOrDefault("CRON_ENABLED", "false")), "true"),
+		PurchasePredictorDirectory:  strings.TrimSpace(envOrDefault("PURCHASE_PREDICTOR_DIRECTORY", "../purchase_predictor")),
+		PurchasePredictorPython:     strings.TrimSpace(os.Getenv("PURCHASE_PREDICTOR_PYTHON")),
 		SMTPHost:                    os.Getenv("SMTP_HOST"),
 		SMTPPort:                    envOrDefault("SMTP_PORT", "587"),
 		SMTPUsername:                os.Getenv("SMTP_USERNAME"),

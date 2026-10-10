@@ -25,7 +25,20 @@ Scheduled jobs are defined in `cron_jobs.csv`. The database backup job runs
 every day at 03:00 in the backend process's local timezone. At 04:00, the file
 storage cleanup job removes uploads older than 24 hours that have not been
 attached to a goods receipt. Cron is disabled by default; set `CRON_ENABLED=true`
-in the production environment to enable scheduled jobs. Set
+in the production environment to enable scheduled jobs.
+
+The purchase predictor trains all 7-, 14-, and 30-day models at 01:00 on the
+first day of every month. It predicts all three horizons every Monday at 05:00.
+Both schedules use the backend process's local timezone. One training job and
+one prediction job are sufficient because each Python command handles all three
+models. Install and configure `../purchase_predictor` before enabling cron. Set
+`PURCHASE_PREDICTOR_DIRECTORY` if it is elsewhere and optionally set
+`PURCHASE_PREDICTOR_PYTHON` to a Python executable; otherwise the job uses the
+predictor's `.venv` executable for the current operating system. The subprocess
+loads database and model settings from `purchase_predictor/.env`, overriding
+same-named backend environment variables.
+
+Set
 `MSSQL_BACKUP_FOLDER` to a directory that the SQL Server service can write to,
 such as `/var/opt/mssql/backups` on Linux or macOS-hosted containers, or
 `H:\backups` on Windows. Because `BACKUP DATABASE` runs on SQL Server, this path
