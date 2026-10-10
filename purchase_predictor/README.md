@@ -32,6 +32,17 @@ On macOS or Linux, run `./install.sh`, copy and edit `.env`, then run
 Successful training writes a versioned model set under `models` and atomically
 updates `models/active.json`.
 
+After applying backend migration `00008`, create and store a prediction snapshot
+for all active customer-product pairs with:
+
+```powershell
+.\.venv\Scripts\python.exe main.py predict
+```
+
+The cutoff defaults to today. For a reproducible historical run, pass
+`--as-of YYYY-MM-DD`. The command loads the active 7-, 14-, and 30-day models
+and stores typed feature and score columns in the prediction tables.
+
 Completed cutoff snapshots and their typed feature rows are cached in
 `Bureaucracy.dbo.purchase_prediction_training_snapshots` and
 `Bureaucracy.dbo.purchase_prediction_training_rows`. Training loads compatible
