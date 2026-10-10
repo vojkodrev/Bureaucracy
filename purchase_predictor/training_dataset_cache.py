@@ -111,6 +111,11 @@ class TrainingDatasetCacheSession:
             if not frame.empty:
                 frame["cutoff_date"] = pd.to_datetime(frame["cutoff_date"]).dt.date
             result[snapshot.cutoff_date] = frame
+            self._logger.info(
+                "Loaded training snapshot for cutoff %s from MSSQL cache (%d rows)",
+                snapshot.cutoff_date,
+                len(frame),
+            )
 
         if result:
             self._logger.info("Loaded %d training snapshots from MSSQL cache", len(result))

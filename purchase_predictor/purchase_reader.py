@@ -19,14 +19,15 @@ class MssqlPurchaseReader:
         self._logger = logging.getLogger(type(self).__name__)
 
     def read(self, start_date: date, end_date: date | None) -> list[Purchase]:
+        final_date = end_date or date.today()
         purchases: list[Purchase] = []
         with pyodbc.connect(self._config.connection_string) as connection:
-            for code, year in self._read_business_years(connection, start_date, end_date):
+            for code, year in self._read_business_years(connection, start_date, final_date):
                 database = self._invoice_database(code)
                 self._logger.info("Reading purchases from %s for business year %s", database, year)
                 try:
                     purchases.extend(
-                        self._read_database(connection, database, start_date, end_date)
+                        self._read_database(connection, database, start_date, final_date)
                     )
                 except pyodbc.Error as error:
                     self._logger.warning(
@@ -72,9 +73,8 @@ class MssqlPurchaseReader:
         connection: pyodbc.Connection,
         database: str,
         start_date: date,
-        end_date: date | None,
+        end_date: date,
     ) -> list[Purchase]:
-        end_filter = " AND r.DatumDUR <= ?" if end_date is not None else ""
         query = f"""
             SELECT
                 LTRIM(RTRIM(r.SifraPartnerja)) AS CustomerCode,
@@ -87,17 +87,14 @@ class MssqlPurchaseReader:
             INNER JOIN [{database}].[dbo].[RacuniSpecifikacija] rs
                 ON rs.Stevilka = r.Stevilka
             WHERE r.DatumDUR >= ?
-              {end_filter}
+              AND r.DatumDUR <= ?
               AND NULLIF(LTRIM(RTRIM(r.SifraPartnerja)), '') IS NOT NULL
               AND NULLIF(LTRIM(RTRIM(rs.Artikel)), '') IS NOT NULL
               AND ISNULL(r.Storno, 0) = 0
               AND ISNULL(rs.Deleted, 0) = 0
               AND COALESCE(rs.Kolicina, 0) > 0
         """
-        parameters = [start_date]
-        if end_date is not None:
-            parameters.append(end_date)
-        rows = connection.cursor().execute(query, *parameters).fetchall()
+        rows = connection.cursor().execute(query, start_date, end_date).fetchall()
         return [
             Purchase(
                 customer_code=str(row.CustomerCode),

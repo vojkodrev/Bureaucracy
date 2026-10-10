@@ -34,7 +34,8 @@ class TrainingDatasetBuilder:
             raise ValueError("No purchases were returned from MSSQL")
 
         latest_date = events["service_date"].max().date()
-        label_end = min(self._config.training_end_date or latest_date, latest_date)
+        configured_end = self._config.training_end_date or date.today()
+        label_end = min(configured_end, latest_date)
         first_date = events["service_date"].min().date()
         cutoff = first_date + relativedelta(months=self._config.warmup_months)
         final_cutoff = label_end - timedelta(days=max(self.horizons))
