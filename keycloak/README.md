@@ -68,6 +68,12 @@ Keycloak listens on HTTPS port 8180 by default. The initial start imports the
 overwrite an existing realm; later configuration changes should be made through
 the Admin Console or an explicit migration process.
 
+This setup uses Keycloak's local cache because it is intended to run as one
+node. That disables JGroups cluster discovery and its startup join retries. If
+the deployment is expanded to multiple Keycloak nodes, remove `cache=local`
+from `conf/keycloak.conf` and `keycloak.conf.example` so the nodes use the
+clustered Infinispan cache instead.
+
 For an already-imported realm, update the `bureaucracy-frontend` client's valid
 redirect URIs and web origins from `http://` to the matching `https://` entries;
 editing `realm-export.json` only affects a new realm import.

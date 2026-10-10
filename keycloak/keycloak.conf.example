@@ -1,6 +1,9 @@
 # Stable, non-secret Keycloak settings. Environment variables in .env override
 # these values when run-prod.ps1 starts the server.
 db=mssql
+# This deployment is intentionally single-node. Avoid the production default
+# (clustered Infinispan with JDBC_PING), which waits for stale cluster members.
+cache=local
 http-enabled=false
 https-port=8180
 health-enabled=true
