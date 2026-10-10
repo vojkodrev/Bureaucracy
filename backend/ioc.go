@@ -49,6 +49,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewAccountingExportRepository),
 		fx.Provide(NewAccountingExportHandler),
 		fx.Provide(NewProductRepository),
+		fx.Provide(NewPurchasePredictionRepository),
 		fx.Provide(NewTaxCodeRepository),
 		fx.Provide(NewResolver),
 		fx.Provide(NewHTTPServer),

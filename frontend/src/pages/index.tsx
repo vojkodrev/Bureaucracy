@@ -36,5 +36,8 @@ export const PriceQuotePage = lazy(
     () => import("./price-quote/PriceQuotePage"),
 );
 export const ProductSearchPage = lazy(() => import("./ProductSearchPage"));
+export const PurchasePredictionSearchPage = lazy(
+    () => import("./PurchasePredictionSearchPage"),
+);
 export const ProductPage = lazy(() => import("./product/ProductPage"));
 export const ExportDataPage = lazy(() => import("./ExportDataPage"));

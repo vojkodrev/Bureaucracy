@@ -26,6 +26,7 @@ const businessYearCheckInterval = 1_000;
 const parameterLabels: Record<string, string> = {
     bankAccount: "Bank account",
     customerId: "Customer ID",
+    customerCode: "Customer ID",
     customerName: "Counterparty",
     statementNumber: "Statement number",
     from: "Date from",
@@ -82,6 +83,7 @@ function breadcrumbLabel(pathname: string) {
         "/goods-receipt": "Goods receipt",
         "/price-quotes/search": "Price quote search",
         "/products/search": "Product search",
+        "/purchase-predictor/search": "Purchase predictor",
         "/export": "Export data",
     };
     const entities = [

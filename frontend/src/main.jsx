@@ -25,6 +25,7 @@ import {
     LayoutPage,
     ProductPage,
     ProductSearchPage,
+    PurchasePredictionSearchPage,
 } from "./pages";
 import "./index.css";
 import { initializeAuth, isStorageOnlyUser } from "./lib/auth.ts";
@@ -80,6 +81,7 @@ function createRouter() {
                 { path: "/price-quote/:quoteNumber?", element: <PriceQuotePage /> },
                 { path: "/invoice/:invoiceNumber?", element: <InvoicePage /> },
                 { path: "/products/search", element: <ProductSearchPage /> },
+                { path: "/purchase-predictor/search", element: <PurchasePredictionSearchPage /> },
                 { path: "/product/:productCode?", element: <ProductPage /> },
                 { path: "/export", element: <ExportDataPage /> },
             ],
