@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import type { FormEvent, SubmitEvent } from 'react'
+import CustomerPickerField from '@/components/customer-search/CustomerPickerField'
+import ProductPickerField from '@/components/product-search/ProductPickerField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -17,6 +20,11 @@ export default function PurchasePredictionSearchForm({
     onSubmit,
     onReset,
 }: Props) {
+    const [customerCode, setCustomerCode] = useState(search.customerCode)
+    const [customerName, setCustomerName] = useState(search.customerName)
+    const [productCode, setProductCode] = useState(search.productCode)
+    const [productName, setProductName] = useState(search.productName)
+
     function submit(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
         const data = new FormData(event.currentTarget)
@@ -31,6 +39,10 @@ export default function PurchasePredictionSearchForm({
     }
 
     function reset(_event: FormEvent<HTMLFormElement>) {
+        setCustomerCode('')
+        setCustomerName('')
+        setProductCode('')
+        setProductName('')
         onReset()
     }
 
@@ -40,18 +52,14 @@ export default function PurchasePredictionSearchForm({
                 <CardContent>
                     <FieldGroup>
                         <div className="grid gap-6 sm:grid-cols-2">
-                            <Field>
-                                <FieldLabel htmlFor="prediction-customer-code">
-                                    Customer ID
-                                </FieldLabel>
-                                <Input
-                                    id="prediction-customer-code"
-                                    name="customerCode"
-                                    type="search"
-                                    defaultValue={search.customerCode}
-                                    autoComplete="off"
-                                />
-                            </Field>
+                            <CustomerPickerField
+                                id="prediction-customer-code"
+                                label="Customer ID"
+                                name="customerCode"
+                                customerId={customerCode}
+                                onCustomerIdChange={setCustomerCode}
+                                onCustomerNameChange={setCustomerName}
+                            />
                             <Field>
                                 <FieldLabel htmlFor="prediction-customer-name">
                                     Customer name
@@ -60,24 +68,21 @@ export default function PurchasePredictionSearchForm({
                                     id="prediction-customer-name"
                                     name="customerName"
                                     type="search"
-                                    defaultValue={search.customerName}
+                                    value={customerName}
                                     autoComplete="off"
+                                    onChange={(event) => setCustomerName(event.target.value)}
                                 />
                             </Field>
                         </div>
                         <div className="grid gap-6 sm:grid-cols-2">
-                            <Field>
-                                <FieldLabel htmlFor="prediction-product-code">
-                                    Product code
-                                </FieldLabel>
-                                <Input
-                                    id="prediction-product-code"
-                                    name="productCode"
-                                    type="search"
-                                    defaultValue={search.productCode}
-                                    autoComplete="off"
-                                />
-                            </Field>
+                            <ProductPickerField
+                                id="prediction-product-code"
+                                label="Product code"
+                                name="productCode"
+                                productCode={productCode}
+                                onProductCodeChange={setProductCode}
+                                onProductNameChange={setProductName}
+                            />
                             <Field>
                                 <FieldLabel htmlFor="prediction-product-name">
                                     Product name
@@ -86,8 +91,9 @@ export default function PurchasePredictionSearchForm({
                                     id="prediction-product-name"
                                     name="productName"
                                     type="search"
-                                    defaultValue={search.productName}
+                                    value={productName}
                                     autoComplete="off"
+                                    onChange={(event) => setProductName(event.target.value)}
                                 />
                             </Field>
                         </div>
