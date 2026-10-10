@@ -12,10 +12,13 @@ export function hasPaymentDateMismatch(
 }
 
 export function hasPaidAmountMismatch(
-    transactionInflow: number | null,
+    invoiceAmount: number | null,
     invoicePaidAmount: number | null,
+    transactionInflow: number | null,
 ) {
-    return transactionInflow == null
+    return invoiceAmount == null
         || invoicePaidAmount == null
-        || Math.round(transactionInflow * 100) !== Math.round(invoicePaidAmount * 100)
+        || transactionInflow == null
+        || Math.round(invoiceAmount * 100) !== Math.round(invoicePaidAmount * 100)
+        || Math.round(invoicePaidAmount * 100) !== Math.round(transactionInflow * 100)
 }

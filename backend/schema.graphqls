@@ -73,6 +73,7 @@ type BankStatementEntry {
 type BankStatementInvoicePayment {
   invoiceNumber: String!
   paymentDate: Time
+  amount: Float
   paidAmount: Float
 }
 

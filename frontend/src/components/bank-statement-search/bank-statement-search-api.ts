@@ -63,7 +63,7 @@ const bankStatementInvoicePaymentsQuery = `
             businessYear: $businessYear
             invoiceNumbers: $invoiceNumbers
         ) {
-            invoiceNumber paymentDate paidAmount
+            invoiceNumber paymentDate amount paidAmount
         }
     }
 `
