@@ -4,6 +4,8 @@ export type PurchasePrediction = {
     customerName: string | null
     productCode: string
     productName: string | null
+    daysSinceLastOrder: number
+    averageOrderFrequencyDays: number | null
     score7Days: number
     score14Days: number
     score30Days: number

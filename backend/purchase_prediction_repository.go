@@ -56,6 +56,8 @@ func (repository *PurchasePredictionRepository) Search(
 		WITH matching AS (
 			SELECT r.id, r.customer_code, c.Partner customer_name,
 				r.product_code, p.Opis product_name,
+				r.days_since_pair_last_purchase,
+				r.pair_mean_interval_days,
 				r.score_7_days, r.score_14_days, r.score_30_days
 			FROM [Bureaucracy].[dbo].[purchase_prediction_rows] r
 			LEFT JOIN [%s].[dbo].[Partner] c ON c.Sifra = r.customer_code
@@ -66,18 +68,23 @@ func (repository *PurchasePredictionRepository) Search(
 				AND (@productCode IS NULL OR r.product_code LIKE '%%' + @productCode + '%%')
 				AND (@productName IS NULL OR p.Opis LIKE '%%' + @productName + '%%')
 		), customers AS (
-			SELECT customer_code, MAX(customer_name) customer_name
+			SELECT customer_code, MAX(customer_name) customer_name,
+				MAX(score_7_days) highest_score_7_days
 			FROM matching GROUP BY customer_code
 		), paged AS (
 			SELECT customer_code FROM customers
-			ORDER BY COALESCE(customer_name, customer_code), customer_code
+			ORDER BY highest_score_7_days DESC, customer_code
 			OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
 		)
 		SELECT m.id, m.customer_code, m.customer_name, m.product_code, m.product_name,
+			m.days_since_pair_last_purchase, m.pair_mean_interval_days,
 			m.score_7_days, m.score_14_days, m.score_30_days
 		FROM matching m INNER JOIN paged pg ON pg.customer_code = m.customer_code
-		ORDER BY COALESCE(m.customer_name, m.customer_code), m.customer_code,
-			COALESCE(m.product_name, m.product_code), m.product_code`, databaseName, databaseName)
+		ORDER BY MAX(m.score_7_days) OVER (PARTITION BY m.customer_code) DESC,
+			m.customer_code, m.score_7_days DESC, m.product_code`,
+		databaseName,
+		databaseName,
+	)
 
 	var totalCount int
 	countQuery := fmt.Sprintf(`
@@ -111,7 +118,10 @@ func (repository *PurchasePredictionRepository) Search(
 		prediction := &PurchasePrediction{}
 		if err := rows.Scan(
 			&prediction.ID, &prediction.CustomerCode, &prediction.CustomerName,
-			&prediction.ProductCode, &prediction.ProductName, &prediction.Score7Days,
+			&prediction.ProductCode, &prediction.ProductName,
+			&prediction.DaysSinceLastOrder,
+			&prediction.AverageOrderFrequencyDays,
+			&prediction.Score7Days,
 			&prediction.Score14Days, &prediction.Score30Days,
 		); err != nil {
 			return nil, fmt.Errorf("scan purchase prediction: %w", err)

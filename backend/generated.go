@@ -339,14 +339,16 @@ type ComplexityRoot struct {
 	}
 
 	PurchasePrediction struct {
-		CustomerCode func(childComplexity int) int
-		CustomerName func(childComplexity int) int
-		ID           func(childComplexity int) int
-		ProductCode  func(childComplexity int) int
-		ProductName  func(childComplexity int) int
-		Score14Days  func(childComplexity int) int
-		Score30Days  func(childComplexity int) int
-		Score7Days   func(childComplexity int) int
+		AverageOrderFrequencyDays func(childComplexity int) int
+		CustomerCode              func(childComplexity int) int
+		CustomerName              func(childComplexity int) int
+		DaysSinceLastOrder        func(childComplexity int) int
+		ID                        func(childComplexity int) int
+		ProductCode               func(childComplexity int) int
+		ProductName               func(childComplexity int) int
+		Score14Days               func(childComplexity int) int
+		Score30Days               func(childComplexity int) int
+		Score7Days                func(childComplexity int) int
 	}
 
 	PurchasePredictionPage struct {
@@ -1768,6 +1770,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ProductPage.TotalPages(childComplexity), true
 
+	case "PurchasePrediction.averageOrderFrequencyDays":
+		if e.ComplexityRoot.PurchasePrediction.AverageOrderFrequencyDays == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PurchasePrediction.AverageOrderFrequencyDays(childComplexity), true
 	case "PurchasePrediction.customerCode":
 		if e.ComplexityRoot.PurchasePrediction.CustomerCode == nil {
 			break
@@ -1780,6 +1788,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.PurchasePrediction.CustomerName(childComplexity), true
+	case "PurchasePrediction.daysSinceLastOrder":
+		if e.ComplexityRoot.PurchasePrediction.DaysSinceLastOrder == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PurchasePrediction.DaysSinceLastOrder(childComplexity), true
 	case "PurchasePrediction.id":
 		if e.ComplexityRoot.PurchasePrediction.ID == nil {
 			break
@@ -2952,6 +2966,10 @@ func (ec *executionContext) childFields_PurchasePrediction(ctx context.Context, 
 		return ec.fieldContext_PurchasePrediction_productCode(ctx, field)
 	case "productName":
 		return ec.fieldContext_PurchasePrediction_productName(ctx, field)
+	case "daysSinceLastOrder":
+		return ec.fieldContext_PurchasePrediction_daysSinceLastOrder(ctx, field)
+	case "averageOrderFrequencyDays":
+		return ec.fieldContext_PurchasePrediction_averageOrderFrequencyDays(ctx, field)
 	case "score7Days":
 		return ec.fieldContext_PurchasePrediction_score7Days(ctx, field)
 	case "score14Days":
@@ -9755,6 +9773,52 @@ func (ec *executionContext) fieldContext_PurchasePrediction_productName(_ contex
 	return graphql.NewScalarFieldContext("PurchasePrediction", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _PurchasePrediction_daysSinceLastOrder(ctx context.Context, field graphql.CollectedField, obj *PurchasePrediction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PurchasePrediction_daysSinceLastOrder(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DaysSinceLastOrder, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PurchasePrediction_daysSinceLastOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PurchasePrediction", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _PurchasePrediction_averageOrderFrequencyDays(ctx context.Context, field graphql.CollectedField, obj *PurchasePrediction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PurchasePrediction_averageOrderFrequencyDays(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AverageOrderFrequencyDays, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_PurchasePrediction_averageOrderFrequencyDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PurchasePrediction", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
 func (ec *executionContext) _PurchasePrediction_score7Days(ctx context.Context, field graphql.CollectedField, obj *PurchasePrediction) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15798,6 +15862,16 @@ func (ec *executionContext) _PurchasePrediction(ctx context.Context, sel ast.Sel
 			}
 		case "productName":
 			out.Values[i] = ec._PurchasePrediction_productName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "daysSinceLastOrder":
+			out.Values[i] = ec._PurchasePrediction_daysSinceLastOrder(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "averageOrderFrequencyDays":
+			out.Values[i] = ec._PurchasePrediction_averageOrderFrequencyDays(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

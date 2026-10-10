@@ -349,6 +349,8 @@ type PurchasePrediction {
   customerName: String
   productCode: String!
   productName: String
+  daysSinceLastOrder: Int!
+  averageOrderFrequencyDays: Float
   score7Days: Float!
   score14Days: Float!
   score30Days: Float!

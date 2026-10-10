@@ -26,6 +26,7 @@ const query = `
         ) {
             predictions {
                 id customerCode customerName productCode productName
+                daysSinceLastOrder averageOrderFrequencyDays
                 score7Days score14Days score30Days
             }
             totalCount page pageSize totalPages

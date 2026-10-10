@@ -19,6 +19,9 @@ const percentage = new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
 })
+const days = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 1,
+})
 
 type Props = {
     result: PurchasePredictionPage | null
@@ -67,6 +70,12 @@ export default function PurchasePredictionSearchResults({
                     <TableRow>
                         <TableHead>Product code</TableHead>
                         <TableHead>Product name</TableHead>
+                        <TableHead className="text-right">
+                            Days since last order
+                        </TableHead>
+                        <TableHead className="text-right">
+                            Average order frequency (days)
+                        </TableHead>
                         <TableHead className="text-right">7 days</TableHead>
                         <TableHead className="text-right">14 days</TableHead>
                         <TableHead className="text-right">30 days</TableHead>
@@ -76,7 +85,7 @@ export default function PurchasePredictionSearchResults({
                     {isLoading && groups.size === 0 && (
                         <TableRow>
                             <TableCell
-                                colSpan={5}
+                                colSpan={7}
                                 className="h-24 text-center text-muted-foreground"
                             >
                                 Loading purchase predictions…
@@ -86,7 +95,7 @@ export default function PurchasePredictionSearchResults({
                     {!isLoading && groups.size === 0 && (
                         <TableRow>
                             <TableCell
-                                colSpan={5}
+                                colSpan={7}
                                 className="h-24 text-center text-muted-foreground"
                             >
                                 No purchase predictions found.
@@ -107,7 +116,7 @@ export default function PurchasePredictionSearchResults({
                                         linkLabel={
                                             `Open customer ${customer.customerCode}`
                                         }
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="font-semibold"
                                     >
                                         {customer.customerCode}
@@ -149,6 +158,24 @@ function PredictionRow({ prediction }: { prediction: PurchasePrediction }) {
             </SearchResultCell>
             <SearchResultCell to={productPath} linkLabel={label}>
                 {prediction.productName || '—'}
+            </SearchResultCell>
+            <SearchResultCell
+                to={productPath}
+                linkLabel={label}
+                className="text-right tabular-nums"
+            >
+                {prediction.daysSinceLastOrder}
+            </SearchResultCell>
+            <SearchResultCell
+                to={productPath}
+                linkLabel={label}
+                className="text-right tabular-nums"
+            >
+                {prediction.averageOrderFrequencyDays == null
+                    ? '—'
+                    : days.format(
+                        prediction.averageOrderFrequencyDays,
+                    )}
             </SearchResultCell>
             {scores.map((score, index) => (
                 <SearchResultCell
