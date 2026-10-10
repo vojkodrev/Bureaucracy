@@ -8,12 +8,15 @@ CREATE TABLE [dbo].[purchase_prediction_runs]
     [forecast_end_7_days] date NOT NULL,
     [forecast_end_14_days] date NOT NULL,
     [forecast_end_30_days] date NOT NULL,
-    [model_version] varchar(32) NOT NULL,
+    [model_version_7_days] varchar(32) NOT NULL,
+    [model_version_14_days] varchar(32) NOT NULL,
+    [model_version_30_days] varchar(32) NOT NULL,
     [row_count] int NOT NULL,
     [created_at_utc] datetime2(7) NOT NULL,
     CONSTRAINT [PK_purchase_prediction_runs] PRIMARY KEY ([id]),
-    CONSTRAINT [UQ_purchase_prediction_runs_date_model]
-        UNIQUE ([as_of_date], [model_version]),
+    CONSTRAINT [UQ_purchase_prediction_runs_date_models]
+        UNIQUE ([as_of_date], [model_version_7_days], [model_version_14_days],
+                [model_version_30_days]),
     CONSTRAINT [CK_purchase_prediction_runs_row_count]
         CHECK ([row_count] >= 0),
     CONSTRAINT [CK_purchase_prediction_runs_forecast_dates]

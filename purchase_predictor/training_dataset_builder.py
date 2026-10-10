@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 import pandas as pd
@@ -9,6 +10,12 @@ from config import AppConfig
 from domain import Purchase
 from feature_builder import FeatureBuilder
 from training_dataset_cache import TrainingDatasetCache
+
+
+@dataclass(frozen=True)
+class TrainingDataset:
+    frame: pd.DataFrame
+    new_snapshot_count: int
 
 
 @singleton
@@ -27,7 +34,7 @@ class TrainingDatasetBuilder:
         self._dataset_cache = dataset_cache
         self._logger = logging.getLogger(type(self).__name__)
 
-    def build(self, purchases: list[Purchase], horizon: int) -> pd.DataFrame:
+    def build(self, purchases: list[Purchase], horizon: int) -> TrainingDataset:
         if horizon not in self.horizons:
             raise ValueError(f"Unsupported prediction horizon: {horizon}")
 
@@ -52,6 +59,7 @@ class TrainingDatasetBuilder:
             cutoff = first_cutoff
             final_cutoff = label_end - timedelta(days=horizon)
             frames: list[pd.DataFrame] = []
+            new_snapshot_count = 0
             cached = cache.load(horizon, cutoff, final_cutoff)
             while cutoff <= final_cutoff:
                 if cutoff in cached:
@@ -66,6 +74,7 @@ class TrainingDatasetBuilder:
                     )
                     cache.save(horizon, cutoff, snapshot)
                     frames.append(snapshot)
+                    new_snapshot_count += 1
                 cutoff += timedelta(days=horizon)
 
         dataset = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
@@ -78,7 +87,7 @@ class TrainingDatasetBuilder:
             len(dataset),
             horizon,
         )
-        return dataset
+        return TrainingDataset(dataset, new_snapshot_count)
 
     def _build_snapshot(
         self,

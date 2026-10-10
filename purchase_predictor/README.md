@@ -30,8 +30,10 @@ Edit `.env`, then train:
 On macOS or Linux, run `./install.sh`, copy and edit `.env`, then run
 `./train.sh`.
 
-Successful training writes a versioned model set under `models` and atomically
-updates `models/active.json`.
+Successful training writes independently versioned models under `models/7`,
+`models/14`, and `models/30`. Each horizon has its own atomic `active.json`
+pointer and is retrained only when its cached dataset gains a snapshot or no
+active model exists yet.
 
 After applying backend migration `00008`, create and store a prediction snapshot
 for all active customer-product pairs with:

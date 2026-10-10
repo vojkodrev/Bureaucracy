@@ -36,7 +36,7 @@ class PredictionService:
             self._config.training_start_date, as_of_date
         )
         features = self._dataset_builder.build(purchases, as_of_date)
-        model_version, models = self._model_repository.load_active(self._feature_builder)
+        model_versions, models = self._model_repository.load_active()
 
         for horizon, model in sorted(models.items()):
             score_column = f"score_{horizon}_days"
@@ -48,12 +48,12 @@ class PredictionService:
                 )[:, 1]
 
         run_id = self._prediction_repository.save(
-            as_of_date, model_version, features
+            as_of_date, model_versions, features
         )
         self._logger.info(
-            "Saved prediction run %d using model %s for %d pairs (%s through %s)",
+            "Saved prediction run %d using models %s for %d pairs (%s through %s)",
             run_id,
-            model_version,
+            model_versions,
             len(features),
             as_of_date + timedelta(days=1),
             as_of_date + timedelta(days=30),

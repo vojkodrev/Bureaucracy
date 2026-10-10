@@ -19,38 +19,53 @@ class PredictionRepository:
         self._connection_string = config.connection_string
         self._feature_columns = feature_builder.feature_columns
 
-    def save(self, as_of_date: date, model_version: str, frame: pd.DataFrame) -> int:
+    def save(
+        self, as_of_date: date, model_versions: dict[int, str], frame: pd.DataFrame
+    ) -> int:
         created_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        version_7 = model_versions[7]
+        version_14 = model_versions[14]
+        version_30 = model_versions[30]
         with pyodbc.connect(self._connection_string) as connection:
             cursor = connection.cursor()
             try:
                 existing = cursor.execute(
                     f"""
                     SELECT id FROM {self._run_table}
-                    WHERE as_of_date = ? AND model_version = ?
+                    WHERE as_of_date = ?
+                      AND model_version_7_days = ?
+                      AND model_version_14_days = ?
+                      AND model_version_30_days = ?
                     """,
                     as_of_date,
-                    model_version,
+                    version_7,
+                    version_14,
+                    version_30,
                 ).fetchone()
                 if existing:
                     raise ValueError(
-                        f"Predictions already exist for {as_of_date} and model {model_version}"
+                        f"Predictions already exist for {as_of_date} and models "
+                        f"{model_versions}"
                     )
 
                 inserted = cursor.execute(
                     f"""
                     INSERT INTO {self._run_table}
                         (as_of_date, forecast_end_7_days, forecast_end_14_days,
-                         forecast_end_30_days, model_version, row_count, created_at_utc)
+                         forecast_end_30_days, model_version_7_days,
+                         model_version_14_days, model_version_30_days,
+                         row_count, created_at_utc)
                     OUTPUT INSERTED.id
                     VALUES (?, DATEADD(day, 7, ?), DATEADD(day, 14, ?),
-                            DATEADD(day, 30, ?), ?, ?, ?)
+                            DATEADD(day, 30, ?), ?, ?, ?, ?, ?)
                     """,
                     as_of_date,
                     as_of_date,
                     as_of_date,
                     as_of_date,
-                    model_version,
+                    version_7,
+                    version_14,
+                    version_30,
                     len(frame),
                     created_at,
                 ).fetchone()

@@ -36,14 +36,25 @@ class TrainingService:
             self._config.training_start_date,
             self._config.training_end_date,
         )
-        models: dict[int, CatBoostClassifier] = {}
-        metrics: dict[str, object] = {}
-        dataset_metadata: dict[str, object] = {}
         features = self._feature_builder.feature_columns
         categorical = self._feature_builder.categorical_columns
 
         for horizon in self._dataset_builder.horizons:
-            dataset = self._dataset_builder.build(purchases, horizon)
+            result = self._dataset_builder.build(purchases, horizon)
+            dataset = result.frame
+            if (
+                result.new_snapshot_count == 0
+                and self._model_repository.is_current(
+                    horizon, dataset["cutoff_date"].max()
+                )
+            ):
+                self._logger.info(
+                    "Skipping %d-day model training because its dataset has no new snapshots",
+                    horizon,
+                )
+                del result, dataset
+                continue
+
             train, validation, test = self._chronological_split(dataset)
             target = "purchased_within_horizon"
             self._require_both_classes(train[target], f"training {horizon}-day target")
@@ -66,7 +77,7 @@ class TrainingService:
             )
             probability = evaluation_model.predict_proba(test[features])[:, 1]
             prediction = (probability >= 0.5).astype(int)
-            metrics[str(horizon)] = {
+            metrics = {
                 "average_precision": average_precision_score(test[target], probability),
                 "log_loss": log_loss(test[target], probability),
                 "precision_at_0_5": precision_score(test[target], prediction, zero_division=0),
@@ -81,8 +92,7 @@ class TrainingService:
                 dataset[target],
                 cat_features=categorical,
             )
-            models[horizon] = final_model
-            dataset_metadata[str(horizon)] = {
+            dataset_metadata = {
                 "training_start_date": dataset["cutoff_date"].min(),
                 "training_end_date": dataset["cutoff_date"].max(),
                 "row_count": len(dataset),
@@ -93,7 +103,21 @@ class TrainingService:
                     "test": len(test),
                 },
             }
+            output = self._model_repository.publish(
+                horizon,
+                final_model,
+                {
+                    "feature_columns": features,
+                    "categorical_columns": categorical,
+                    "metrics": metrics,
+                    "dataset": dataset_metadata,
+                },
+            )
+            self._logger.info(
+                "Published trained %d-day model to %s", horizon, output
+            )
             del (
+                result,
                 dataset,
                 train,
                 validation,
@@ -101,18 +125,8 @@ class TrainingService:
                 evaluation_model,
                 probability,
                 prediction,
+                final_model,
             )
-
-        output = self._model_repository.publish(
-            models,
-            {
-                "feature_columns": features,
-                "categorical_columns": categorical,
-                "metrics": metrics,
-                "datasets": dataset_metadata,
-            },
-        )
-        self._logger.info("Published trained model set to %s", output)
 
     def _new_model(self, iterations: int) -> CatBoostClassifier:
         return CatBoostClassifier(
