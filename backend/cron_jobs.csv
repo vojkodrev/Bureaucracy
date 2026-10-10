@@ -1,5 +1,5 @@
 cron_schedule,job_name
 0 3 * * *,database_backup
 0 4 * * *,file_storage_cleanup
-0 1 1 * *,purchase_predictor_training
+0 1 * * 1,purchase_predictor_training
 0 5 * * 1,purchase_predictor_prediction

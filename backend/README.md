@@ -27,8 +27,8 @@ storage cleanup job removes uploads older than 24 hours that have not been
 attached to a goods receipt. Cron is disabled by default; set `CRON_ENABLED=true`
 in the production environment to enable scheduled jobs.
 
-The purchase predictor trains all 7-, 14-, and 30-day models at 01:00 on the
-first day of every month. It predicts all three horizons every Monday at 05:00.
+The purchase predictor trains all 7-, 14-, and 30-day models every Monday at
+01:00. It predicts all three horizons every Monday at 05:00.
 Both schedules use the backend process's local timezone. One training job and
 one prediction job are sufficient because each Python command handles all three
 models. Install and configure `../purchase_predictor` before enabling cron. Set
