@@ -16,7 +16,6 @@ from feature_builder import FeatureBuilder
 @singleton
 class TrainingDatasetCache:
     _schema_version = 1
-    _horizons = (7, 14, 30)
 
     @inject
     def __init__(self, config: AppConfig, feature_builder: FeatureBuilder):
@@ -24,7 +23,7 @@ class TrainingDatasetCache:
         self._columns = [
             *feature_builder.feature_columns,
             "cutoff_date",
-            *(f"purchased_within_{horizon}_days" for horizon in self._horizons),
+            "purchased_within_horizon",
         ]
         self._cache_key = self._make_cache_key(config, feature_builder)
         self._logger = logging.getLogger(type(self).__name__)
@@ -43,9 +42,7 @@ class TrainingDatasetCache:
                 f"schema_version={cls._schema_version}",
                 f"training_start_date={config.training_start_date.isoformat()}",
                 f"warmup_months={config.warmup_months}",
-                f"cutoff_interval_days={config.cutoff_interval_days}",
                 f"active_pair_months={config.active_pair_months}",
-                f"horizons={','.join(str(value) for value in cls._horizons)}",
                 f"feature_columns={','.join(feature_builder.feature_columns)}",
             ]
         )
@@ -69,15 +66,19 @@ class TrainingDatasetCacheSession:
         self._columns = columns
         self._logger = logger
 
-    def load(self, first_cutoff: date, final_cutoff: date) -> dict[date, pd.DataFrame]:
+    def load(
+        self, horizon: int, first_cutoff: date, final_cutoff: date
+    ) -> dict[date, pd.DataFrame]:
         snapshots = self._connection.cursor().execute(
             f"""
             SELECT cutoff_date, row_count
             FROM {self._snapshot_table}
-            WHERE cache_key = ? AND cutoff_date BETWEEN ? AND ?
+            WHERE cache_key = ? AND horizon_days = ?
+              AND cutoff_date BETWEEN ? AND ?
             ORDER BY cutoff_date
             """,
             self._cache_key,
+            horizon,
             first_cutoff,
             final_cutoff,
         ).fetchall()
@@ -88,10 +89,12 @@ class TrainingDatasetCacheSession:
             f"""
             SELECT {selected_columns}
             FROM {self._row_table}
-            WHERE cache_key = ? AND cutoff_date BETWEEN ? AND ?
+            WHERE cache_key = ? AND horizon_days = ?
+              AND cutoff_date BETWEEN ? AND ?
             ORDER BY cutoff_date, customer_code, product_code
             """,
             self._cache_key,
+            horizon,
             first_cutoff,
             final_cutoff,
         ).fetchall()
@@ -112,33 +115,44 @@ class TrainingDatasetCacheSession:
                 frame["cutoff_date"] = pd.to_datetime(frame["cutoff_date"]).dt.date
             result[snapshot.cutoff_date] = frame
             self._logger.info(
-                "Loaded training snapshot for cutoff %s from MSSQL cache (%d rows)",
+                "Loaded %d-day training snapshot for cutoff %s from MSSQL cache (%d rows)",
+                horizon,
                 snapshot.cutoff_date,
                 len(frame),
             )
 
         if result:
-            self._logger.info("Loaded %d training snapshots from MSSQL cache", len(result))
+            self._logger.info(
+                "Loaded %d training snapshots for the %d-day horizon from MSSQL cache",
+                len(result),
+                horizon,
+            )
         return result
 
-    def save(self, cutoff: date, frame: pd.DataFrame) -> None:
+    def save(self, horizon: int, cutoff: date, frame: pd.DataFrame) -> None:
         cursor = self._connection.cursor()
         try:
             cursor.execute(
                 f"""
-                INSERT INTO {self._snapshot_table} (cache_key, cutoff_date, row_count)
-                VALUES (?, ?, ?)
+                INSERT INTO {self._snapshot_table}
+                    (cache_key, horizon_days, cutoff_date, row_count)
+                VALUES (?, ?, ?, ?)
                 """,
                 self._cache_key,
+                horizon,
                 cutoff,
                 len(frame),
             )
             if not frame.empty:
-                database_columns = ["cache_key", *self._columns]
+                database_columns = ["cache_key", "horizon_days", *self._columns]
                 column_sql = ", ".join(f"[{column}]" for column in database_columns)
                 placeholders = ", ".join("?" for _ in database_columns)
                 values = [
-                    (self._cache_key, *(self._database_value(value) for value in row))
+                    (
+                        self._cache_key,
+                        horizon,
+                        *(self._database_value(value) for value in row),
+                    )
                     for row in frame[self._columns].itertuples(index=False, name=None)
                 ]
                 cursor.fast_executemany = True

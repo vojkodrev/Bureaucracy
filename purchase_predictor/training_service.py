@@ -36,30 +36,21 @@ class TrainingService:
             self._config.training_start_date,
             self._config.training_end_date,
         )
-        dataset = self._dataset_builder.build(purchases)
-        train, validation, test = self._chronological_split(dataset)
-
         models: dict[int, CatBoostClassifier] = {}
         metrics: dict[str, object] = {}
+        dataset_metadata: dict[str, object] = {}
         features = self._feature_builder.feature_columns
         categorical = self._feature_builder.categorical_columns
 
         for horizon in self._dataset_builder.horizons:
-            target = f"purchased_within_{horizon}_days"
+            dataset = self._dataset_builder.build(purchases, horizon)
+            train, validation, test = self._chronological_split(dataset)
+            target = "purchased_within_horizon"
             self._require_both_classes(train[target], f"training {horizon}-day target")
             self._require_both_classes(test[target], f"test {horizon}-day target")
 
-            model = CatBoostClassifier(
-                iterations=self._config.model_iterations,
-                learning_rate=self._config.model_learning_rate,
-                depth=self._config.model_depth,
-                random_seed=self._config.model_random_seed,
-                loss_function="Logloss",
-                eval_metric="PRAUC",
-                auto_class_weights="Balanced",
-                verbose=50,
-            )
-            model.fit(
+            evaluation_model = self._new_model(self._config.model_iterations)
+            evaluation_model.fit(
                 train[features],
                 train[target],
                 cat_features=categorical,
@@ -67,7 +58,13 @@ class TrainingService:
                 early_stopping_rounds=50,
                 use_best_model=True,
             )
-            probability = model.predict_proba(test[features])[:, 1]
+            best_iteration = evaluation_model.get_best_iteration()
+            selected_iterations = (
+                best_iteration + 1
+                if best_iteration >= 0
+                else self._config.model_iterations
+            )
+            probability = evaluation_model.predict_proba(test[features])[:, 1]
             prediction = (probability >= 0.5).astype(int)
             metrics[str(horizon)] = {
                 "average_precision": average_precision_score(test[target], probability),
@@ -75,22 +72,59 @@ class TrainingService:
                 "precision_at_0_5": precision_score(test[target], prediction, zero_division=0),
                 "recall_at_0_5": recall_score(test[target], prediction, zero_division=0),
                 "positive_rate": float(test[target].mean()),
+                "selected_iterations": selected_iterations,
             }
-            models[horizon] = model
+
+            final_model = self._new_model(selected_iterations)
+            final_model.fit(
+                dataset[features],
+                dataset[target],
+                cat_features=categorical,
+            )
+            models[horizon] = final_model
+            dataset_metadata[str(horizon)] = {
+                "training_start_date": dataset["cutoff_date"].min(),
+                "training_end_date": dataset["cutoff_date"].max(),
+                "row_count": len(dataset),
+                "snapshot_interval_days": horizon,
+                "split": {
+                    "train": len(train),
+                    "validation": len(validation),
+                    "test": len(test),
+                },
+            }
+            del (
+                dataset,
+                train,
+                validation,
+                test,
+                evaluation_model,
+                probability,
+                prediction,
+            )
 
         output = self._model_repository.publish(
             models,
             {
-                "training_start_date": dataset["cutoff_date"].min(),
-                "training_end_date": dataset["cutoff_date"].max(),
-                "row_count": len(dataset),
                 "feature_columns": features,
                 "categorical_columns": categorical,
                 "metrics": metrics,
-                "split": {"train": len(train), "validation": len(validation), "test": len(test)},
+                "datasets": dataset_metadata,
             },
         )
         self._logger.info("Published trained model set to %s", output)
+
+    def _new_model(self, iterations: int) -> CatBoostClassifier:
+        return CatBoostClassifier(
+            iterations=iterations,
+            learning_rate=self._config.model_learning_rate,
+            depth=self._config.model_depth,
+            random_seed=self._config.model_random_seed,
+            loss_function="Logloss",
+            eval_metric="PRAUC",
+            auto_class_weights="Balanced",
+            verbose=50,
+        )
 
     @staticmethod
     def _chronological_split(
@@ -98,7 +132,7 @@ class TrainingService:
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         dates = sorted(dataset["cutoff_date"].unique())
         if len(dates) < 10:
-            raise ValueError("At least 10 weekly cutoff dates are required")
+            raise ValueError("At least 10 cutoff dates are required")
         validation_index = max(1, int(len(dates) * 0.70))
         test_index = max(validation_index + 1, int(len(dates) * 0.85))
         validation_start = dates[validation_index]

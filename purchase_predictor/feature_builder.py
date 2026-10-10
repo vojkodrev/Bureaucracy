@@ -14,6 +14,9 @@ class FeatureBuilder:
         "cutoff_week",
         "days_since_pair_last_purchase",
         "pair_purchase_count_lifetime",
+        "pair_purchase_count_7d",
+        "pair_purchase_count_14d",
+        "pair_purchase_count_30d",
         "pair_purchase_count_90d",
         "pair_purchase_count_365d",
         "pair_mean_interval_days",
@@ -32,12 +35,21 @@ class FeatureBuilder:
         "pair_mean_unit_price",
         "pair_unit_price_change_percent",
         "customer_days_since_any_purchase",
+        "customer_invoice_count_7d",
+        "customer_invoice_count_14d",
+        "customer_invoice_count_30d",
         "customer_invoice_count_90d",
         "customer_invoice_count_365d",
+        "product_purchase_count_7d",
+        "product_purchase_count_14d",
+        "product_purchase_count_30d",
         "product_purchase_count_90d",
         "product_purchase_count_365d",
         "product_mean_interval_days",
         "product_median_interval_days",
+        "product_customer_count_7d",
+        "product_customer_count_14d",
+        "product_customer_count_30d",
         "product_customer_count_90d",
         "product_customer_count_365d",
         "product_customer_count_lifetime",
@@ -79,6 +91,15 @@ class FeatureBuilder:
             "cutoff_week": cutoff.isocalendar().week,
             "days_since_pair_last_purchase": days_since_last,
             "pair_purchase_count_lifetime": len(pair_history),
+            "pair_purchase_count_7d": self._count_since(
+                pair_history, cutoff_timestamp, 7
+            ),
+            "pair_purchase_count_14d": self._count_since(
+                pair_history, cutoff_timestamp, 14
+            ),
+            "pair_purchase_count_30d": self._count_since(
+                pair_history, cutoff_timestamp, 30
+            ),
             "pair_purchase_count_90d": self._count_since(pair_history, cutoff_timestamp, 90),
             "pair_purchase_count_365d": self._count_since(pair_history, cutoff_timestamp, 365),
             "pair_mean_interval_days": self._number(intervals.mean()),
@@ -103,16 +124,43 @@ class FeatureBuilder:
             "customer_days_since_any_purchase": (
                 cutoff_timestamp - customer_history["service_date"].max()
             ).days,
+            "customer_invoice_count_7d": self._unique_since(
+                customer_history, cutoff_timestamp, 7, "invoice_id"
+            ),
+            "customer_invoice_count_14d": self._unique_since(
+                customer_history, cutoff_timestamp, 14, "invoice_id"
+            ),
+            "customer_invoice_count_30d": self._unique_since(
+                customer_history, cutoff_timestamp, 30, "invoice_id"
+            ),
             "customer_invoice_count_90d": self._unique_since(
                 customer_history, cutoff_timestamp, 90, "invoice_id"
             ),
             "customer_invoice_count_365d": self._unique_since(
                 customer_history, cutoff_timestamp, 365, "invoice_id"
             ),
+            "product_purchase_count_7d": self._count_since(
+                product_history, cutoff_timestamp, 7
+            ),
+            "product_purchase_count_14d": self._count_since(
+                product_history, cutoff_timestamp, 14
+            ),
+            "product_purchase_count_30d": self._count_since(
+                product_history, cutoff_timestamp, 30
+            ),
             "product_purchase_count_90d": self._count_since(product_history, cutoff_timestamp, 90),
             "product_purchase_count_365d": self._count_since(product_history, cutoff_timestamp, 365),
             "product_mean_interval_days": self._number(product_intervals.mean()),
             "product_median_interval_days": self._number(product_intervals.median()),
+            "product_customer_count_7d": self._unique_since(
+                product_history, cutoff_timestamp, 7, "customer_code"
+            ),
+            "product_customer_count_14d": self._unique_since(
+                product_history, cutoff_timestamp, 14, "customer_code"
+            ),
+            "product_customer_count_30d": self._unique_since(
+                product_history, cutoff_timestamp, 30, "customer_code"
+            ),
             "product_customer_count_90d": self._unique_since(
                 product_history, cutoff_timestamp, 90, "customer_code"
             ),

@@ -27,7 +27,10 @@ class TrainingDatasetBuilder:
         self._dataset_cache = dataset_cache
         self._logger = logging.getLogger(type(self).__name__)
 
-    def build(self, purchases: list[Purchase]) -> pd.DataFrame:
+    def build(self, purchases: list[Purchase], horizon: int) -> pd.DataFrame:
+        if horizon not in self.horizons:
+            raise ValueError(f"Unsupported prediction horizon: {horizon}")
+
         purchase_lines = self._purchase_lines(purchases)
         events = self._events(purchase_lines)
         if events.empty:
@@ -37,9 +40,7 @@ class TrainingDatasetBuilder:
         configured_end = self._config.training_end_date or date.today()
         label_end = min(configured_end, latest_date)
         first_date = events["service_date"].min().date()
-        cutoff = first_date + relativedelta(months=self._config.warmup_months)
-        final_cutoff = label_end - timedelta(days=max(self.horizons))
-        frames: list[pd.DataFrame] = []
+        first_cutoff = first_date + relativedelta(months=self._config.warmup_months)
         all_pair_groups = {
             key: value
             for key, value in events.groupby(
@@ -48,32 +49,48 @@ class TrainingDatasetBuilder:
         }
 
         with self._dataset_cache.session() as cache:
-            cached = cache.load(cutoff, final_cutoff)
+            cutoff = first_cutoff
+            final_cutoff = label_end - timedelta(days=horizon)
+            frames: list[pd.DataFrame] = []
+            cached = cache.load(horizon, cutoff, final_cutoff)
             while cutoff <= final_cutoff:
                 if cutoff in cached:
                     frames.append(cached[cutoff])
                 else:
                     snapshot = self._build_snapshot(
-                        cutoff, purchase_lines, events, all_pair_groups
+                        cutoff,
+                        horizon,
+                        purchase_lines,
+                        events,
+                        all_pair_groups,
                     )
-                    cache.save(cutoff, snapshot)
+                    cache.save(horizon, cutoff, snapshot)
                     frames.append(snapshot)
-                cutoff += timedelta(days=self._config.cutoff_interval_days)
+                cutoff += timedelta(days=horizon)
 
         dataset = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         if dataset.empty:
-            raise ValueError("Training rules produced no rows")
-        self._logger.info("Built %d training rows", len(dataset))
+            raise ValueError(
+                f"Training rules produced no rows for the {horizon}-day horizon"
+            )
+        self._logger.info(
+            "Built %d training rows for the %d-day horizon",
+            len(dataset),
+            horizon,
+        )
         return dataset
 
     def _build_snapshot(
         self,
         cutoff: date,
+        horizon: int,
         purchase_lines: pd.DataFrame,
         events: pd.DataFrame,
         all_pair_groups: dict[tuple[object, object], pd.DataFrame],
     ) -> pd.DataFrame:
-        self._logger.info("Building training snapshot for cutoff %s", cutoff)
+        self._logger.info(
+            "Building %d-day training snapshot for cutoff %s", horizon, cutoff
+        )
         history = events[events["service_date"] <= pd.Timestamp(cutoff)]
         invoice_history = purchase_lines[
             purchase_lines["service_date"] <= pd.Timestamp(cutoff)
@@ -115,11 +132,13 @@ class TrainingDatasetBuilder:
                 (next_date - pd.Timestamp(cutoff)).days if pd.notna(next_date) else None
             )
 
-            row = {**features, "cutoff_date": cutoff}
-            for horizon in self.horizons:
-                row[f"purchased_within_{horizon}_days"] = int(
+            row = {
+                **features,
+                "cutoff_date": cutoff,
+                "purchased_within_horizon": int(
                     days_to_next is not None and days_to_next <= horizon
-                )
+                ),
+            }
             rows.append(row)
         return pd.DataFrame(rows)
 

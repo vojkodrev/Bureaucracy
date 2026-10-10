@@ -31,7 +31,6 @@ class AppConfig:
     training_start_date: date
     training_end_date: date | None
     warmup_months: int
-    cutoff_interval_days: int
     active_pair_months: int
     model_directory: Path
     model_iterations: int
@@ -66,7 +65,6 @@ class AppConfig:
             training_start_date=_optional_date("TRAINING_START_DATE") or date(2004, 1, 1),
             training_end_date=_optional_date("TRAINING_END_DATE"),
             warmup_months=int(os.getenv("WARMUP_MONTHS", "12")),
-            cutoff_interval_days=int(os.getenv("CUTOFF_INTERVAL_DAYS", "7")),
             active_pair_months=int(os.getenv("ACTIVE_PAIR_MONTHS", "24")),
             model_directory=model_directory,
             model_iterations=int(os.getenv("MODEL_ITERATIONS", "500")),
