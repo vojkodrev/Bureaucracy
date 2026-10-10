@@ -46,19 +46,14 @@ func (repository *PurchasePredictionRepository) Search(
 		sql.Named("offset", (page-1)*pageSize), sql.Named("pageSize", pageSize),
 	}
 
-	// Page by customer so a customer's product predictions are never split across pages.
 	query := fmt.Sprintf(`
 		DECLARE @runID bigint = (
 			SELECT TOP (1) id
 			FROM [Bureaucracy].[dbo].[purchase_prediction_runs]
 			ORDER BY as_of_date DESC, created_at_utc DESC, id DESC
 		);
-		WITH matching AS (
-			SELECT r.id, r.customer_code, c.Partner customer_name,
-				r.product_code, p.Opis product_name,
-				r.days_since_pair_last_purchase,
-				r.pair_mean_interval_days,
-				r.score_7_days, r.score_14_days, r.score_30_days
+		WITH matching_customers AS (
+			SELECT r.customer_code, MAX(r.score_7_days) highest_score_7_days
 			FROM [Bureaucracy].[dbo].[purchase_prediction_rows] r
 			LEFT JOIN [%s].[dbo].[Partner] c ON c.Sifra = r.customer_code
 			LEFT JOIN [%s].[dbo].[Artikel] p ON p.Artikel = r.product_code
@@ -67,21 +62,25 @@ func (repository *PurchasePredictionRepository) Search(
 				AND (@customerName IS NULL OR c.Partner LIKE '%%' + @customerName + '%%')
 				AND (@productCode IS NULL OR r.product_code LIKE '%%' + @productCode + '%%')
 				AND (@productName IS NULL OR p.Opis LIKE '%%' + @productName + '%%')
-		), customers AS (
-			SELECT customer_code, MAX(customer_name) customer_name,
-				MAX(score_7_days) highest_score_7_days
-			FROM matching GROUP BY customer_code
+			GROUP BY r.customer_code
 		), paged AS (
-			SELECT customer_code FROM customers
+			SELECT customer_code FROM matching_customers
 			ORDER BY highest_score_7_days DESC, customer_code
 			OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
 		)
-		SELECT m.id, m.customer_code, m.customer_name, m.product_code, m.product_name,
-			m.days_since_pair_last_purchase, m.pair_mean_interval_days,
-			m.score_7_days, m.score_14_days, m.score_30_days
-		FROM matching m INNER JOIN paged pg ON pg.customer_code = m.customer_code
-		ORDER BY MAX(m.score_7_days) OVER (PARTITION BY m.customer_code) DESC,
-			m.customer_code, m.score_7_days DESC, m.product_code`,
+		SELECT r.id, r.customer_code, c.Partner customer_name,
+			r.product_code, p.Opis product_name,
+			r.days_since_pair_last_purchase, r.pair_mean_interval_days,
+			r.score_7_days, r.score_14_days, r.score_30_days
+		FROM [Bureaucracy].[dbo].[purchase_prediction_rows] r
+		INNER JOIN paged pg ON pg.customer_code = r.customer_code
+		LEFT JOIN [%s].[dbo].[Partner] c ON c.Sifra = r.customer_code
+		LEFT JOIN [%s].[dbo].[Artikel] p ON p.Artikel = r.product_code
+		WHERE r.run_id = @runID
+		ORDER BY MAX(r.score_7_days) OVER (PARTITION BY r.customer_code) DESC,
+			r.customer_code, r.score_7_days DESC, r.product_code`,
+		databaseName,
+		databaseName,
 		databaseName,
 		databaseName,
 	)
