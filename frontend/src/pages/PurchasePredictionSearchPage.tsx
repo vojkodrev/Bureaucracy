@@ -7,6 +7,7 @@ import {
     PurchasePredictionSearchResults,
     type PurchasePredictionSearchCriteria,
 } from '@/components/purchase-prediction-search'
+import { isStorageOnlyUser } from '@/lib/auth'
 import { defaultPage, defaultPageSize } from '@/lib/pagination'
 import type { PurchasePredictionPage } from '@/lib/purchase-prediction-types'
 
@@ -108,6 +109,7 @@ export default function PurchasePredictionSearchPage() {
                 <PurchasePredictionSearchResults
                     result={state.result}
                     isLoading={isLoading}
+                    allowCustomerNavigation={!isStorageOnlyUser()}
                     onPageChange={(page) => update({
                         ...search,
                         page: String(page),

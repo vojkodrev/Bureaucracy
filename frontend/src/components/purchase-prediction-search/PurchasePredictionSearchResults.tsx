@@ -26,6 +26,7 @@ const days = new Intl.NumberFormat(undefined, {
 type Props = {
     result: PurchasePredictionPage | null
     isLoading: boolean
+    allowCustomerNavigation: boolean
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
 }
@@ -33,6 +34,7 @@ type Props = {
 export default function PurchasePredictionSearchResults({
     result,
     isLoading,
+    allowCustomerNavigation,
     onPageChange,
     onPageSizeChange,
 }: Props) {
@@ -71,10 +73,10 @@ export default function PurchasePredictionSearchResults({
                         <TableHead>Product code</TableHead>
                         <TableHead>Product name</TableHead>
                         <TableHead className="text-right">
-                            Days since last order
+                            Average order frequency (days)
                         </TableHead>
                         <TableHead className="text-right">
-                            Average order frequency (days)
+                            Days since last order
                         </TableHead>
                         <TableHead className="text-right">7 days</TableHead>
                         <TableHead className="text-right">14 days</TableHead>
@@ -109,10 +111,20 @@ export default function PurchasePredictionSearchResults({
                         )}`
                         return (
                             <Fragment key={customer.customerCode}>
-                                <TableRow className="cursor-pointer bg-muted/60">
+                                <TableRow
+                                    className={
+                                        allowCustomerNavigation
+                                            ? 'cursor-pointer bg-muted/60'
+                                            : 'bg-muted/60'
+                                    }
+                                >
                                     <SearchResultCell
                                         primary
-                                        to={customerPath}
+                                        to={
+                                            allowCustomerNavigation
+                                                ? customerPath
+                                                : undefined
+                                        }
                                         linkLabel={
                                             `Open customer ${customer.customerCode}`
                                         }
@@ -164,18 +176,18 @@ function PredictionRow({ prediction }: { prediction: PurchasePrediction }) {
                 linkLabel={label}
                 className="text-right tabular-nums"
             >
-                {prediction.daysSinceLastOrder}
+                {prediction.averageOrderFrequencyDays == null
+                    ? '—'
+                    : days.format(
+                        prediction.averageOrderFrequencyDays,
+                    )}
             </SearchResultCell>
             <SearchResultCell
                 to={productPath}
                 linkLabel={label}
                 className="text-right tabular-nums"
             >
-                {prediction.averageOrderFrequencyDays == null
-                    ? '—'
-                    : days.format(
-                        prediction.averageOrderFrequencyDays,
-                    )}
+                {prediction.daysSinceLastOrder}
             </SearchResultCell>
             {scores.map((score, index) => (
                 <SearchResultCell
