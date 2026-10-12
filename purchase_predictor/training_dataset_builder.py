@@ -1,6 +1,9 @@
 import logging
+import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
+from types import SimpleNamespace
 
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -56,26 +59,57 @@ class TrainingDatasetBuilder:
         }
 
         with self._dataset_cache.session() as cache:
-            cutoff = first_cutoff
             final_cutoff = label_end - timedelta(days=horizon)
-            frames: list[pd.DataFrame] = []
-            new_snapshot_count = 0
-            cached = cache.load(horizon, cutoff, final_cutoff)
+            cached = cache.load(horizon, first_cutoff, final_cutoff)
+
+            cutoffs: list[date] = []
+            cutoff = first_cutoff
             while cutoff <= final_cutoff:
-                if cutoff in cached:
-                    frames.append(cached[cutoff])
-                else:
-                    snapshot = self._build_snapshot(
+                cutoffs.append(cutoff)
+                cutoff += timedelta(days=horizon)
+
+            missing_cutoffs = [cutoff for cutoff in cutoffs if cutoff not in cached]
+            built: dict[date, pd.DataFrame] = {}
+            worker_count = min(os.cpu_count() or 1, len(missing_cutoffs) or 1)
+            if worker_count == 1:
+                snapshots = (
+                    self._build_snapshot(
                         cutoff,
                         horizon,
                         purchase_lines,
                         events,
                         all_pair_groups,
                     )
+                    for cutoff in missing_cutoffs
+                )
+                for cutoff, snapshot in zip(missing_cutoffs, snapshots):
                     cache.save(horizon, cutoff, snapshot)
-                    frames.append(snapshot)
-                    new_snapshot_count += 1
-                cutoff += timedelta(days=horizon)
+                    built[cutoff] = snapshot
+            else:
+                with ProcessPoolExecutor(
+                    max_workers=worker_count,
+                    initializer=_initialize_snapshot_worker,
+                    initargs=(
+                        self._config.active_pair_months,
+                        purchase_lines,
+                        events,
+                        all_pair_groups,
+                    ),
+                ) as executor:
+                    snapshots = executor.map(
+                        _build_snapshot_in_worker,
+                        ((cutoff, horizon) for cutoff in missing_cutoffs),
+                    )
+                    for cutoff, snapshot in zip(missing_cutoffs, snapshots):
+                        # Keep the pyodbc connection in the parent process.
+                        cache.save(horizon, cutoff, snapshot)
+                        built[cutoff] = snapshot
+
+            frames = [
+                cached[cutoff] if cutoff in cached else built[cutoff]
+                for cutoff in cutoffs
+            ]
+            new_snapshot_count = len(built)
 
         dataset = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         if dataset.empty:
@@ -168,3 +202,56 @@ class TrainingDatasetBuilder:
             .sort_values("service_date")
             .reset_index(drop=True)
         )
+
+
+_snapshot_worker: TrainingDatasetBuilder | None = None
+_snapshot_purchase_lines: pd.DataFrame | None = None
+_snapshot_events: pd.DataFrame | None = None
+_snapshot_pair_groups: dict[tuple[object, object], pd.DataFrame] | None = None
+
+
+def _initialize_snapshot_worker(
+    active_pair_months: int,
+    purchase_lines: pd.DataFrame,
+    events: pd.DataFrame,
+    all_pair_groups: dict[tuple[object, object], pd.DataFrame],
+) -> None:
+    global _snapshot_worker
+    global _snapshot_purchase_lines
+    global _snapshot_events
+    global _snapshot_pair_groups
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format=(
+            "%(asctime)s %(levelname)s %(processName)s %(name)s: %(message)s"
+        ),
+        force=True,
+    )
+    builder = TrainingDatasetBuilder.__new__(TrainingDatasetBuilder)
+    builder._config = SimpleNamespace(active_pair_months=active_pair_months)
+    builder._feature_builder = FeatureBuilder()
+    builder._logger = logging.getLogger(TrainingDatasetBuilder.__name__)
+    _snapshot_worker = builder
+    _snapshot_purchase_lines = purchase_lines
+    _snapshot_events = events
+    _snapshot_pair_groups = all_pair_groups
+
+
+def _build_snapshot_in_worker(arguments: tuple[date, int]) -> pd.DataFrame:
+    if (
+        _snapshot_worker is None
+        or _snapshot_purchase_lines is None
+        or _snapshot_events is None
+        or _snapshot_pair_groups is None
+    ):
+        raise RuntimeError("Snapshot worker was not initialized")
+
+    cutoff, horizon = arguments
+    return _snapshot_worker._build_snapshot(
+        cutoff,
+        horizon,
+        _snapshot_purchase_lines,
+        _snapshot_events,
+        _snapshot_pair_groups,
+    )
