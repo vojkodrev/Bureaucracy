@@ -54,7 +54,7 @@ export default function PurchasePredictionSearchResults({
         : 0
 
     return (
-        <div className="mt-8 w-full overflow-x-auto">
+        <div className="mt-8 w-full [&_[data-slot=table-container]]:overflow-visible">
             {result && (
                 <Pager
                     firstItem={first}
@@ -68,7 +68,7 @@ export default function PurchasePredictionSearchResults({
                 />
             )}
             <Table aria-busy={isLoading}>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-background">
                     <TableRow>
                         <TableHead>Product code</TableHead>
                         <TableHead>Product name</TableHead>
