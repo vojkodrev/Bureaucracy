@@ -398,7 +398,8 @@ type ComplexityRoot struct {
 	}
 
 	Storage struct {
-		Code func(childComplexity int) int
+		Code        func(childComplexity int) int
+		Description func(childComplexity int) int
 	}
 
 	TaxCode struct {
@@ -2246,6 +2247,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Storage.Code(childComplexity), true
+	case "Storage.description":
+		if e.ComplexityRoot.Storage.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Storage.Description(childComplexity), true
 
 	case "TaxCode.code":
 		if e.ComplexityRoot.TaxCode.Code == nil {
@@ -3009,6 +3016,8 @@ func (ec *executionContext) childFields_Storage(ctx context.Context, field graph
 	switch field.Name {
 	case "code":
 		return ec.fieldContext_Storage_code(ctx, field)
+	case "description":
+		return ec.fieldContext_Storage_description(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Storage", field.Name)
 }
@@ -11627,6 +11636,29 @@ func (ec *executionContext) fieldContext_Storage_code(_ context.Context, field g
 	return graphql.NewScalarFieldContext("Storage", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
+func (ec *executionContext) _Storage_description(ctx context.Context, field graphql.CollectedField, obj *Storage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Storage_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Storage_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Storage", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _TaxCode_id(ctx context.Context, field graphql.CollectedField, obj *TaxCode) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -16823,6 +16855,11 @@ func (ec *executionContext) _Storage(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("Storage")
 		case "code":
 			out.Values[i] = ec._Storage_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Storage_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

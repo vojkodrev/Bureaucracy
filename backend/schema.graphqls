@@ -398,6 +398,7 @@ type GoodsReceipt {
 
 type Storage {
   code: String!
+  description: String!
 }
 
 type GoodsReceiptItem {

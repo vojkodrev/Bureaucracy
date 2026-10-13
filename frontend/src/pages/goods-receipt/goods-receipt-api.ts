@@ -97,7 +97,7 @@ export async function fetchNextGoodsReceiptNumber(
 export async function fetchGoodsReceiptStorages(signal?: AbortSignal) {
     const result = await postGraphql<{ data?: { goodsReceiptStorages: Storage[] } }>(`
         query GoodsReceiptStorages($businessYear: String!) {
-            goodsReceiptStorages(businessYear: $businessYear) { code }
+            goodsReceiptStorages(businessYear: $businessYear) { code description }
         }
     `, { businessYear: getSelectedBusinessYear() }, signal)
     return result.data?.goodsReceiptStorages ?? []

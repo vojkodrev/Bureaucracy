@@ -16,11 +16,15 @@ type Props = {
     onChange: (value: string) => void;
 };
 
+const storageLabel = (storage: Storage) => storage.description
+    ? `${storage.code} - ${storage.description}`
+    : storage.code;
+
 export default function StorageComboboxField({ value, onChange }: Props) {
     const [storages, setStorages] = useState<Storage[]>([]);
     const [error, setError] = useState<string | null>(null);
     const selected = storages.find((storage) => storage.code === value) ??
-        (value ? { code: value } : null);
+        (value ? { code: value, description: "" } : null);
     const items = selected && !storages.some(
         (storage) => storage.code === selected.code,
     )
@@ -49,7 +53,7 @@ export default function StorageComboboxField({ value, onChange }: Props) {
                 items={items}
                 value={selected}
                 onValueChange={(storage) => onChange(storage?.code ?? "")}
-                itemToStringLabel={(storage) => storage.code}
+                itemToStringLabel={storageLabel}
                 itemToStringValue={(storage) => storage.code}
                 isItemEqualToValue={(storage, current) =>
                     storage.code === current.code}
@@ -68,7 +72,7 @@ export default function StorageComboboxField({ value, onChange }: Props) {
                                 key={storage.code}
                                 value={storage}
                             >
-                                {storage.code}
+                                {storageLabel(storage)}
                             </ComboboxItem>
                         )}
                     </ComboboxList>

@@ -45,6 +45,7 @@ export function useGoodsReceiptSave(options: Options) {
     const canSave = Boolean(
         options.draft.receiptNumber.trim() &&
         options.draft.receiptDate &&
+        options.draft.storage.trim() &&
         options.draft.receivedBy.trim() &&
         hasValidItems,
     ) && !options.isLoading && !options.isDuplicating && !options.loadError;

@@ -76,7 +76,7 @@ func (r *queryResolver) GoodsReceipt(ctx context.Context, businessYear string, r
 
 // GoodsReceiptStorages is the resolver for the goodsReceiptStorages field.
 func (r *queryResolver) GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
-	return r.GoodsReceipts.ListStorages(ctx, businessYear)
+	return r.Storages.List(ctx)
 }
 
 // LatestInventoryItemPhotos is the resolver for the latestInventoryItemPhotos field.

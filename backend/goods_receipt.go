@@ -11,10 +11,6 @@ type GoodsReceipt struct {
 	Items         []*GoodsReceiptItem `json:"items"`
 }
 
-type Storage struct {
-	Code string `json:"code"`
-}
-
 type GoodsReceiptItem struct {
 	ID          int                      `json:"id"`
 	ProductCode *string                  `json:"productCode"`
