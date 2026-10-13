@@ -35,7 +35,7 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
     }
 
     return (
-        <form className="max-w-6xl" onSubmit={submit} onReset={onReset}>
+        <form className="max-w-2xl" onSubmit={submit} onReset={onReset}>
             <Card>
                 <CardContent>
                     <FieldGroup>
