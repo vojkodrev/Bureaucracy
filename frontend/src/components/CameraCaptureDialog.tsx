@@ -89,20 +89,20 @@ export default function CameraCaptureDialog({
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto_auto] overflow-y-auto sm:max-w-[calc(100%-2rem)]">
                 <DialogHeader>
                     <DialogTitle>Take photo</DialogTitle>
                     <DialogDescription>
                         Position the stock item in the frame and take a photo.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="overflow-hidden rounded-md bg-black">
+                <div className="min-h-0 overflow-hidden rounded-md bg-black">
                     <video
                         ref={video}
                         autoPlay
                         muted
                         playsInline
-                        className="max-h-[65vh] w-full object-contain"
+                        className="h-full w-full object-contain"
                     />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
