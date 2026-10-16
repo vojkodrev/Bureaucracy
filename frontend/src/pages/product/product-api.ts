@@ -73,13 +73,17 @@ export async function postSaveProduct(product: Record<string, unknown>): Promise
     return result.data.saveProduct
 }
 
-export async function fetchProductInvoiceCount(productCode: string): Promise<number> {
+export async function fetchProductInvoiceCount(productCode: string, signal?: AbortSignal): Promise<number> {
     const result = await postGraphql<{
         data?: { productInvoiceCounts: { productCode: string, invoiceCount: number }[] }
         errors?: { message: string }[]
-    }>(productInvoiceCountQuery, {
-        businessYear: getSelectedBusinessYear(),
-        productCodes: [productCode],
-    })
+    }>(
+        productInvoiceCountQuery,
+        {
+            businessYear: getSelectedBusinessYear(),
+            productCodes: [productCode],
+        },
+        signal,
+    )
     return result.data?.productInvoiceCounts[0]?.invoiceCount ?? 0
 }

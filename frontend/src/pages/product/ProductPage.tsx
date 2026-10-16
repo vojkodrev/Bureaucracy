@@ -97,7 +97,6 @@ function ProductPage() {
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <ProductDetails productCode={draft.productCode} name={draft.name} unit={draft.unit}
-                    readOnly={storageOnly}
                     onProductCodeChange={(value) => setField('productCode', value)}
                     onNameChange={(value) => setField('name', value)}
                     onUnitChange={(value) => setField('unit', value)} />
