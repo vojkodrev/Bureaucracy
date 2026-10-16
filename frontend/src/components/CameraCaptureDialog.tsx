@@ -13,7 +13,7 @@ import {
 
 type Props = {
     onOpenChange: (open: boolean) => void;
-    onCapture: (file: File) => Promise<void>;
+    onCapture: (file: File, signal: AbortSignal) => Promise<void>;
 };
 
 export default function CameraCaptureDialog({
@@ -22,6 +22,7 @@ export default function CameraCaptureDialog({
 }: Props) {
     const video = useRef<HTMLVideoElement>(null);
     const stream = useRef<MediaStream | null>(null);
+    const uploadController = useRef<AbortController | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export default function CameraCaptureDialog({
         return () => {
             active = false;
             stream.current?.getTracks().forEach((track) => track.stop());
+            uploadController.current?.abort();
         };
     }, []);
 
@@ -90,19 +92,29 @@ export default function CameraCaptureDialog({
             stream.current?.getTracks().forEach((track) => track.stop());
             stream.current = null;
 
-            await onCapture(file);
+            const controller = new AbortController();
+            uploadController.current = controller;
+            await onCapture(file, controller.signal);
             onOpenChange(false);
         } catch (captureError) {
+            if (captureError instanceof DOMException &&
+                captureError.name === "AbortError") return;
             setError(captureError instanceof Error
                 ? captureError.message
                 : "Taking photo failed");
         } finally {
+            uploadController.current = null;
             setIsCapturing(false);
         }
     };
 
+    const handleOpenChange = (open: boolean) => {
+        if (!open) uploadController.current?.abort();
+        onOpenChange(open);
+    };
+
     return (
-        <Dialog open onOpenChange={onOpenChange}>
+        <Dialog open onOpenChange={handleOpenChange}>
             <DialogContent className="h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto_auto] overflow-y-auto sm:max-w-[calc(100%-2rem)]">
                 <DialogHeader>
                     <DialogTitle>Take photo</DialogTitle>

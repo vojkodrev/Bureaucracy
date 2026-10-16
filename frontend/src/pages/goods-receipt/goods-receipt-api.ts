@@ -20,10 +20,10 @@ export function goodsReceiptPhotoUrl(fileId: string) {
     return fileApiUrl(fileId)
 }
 
-export async function uploadGoodsReceiptPhoto(file: File) {
+export async function uploadGoodsReceiptPhoto(file: File, signal?: AbortSignal) {
     const body = new FormData()
     body.append('file', file)
-    const response = await apiFetch(fileApiUrl(), { method: 'POST', body })
+    const response = await apiFetch(fileApiUrl(), { method: 'POST', body, signal })
     const result = await response.json().catch(() => ({})) as { fileId?: string; error?: string }
     if (!response.ok || !result.fileId) throw new Error(result.error ?? `Photo upload failed (${response.status})`)
     return { fileId: result.fileId }

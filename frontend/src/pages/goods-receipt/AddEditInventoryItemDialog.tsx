@@ -51,16 +51,20 @@ export default function AddEditInventoryItemDialog({
         Number.isFinite(quantityValue) &&
         quantityValue !== 0 && !isUploading;
 
-    const uploadPhotos = async (files: FileList | File[] | null) => {
+    const uploadPhotos = async (
+        files: FileList | File[] | null,
+        signal?: AbortSignal,
+    ) => {
         if (!files?.length) return;
         setIsUploading(true);
         setPhotoError(null);
         try {
             for (const file of Array.from(files)) {
-                const photo = await uploadGoodsReceiptPhoto(file);
+                const photo = await uploadGoodsReceiptPhoto(file, signal);
                 setPhotos((current) => [...current, photo]);
             }
         } catch (error) {
+            if (error instanceof DOMException && error.name === "AbortError") return;
             setPhotoError(error instanceof Error ? error.message : "Photo upload failed");
         } finally {
             setIsUploading(false);
@@ -195,8 +199,8 @@ export default function AddEditInventoryItemDialog({
                 {cameraOpen && (
                     <CameraCaptureDialog
                         onOpenChange={setCameraOpen}
-                        onCapture={async (file) => {
-                            await uploadPhotos([file]);
+                        onCapture={async (file, signal) => {
+                            await uploadPhotos([file], signal);
                         }}
                     />
                 )}
