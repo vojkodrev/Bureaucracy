@@ -24,6 +24,7 @@ export default function CameraCaptureDialog({
     const stream = useRef<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
+    const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -53,6 +54,12 @@ export default function CameraCaptureDialog({
         };
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
+        };
+    }, [capturedPhotoUrl]);
+
     const capture = async () => {
         const source = video.current;
         if (!source?.videoWidth || !source.videoHeight) return;
@@ -72,11 +79,18 @@ export default function CameraCaptureDialog({
                 "image/jpeg",
                 0.92,
                 ));
-            await onCapture(new File(
+            const file = new File(
                 [blob],
                 `camera-${Date.now()}.jpg`,
                 { type: "image/jpeg" },
-            ));
+            );
+
+            // Freeze the exact encoded image that is handed to the uploader.
+            setCapturedPhotoUrl(URL.createObjectURL(file));
+            stream.current?.getTracks().forEach((track) => track.stop());
+            stream.current = null;
+
+            await onCapture(file);
             onOpenChange(false);
         } catch (captureError) {
             setError(captureError instanceof Error
@@ -97,13 +111,21 @@ export default function CameraCaptureDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="min-h-0 overflow-hidden rounded-md bg-black">
-                    <video
-                        ref={video}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="h-full w-full object-contain"
-                    />
+                    {capturedPhotoUrl ? (
+                        <img
+                            src={capturedPhotoUrl}
+                            alt="Captured item"
+                            className="h-full w-full object-contain"
+                        />
+                    ) : (
+                        <video
+                            ref={video}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="h-full w-full object-contain"
+                        />
+                    )}
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <DialogFooter>
