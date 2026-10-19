@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,20 @@ type Props = {
     onCapture: (file: File, signal: AbortSignal) => Promise<void>;
 };
 
+type CameraCapabilities = MediaTrackCapabilities & {
+    focusMode?: string[];
+};
+
+type CameraConstraints = MediaTrackConstraints & {
+    focusMode?: "single-shot" | "continuous";
+    pointsOfInterest?: Array<{ x: number; y: number }>;
+};
+
+type FocusPoint = {
+    left: number;
+    top: number;
+};
+
 export default function CameraCaptureDialog({
     onOpenChange,
     onCapture,
@@ -23,9 +37,11 @@ export default function CameraCaptureDialog({
     const video = useRef<HTMLVideoElement>(null);
     const stream = useRef<MediaStream | null>(null);
     const uploadController = useRef<AbortController | null>(null);
+    const focusIndicatorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
+    const [focusPoint, setFocusPoint] = useState<FocusPoint | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -43,6 +59,19 @@ export default function CameraCaptureDialog({
             }
             stream.current = cameraStream;
             if (video.current) video.current.srcObject = cameraStream;
+
+            // Ask capable mobile cameras to keep focusing between user taps.
+            const track = cameraStream.getVideoTracks()[0];
+            const capabilities = typeof track.getCapabilities === "function"
+                ? track.getCapabilities() as CameraCapabilities
+                : {} as CameraCapabilities;
+            if (capabilities.focusMode?.includes("continuous")) {
+                void track.applyConstraints({
+                    focusMode: "continuous",
+                } as CameraConstraints).catch(() => {
+                    // Some browsers advertise a camera control but reject it.
+                });
+            }
         }).catch((cameraError: unknown) => {
             if (!active) return;
             setError(cameraError instanceof Error
@@ -51,6 +80,9 @@ export default function CameraCaptureDialog({
         });
         return () => {
             active = false;
+            if (focusIndicatorTimer.current) {
+                clearTimeout(focusIndicatorTimer.current);
+            }
             stream.current?.getTracks().forEach((track) => track.stop());
             uploadController.current?.abort();
         };
@@ -61,6 +93,65 @@ export default function CameraCaptureDialog({
             if (capturedPhotoUrl) URL.revokeObjectURL(capturedPhotoUrl);
         };
     }, [capturedPhotoUrl]);
+
+    const focusCamera = async (event: PointerEvent<HTMLVideoElement>) => {
+        const source = video.current;
+        const track = stream.current?.getVideoTracks()[0];
+        if (!source || !track || !source.videoWidth || !source.videoHeight) return;
+
+        const bounds = source.getBoundingClientRect();
+        const scale = Math.min(
+            bounds.width / source.videoWidth,
+            bounds.height / source.videoHeight,
+        );
+        const displayedWidth = source.videoWidth * scale;
+        const displayedHeight = source.videoHeight * scale;
+        const offsetX = (bounds.width - displayedWidth) / 2;
+        const offsetY = (bounds.height - displayedHeight) / 2;
+        const localX = event.clientX - bounds.left;
+        const localY = event.clientY - bounds.top;
+
+        // Ignore taps in the black bars created by object-contain.
+        if (
+            localX < offsetX || localX > offsetX + displayedWidth ||
+            localY < offsetY || localY > offsetY + displayedHeight
+        ) return;
+
+        const point = {
+            x: (localX - offsetX) / displayedWidth,
+            y: (localY - offsetY) / displayedHeight,
+        };
+        const capabilities = typeof track.getCapabilities === "function"
+            ? track.getCapabilities() as CameraCapabilities
+            : {} as CameraCapabilities;
+        const supportedConstraints = navigator.mediaDevices.getSupportedConstraints() as
+            MediaTrackSupportedConstraints & { pointsOfInterest?: boolean };
+
+        if (!supportedConstraints.pointsOfInterest) return;
+
+        const constraints: CameraConstraints = { pointsOfInterest: [point] };
+        if (capabilities.focusMode?.includes("single-shot")) {
+            constraints.focusMode = "single-shot";
+        } else if (capabilities.focusMode?.includes("continuous")) {
+            constraints.focusMode = "continuous";
+        }
+
+        try {
+            await track.applyConstraints(constraints);
+            setFocusPoint({
+                left: (localX / bounds.width) * 100,
+                top: (localY / bounds.height) * 100,
+            });
+            if (focusIndicatorTimer.current) {
+                clearTimeout(focusIndicatorTimer.current);
+            }
+            focusIndicatorTimer.current = setTimeout(() => {
+                setFocusPoint(null);
+            }, 1200);
+        } catch {
+            // Keep the camera usable when focus controls are partially supported.
+        }
+    };
 
     const capture = async () => {
         const source = video.current;
@@ -122,7 +213,7 @@ export default function CameraCaptureDialog({
                         Position the stock item in the frame and take a photo.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="min-h-0 overflow-hidden rounded-md bg-black">
+                <div className="relative min-h-0 overflow-hidden rounded-md bg-black">
                     {capturedPhotoUrl ? (
                         <img
                             src={capturedPhotoUrl}
@@ -135,7 +226,15 @@ export default function CameraCaptureDialog({
                             autoPlay
                             muted
                             playsInline
-                            className="h-full w-full object-contain"
+                            onPointerUp={(event) => { void focusCamera(event); }}
+                            className="h-full w-full cursor-crosshair touch-manipulation object-contain"
+                        />
+                    )}
+                    {focusPoint && (
+                        <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute size-16 -translate-x-1/2 -translate-y-1/2 rounded-md border-2 border-yellow-300 shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
+                            style={{ left: `${focusPoint.left}%`, top: `${focusPoint.top}%` }}
                         />
                     )}
                 </div>
