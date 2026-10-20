@@ -34,6 +34,8 @@ const query = `
     }
 `
 
+const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
+
 export async function fetchPurchasePredictions(
     search: PurchasePredictionSearchCriteria,
     signal?: AbortSignal,
@@ -52,4 +54,24 @@ export async function fetchPurchasePredictions(
     }
     const result = await postGraphql<Response>(query, variables, signal)
     return result.data?.searchPurchasePredictions ?? null
+}
+
+export function purchasePredictionReportPdfUrl(
+    search: PurchasePredictionSearchCriteria,
+): string {
+    const url = new URL(graphqlUrl)
+    url.pathname = '/api/purchase-predictions/report/pdf'
+    for (const key of [
+        'customerCode',
+        'customerName',
+        'productCode',
+        'productName',
+        'page',
+        'pageSize',
+    ] as const) {
+        if (search[key]) url.searchParams.set(key, search[key])
+    }
+    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.searchParams.set('_', String(Date.now()))
+    return url.toString()
 }

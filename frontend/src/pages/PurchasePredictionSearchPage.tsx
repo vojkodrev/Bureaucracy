@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import {
     fetchPurchasePredictions,
+    purchasePredictionReportPdfUrl,
     PurchasePredictionSearchForm,
     PurchasePredictionSearchResults,
     type PurchasePredictionSearchCriteria,
 } from '@/components/purchase-prediction-search'
-import { isStorageOnlyUser } from '@/lib/auth'
+import PurchasePredictionSearchMenu from '@/components/purchase-prediction-search/PurchasePredictionSearchMenu'
+import { isStorageOnlyUser, openAuthenticatedUrl } from '@/lib/auth'
 import { defaultPage, defaultPageSize } from '@/lib/pagination'
 import type { PurchasePredictionPage } from '@/lib/purchase-prediction-types'
 
@@ -58,7 +60,34 @@ export default function PurchasePredictionSearchPage() {
         result: null,
         error: null,
     })
+    const [printError, setPrintError] = useState<string | null>(null)
     const isLoading = state.key !== searchKey
+    const canPrint = !isLoading && !state.error
+        && Boolean(state.result?.predictions.length)
+
+    const printReport = async () => {
+        if (!canPrint) return
+        try {
+            await openAuthenticatedUrl(purchasePredictionReportPdfUrl(search))
+            setPrintError(null)
+        } catch (error) {
+            setPrintError(error instanceof Error
+                ? error.message
+                : 'Could not open the purchase prediction report PDF.')
+        }
+    }
+    const onPrintShortcut = useEffectEvent(printReport)
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey)
+                || event.key.toLowerCase() !== 'p') return
+            event.preventDefault()
+            onPrintShortcut()
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     useEffect(() => {
         const controller = new AbortController()
@@ -88,6 +117,15 @@ export default function PurchasePredictionSearchPage() {
 
     return (
         <div className="p-4">
+            {printError && (
+                <div className="mb-6 max-w-4xl">
+                    <ErrorAlert
+                        title="Purchase prediction report could not be printed"
+                        description="The report PDF could not be opened."
+                        error={printError}
+                    />
+                </div>
+            )}
             {!isLoading && state.error && (
                 <div className="mb-6 max-w-4xl">
                     <ErrorAlert
@@ -99,6 +137,10 @@ export default function PurchasePredictionSearchPage() {
                     />
                 </div>
             )}
+            <PurchasePredictionSearchMenu
+                disabled={!canPrint}
+                onPrint={printReport}
+            />
             <PurchasePredictionSearchForm
                 key={searchKey}
                 search={search}
