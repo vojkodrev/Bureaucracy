@@ -38,26 +38,13 @@
                 <td>{{.PaymentDate}}</td>
             </tr>
             {{end}}
+            {{range .Totals}}
             <tr class="subtotal">
-                <td colspan="2">Plačano</td>
-                <td class="number">{{.TotalPaid}}</td>
+                <td colspan="2">{{.Label}}</td>
+                <td class="number">{{.Amount}}</td>
                 <td colspan="3"></td>
             </tr>
-            <tr class="subtotal">
-                <td colspan="2">Neplačano</td>
-                <td class="number">{{.TotalOutstanding}}</td>
-                <td colspan="3"></td>
-            </tr>
-            <tr class="subtotal">
-                <td colspan="2">Od tega zapadlo</td>
-                <td class="number">{{.TotalOverdue}}</td>
-                <td colspan="3"></td>
-            </tr>
-            <tr class="subtotal subtotal-total">
-                <td colspan="2">Skupaj zaračunano</td>
-                <td class="number">{{.TotalInvoiced}}</td>
-                <td colspan="3"></td>
-            </tr>
+            {{end}}
         </tbody>
         {{else}}
         <tbody>
@@ -69,10 +56,9 @@
     <section class="summary">
         <h2>Skupaj</h2>
         <dl>
-            <dt>Skupni znesek</dt><dd>{{.Document.Total}}</dd>
-            <dt>Neplačano</dt><dd>{{.Document.Unpaid}}</dd>
-            <dt>Zapadlo</dt><dd>{{.Document.PastDue}}</dd>
-            <dt>Plačano</dt><dd>{{.Document.Paid}}</dd>
+            {{range .Document.Summary}}
+            <dt>{{.Label}}</dt><dd>{{.Amount}}</dd>
+            {{end}}
         </dl>
     </section>
 </body>

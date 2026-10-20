@@ -16,6 +16,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoiceCustomerSummary, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 import InvoicePaymentDate from './InvoicePaymentDate'
 import SearchResultCell from '@/components/SearchResultCell'
+import type { PaymentStatus } from './types'
 
 type InvoiceSearchResultsByCustomerProps = {
     onPrintReminders: (customer: InvoiceCustomerSummary) => void
@@ -27,6 +28,7 @@ type InvoiceSearchResultsByCustomerProps = {
     onInvoiceSelect: (invoice: Invoice) => void
     onPageChange: (page: number) => void
     onPageSizeChange: (pageSize: number) => void
+    paymentStatus: PaymentStatus
 }
 
 function InvoiceSearchResultsByCustomer({
@@ -39,6 +41,7 @@ function InvoiceSearchResultsByCustomer({
     onInvoiceSelect,
     onPageChange,
     onPageSizeChange,
+    paymentStatus,
 }: InvoiceSearchResultsByCustomerProps) {
     const firstInvoice = summaryPage && summaryPage.totalCount > 0
         ? (summaryPage.page - 1) * summaryPage.pageSize + 1
@@ -91,12 +94,17 @@ function InvoiceSearchResultsByCustomer({
                     )}
                     {customerSummaries.map((summary) => {
                         const customerKey = `${summary.customerCode ?? ''}:${summary.customerName ?? ''}`
-                        const totals = [
+                        const allTotals = [
                             ['Total paid', summary.totalPaid],
                             ['Total outstanding', summary.totalOutstanding],
                             ['Of which overdue', summary.totalOverdue],
                             ['Total invoiced', summary.totalInvoiced],
                         ] as const
+                        const totals = paymentStatus === 'paid'
+                            ? allTotals.slice(0, 1)
+                            : paymentStatus === 'overdue'
+                                ? [['Total overdue', summary.totalOverdue] as const]
+                                : allTotals
 
                         return (
                             <Fragment key={customerKey}>

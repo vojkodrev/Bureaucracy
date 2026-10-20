@@ -135,9 +135,12 @@ function InvoiceSearch({
                         customerSummaryPage?.pageSize,
                     )}
                     onPageSizeChange={searchState.changePageSize}
+                    paymentStatus={search.paymentStatus}
                 />
             )}
-            {!error && showSummary && <InvoiceSearchSummary invoices={invoices} />}
+            {!error && showSummary && (
+                <InvoiceSearchSummary invoices={invoices} paymentStatus={search.paymentStatus} />
+            )}
         </div>
     )
 }

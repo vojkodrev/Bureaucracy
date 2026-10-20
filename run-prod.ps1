@@ -15,36 +15,41 @@ if (-not $shell) {
     $shell = Get-Command powershell.exe -ErrorAction Stop
 }
 
-$terminal = Get-Command wt.exe -ErrorAction SilentlyContinue
-if ($terminal) {
-    # Keep all services visible in one Windows Terminal window, similar to tmux panes.
-    & $terminal.Source -w new `
-        new-tab --title 'Backend' --startingDirectory $backendDir `
-        $shell.Source -NoExit -ExecutionPolicy Bypass -File $backendScript `; `
-        split-pane --vertical --size 0.5 --title 'Frontend' --startingDirectory $frontendDir `
-        $shell.Source -NoExit -ExecutionPolicy Bypass -File $frontendScript `; `
-        split-pane --horizontal --size 0.5 --title 'Keycloak' --startingDirectory $keycloakDir `
-        $shell.Source -NoExit -ExecutionPolicy Bypass -File $keycloakScript
+$terminal = Get-Command wt.exe -ErrorAction Stop
 
-    exit $LASTEXITCODE
+function Quote-ProcessArgument([string] $value) {
+    return '"' + $value.Replace('"', '\"') + '"'
 }
 
-Write-Warning 'Windows Terminal (wt.exe) was not found. Opening three PowerShell windows instead.'
+$shellArgument = Quote-ProcessArgument $shell.Source
 
-Start-Process -FilePath $shell.Source -WorkingDirectory $backendDir -ArgumentList @(
-    '-NoExit'
-    '-ExecutionPolicy', 'Bypass'
-    '-File', $backendScript
+$terminalArguments = @(
+    '-w', 'new'
+    'new-tab'
+    '--title', 'Backend'
+    '--startingDirectory', (Quote-ProcessArgument $backendDir)
+    $shellArgument, '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', (Quote-ProcessArgument $backendScript)
+    ';'
+    'split-pane', '--vertical', '--size', '0.5'
+    '--title', 'Frontend'
+    '--startingDirectory', (Quote-ProcessArgument $frontendDir)
+    $shellArgument, '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', (Quote-ProcessArgument $frontendScript)
+    ';'
+    'split-pane', '--horizontal', '--size', '0.5'
+    '--title', 'Keycloak'
+    '--startingDirectory', (Quote-ProcessArgument $keycloakDir)
+    $shellArgument, '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', (Quote-ProcessArgument $keycloakScript)
 )
 
-Start-Process -FilePath $shell.Source -WorkingDirectory $frontendDir -ArgumentList @(
-    '-NoExit'
-    '-ExecutionPolicy', 'Bypass'
-    '-File', $frontendScript
-)
+$process = Start-Process -FilePath $terminal.Source `
+    -ArgumentList $terminalArguments `
+    -PassThru
 
-Start-Process -FilePath $shell.Source -WorkingDirectory $keycloakDir -ArgumentList @(
-    '-NoExit'
-    '-ExecutionPolicy', 'Bypass'
-    '-File', $keycloakScript
-)
+if (-not $process.WaitForExit(10000)) {
+    throw 'Windows Terminal did not finish processing the pane request.'
+}
+if ($process.ExitCode -ne 0) {
+    throw "Windows Terminal could not create the panes (exit code $($process.ExitCode))."
+}
+
+exit 0

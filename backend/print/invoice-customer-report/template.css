@@ -76,7 +76,7 @@ header p { margin: 0; }
     page-break-inside: avoid;
 }
 
-.subtotal-total td {
+.customer-group .subtotal:last-child td {
     border-bottom-width: 0.6mm;
 }
 
