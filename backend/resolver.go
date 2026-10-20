@@ -12,10 +12,12 @@ type Resolver struct {
 	GoodsReceipts          *GoodsReceiptRepository
 	PriceQuotes            *PriceQuoteRepository
 	Products               *ProductRepository
+	PurchasePredictions    *PurchasePredictionRepository
+	Storages               *StorageRepository
 	TaxCodeRepository      *TaxCodeRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, inventoryItems *InventoryItemRepository, goodsReceipts *GoodsReceiptRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, taxCodes *TaxCodeRepository) *Resolver {
+func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, inventoryItems *InventoryItemRepository, goodsReceipts *GoodsReceiptRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, purchasePredictions *PurchasePredictionRepository, storages *StorageRepository, taxCodes *TaxCodeRepository) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
 		BankStatements:         bankStatements,
@@ -26,6 +28,8 @@ func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStat
 		GoodsReceipts:          goodsReceipts,
 		PriceQuotes:            priceQuotes,
 		Products:               products,
+		PurchasePredictions:    purchasePredictions,
+		Storages:               storages,
 		TaxCodeRepository:      taxCodes,
 	}
 }

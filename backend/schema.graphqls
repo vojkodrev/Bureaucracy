@@ -73,6 +73,7 @@ type BankStatementEntry {
 type BankStatementInvoicePayment {
   invoiceNumber: String!
   paymentDate: Time
+  amount: Float
   paidAmount: Float
 }
 
@@ -343,6 +344,27 @@ type ProductPage {
   totalPages: Int!
 }
 
+type PurchasePrediction {
+  id: ID!
+  customerCode: String!
+  customerName: String
+  productCode: String!
+  productName: String
+  daysSinceLastOrder: Int!
+  averageOrderFrequencyDays: Float
+  score7Days: Float!
+  score14Days: Float!
+  score30Days: Float!
+}
+
+type PurchasePredictionPage {
+  predictions: [PurchasePrediction!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
 type InventoryItem {
   id: Int!
   productCode: String
@@ -376,6 +398,7 @@ type GoodsReceipt {
 
 type Storage {
   code: String!
+  description: String!
 }
 
 type GoodsReceiptItem {
@@ -437,6 +460,16 @@ input ProductInput {
 }
 
 type Query {
+
+  searchPurchasePredictions(
+    businessYear: String!
+    customerCode: String
+    customerName: String
+    productCode: String
+    productName: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): PurchasePredictionPage!
 
   goodsReceipt(businessYear: String!, receiptNumber: String!): GoodsReceipt
   goodsReceiptStorages(businessYear: String!): [Storage!]!

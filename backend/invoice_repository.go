@@ -57,7 +57,7 @@ func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, 
 			arguments = append(arguments, sql.Named(name, invoiceNumber))
 		}
 		rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
-			SELECT LTRIM(RTRIM(Stevilka)), DatumPlacila, PlacanoSIT
+			SELECT LTRIM(RTRIM(Stevilka)), DatumPlacila, Znesek, PlacanoSIT
 			FROM [%s].[dbo].[Racuni]
 			WHERE UPPER(LTRIM(RTRIM(Stevilka))) IN (%s)`, databaseName, strings.Join(placeholders, ", ")), arguments...)
 		if err != nil {
@@ -65,7 +65,7 @@ func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, 
 		}
 		for rows.Next() {
 			payment := &BankStatementInvoicePayment{}
-			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.PaidAmount); err != nil {
+			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.Amount, &payment.PaidAmount); err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("scan invoice payment for bank statements: %w", err)
 			}

@@ -31,7 +31,11 @@ function InvoicePaymentMismatchAlert({
             entry.paymentDate,
             invoicePayment.paymentDate,
         )
-        const paidAmountMismatch = hasPaidAmountMismatch(entry.inflow, invoicePayment.paidAmount)
+        const paidAmountMismatch = hasPaidAmountMismatch(
+            invoicePayment.amount,
+            invoicePayment.paidAmount,
+            entry.inflow,
+        )
         return paymentDateMismatch || paidAmountMismatch
             ? [{ entry, paymentDateMismatch, paidAmountMismatch }]
             : []

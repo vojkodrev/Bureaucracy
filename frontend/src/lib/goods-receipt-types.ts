@@ -18,7 +18,7 @@ export type GoodsReceipt = {
     items: GoodsReceiptItem[]
 }
 
-export type Storage = { code: string }
+export type Storage = { code: string; description: string }
 
 export type GoodsReceiptPage = {
     goodsReceipts: GoodsReceipt[]

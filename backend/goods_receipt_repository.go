@@ -359,32 +359,6 @@ func (repository *GoodsReceiptRepository) LatestInventoryItemPhotos(
 	return photos, nil
 }
 
-func (repository *GoodsReceiptRepository) ListStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
-	if !businessYearPattern.MatchString(businessYear) {
-		return nil, fmt.Errorf("businessYear must contain only digits")
-	}
-	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
-	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
-	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
-		SELECT DISTINCT code FROM (
-			SELECT NULLIF(LTRIM(RTRIM(Skladisce)), '') code FROM [%s].[dbo].[Dobava]
-			UNION SELECT NULLIF(LTRIM(RTRIM(Skladisce)), '') FROM [%s].[dbo].[ArtikelCene]
-		) storages WHERE code IS NOT NULL ORDER BY code`, receiptDatabase, inventoryDatabase))
-	if err != nil {
-		return nil, fmt.Errorf("list goods receipt storages: %w", err)
-	}
-	defer rows.Close()
-	storages := make([]*Storage, 0)
-	for rows.Next() {
-		storage := &Storage{}
-		if err := rows.Scan(&storage.Code); err != nil {
-			return nil, fmt.Errorf("scan goods receipt storage: %w", err)
-		}
-		storages = append(storages, storage)
-	}
-	return storages, rows.Err()
-}
-
 func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear string, input model.GoodsReceiptInput) (*GoodsReceipt, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
@@ -395,8 +369,8 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 	if input.ReceiptNumber == "" || len([]rune(input.ReceiptNumber)) > 10 {
 		return nil, fmt.Errorf("receiptNumber is required and must be at most 10 characters")
 	}
-	if input.Storage != nil && len([]rune(*input.Storage)) > 1 {
-		return nil, fmt.Errorf("storage must be at most one character")
+	if input.Storage == nil || len([]rune(*input.Storage)) > 1 {
+		return nil, fmt.Errorf("storage is required and must be at most one character")
 	}
 	if input.ReceivedBy == "" || len([]rune(input.ReceivedBy)) > 30 {
 		return nil, fmt.Errorf("receivedBy is required and must be at most 30 characters")

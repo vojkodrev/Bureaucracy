@@ -38,6 +38,8 @@ type CronServer struct {
 func NewCronServer(
 	databaseBackupHandler *DatabaseBackupJobHandler,
 	fileStorageCleanupHandler *FileStorageCleanupJobHandler,
+	purchasePredictorTrainingHandler *PurchasePredictorTrainingJobHandler,
+	purchasePredictorPredictionHandler *PurchasePredictorPredictionJobHandler,
 ) (*CronServer, error) {
 	jobs, err := loadCronJobConfig(cronJobsConfig)
 	if err != nil {
@@ -45,8 +47,10 @@ func NewCronServer(
 	}
 
 	handlers := map[string]CronJobHandler{
-		databaseBackupHandler.Name():     databaseBackupHandler,
-		fileStorageCleanupHandler.Name(): fileStorageCleanupHandler,
+		databaseBackupHandler.Name():              databaseBackupHandler,
+		fileStorageCleanupHandler.Name():          fileStorageCleanupHandler,
+		purchasePredictorTrainingHandler.Name():   purchasePredictorTrainingHandler,
+		purchasePredictorPredictionHandler.Name(): purchasePredictorPredictionHandler,
 	}
 	jobContext, cancel := context.WithCancel(context.Background())
 	scheduler := cron.New(cron.WithChain(

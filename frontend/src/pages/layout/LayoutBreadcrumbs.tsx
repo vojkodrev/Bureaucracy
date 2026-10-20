@@ -20,6 +20,7 @@ const labels: Record<string, string> = {
     "/goods-receipts/search": "Goods receipt search",
     "/price-quotes/search": "Price quote search",
     "/products/search": "Product search",
+    "/purchase-predictor/search": "Purchase predictor",
     "/export": "Export data",
 };
 type Entity = {

@@ -8,6 +8,7 @@ package main
 import (
 	"bureaucracy/backend/graph/model"
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -51,6 +52,23 @@ func (r *mutationResolver) SaveInventoryItem(ctx context.Context, businessYear s
 	return r.InventoryItems.Save(ctx, businessYear, inventoryItem)
 }
 
+// ID is the resolver for the id field.
+func (r *purchasePredictionResolver) ID(ctx context.Context, obj *PurchasePrediction) (string, error) {
+	return strconv.FormatInt(obj.ID, 10), nil
+}
+
+// SearchPurchasePredictions is the resolver for the searchPurchasePredictions field.
+func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessYear string, customerCode *string, customerName *string, productCode *string, productName *string, page *int, pageSize *int) (*PurchasePredictionPage, error) {
+	resolvedPage, resolvedPageSize := 1, 20
+	if page != nil {
+		resolvedPage = *page
+	}
+	if pageSize != nil {
+		resolvedPageSize = *pageSize
+	}
+	return r.PurchasePredictions.Search(ctx, businessYear, customerCode, customerName, productCode, productName, resolvedPage, resolvedPageSize)
+}
+
 // GoodsReceipt is the resolver for the goodsReceipt field.
 func (r *queryResolver) GoodsReceipt(ctx context.Context, businessYear string, receiptNumber string) (*GoodsReceipt, error) {
 	return r.GoodsReceipts.GetByNumber(ctx, businessYear, receiptNumber)
@@ -58,7 +76,7 @@ func (r *queryResolver) GoodsReceipt(ctx context.Context, businessYear string, r
 
 // GoodsReceiptStorages is the resolver for the goodsReceiptStorages field.
 func (r *queryResolver) GoodsReceiptStorages(ctx context.Context, businessYear string) ([]*Storage, error) {
-	return r.GoodsReceipts.ListStorages(ctx, businessYear)
+	return r.Storages.List(ctx)
 }
 
 // LatestInventoryItemPhotos is the resolver for the latestInventoryItemPhotos field.
@@ -308,10 +326,16 @@ func (r *queryResolver) TaxCodes(ctx context.Context, businessYear string) ([]*T
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
+// PurchasePrediction returns PurchasePredictionResolver implementation.
+func (r *Resolver) PurchasePrediction() PurchasePredictionResolver {
+	return &purchasePredictionResolver{r}
+}
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type (
-	mutationResolver struct{ *Resolver }
-	queryResolver    struct{ *Resolver }
+	mutationResolver           struct{ *Resolver }
+	purchasePredictionResolver struct{ *Resolver }
+	queryResolver              struct{ *Resolver }
 )

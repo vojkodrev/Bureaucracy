@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
@@ -15,11 +14,13 @@ import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
 import InvoiceMenu from './InvoiceMenu'
 import InvoiceSummary from './InvoiceSummary'
+import PaidInvoiceEmailAlert from './PaidInvoiceEmailAlert'
 import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
 import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
+import { useInvoiceEmail } from './hooks/useInvoiceEmail'
 import { useInvoiceHalcomExport } from './hooks/useInvoiceHalcomExport'
 import { useInvoiceKeyboardShortcuts } from './hooks/useInvoiceKeyboardShortcuts'
 import { useInvoiceLoader } from './hooks/useInvoiceLoader'
@@ -41,8 +42,6 @@ function InvoicePage() {
         clearCleanDraft: draftState.clearCleanDraft, disallowNavigation: guard.disallowNavigation,
     })
     const navigation = useInvoiceNumberNavigation(routeInvoiceNumber, navigate)
-    const [emailDialogOpen, setEmailDialogOpen] = useState(false)
-    const [confirmingEmail, setConfirmingEmail] = useState(false)
     const dueDate = useInvoiceDueDate({
         customerId: draft.customerId,
         invoiceDate: draft.invoiceDate,
@@ -69,6 +68,12 @@ function InvoicePage() {
         isSaving: save.isSaving, isDuplicating: duplicate.isDuplicating,
         canSave: save.canSave,
     })
+    const email = useInvoiceEmail({
+        canEmail: print.canPrint,
+        canSave: save.canSave,
+        total: draftState.totalIncludingVat,
+        paidAmount: draft.paidAmount,
+    })
     const xmlExport = useInvoiceXmlExport({
         invoiceNumber: draft.invoiceNumber,
         canExport: print.canPrint, canSave: save.canSave,
@@ -85,10 +90,6 @@ function InvoicePage() {
         clearPrintError: () => print.setPrintError(null), reload: loader.reload,
     })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
-    const email = () => {
-        if (print.canPrint) setEmailDialogOpen(true)
-        else if (save.canSave) setConfirmingEmail(true)
-    }
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
         ['print', 'Invoice could not be printed', 'The invoice PDF could not be prepared.', print.printError],
@@ -118,7 +119,7 @@ function InvoicePage() {
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
-                onEmail={email} onRevert={revert.requestRevert}
+                onEmail={email.requestEmail} onRevert={revert.requestRevert}
                 onExportXml={() => { void xmlExport.exportXml() }}
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}
                 onDuplicate={() => { void duplicate.duplicate() }} />
@@ -127,7 +128,7 @@ function InvoicePage() {
             <Button type="button" variant="outline" size="icon" aria-label="Next invoice"
                 disabled={!navigation.canNavigateNext} onClick={navigation.navigateNext}><ChevronRight /></Button>
         </div>
-        <EmailDocumentDialog open={emailDialogOpen} documentName="invoice"
+        <EmailDocumentDialog open={email.dialogOpen} documentName="invoice"
             customerId={draft.customerId} customerName={draft.customerName}
             businessYear={loader.businessYear}
             defaultSubject={`Drevi d.o.o. - Račun ${loader.businessYear
@@ -140,14 +141,17 @@ function InvoicePage() {
                     description: `Invoice ${draft.invoiceNumber.trim()} was sent to ${fields.recipient}.`,
                     type: 'success' })
             }}
-            onOpenChange={setEmailDialogOpen} />
+            onOpenChange={email.setDialogOpen} />
+        <PaidInvoiceEmailAlert open={email.confirmingPaidInvoiceEmail}
+            onOpenChange={email.setConfirmingPaidInvoiceEmail}
+            onConfirm={email.confirmPaidInvoiceEmail} />
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
         <UnsavedInvoiceAlerts isNavigationBlocked={guard.blocker.state === 'blocked'}
             isConfirmingRevert={revert.confirmingRevert} isConfirmingDuplicate={duplicate.confirmingDuplicate}
             isConfirmingPrint={print.confirmingPrint}
-            isConfirmingEmail={confirmingEmail}
+            isConfirmingEmail={email.confirmingUnsavedEmail}
             isConfirmingXmlExport={xmlExport.confirmingExport}
             isConfirmingHalcomExport={halcomExport.confirmingExport}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
@@ -157,8 +161,10 @@ function InvoicePage() {
             onDuplicateAnyway={() => { void duplicate.performDuplicate() }}
             onConfirmingPrintChange={print.setConfirmingPrint}
             onSaveBeforePrint={() => { print.setConfirmingPrint(false); void save.requestSave() }}
-            onConfirmingEmailChange={setConfirmingEmail}
-            onSaveBeforeEmail={() => { setConfirmingEmail(false); void save.requestSave() }}
+            onConfirmingEmailChange={email.setConfirmingUnsavedEmail}
+            onSaveBeforeEmail={() => {
+                email.setConfirmingUnsavedEmail(false); void save.requestSave()
+            }}
             onConfirmingXmlExportChange={xmlExport.setConfirmingExport}
             onSaveBeforeXmlExport={() => {
                 xmlExport.setConfirmingExport(false); void save.requestSave()

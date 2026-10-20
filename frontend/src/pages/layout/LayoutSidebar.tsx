@@ -10,6 +10,7 @@ import {
     LogOut,
     PackageCheck,
     PackageSearch,
+    ChartNoAxesCombined,
     Plus,
     ReceiptText,
     Search,
@@ -56,6 +57,12 @@ type Section = {
 };
 
 const sections: Section[] = [
+    {
+        key: "purchase-predictor",
+        label: "Purchase predictor",
+        icon: ChartNoAxesCombined,
+        searchPath: "/purchase-predictor/search",
+    },
     {
         key: "goods-receipts",
         label: "Goods receipts",
@@ -126,7 +133,7 @@ const sectionGroups = [
     },
     {
         label: "Storage",
-        sectionKeys: ["inventory-items", "goods-receipts"],
+        sectionKeys: ["inventory-items", "goods-receipts", "purchase-predictor"],
     },
     { label: "Accounting", sectionKeys: ["bank-statements"] },
 ] as const;
@@ -160,7 +167,7 @@ export default function LayoutSidebar({
             .map((group) => ({
                 ...group,
                 sectionKeys: group.sectionKeys.filter((key) =>
-                    ["products", "inventory-items", "goods-receipts"].includes(key),
+                    ["products", "inventory-items", "goods-receipts", "purchase-predictor"].includes(key),
                 ),
             }))
             .filter((group) => group.sectionKeys.length > 0)
