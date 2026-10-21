@@ -106,7 +106,7 @@ function InvoicePage() {
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
     ] as const
 
-    return <div className="max-w-5xl p-4">
+    return <div className="max-w-6xl p-4">
         {errors.some(([, , , error]) => error) && <div className="mb-6 space-y-2">
             {errors.map(([key, title, description, error]) => error &&
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
