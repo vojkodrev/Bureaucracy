@@ -13,7 +13,7 @@ import { ComponentMode } from "@/lib/component-mode";
 
 type Props = {
     itemId: number | null;
-    productCode: string;
+    inventoryItemCode: string;
     name: string;
     unit: string;
     hasUnsavedChanges: boolean;
@@ -24,7 +24,7 @@ type Props = {
 
 export default function InventoryItemRelatedData({
     itemId,
-    productCode,
+    inventoryItemCode,
     name,
     unit,
     hasUnsavedChanges,
@@ -39,7 +39,7 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Stock summary</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemStockSummary
-                        productCode={productCode}
+                        inventoryItemCode={inventoryItemCode}
                         unit={unit}
                     />
                 </AccordionContent>
@@ -47,7 +47,7 @@ export default function InventoryItemRelatedData({
             <AccordionItem value="photos">
                 <AccordionTrigger>Photos</AccordionTrigger>
                 <AccordionContent keepMounted>
-                    <InventoryItemPhotos productCode={productCode} />
+                    <InventoryItemPhotos inventoryItemCode={inventoryItemCode} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="similar-inventory-items">
@@ -69,11 +69,11 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Goods receipts</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <GoodsReceiptSearch
-                        key={productCode}
+                        key={inventoryItemCode}
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
                         showSummary={false}
-                        defaultProductCode={productCode}
+                        defaultInventoryItemCode={inventoryItemCode}
                         onGoodsReceiptSelect={(receipt) =>
                             onGoodsReceiptSelect(receipt.receiptNumber)
                         }

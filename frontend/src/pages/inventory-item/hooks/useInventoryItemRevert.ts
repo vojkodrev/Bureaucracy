@@ -6,7 +6,7 @@ import {
 } from "./useInventoryItemDraft";
 
 type Options = {
-    routeProductCode?: string;
+    routeInventoryItemCode?: string;
     hasUnsavedChanges: boolean;
     isDuplicating: boolean;
     clearSaveError: () => void;
@@ -24,7 +24,7 @@ export function useInventoryItemRevert(options: Options) {
         setConfirmingRevert(false);
         options.clearSaveError();
         options.clearDuplicateError();
-        if (options.routeProductCode) {
+        if (options.routeInventoryItemCode) {
             options.reload();
         } else {
             const emptyDraft = inventoryItemDraft();
@@ -33,8 +33,8 @@ export function useInventoryItemRevert(options: Options) {
         }
         toast.add({
             title: "Inventory item reverted",
-            description: options.routeProductCode
-                ? `${options.routeProductCode} was restored to its last saved version.`
+            description: options.routeInventoryItemCode
+                ? `${options.routeInventoryItemCode} was restored to its last saved version.`
                 : "The new inventory item form was cleared.",
             type: "success",
         });

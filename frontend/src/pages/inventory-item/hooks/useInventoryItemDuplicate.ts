@@ -26,11 +26,11 @@ export function useInventoryItemDuplicate(options: Options) {
         setIsDuplicating(true);
         setDuplicateError(null);
         try {
-            const productCode = await fetchNextInventoryItemCode();
+            const inventoryItemCode = await fetchNextInventoryItemCode();
             options.setItemId(null);
             options.replaceDraft((current) => ({
                 ...current,
-                productCode,
+                inventoryItemCode,
             }));
             options.markUnsaved();
             options.preserveDuplicateDraft();
@@ -39,7 +39,7 @@ export function useInventoryItemDuplicate(options: Options) {
             toast.add({
                 title: "Inventory item duplicated",
                 description:
-                    `Product code ${productCode} has been assigned to the ` +
+                    `Inventory item code ${inventoryItemCode} has been assigned to the ` +
                     "new unsaved copy.",
                 type: "info",
             });

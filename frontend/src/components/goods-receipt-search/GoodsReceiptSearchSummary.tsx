@@ -48,7 +48,7 @@ export default function GoodsReceiptSearchSummary({ goodsReceipts }: Props) {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Inventory item code</TableHead>
-                        <TableHead>Name</TableHead>
+                        <TableHead>Inventory item name</TableHead>
                         <TableHead className="text-right">Quantity</TableHead>
                     </TableRow>
                 </TableHeader>

@@ -10,14 +10,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type Props = {
-    productCode: string;
+    inventoryItemCode: string;
     goodsReceiptCount: number | null;
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
 };
 
 export default function InventoryItemUsageAlert({
-    productCode,
+    inventoryItemCode,
     goodsReceiptCount,
     onOpenChange,
     onConfirm,
@@ -33,7 +33,7 @@ export default function InventoryItemUsageAlert({
                         Save changes to a used inventory item?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        Inventory item {productCode} is already used on{" "}
+                        Inventory item {inventoryItemCode} is already used on{" "}
                         {goodsReceiptCount}{" "}
                         {goodsReceiptCount === 1
                             ? "goods receipt"

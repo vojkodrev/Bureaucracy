@@ -475,13 +475,13 @@ type Query {
   goodsReceiptStorages(businessYear: String!): [Storage!]!
   latestInventoryItemPhotos(
     businessYear: String!
-    productCode: String!
+    inventoryItemCode: String!
   ): [GoodsReceiptItemPhoto!]!
 
   searchGoodsReceipts(
     businessYear: String!
-    productCode: String
-    productName: String
+    inventoryItemCode: String
+    inventoryItemName: String
     receivedFrom: Time
     receivedTo: Time
     sortBy: String
@@ -624,8 +624,8 @@ type Query {
 
   searchInventoryItems(
     businessYear: String!
-    productCode: String
-    productName: String
+    inventoryItemCode: String
+    inventoryItemName: String
     similarName: String
     sortBy: String
     sortDirection: String
@@ -635,19 +635,19 @@ type Query {
 
   searchLowStockInventoryItems(
     businessYear: String!
-    productCode: String
-    productName: String
+    inventoryItemCode: String
+    inventoryItemName: String
     sortBy: String
     sortDirection: String
     page: Int = 1
     pageSize: Int = 20
   ): InventoryItemPage!
 
-  inventoryItem(businessYear: String!, productCode: String!): InventoryItem
+  inventoryItem(businessYear: String!, inventoryItemCode: String!): InventoryItem
 
   inventoryItemGoodsReceiptCounts(
     businessYear: String!
-    productCodes: [String!]!
+    inventoryItemCodes: [String!]!
   ): [InventoryItemGoodsReceiptCount!]!
 
   productInvoiceCounts(

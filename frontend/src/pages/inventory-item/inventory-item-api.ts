@@ -16,7 +16,7 @@ export type InventoryItemPhotoSource = {
 };
 
 export async function fetchLatestInventoryItemPhotos(
-    productCode: string,
+    inventoryItemCode: string,
     signal?: AbortSignal,
 ): Promise<InventoryItemPhotoSource | null> {
     const result = await postGraphql<{
@@ -24,14 +24,14 @@ export async function fetchLatestInventoryItemPhotos(
     }>(
         `query LatestInventoryItemPhotos(
             $businessYear: String!
-            $productCode: String!
+            $inventoryItemCode: String!
         ) {
             latestInventoryItemPhotos(
                 businessYear: $businessYear
-                productCode: $productCode
+                inventoryItemCode: $inventoryItemCode
             ) { fileId }
         }`,
-        { businessYear: getSelectedBusinessYear(), productCode },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCode },
         signal,
     );
     const photos = result.data?.latestInventoryItemPhotos ?? [];
@@ -39,57 +39,57 @@ export async function fetchLatestInventoryItemPhotos(
 }
 
 export async function fetchInventoryItem(
-    productCode: string,
+    inventoryItemCode: string,
     signal?: AbortSignal,
 ): Promise<InventoryItem> {
     const result = await postGraphql<{
         data?: { inventoryItem: InventoryItem | null };
     }>(
         `
-        query InventoryItem($businessYear: String!, $productCode: String!) {
-            inventoryItem(businessYear: $businessYear, productCode: $productCode) { ${fields} }
+        query InventoryItem($businessYear: String!, $inventoryItemCode: String!) {
+			inventoryItem(businessYear: $businessYear, inventoryItemCode: $inventoryItemCode) { ${fields} }
         }`,
-        { businessYear: getSelectedBusinessYear(), productCode },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCode },
         signal,
     );
     if (!result.data?.inventoryItem)
-        throw new Error(`Inventory item ${productCode} was not found`);
+        throw new Error(`Inventory item ${inventoryItemCode} was not found`);
     return result.data.inventoryItem;
 }
 
-export async function fetchInventoryItemExists(productCode: string): Promise<boolean> {
+export async function fetchInventoryItemExists(inventoryItemCode: string): Promise<boolean> {
     const result = await postGraphql<{
         data?: { inventoryItem: Pick<InventoryItem, "id"> | null };
     }>(
-        `query InventoryItemExists($businessYear: String!, $productCode: String!) {
-            inventoryItem(businessYear: $businessYear, productCode: $productCode) { id }
+        `query InventoryItemExists($businessYear: String!, $inventoryItemCode: String!) {
+			inventoryItem(businessYear: $businessYear, inventoryItemCode: $inventoryItemCode) { id }
         }`,
-        { businessYear: getSelectedBusinessYear(), productCode },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCode },
     );
     return result.data?.inventoryItem != null;
 }
 
 export async function fetchInventoryItemGoodsReceiptCount(
-    productCode: string,
+    inventoryItemCode: string,
 ): Promise<number> {
     const result = await postGraphql<{
         data?: { searchGoodsReceipts: { totalCount: number } };
     }>(
-        `query InventoryItemGoodsReceiptCount($businessYear: String!, $productCode: String!) {
+        `query InventoryItemGoodsReceiptCount($businessYear: String!, $inventoryItemCode: String!) {
             searchGoodsReceipts(
                 businessYear: $businessYear
-                productCode: $productCode
+                inventoryItemCode: $inventoryItemCode
                 page: 1
                 pageSize: 1
             ) { totalCount }
         }`,
-        { businessYear: getSelectedBusinessYear(), productCode },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCode },
     );
     return result.data?.searchGoodsReceipts.totalCount ?? 0;
 }
 
 export async function fetchInventoryItemStock(
-    productCode: string,
+    inventoryItemCode: string,
     signal?: AbortSignal,
 ): Promise<InventoryItemStock[]> {
     const result = await postGraphql<{
@@ -102,10 +102,10 @@ export async function fetchInventoryItemStock(
             };
         };
     }>(
-        `query InventoryItemStock($businessYear: String!, $productCode: String!) {
+        `query InventoryItemStock($businessYear: String!, $inventoryItemCode: String!) {
             searchGoodsReceipts(
                 businessYear: $businessYear
-                productCode: $productCode
+                inventoryItemCode: $inventoryItemCode
                 page: 1
                 pageSize: 10000
             ) {
@@ -115,13 +115,13 @@ export async function fetchInventoryItemStock(
                 }
             }
         }`,
-        { businessYear: getSelectedBusinessYear(), productCode },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCode },
         signal,
     );
     const quantities = new Map<string | null, number>();
     for (const receipt of result.data?.searchGoodsReceipts.goodsReceipts ?? []) {
         const quantity = receipt.items
-            .filter((item) => item.productCode === productCode)
+            .filter((item) => item.productCode === inventoryItemCode)
             .reduce((sum, item) => sum + (item.quantity ?? 0), 0);
         quantities.set(receipt.storage, (quantities.get(receipt.storage) ?? 0) + quantity);
     }

@@ -80,12 +80,12 @@ func (r *queryResolver) GoodsReceiptStorages(ctx context.Context, businessYear s
 }
 
 // LatestInventoryItemPhotos is the resolver for the latestInventoryItemPhotos field.
-func (r *queryResolver) LatestInventoryItemPhotos(ctx context.Context, businessYear string, productCode string) ([]*GoodsReceiptItemPhoto, error) {
-	return r.GoodsReceipts.LatestInventoryItemPhotos(ctx, businessYear, productCode)
+func (r *queryResolver) LatestInventoryItemPhotos(ctx context.Context, businessYear string, inventoryItemCode string) ([]*GoodsReceiptItemPhoto, error) {
+	return r.GoodsReceipts.LatestInventoryItemPhotos(ctx, businessYear, inventoryItemCode)
 }
 
 // SearchGoodsReceipts is the resolver for the searchGoodsReceipts field.
-func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, productCode *string, productName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
+func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -94,7 +94,7 @@ func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear st
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.GoodsReceipts.Search(ctx, businessYear, productCode, productName,
+	return r.GoodsReceipts.Search(ctx, businessYear, inventoryItemCode, inventoryItemName,
 		receivedFrom, receivedTo, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
@@ -276,7 +276,7 @@ func (r *queryResolver) SearchProducts(ctx context.Context, businessYear string,
 }
 
 // SearchInventoryItems is the resolver for the searchInventoryItems field.
-func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -285,12 +285,12 @@ func (r *queryResolver) SearchInventoryItems(ctx context.Context, businessYear s
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.InventoryItems.Search(ctx, businessYear, productCode, productName, similarName,
+	return r.InventoryItems.Search(ctx, businessYear, inventoryItemCode, inventoryItemName, similarName,
 		sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // SearchLowStockInventoryItems is the resolver for the searchLowStockInventoryItems field.
-func (r *queryResolver) SearchLowStockInventoryItems(ctx context.Context, businessYear string, productCode *string, productName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
+func (r *queryResolver) SearchLowStockInventoryItems(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -299,18 +299,18 @@ func (r *queryResolver) SearchLowStockInventoryItems(ctx context.Context, busine
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.InventoryItems.SearchLowStock(ctx, businessYear, productCode, productName,
+	return r.InventoryItems.SearchLowStock(ctx, businessYear, inventoryItemCode, inventoryItemName,
 		sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // InventoryItem is the resolver for the inventoryItem field.
-func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
-	return r.InventoryItems.GetByCode(ctx, businessYear, productCode)
+func (r *queryResolver) InventoryItem(ctx context.Context, businessYear string, inventoryItemCode string) (*InventoryItem, error) {
+	return r.InventoryItems.GetByCode(ctx, businessYear, inventoryItemCode)
 }
 
 // InventoryItemGoodsReceiptCounts is the resolver for the inventoryItemGoodsReceiptCounts field.
-func (r *queryResolver) InventoryItemGoodsReceiptCounts(ctx context.Context, businessYear string, productCodes []string) ([]*InventoryItemGoodsReceiptCount, error) {
-	return r.GoodsReceipts.ItemCounts(ctx, businessYear, productCodes)
+func (r *queryResolver) InventoryItemGoodsReceiptCounts(ctx context.Context, businessYear string, inventoryItemCodes []string) ([]*InventoryItemGoodsReceiptCount, error) {
+	return r.GoodsReceipts.ItemCounts(ctx, businessYear, inventoryItemCodes)
 }
 
 // ProductInvoiceCounts is the resolver for the productInvoiceCounts field.

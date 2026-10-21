@@ -68,8 +68,8 @@ export default function GoodsReceiptItems({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Stock item code</TableHead>
-                            <TableHead>Description</TableHead>
+                            <TableHead>Inventory item code</TableHead>
+                            <TableHead>Inventory item name</TableHead>
                             <TableHead>Unit of measure</TableHead>
                             <TableHead className="text-right">
                                 Quantity

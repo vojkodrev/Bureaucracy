@@ -10,7 +10,7 @@ import {
 } from "./useInventoryItemDraft";
 
 type Options = {
-    routeProductCode?: string;
+    routeInventoryItemCode?: string;
     defaultName: string;
     defaultUnit: string;
     replaceDraft: (draft: InventoryItemDraft) => void;
@@ -22,7 +22,7 @@ const wasAborted = (error: unknown) =>
     error instanceof DOMException && error.name === "AbortError";
 
 export function useInventoryItemLoader({
-    routeProductCode,
+    routeInventoryItemCode,
     defaultName,
     defaultUnit,
     replaceDraft,
@@ -37,7 +37,7 @@ export function useInventoryItemLoader({
     const markLoadedDraftClean = useEffectEvent(markClean);
     const finishNavigation = useEffectEvent(disallowNavigation);
     const requestKey = [
-        routeProductCode ?? "",
+        routeInventoryItemCode ?? "",
         defaultName,
         defaultUnit,
         reloadVersion,
@@ -46,16 +46,16 @@ export function useInventoryItemLoader({
         requestKey: "__initial__",
         error: null as string | null,
     });
-    const isLoading = Boolean(routeProductCode) &&
+    const isLoading = Boolean(routeInventoryItemCode) &&
         loadResult.requestKey !== requestKey;
     const error = loadResult.requestKey === requestKey
         ? loadResult.error
         : null;
 
     useEffect(() => {
-        if (!routeProductCode) return;
+        if (!routeInventoryItemCode) return;
         const controller = new AbortController();
-        void fetchInventoryItem(routeProductCode, controller.signal)
+        void fetchInventoryItem(routeInventoryItemCode, controller.signal)
             .then((item) => {
                 const loadedDraft = inventoryItemDraft(item);
                 setItemId(item.id);
@@ -74,10 +74,10 @@ export function useInventoryItemLoader({
                 });
             });
         return () => controller.abort();
-    }, [requestKey, routeProductCode, defaultName, defaultUnit]);
+    }, [requestKey, routeInventoryItemCode, defaultName, defaultUnit]);
 
     useEffect(() => {
-        if (routeProductCode) return;
+        if (routeInventoryItemCode) return;
         if (preserveDuplicateRef.current) {
             preserveDuplicateRef.current = false;
             finishNavigation();
@@ -93,8 +93,8 @@ export function useInventoryItemLoader({
 
         const controller = new AbortController();
         void fetchNextInventoryItemCode(controller.signal)
-            .then((productCode) => {
-                const codeOnlyDraft = { ...emptyDraft, productCode };
+            .then((inventoryItemCode) => {
+                const codeOnlyDraft = { ...emptyDraft, inventoryItemCode };
                 const initialDraft = {
                     ...codeOnlyDraft,
                     name: defaultName,
@@ -110,7 +110,7 @@ export function useInventoryItemLoader({
                     toast.add({
                         title: "Inventory item draft created",
                         description:
-                            `Product code ${productCode} has been assigned. ` +
+                            `Inventory item code ${inventoryItemCode} has been assigned. ` +
                             "Review the inventory item and save it when ready.",
                         type: "info",
                     });
@@ -120,7 +120,7 @@ export function useInventoryItemLoader({
                 if (!wasAborted(requestError)) console.error(requestError);
             });
         return () => controller.abort();
-    }, [requestKey, routeProductCode, defaultName, defaultUnit]);
+    }, [requestKey, routeInventoryItemCode, defaultName, defaultUnit]);
 
     return {
         itemId,

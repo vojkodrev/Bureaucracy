@@ -1,12 +1,12 @@
 export type InventoryItemSortColumn =
-    | 'productCode'
+    | 'inventoryItemCode'
     | 'name'
     | 'unit'
     | 'minimumStockLevel'
 
 export type InventoryItemSearchCriteria = {
-    productCode: string
-    productName: string
+    inventoryItemCode: string
+    inventoryItemName: string
     resultsView: 'itemList' | 'lowStock'
     page: string
     pageSize: string

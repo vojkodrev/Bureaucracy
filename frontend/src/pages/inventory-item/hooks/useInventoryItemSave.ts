@@ -16,7 +16,7 @@ import {
 type Options = {
     itemId: number | null;
     draft: InventoryItemDraft;
-    routeProductCode?: string;
+    routeInventoryItemCode?: string;
     isLoading: boolean;
     loadError: string | null;
     isDuplicating: boolean;
@@ -37,7 +37,7 @@ export function useInventoryItemSave(options: Options) {
     >(null);
     const [duplicateCodeWarning, setDuplicateCodeWarning] = useState(false);
     const canSave = Boolean(
-        options.draft.productCode.trim() && options.draft.name.trim(),
+        options.draft.inventoryItemCode.trim() && options.draft.name.trim(),
     ) && isOptionalNonNegativeNumber(options.draft.minimumStockLevel) &&
         !options.isLoading && !options.isDuplicating && !options.loadError;
 
@@ -46,7 +46,7 @@ export function useInventoryItemSave(options: Options) {
         try {
             const saved = await postSaveInventoryItem({
                 id: options.itemId,
-                productCode: options.draft.productCode.trim(),
+                productCode: options.draft.inventoryItemCode.trim(),
                 name: emptyToNull(options.draft.name),
                 unit: emptyToNull(options.draft.unit),
                 minimumStockLevel: numberOrNull(
@@ -62,7 +62,7 @@ export function useInventoryItemSave(options: Options) {
                 description: `${saved.productCode} was ${isCreating ? "created" : "updated"} successfully.`,
                 type: "success",
             });
-            if (options.routeProductCode === saved.productCode) {
+            if (options.routeInventoryItemCode === saved.productCode) {
                 options.reloadAfterSave();
             } else {
                 options.allowNavigation();
@@ -88,14 +88,14 @@ export function useInventoryItemSave(options: Options) {
         options.clearDuplicateError();
         try {
             if (options.itemId == null && await fetchInventoryItemExists(
-                options.draft.productCode.trim(),
+                options.draft.inventoryItemCode.trim(),
             )) {
                 setDuplicateCodeWarning(true);
                 return false;
             }
-            if (options.itemId != null && options.routeProductCode) {
+            if (options.itemId != null && options.routeInventoryItemCode) {
                 const count = await fetchInventoryItemGoodsReceiptCount(
-                    options.routeProductCode,
+                    options.routeInventoryItemCode,
                 );
                 if (count > 0) {
                     setGoodsReceiptCountWarning(count);

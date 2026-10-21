@@ -14,8 +14,8 @@ export function goodsReceiptSearchFromParams(params: URLSearchParams): GoodsRece
     return {
         from: params.get('from') ?? '',
         to: params.get('to') ?? '',
-        productCode: params.get('productCode') ?? '',
-        productName: params.get('productName') ?? '',
+        inventoryItemCode: params.get('inventoryItemCode') ?? '',
+        inventoryItemName: params.get('inventoryItemName') ?? '',
         page: params.get('page') ?? '1',
         pageSize: params.get('pageSize') ?? String(defaultPageSize),
         sortBy: sortDirection ? sortBy : '',
@@ -25,7 +25,7 @@ export function goodsReceiptSearchFromParams(params: URLSearchParams): GoodsRece
 
 export function goodsReceiptSearchToParams(search: GoodsReceiptSearchCriteria): URLSearchParams {
     const params = new URLSearchParams()
-    for (const key of ['from', 'to', 'productCode', 'productName'] as const) {
+    for (const key of ['from', 'to', 'inventoryItemCode', 'inventoryItemName'] as const) {
         if (search[key]) params.set(key, search[key])
     }
     params.set('page', search.page)

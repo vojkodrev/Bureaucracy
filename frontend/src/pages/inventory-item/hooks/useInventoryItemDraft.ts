@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { InventoryItem } from "@/lib/inventory-item-types";
 
 export type InventoryItemDraft = {
-    productCode: string;
+    inventoryItemCode: string;
     name: string;
     unit: string;
     minimumStockLevel: string;
@@ -11,7 +11,7 @@ export function inventoryItemDraft(
     item?: InventoryItem | null,
 ): InventoryItemDraft {
     return {
-        productCode: item?.productCode ?? "",
+        inventoryItemCode: item?.productCode ?? "",
         name: item?.name ?? "",
         unit: item?.unit ?? "",
         minimumStockLevel:
