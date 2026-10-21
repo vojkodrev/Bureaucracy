@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 	"github.com/google/uuid"
 )
 
@@ -117,8 +118,8 @@ func (repository *GoodsReceiptRepository) Search(
 	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
 	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("productCode", lib.OptionalLikePattern(productCode)),
+		sql.Named("productName", lib.WordsLikePattern(productName)),
 		sql.Named("receivedFrom", nullableTime(receivedFrom)),
 		sql.Named("receivedTo", nullableTime(receivedTo)),
 	}

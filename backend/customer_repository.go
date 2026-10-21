@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type CustomerRepository struct {
@@ -229,8 +230,8 @@ func (repository *CustomerRepository) Search(
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	queryArguments := []any{
-		sql.Named("customerID", optionalLikePattern(customerID)),
-		sql.Named("customerName", optionalLikePattern(customerName)),
+		sql.Named("customerID", lib.OptionalLikePattern(customerID)),
+		sql.Named("customerName", lib.OptionalLikePattern(customerName)),
 	}
 
 	var totalCount int

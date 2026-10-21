@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type PriceQuoteRepository struct{ database *sql.DB }
@@ -298,11 +299,11 @@ func (repository *PriceQuoteRepository) Search(
 	}
 
 	arguments := []any{
-		sql.Named("quoteNumber", optionalLikePattern(quoteNumber)),
-		sql.Named("customerID", optionalLikePattern(customerID)),
-		sql.Named("customerName", optionalLikePattern(customerName)),
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("quoteNumber", lib.OptionalLikePattern(quoteNumber)),
+		sql.Named("customerID", lib.OptionalLikePattern(customerID)),
+		sql.Named("customerName", lib.OptionalLikePattern(customerName)),
+		sql.Named("productCode", lib.OptionalLikePattern(productCode)),
+		sql.Named("productName", lib.WordsLikePattern(productName)),
 		sql.Named("issuedFrom", nullableTime(issuedFrom)),
 		sql.Named("issuedTo", nullableTime(issuedTo)),
 	}

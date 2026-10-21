@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type InventoryItemRepository struct {
@@ -119,8 +120,8 @@ func (repository *InventoryItemRepository) Search(
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("productCode", lib.OptionalLikePattern(productCode)),
+		sql.Named("productName", lib.WordsLikePattern(productName)),
 	}
 	if similaritySearch == "" {
 		return repository.searchInventoryItemsNormally(
@@ -175,8 +176,8 @@ func (repository *InventoryItemRepository) searchLowStockInventoryItems(
 	pageSize int,
 ) (*InventoryItemPage, error) {
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("productCode", lib.OptionalLikePattern(productCode)),
+		sql.Named("productName", lib.WordsLikePattern(productName)),
 	}
 	fromAndFilters := fmt.Sprintf(`
 		FROM [%s].[dbo].[ArtikelNabava] inventory

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type ProductRepository struct {
@@ -174,8 +175,8 @@ func (repository *ProductRepository) Search(
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	queryArguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("productCode", lib.OptionalLikePattern(productCode)),
+		sql.Named("productName", lib.WordsLikePattern(productName)),
 	}
 
 	if similaritySearch == "" {

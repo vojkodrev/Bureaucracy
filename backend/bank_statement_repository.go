@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type BankStatementRepository struct {
@@ -650,11 +651,11 @@ func (repository *BankStatementRepository) Search(
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
-		sql.Named("documentNumber", optionalLikePattern(documentNumber)),
-		sql.Named("reference", optionalLikePattern(reference)),
+		sql.Named("documentNumber", lib.OptionalLikePattern(documentNumber)),
+		sql.Named("reference", lib.OptionalLikePattern(reference)),
 		sql.Named("bankAccount", bankAccountValue),
-		sql.Named("customerID", optionalLikePattern(customerID)),
-		sql.Named("customerName", optionalLikePattern(customerName)),
+		sql.Named("customerID", lib.OptionalLikePattern(customerID)),
+		sql.Named("customerName", lib.OptionalLikePattern(customerName)),
 	}
 	transactionFilter := `
 		(@dateFrom IS NULL OR transactionRow.Datum >= @dateFrom)
