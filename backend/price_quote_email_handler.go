@@ -42,7 +42,7 @@ func (handler *PriceQuoteEmailHandler) Send(context *gin.Context) {
 
 func (handler *PriceQuoteEmailHandler) loadPriceQuote(context *gin.Context) (*PriceQuote, *Customer, int, bool) {
 	quoteNumber := strings.TrimSpace(context.Param("quoteNumber"))
-	businessYear := strings.TrimSpace(context.Query("businessYear"))
+	businessYear := strings.TrimSpace(context.PostForm("businessYear"))
 	if quoteNumber == "" || !businessYearPattern.MatchString(businessYear) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "a valid price quote number and business year are required"})
 		return nil, nil, 0, false

@@ -81,6 +81,22 @@ func parseDocumentEmailRequest(context *gin.Context) (*documentEmailRequest, boo
 	return request, true
 }
 
+// exposeDocumentEmailParametersToQuery keeps the shared report loaders usable
+// for email POSTs while accepting their parameters in the multipart body.
+func exposeDocumentEmailParametersToQuery(context *gin.Context) {
+	query := context.Request.URL.Query()
+	for key, values := range context.Request.PostForm {
+		if key == "recipient" || key == "bcc" || key == "subject" || key == "message" {
+			continue
+		}
+		query.Del(key)
+		for _, value := range values {
+			query.Add(key, value)
+		}
+	}
+	context.Request.URL.RawQuery = query.Encode()
+}
+
 func sendDocumentEmail(context *gin.Context, sender EmailSender, request *documentEmailRequest, document EmailAttachment, storedRecipient string) {
 	attachments := append([]EmailAttachment{document}, request.attachments...)
 	if err := sender.Send(context.Request.Context(), EmailMessage{To: request.recipient, BCC: request.bcc, Subject: request.subject, Body: request.message, Attachments: attachments}); err != nil {

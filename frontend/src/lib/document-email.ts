@@ -19,9 +19,10 @@ export async function sendDocumentEmail(
 ): Promise<void> {
     const url = new URL(graphqlUrl)
     url.pathname = `/api/${resource}/${encodeURIComponent(documentNumber)}/email`
-    url.searchParams.set('businessYear', getSelectedBusinessYear())
+    url.search = ''
     url.hash = ''
     const form = new FormData()
+    form.set('businessYear', getSelectedBusinessYear())
     form.set('recipient', fields.recipient)
     form.set('bcc', fields.bcc)
     form.set('subject', fields.subject)
@@ -39,9 +40,11 @@ export async function sendAccountingExportEmail(
 ): Promise<void> {
     const url = new URL(graphqlUrl)
     url.pathname = '/api/exports/accounting/email'
-    url.search = new URLSearchParams({ month, year }).toString()
+    url.search = ''
     url.hash = ''
     const form = new FormData()
+    form.set('month', month)
+    form.set('year', year)
     form.set('recipient', fields.recipient)
     form.set('bcc', fields.bcc)
     form.set('subject', fields.subject)

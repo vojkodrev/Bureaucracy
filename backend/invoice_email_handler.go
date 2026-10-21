@@ -41,7 +41,7 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 
 func (handler *InvoiceEmailHandler) loadInvoice(context *gin.Context) (*Invoice, *Customer, int, bool) {
 	invoiceNumber := strings.TrimSpace(context.Param("invoiceNumber"))
-	businessYear := strings.TrimSpace(context.Query("businessYear"))
+	businessYear := strings.TrimSpace(context.PostForm("businessYear"))
 	if invoiceNumber == "" || !businessYearPattern.MatchString(businessYear) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "a valid invoice number and business year are required"})
 		return nil, nil, 0, false

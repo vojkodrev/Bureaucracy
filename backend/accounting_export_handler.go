@@ -27,7 +27,7 @@ func NewAccountingExportHandler(
 }
 
 func (handler *AccountingExportHandler) Handle(context *gin.Context) {
-	content, month, year, ok := handler.generate(context)
+	content, month, year, ok := handler.generate(context, context.Query("month"), context.Query("year"))
 	if !ok {
 		return
 	}
@@ -42,7 +42,7 @@ func (handler *AccountingExportHandler) Send(context *gin.Context) {
 	if !ok {
 		return
 	}
-	content, month, year, ok := handler.generate(context)
+	content, month, year, ok := handler.generate(context, context.PostForm("month"), context.PostForm("year"))
 	if !ok {
 		return
 	}
@@ -54,9 +54,9 @@ func (handler *AccountingExportHandler) Send(context *gin.Context) {
 	sendDocumentEmail(context, handler.sender, request, attachment, "")
 }
 
-func (handler *AccountingExportHandler) generate(context *gin.Context) ([]byte, int, int, bool) {
-	month, monthErr := strconv.Atoi(context.Query("month"))
-	year, yearErr := strconv.Atoi(context.Query("year"))
+func (handler *AccountingExportHandler) generate(context *gin.Context, monthValue, yearValue string) ([]byte, int, int, bool) {
+	month, monthErr := strconv.Atoi(monthValue)
+	year, yearErr := strconv.Atoi(yearValue)
 	if monthErr != nil || month < 1 || month > 12 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "month must be between 1 and 12"})
 		return nil, 0, 0, false
