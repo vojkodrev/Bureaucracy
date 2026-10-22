@@ -231,7 +231,7 @@ func (repository *CustomerRepository) Search(
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	queryArguments := []any{
 		sql.Named("customerID", lib.OptionalLikePattern(customerID)),
-		sql.Named("customerName", lib.OptionalLikePattern(customerName)),
+		sql.Named("customerName", lib.WordsLikePattern(customerName)),
 	}
 
 	var totalCount int

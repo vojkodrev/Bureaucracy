@@ -587,7 +587,7 @@ func (repository *InvoiceRepository) Search(
 
 	invoiceNumberPattern := lib.OptionalLikePattern(invoiceNumber)
 	customerIDPattern := lib.OptionalLikePattern(customerID)
-	customerNamePattern := lib.OptionalLikePattern(customerName)
+	customerNamePattern := lib.WordsLikePattern(customerName)
 	productCodePattern := lib.OptionalLikePattern(productCode)
 	productNamePattern := lib.WordsLikePattern(productName)
 	queryArguments := []any{
