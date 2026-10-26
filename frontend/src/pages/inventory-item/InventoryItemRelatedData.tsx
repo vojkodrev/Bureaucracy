@@ -56,7 +56,6 @@ export default function InventoryItemRelatedData({
                     <InventoryItemSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
-                        showGoodsReceiptCount
                         similarName={name}
                         onInventoryItemSelect={(item) => {
                             if (item.productCode)

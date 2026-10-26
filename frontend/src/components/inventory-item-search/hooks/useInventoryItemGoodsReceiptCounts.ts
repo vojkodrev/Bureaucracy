@@ -9,7 +9,6 @@ type GoodsReceiptCountResult = {
 };
 
 export function useInventoryItemGoodsReceiptCounts(
-    enabled: boolean,
     itemPage: InventoryItemPage | null,
     searchKey: string,
 ) {
@@ -20,10 +19,9 @@ export function useInventoryItemGoodsReceiptCounts(
             ) ?? [],
         [itemPage],
     );
-    const requestKey =
-        enabled && itemPage
-            ? `${searchKey}:${inventoryItemCodes.join(",")}`
-            : "__disabled__";
+    const requestKey = itemPage
+        ? `${searchKey}:${inventoryItemCodes.join(",")}`
+        : "__initial__";
     const [result, setResult] = useState<GoodsReceiptCountResult>({
         key: "__initial__",
         counts: {},
@@ -31,13 +29,12 @@ export function useInventoryItemGoodsReceiptCounts(
     });
     const hasInventoryItemCodes = inventoryItemCodes.length > 0;
     const isLoading =
-        enabled &&
         itemPage != null &&
         hasInventoryItemCodes &&
         result.key !== requestKey;
 
     useEffect(() => {
-        if (!enabled || !itemPage || inventoryItemCodes.length === 0) return;
+        if (!itemPage || inventoryItemCodes.length === 0) return;
 
         const controller = new AbortController();
         void fetchInventoryItemGoodsReceiptCounts(
@@ -56,7 +53,7 @@ export function useInventoryItemGoodsReceiptCounts(
                 setResult({ key: requestKey, counts: {}, error: true });
             });
         return () => controller.abort();
-    }, [enabled, itemPage, inventoryItemCodes, requestKey]);
+    }, [itemPage, inventoryItemCodes, requestKey]);
 
     return {
         counts: hasInventoryItemCodes ? result.counts : {},
