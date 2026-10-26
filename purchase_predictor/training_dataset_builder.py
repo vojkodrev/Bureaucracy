@@ -61,12 +61,7 @@ class TrainingDatasetBuilder:
         with self._dataset_cache.session() as cache:
             final_cutoff = label_end - timedelta(days=horizon)
             cached = cache.load(horizon, first_cutoff, final_cutoff)
-
-            cutoffs: list[date] = []
-            cutoff = first_cutoff
-            while cutoff <= final_cutoff:
-                cutoffs.append(cutoff)
-                cutoff += timedelta(days=horizon)
+            cutoffs = self._cutoffs(first_cutoff, final_cutoff, horizon)
 
             missing_cutoffs = [cutoff for cutoff in cutoffs if cutoff not in cached]
             built: dict[date, pd.DataFrame] = {}
@@ -122,6 +117,34 @@ class TrainingDatasetBuilder:
             horizon,
         )
         return TrainingDataset(dataset, new_snapshot_count)
+
+    @staticmethod
+    def _cutoffs(first_cutoff: date, final_cutoff: date, horizon: int) -> list[date]:
+        if horizon in (7, 14):
+            if first_cutoff > final_cutoff:
+                return []
+            cutoff = final_cutoff - timedelta(days=(final_cutoff.weekday() + 1) % 7)
+            cutoffs: list[date] = []
+            while cutoff >= first_cutoff:
+                cutoffs.append(cutoff)
+                cutoff -= timedelta(days=horizon)
+            return list(reversed(cutoffs))
+
+        elif horizon == 30:
+            if first_cutoff > final_cutoff:
+                return []
+            cutoff = date(first_cutoff.year, 1, 1)
+            while cutoff < first_cutoff:
+                cutoff += relativedelta(months=1)
+
+            cutoffs = []
+            while cutoff <= final_cutoff:
+                cutoffs.append(cutoff)
+                cutoff += relativedelta(months=1)
+            return cutoffs
+
+        else:
+            raise ValueError(f"Unsupported prediction horizon: {horizon}")
 
     def _build_snapshot(
         self,

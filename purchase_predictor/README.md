@@ -9,8 +9,11 @@ The reader discovers historical databases from
 `Birokrat.dbo.PoslovnaLeta`, then joins each `Racuni` table to its
 `RacuniSpecifikacija` table. A pair is eligible at a cutoff when it was active
 during the preceding 24 months. Each model has its own non-overlapping snapshot
-cadence matching its horizon: every 7, 14, or 30 days. Once selected, the pair's
-full history up to that cutoff is used for feature construction.
+cadence. Once selected, the pair's full history up to that cutoff is used for
+feature construction. The 7- and 14-day snapshots are anchored to the latest
+eligible Sunday and generated backwards at their respective intervals. The
+30-day model uses calendar-month snapshots on the first day of each month,
+anchored from January 1.
 
 ## Windows setup
 
