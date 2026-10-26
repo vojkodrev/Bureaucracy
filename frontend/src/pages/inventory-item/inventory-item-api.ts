@@ -142,7 +142,7 @@ export async function fetchNextInventoryItemCode(
     }>(
         `
         query LatestInventoryItem($businessYear: String!) {
-            searchInventoryItems(businessYear: $businessYear, sortBy: "productCode", sortDirection: "desc", page: 1, pageSize: 1) {
+            searchInventoryItems(businessYear: $businessYear, sortBy: "inventoryItemCode", sortDirection: "desc", page: 1, pageSize: 1) {
                 items { productCode }
             }
         }`,

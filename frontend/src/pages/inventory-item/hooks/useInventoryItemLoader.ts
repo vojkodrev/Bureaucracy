@@ -85,8 +85,13 @@ export function useInventoryItemLoader({
             return;
         }
         const emptyDraft = inventoryItemDraft();
+        const handoffDraft = {
+            ...emptyDraft,
+            name: defaultName,
+            unit: defaultUnit,
+        };
         setItemId(null);
-        replaceLoadedDraft(emptyDraft);
+        replaceLoadedDraft(handoffDraft);
         markLoadedDraftClean(emptyDraft);
         finishNavigation();
         setLoadResult({ requestKey, error: null });
@@ -96,9 +101,8 @@ export function useInventoryItemLoader({
             .then((inventoryItemCode) => {
                 const codeOnlyDraft = { ...emptyDraft, inventoryItemCode };
                 const initialDraft = {
-                    ...codeOnlyDraft,
-                    name: defaultName,
-                    unit: defaultUnit,
+                    ...handoffDraft,
+                    inventoryItemCode,
                 };
                 replaceLoadedDraft(initialDraft);
                 markLoadedDraftClean(
