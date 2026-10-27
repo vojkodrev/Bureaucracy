@@ -13,6 +13,7 @@ from config import AppConfig
 from domain import Purchase
 from feature_builder import FeatureBuilder
 from training_dataset_cache import TrainingDatasetCache
+from training_dates import label_date_range
 
 
 @dataclass(frozen=True)
@@ -46,9 +47,7 @@ class TrainingDatasetBuilder:
         if events.empty:
             raise ValueError("No purchases were returned from MSSQL")
 
-        latest_date = events["service_date"].max().date()
-        configured_end = self._config.training_end_date or date.today()
-        label_end = min(configured_end, latest_date)
+        label_end = date.today()
         first_date = events["service_date"].min().date()
         first_cutoff = first_date + relativedelta(months=self._config.warmup_months)
         all_pair_groups = {
@@ -65,40 +64,28 @@ class TrainingDatasetBuilder:
 
             missing_cutoffs = [cutoff for cutoff in cutoffs if cutoff not in cached]
             built: dict[date, pd.DataFrame] = {}
+            cache_before = date.today() - relativedelta(
+                months=self._config.cache_exclude_recent_months
+            )
             worker_count = min(os.cpu_count() or 1, len(missing_cutoffs) or 1)
-            if worker_count == 1:
-                snapshots = (
-                    self._build_snapshot(
-                        cutoff,
-                        horizon,
-                        purchase_lines,
-                        events,
-                        all_pair_groups,
-                    )
-                    for cutoff in missing_cutoffs
+            with ProcessPoolExecutor(
+                max_workers=worker_count,
+                initializer=_initialize_snapshot_worker,
+                initargs=(
+                    self._config.active_pair_months,
+                    purchase_lines,
+                    events,
+                    all_pair_groups,
+                ),
+            ) as executor:
+                snapshots = executor.map(
+                    _build_snapshot_in_worker,
+                    ((cutoff, horizon) for cutoff in missing_cutoffs),
                 )
                 for cutoff, snapshot in zip(missing_cutoffs, snapshots):
-                    cache.save(horizon, cutoff, snapshot)
-                    built[cutoff] = snapshot
-            else:
-                with ProcessPoolExecutor(
-                    max_workers=worker_count,
-                    initializer=_initialize_snapshot_worker,
-                    initargs=(
-                        self._config.active_pair_months,
-                        purchase_lines,
-                        events,
-                        all_pair_groups,
-                    ),
-                ) as executor:
-                    snapshots = executor.map(
-                        _build_snapshot_in_worker,
-                        ((cutoff, horizon) for cutoff in missing_cutoffs),
-                    )
-                    for cutoff, snapshot in zip(missing_cutoffs, snapshots):
-                        # Keep the pyodbc connection in the parent process.
+                    if cutoff < cache_before:
                         cache.save(horizon, cutoff, snapshot)
-                        built[cutoff] = snapshot
+                    built[cutoff] = snapshot
 
             frames = [
                 cached[cutoff] if cutoff in cached else built[cutoff]
@@ -133,15 +120,12 @@ class TrainingDatasetBuilder:
         elif horizon == 30:
             if first_cutoff > final_cutoff:
                 return []
-            cutoff = date(first_cutoff.year, 1, 1)
-            while cutoff < first_cutoff:
-                cutoff += relativedelta(months=1)
-
-            cutoffs = []
-            while cutoff <= final_cutoff:
+            cutoff = date(final_cutoff.year, final_cutoff.month, 1)
+            cutoffs: list[date] = []
+            while cutoff >= first_cutoff:
                 cutoffs.append(cutoff)
-                cutoff += relativedelta(months=1)
-            return cutoffs
+                cutoff -= relativedelta(months=1)
+            return list(reversed(cutoffs))
 
         else:
             raise ValueError(f"Unsupported prediction horizon: {horizon}")
@@ -154,8 +138,13 @@ class TrainingDatasetBuilder:
         events: pd.DataFrame,
         all_pair_groups: dict[tuple[object, object], pd.DataFrame],
     ) -> pd.DataFrame:
+        label_from, label_to = label_date_range(cutoff, horizon)
         self._logger.info(
-            "Building %d-day training snapshot for cutoff %s", horizon, cutoff
+            "Building %d-day training snapshot for cutoff %s (label dates %s to %s)",
+            horizon,
+            cutoff,
+            label_from,
+            label_to,
         )
         history = events[events["service_date"] <= pd.Timestamp(cutoff)]
         invoice_history = purchase_lines[
@@ -192,18 +181,15 @@ class TrainingDatasetBuilder:
                 product_history=product_groups[product_code],
             )
             next_dates = all_pair_groups[(customer_code, product_code)]["service_date"]
-            next_dates = next_dates[next_dates > pd.Timestamp(cutoff)]
-            next_date = next_dates.min() if not next_dates.empty else pd.NaT
-            days_to_next = (
-                (next_date - pd.Timestamp(cutoff)).days if pd.notna(next_date) else None
-            )
+            label_dates = next_dates[
+                (next_dates >= pd.Timestamp(label_from))
+                & (next_dates <= pd.Timestamp(label_to))
+            ]
 
             row = {
                 **features,
                 "cutoff_date": cutoff,
-                "purchased_within_horizon": int(
-                    days_to_next is not None and days_to_next <= horizon
-                ),
+                "purchased_within_horizon": int(not label_dates.empty),
             }
             rows.append(row)
         return pd.DataFrame(rows)

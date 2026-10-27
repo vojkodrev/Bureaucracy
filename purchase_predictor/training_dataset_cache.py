@@ -11,6 +11,7 @@ from injector import inject, singleton
 
 from config import AppConfig
 from feature_builder import FeatureBuilder
+from training_dates import label_date_range
 
 
 @singleton
@@ -114,10 +115,14 @@ class TrainingDatasetCacheSession:
             if not frame.empty:
                 frame["cutoff_date"] = pd.to_datetime(frame["cutoff_date"]).dt.date
             result[snapshot.cutoff_date] = frame
+            label_from, label_to = label_date_range(snapshot.cutoff_date, horizon)
             self._logger.info(
-                "Loaded %d-day training snapshot for cutoff %s from MSSQL cache (%d rows)",
+                "Loaded %d-day training snapshot for cutoff %s "
+                "(label dates %s to %s) from MSSQL cache (%d rows)",
                 horizon,
                 snapshot.cutoff_date,
+                label_from,
+                label_to,
                 len(frame),
             )
 
