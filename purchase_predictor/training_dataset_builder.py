@@ -12,6 +12,7 @@ from injector import inject, singleton
 from config import AppConfig
 from domain import Purchase
 from feature_builder import FeatureBuilder
+from progress_timer import ProgressTimer
 from training_dataset_cache import TrainingDatasetCache
 from training_dates import label_date_range
 
@@ -67,6 +68,7 @@ class TrainingDatasetBuilder:
             cache_before = date.today() - relativedelta(
                 months=self._config.cache_exclude_recent_months
             )
+            progress_timer = ProgressTimer()
             worker_count = min(os.cpu_count() or 1, len(missing_cutoffs) or 1)
             with ProcessPoolExecutor(
                 max_workers=worker_count,
@@ -82,10 +84,28 @@ class TrainingDatasetBuilder:
                     _build_snapshot_in_worker,
                     ((cutoff, horizon) for cutoff in missing_cutoffs),
                 )
-                for cutoff, snapshot in zip(missing_cutoffs, snapshots):
+                for completed, (cutoff, result) in enumerate(
+                    zip(missing_cutoffs, snapshots), start=1
+                ):
+                    snapshot, label_from, label_to = result
                     if cutoff < cache_before:
                         cache.save(horizon, cutoff, snapshot)
                     built[cutoff] = snapshot
+                    elapsed, remaining = progress_timer.update(
+                        completed, len(missing_cutoffs)
+                    )
+                    self._logger.info(
+                        "Built %d-day training snapshot for cutoff %s "
+                        "(label dates %s to %s): %d/%d, elapsed %s, remaining %s",
+                        horizon,
+                        cutoff,
+                        label_from,
+                        label_to,
+                        completed,
+                        len(missing_cutoffs),
+                        elapsed,
+                        remaining,
+                    )
 
             frames = [
                 cached[cutoff] if cutoff in cached else built[cutoff]
@@ -137,15 +157,8 @@ class TrainingDatasetBuilder:
         purchase_lines: pd.DataFrame,
         events: pd.DataFrame,
         all_pair_groups: dict[tuple[object, object], pd.DataFrame],
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, date, date]:
         label_from, label_to = label_date_range(cutoff, horizon)
-        self._logger.info(
-            "Building %d-day training snapshot for cutoff %s (label dates %s to %s)",
-            horizon,
-            cutoff,
-            label_from,
-            label_to,
-        )
         history = events[events["service_date"] <= pd.Timestamp(cutoff)]
         invoice_history = purchase_lines[
             purchase_lines["service_date"] <= pd.Timestamp(cutoff)
@@ -192,7 +205,7 @@ class TrainingDatasetBuilder:
                 "purchased_within_horizon": int(not label_dates.empty),
             }
             rows.append(row)
-        return pd.DataFrame(rows)
+        return pd.DataFrame(rows), label_from, label_to
 
     @staticmethod
     def _purchase_lines(purchases: list[Purchase]) -> pd.DataFrame:
@@ -247,7 +260,9 @@ def _initialize_snapshot_worker(
     _snapshot_pair_groups = all_pair_groups
 
 
-def _build_snapshot_in_worker(arguments: tuple[date, int]) -> pd.DataFrame:
+def _build_snapshot_in_worker(
+    arguments: tuple[date, int],
+) -> tuple[pd.DataFrame, date, date]:
     if (
         _snapshot_worker is None
         or _snapshot_purchase_lines is None
