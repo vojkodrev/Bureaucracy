@@ -31,20 +31,6 @@ class FileModelRepository:
             models[horizon] = model
         return versions, models
 
-    def is_current(self, horizon: int, training_end_date: object) -> bool:
-        try:
-            _, manifest = self._active_manifest(horizon)
-        except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-            return False
-        dataset = manifest.get("dataset")
-        return (
-            int(manifest.get("horizon_days", 0)) == horizon
-            and manifest.get("feature_columns")
-            == list(self._feature_builder.feature_columns)
-            and isinstance(dataset, dict)
-            and dataset.get("training_end_date") == str(training_end_date)
-        )
-
     def _load_active_horizon(self, horizon: int) -> tuple[str, CatBoostClassifier]:
         version_directory, manifest = self._active_manifest(horizon)
         version = version_directory.name

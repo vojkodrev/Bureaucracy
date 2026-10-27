@@ -1,7 +1,6 @@
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from datetime import date, timedelta
 from types import SimpleNamespace
 
@@ -15,13 +14,6 @@ from feature_builder import FeatureBuilder
 from progress_timer import ProgressTimer
 from training_dataset_cache import TrainingDatasetCache
 from training_dates import label_date_range
-
-
-@dataclass(frozen=True)
-class TrainingDataset:
-    frame: pd.DataFrame
-    new_snapshot_count: int
-
 
 @singleton
 class TrainingDatasetBuilder:
@@ -39,7 +31,7 @@ class TrainingDatasetBuilder:
         self._dataset_cache = dataset_cache
         self._logger = logging.getLogger(type(self).__name__)
 
-    def build(self, purchases: list[Purchase], horizon: int) -> TrainingDataset:
+    def build(self, purchases: list[Purchase], horizon: int) -> pd.DataFrame:
         if horizon not in self.horizons:
             raise ValueError(f"Unsupported prediction horizon: {horizon}")
 
@@ -111,8 +103,6 @@ class TrainingDatasetBuilder:
                 cached[cutoff] if cutoff in cached else built[cutoff]
                 for cutoff in cutoffs
             ]
-            new_snapshot_count = len(built)
-
         dataset = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         if dataset.empty:
             raise ValueError(
@@ -123,7 +113,7 @@ class TrainingDatasetBuilder:
             len(dataset),
             horizon,
         )
-        return TrainingDataset(dataset, new_snapshot_count)
+        return dataset
 
     @staticmethod
     def _cutoffs(first_cutoff: date, final_cutoff: date, horizon: int) -> list[date]:
