@@ -67,18 +67,24 @@ ORDER BY [name];`)
 		if !makeFullBackup {
 			var hasFullBackup bool
 			if err := handler.database.QueryRowContext(ctx, `
-DECLARE @last_full_backup datetime;
+DECLARE @latest_full_media_set_id int;
+DECLARE @latest_full_checkpoint_lsn numeric(25, 0);
 
-SELECT @last_full_backup = MAX(backup_set.backup_finish_date)
+SELECT TOP (1)
+    @latest_full_media_set_id = backup_set.media_set_id,
+    @latest_full_checkpoint_lsn = backup_set.checkpoint_lsn
 FROM msdb.dbo.backupset AS backup_set
-INNER JOIN msdb.dbo.backupmediafamily AS media
-    ON media.media_set_id = backup_set.media_set_id
 WHERE backup_set.database_name = @database_name
   AND backup_set.[type] = 'D'
   AND backup_set.is_copy_only = 0
-  AND media.physical_device_name = @full_backup_path;
+ORDER BY backup_set.backup_finish_date DESC, backup_set.backup_set_id DESC;
 
-SELECT CASE WHEN @last_full_backup IS NOT NULL THEN 1 ELSE 0 END,
+SELECT CASE WHEN EXISTS (
+    SELECT 1
+    FROM msdb.dbo.backupmediafamily AS media
+    WHERE media.media_set_id = @latest_full_media_set_id
+      AND media.physical_device_name = @full_backup_path
+) THEN 1 ELSE 0 END,
     CASE WHEN EXISTS (
     SELECT 1
     FROM msdb.dbo.backupset AS backup_set
@@ -86,7 +92,7 @@ SELECT CASE WHEN @last_full_backup IS NOT NULL THEN 1 ELSE 0 END,
         ON media.media_set_id = backup_set.media_set_id
     WHERE backup_set.database_name = @database_name
       AND backup_set.[type] = 'I'
-      AND backup_set.backup_finish_date > @last_full_backup
+      AND backup_set.database_backup_lsn = @latest_full_checkpoint_lsn
       AND media.physical_device_name = @differential_backup_path
 ) THEN 1 ELSE 0 END;`,
 				sql.Named("database_name", databaseName),
