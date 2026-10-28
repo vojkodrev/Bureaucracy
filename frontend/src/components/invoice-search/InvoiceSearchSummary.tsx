@@ -21,7 +21,10 @@ function InvoiceSearchSummary({ invoices, paymentStatus }: InvoiceSearchSummaryP
         const total = invoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0)
         const unpaidInvoices = invoices.filter((invoice) => !invoice.paymentDate)
         const pastDueInvoices = unpaidInvoices.filter(
-            (invoice) => invoice.dueDate && new Date(invoice.dueDate) < new Date(),
+            (invoice) => {
+                const effectiveDueDate = invoice.dueDate ?? invoice.issueDate
+                return effectiveDueDate && new Date(effectiveDueDate) < new Date()
+            },
         )
         const paidInvoices = invoices.filter((invoice) => invoice.paymentDate)
 

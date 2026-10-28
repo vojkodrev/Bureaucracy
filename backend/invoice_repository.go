@@ -622,7 +622,7 @@ func (repository *InvoiceRepository) Search(
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		  AND (@paymentStatus = 'all'
-		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))`, databaseName, databaseName, productDatabaseName),
 		queryArguments...,
@@ -670,7 +670,7 @@ func (repository *InvoiceRepository) Search(
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		  AND (@paymentStatus = 'all'
-		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s

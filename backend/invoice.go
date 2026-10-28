@@ -39,13 +39,23 @@ func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *Invoi
 			summary.TotalPaid += amount
 		} else {
 			summary.TotalOutstanding += amount
-			if invoice.DueDate != nil && invoice.DueDate.Before(now) {
+			if dueDate := effectiveInvoiceDueDate(invoice); dueDate != nil && dueDate.Before(now) {
 				summary.TotalOverdue += amount
 			}
 		}
 	}
 
 	return summaryPage
+}
+
+func effectiveInvoiceDueDate(invoice *Invoice) *time.Time {
+	if invoice == nil {
+		return nil
+	}
+	if invoice.DueDate != nil {
+		return invoice.DueDate
+	}
+	return invoice.IssueDate
 }
 
 func optionalStringEqual(left *string, right *string) bool {
