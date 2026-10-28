@@ -15,6 +15,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewPurchasePredictorRunner),
 		fx.Provide(NewPurchasePredictorTrainingJobHandler),
 		fx.Provide(NewPurchasePredictorPredictionJobHandler),
+		fx.Provide(NewPurchasePredictionCleanupJobHandler),
 		fx.Provide(NewCronServer),
 		fx.Provide(NewBusinessYearRepository),
 		fx.Provide(NewBankStatementRepository),
