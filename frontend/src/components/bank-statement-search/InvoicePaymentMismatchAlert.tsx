@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { BankStatementEntry, BankStatementInvoicePayment } from '@/lib/bank-statement-types'
 import { formatDate } from '@/lib/formatters'
 import {
+    duplicateInvoiceNumbers,
     hasPaidAmountMismatch,
     hasPaymentDateMismatch,
     normalizeInvoiceNumber,
@@ -21,11 +22,17 @@ function InvoicePaymentMismatchAlert({
 }: InvoicePaymentMismatchAlertProps) {
     const [dismissed, setDismissed] = useState(false)
     const [expanded, setExpanded] = useState(false)
+    const duplicateDocuments = duplicateInvoiceNumbers(entries)
     const mismatches = entries.flatMap((entry) => {
         const invoicePayment = entry.documentNumber
             ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
             : undefined
-        if (!invoicePayment) return []
+        const duplicate = entry.documentNumber
+            ? duplicateDocuments.has(normalizeInvoiceNumber(entry.documentNumber))
+            : false
+        if (!invoicePayment) return duplicate
+            ? [{ entry, paymentDateMismatch: false, paidAmountMismatch: false, duplicate }]
+            : []
 
         const paymentDateMismatch = hasPaymentDateMismatch(
             entry.paymentDate,
@@ -36,8 +43,8 @@ function InvoicePaymentMismatchAlert({
             invoicePayment.paidAmount,
             entry.inflow,
         )
-        return paymentDateMismatch || paidAmountMismatch
-            ? [{ entry, paymentDateMismatch, paidAmountMismatch }]
+        return paymentDateMismatch || paidAmountMismatch || duplicate
+            ? [{ entry, paymentDateMismatch, paidAmountMismatch, duplicate }]
             : []
     })
 
@@ -60,21 +67,22 @@ function InvoicePaymentMismatchAlert({
         >
             <TriangleAlert />
             <AlertTitle>
-                {mismatches.length} invoice payment {mismatches.length === 1 ? 'mismatch' : 'mismatches'}
+                {mismatches.length} bank transaction {mismatches.length === 1 ? 'warning' : 'warnings'}
             </AlertTitle>
             {expanded && (
                 <AlertDescription>
                     <p>
-                        The following bank transactions do not match their invoice payment details.
+                        The following bank transactions have invoice payment or duplicate booking warnings.
                     </p>
                     <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto">
-                        {mismatches.map(({ entry, paymentDateMismatch, paidAmountMismatch }) => (
+                        {mismatches.map(({ entry, paymentDateMismatch, paidAmountMismatch, duplicate }) => (
                             <li key={entry.id}>
                                 {formatDate(entry.paymentDate)} — {entry.customerName || 'Unknown counterparty'}
                                 <span className="ml-1 font-medium">
                                     — {[
                                         paymentDateMismatch ? 'Payment date' : null,
                                         paidAmountMismatch ? 'Paid amount' : null,
+                                        duplicate ? 'Document booked more than once' : null,
                                     ].filter(Boolean).join(' and ')}
                                 </span>
                             </li>
@@ -87,7 +95,7 @@ function InvoicePaymentMismatchAlert({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    aria-label="Dismiss invoice payment mismatch warning"
+                    aria-label="Dismiss bank transaction warnings"
                     onClick={(event) => {
                         event.stopPropagation()
                         setDismissed(true)
