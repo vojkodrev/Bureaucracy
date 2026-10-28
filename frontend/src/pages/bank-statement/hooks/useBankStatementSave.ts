@@ -2,8 +2,13 @@ import { useRef, useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { dateForApi } from "@/lib/dates";
 import { toast } from "@/lib/toast";
-import type { BankStatementNumberWarning } from "../BankStatementNumberAlert";
-import { fetchBankStatementExists, fetchLatestBankStatementNumber, postSaveBankStatement } from "../bank-statement-api";
+import { BankStatementNumberWarning } from "../BankStatementNumberAlert";
+import {
+    fetchBankStatementExists,
+    fetchBankStatementNumberByDate,
+    fetchLatestBankStatementNumber,
+    postSaveBankStatement,
+} from "../bank-statement-api";
 import type { BankStatementDraft } from "./useBankStatementDraft";
 
 type Options = {
@@ -85,18 +90,25 @@ export function useBankStatementSave({
         try {
             const value = Number(draft.statementNumber);
             if (statementId == null && await fetchBankStatementExists(value)) {
-                setNumberWarning("duplicate");
+                setNumberWarning(BankStatementNumberWarning.Duplicate);
                 return false;
             }
-            const latest = await fetchLatestBankStatementNumber();
-            if (latest != null && value !== latest && value !== latest + 1) {
-                setNumberWarning(value > latest + 1 ? "skipped" : "historical");
+            const [latest, nextStatement] = await Promise.all([
+                fetchLatestBankStatementNumber(),
+                fetchBankStatementNumberByDate(draft.statementDate!, "NEXT"),
+            ]);
+            if (nextStatement != null) {
+                setNumberWarning(BankStatementNumberWarning.Historical);
+                return false;
+            }
+            if (latest != null && value > latest + 1) {
+                setNumberWarning(BankStatementNumberWarning.Skipped);
                 return false;
             }
             return await performSave();
         } catch (error: unknown) {
             setLatestNumberError(
-                error instanceof Error ? error.message : "Checking latest bank statement failed",
+                error instanceof Error ? error.message : "Validating bank statement failed",
             );
             return false;
         } finally {

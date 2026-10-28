@@ -36,8 +36,8 @@ function BankStatementErrors({
         ],
         [
             "latest-number",
-            "Latest statement number could not be checked",
-            "The bank statement number could not be validated before saving.",
+            "Bank statement could not be validated",
+            "The statement number and date could not be validated before saving.",
             latestNumberError,
         ],
         [
