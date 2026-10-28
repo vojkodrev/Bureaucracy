@@ -406,6 +406,24 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 			}
 		}
 	}
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`UPDATE existingEntry
+		SET existingEntry.Stevilka=NULL
+		FROM [%s].[dbo].[BankaZR] existingEntry
+		WHERE NULLIF(LTRIM(RTRIM(existingEntry.Stevilka)), '') IS NOT NULL
+		  AND NOT EXISTS (
+			SELECT 1 FROM #SavedBankEntries saved
+			WHERE saved.RecNo=existingEntry.RecNo
+		  )
+		  AND EXISTS (
+			SELECT 1
+			FROM #SavedBankEntries saved
+			INNER JOIN [%s].[dbo].[BankaZR] savedEntry ON savedEntry.RecNo=saved.RecNo
+			WHERE NULLIF(LTRIM(RTRIM(savedEntry.Stevilka)), '') IS NOT NULL
+			  AND UPPER(LTRIM(RTRIM(savedEntry.Stevilka)))=UPPER(LTRIM(RTRIM(existingEntry.Stevilka)))
+		  )`, databaseName, databaseName))
+	if err != nil {
+		return nil, fmt.Errorf("clear document numbers moved to saved bank statement: %w", err)
+	}
 	if oldDate != nil && oldAccount != nil {
 		_, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE transactionDetails
 			FROM [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
