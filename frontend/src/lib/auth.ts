@@ -1,4 +1,7 @@
-import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js'
+import Keycloak, {
+    type KeycloakAdapter,
+    type KeycloakTokenParsed,
+} from 'keycloak-js'
 
 export type AuthUser = {
     name: string
@@ -18,6 +21,27 @@ const keycloak = new Keycloak({
     realm: import.meta.env.VITE_KEYCLOAK_REALM || 'bureaucracy',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'bureaucracy-frontend',
 })
+
+const browserAdapter: KeycloakAdapter = {
+    redirectUri: (options) => options?.redirectUri || keycloak.redirectUri || window.location.href,
+    login: async (options) => {
+        window.location.replace(await keycloak.createLoginUrl(options))
+        return new Promise<never>(() => {})
+    },
+    logout: async (options) => {
+        window.location.replace(keycloak.createLogoutUrl(options))
+    },
+    register: async (options) => {
+        window.location.replace(await keycloak.createRegisterUrl(options))
+        return new Promise<never>(() => {})
+    },
+    accountManagement: async () => {
+        const accountUrl = keycloak.createAccountUrl()
+        if (!accountUrl) throw new Error('Account management is not supported.')
+        window.location.assign(accountUrl)
+        return new Promise<never>(() => {})
+    },
+}
 
 // Remove credentials left in session storage by the previous custom OIDC client.
 sessionStorage.removeItem('bureaucracy.auth.tokens')
@@ -45,6 +69,7 @@ async function accessToken(forceRefresh = false): Promise<string> {
 
 export async function initializeAuth() {
     const authenticated = await keycloak.init({
+        adapter: browserAdapter,
         onLoad: 'login-required',
         flow: 'standard',
         pkceMethod: 'S256',
