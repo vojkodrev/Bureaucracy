@@ -5,10 +5,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$certDir = Join-Path $PSScriptRoot '..\certs'
+$certDir = Join-Path $PSScriptRoot '..\certs\local-https'
 foreach ($name in @('bureaucracy.crt', 'bureaucracy.key')) {
     if (-not (Test-Path (Join-Path $certDir $name))) {
-        throw 'HTTPS certificates are missing. Run certs\generate.ps1 first.'
+        throw 'HTTPS certificates are missing. Run certs\local-https\generate.ps1 first.'
     }
 }
 

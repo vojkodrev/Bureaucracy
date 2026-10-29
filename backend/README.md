@@ -7,8 +7,8 @@ The backend exposes BIRO225 invoices through an English GraphQL API.
 ./run-dev.sh
 ```
 
-Generate the repository-wide development certificate with `../certs/generate.sh`
-(or `..\certs\generate.ps1` on Windows), trust `bureaucracy-ca.crt`, and then
+Generate the repository-wide development certificate with `../certs/local-https/generate.sh`
+(or `..\certs\local-https\generate.ps1` on Windows), trust `bureaucracy-ca.crt`, and then
 open the GraphQL playground at <https://localhost:8080/> or send requests to
 `https://localhost:8080/graphql`.
 

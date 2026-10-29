@@ -67,9 +67,9 @@ func NewAppConfig() *AppConfig {
 		KeycloakURL:                 strings.TrimRight(envOrDefault("KEYCLOAK_URL", "https://localhost:8180"), "/"),
 		KeycloakRealm:               envOrDefault("KEYCLOAK_REALM", "bureaucracy"),
 		KeycloakClientID:            envOrDefault("KEYCLOAK_CLIENT_ID", "bureaucracy-frontend"),
-		KeycloakCACertFile:          envOrDefault("KEYCLOAK_CA_CERT_FILE", "../certs/bureaucracy-ca.crt"),
-		TLSCertFile:                 envOrDefault("TLS_CERT_FILE", "../certs/bureaucracy.crt"),
-		TLSKeyFile:                  envOrDefault("TLS_KEY_FILE", "../certs/bureaucracy.key"),
+		KeycloakCACertFile:          envOrDefault("KEYCLOAK_CA_CERT_FILE", "../certs/local-https/bureaucracy-ca.crt"),
+		TLSCertFile:                 envOrDefault("TLS_CERT_FILE", "../certs/local-https/bureaucracy.crt"),
+		TLSKeyFile:                  envOrDefault("TLS_KEY_FILE", "../certs/local-https/bureaucracy.key"),
 	}
 }
 

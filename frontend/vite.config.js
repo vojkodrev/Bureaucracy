@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const https = {
-    cert: fs.readFileSync(path.resolve(dirname, '../certs/bureaucracy.crt')),
-    key: fs.readFileSync(path.resolve(dirname, '../certs/bureaucracy.key')),
+    cert: fs.readFileSync(path.resolve(dirname, '../certs/local-https/bureaucracy.crt')),
+    key: fs.readFileSync(path.resolve(dirname, '../certs/local-https/bureaucracy.key')),
 }
 
 // https://vite.dev/config/

@@ -5,10 +5,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/.bin"
 BINARY="$SCRIPT_DIR/.bin/bureaucracy-backend"
-CERT_DIR="$SCRIPT_DIR/../certs"
+CERT_DIR="$SCRIPT_DIR/../certs/local-https"
 
 if [[ ! -f "$CERT_DIR/bureaucracy.crt" || ! -f "$CERT_DIR/bureaucracy.key" || ! -f "$CERT_DIR/bureaucracy-ca.crt" ]]; then
-    echo "HTTPS certificates are missing. Run certs/generate.sh first." >&2
+    echo "HTTPS certificates are missing. Run certs/local-https/generate.sh first." >&2
     exit 1
 fi
 
