@@ -29,11 +29,16 @@ import (
 
 const fursNamespace = "http://www.fu.gov.si/"
 
-type FURSClient struct{ config *AppConfig }
+type FURSClient struct {
+	config   *AppConfig
+	requests *FURSSOAPRequestRepository
+}
 
-func NewFURSClient(config *AppConfig) *FURSClient { return &FURSClient{config: config} }
+func NewFURSClient(config *AppConfig, requests *FURSSOAPRequestRepository) *FURSClient {
+	return &FURSClient{config: config, requests: requests}
+}
 
-func (client *FURSClient) ConfirmInvoice(ctx context.Context, invoice *Invoice, issuedAt time.Time) (string, string, error) {
+func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int, invoice *Invoice, issuedAt time.Time) (string, string, error) {
 	privateKey, certificate, err := client.credentials()
 	if err != nil {
 		return "", "", err
@@ -86,9 +91,13 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, invoice *Invoice, 
 	}
 
 	tlsCertificate := tls.Certificate{Certificate: [][]byte{certificate.Raw}, PrivateKey: privateKey, Leaf: certificate}
-	httpClient := &http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{TLSClientConfig: &tls.Config{
+	baseTransport := &http.Transport{TLSClientConfig: &tls.Config{
 		MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{tlsCertificate},
-	}}}
+	}}
+	httpClient := &http.Client{Timeout: 30 * time.Second, Transport: &FURSPayloadTransport{
+		base: baseTransport, requests: client.requests, businessYearID: businessYearID,
+		invoiceID: invoice.ID, invoiceNumber: invoice.InvoiceNumber,
+	}}
 	soapClient := soap.NewClient(client.config.FURSURL, soap.WithHTTPClient(httpClient))
 	response := &furs.InvoiceResponse{}
 	if err := soapClient.CallContext(ctx, "/invoices", furs.RawXML(payload), response); err != nil {

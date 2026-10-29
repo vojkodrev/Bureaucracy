@@ -26,6 +26,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewCustomerRepository),
 		fx.Provide(NewInvoiceRepository),
 		fx.Provide(NewInvoiceTaxConfirmationRepository),
+		fx.Provide(NewFURSSOAPRequestRepository),
 		fx.Provide(NewFURSClient),
 		fx.Provide(NewInvoiceTaxConfirmationHandler),
 		fx.Provide(NewInventoryItemRepository),

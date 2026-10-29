@@ -54,7 +54,7 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		return
 	}
 	issuedAt := time.Now().Truncate(time.Second)
-	zoi, eor, err := handler.furs.ConfirmInvoice(c.Request.Context(), invoice, issuedAt)
+	zoi, eor, err := handler.furs.ConfirmInvoice(c.Request.Context(), businessYearID, invoice, issuedAt)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
