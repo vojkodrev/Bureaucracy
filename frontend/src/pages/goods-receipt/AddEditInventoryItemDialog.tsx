@@ -105,7 +105,7 @@ export default function AddEditInventoryItemDialog({
                 <div className="grid gap-4 sm:grid-cols-[1fr_2fr_8rem]">
                     <InventoryItemPickerField
                         id="goods-receipt-item-code"
-                        label="Stock item code"
+                        label="Inventory item code"
                         name="stockItemCode"
                         inventoryItemCode={code}
                         onInventoryItemCodeChange={setCode}
@@ -114,7 +114,7 @@ export default function AddEditInventoryItemDialog({
                     />
                     <Field>
                         <FieldLabel htmlFor="goods-receipt-item-description">
-                            Description
+                            Inventory item name
                         </FieldLabel>
                         <Input
                             id="goods-receipt-item-description"

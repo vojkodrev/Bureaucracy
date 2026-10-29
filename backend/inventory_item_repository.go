@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type InventoryItemRepository struct {
@@ -18,20 +19,20 @@ func NewInventoryItemRepository(database *sql.DB) *InventoryItemRepository {
 	return &InventoryItemRepository{database: database}
 }
 
-func (repository *InventoryItemRepository) GetByCode(ctx context.Context, businessYear string, productCode string) (*InventoryItem, error) {
+func (repository *InventoryItemRepository) GetByCode(ctx context.Context, businessYear string, inventoryItemCode string) (*InventoryItem, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
-	productCode = strings.TrimSpace(productCode)
-	if productCode == "" {
-		return nil, fmt.Errorf("productCode is required")
+	inventoryItemCode = strings.TrimSpace(inventoryItemCode)
+	if inventoryItemCode == "" {
+		return nil, fmt.Errorf("inventoryItemCode is required")
 	}
 	item := &InventoryItem{}
 	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT RecNo, Artikel, Opis, Enota, MinimalnaZaloga
 		FROM [%s].[dbo].[ArtikelNabava]
-		WHERE Artikel = @productCode`, fmt.Sprintf("BIRO%s3", businessYear)),
-		sql.Named("productCode", productCode),
+		WHERE Artikel = @inventoryItemCode`, fmt.Sprintf("BIRO%s3", businessYear)),
+		sql.Named("inventoryItemCode", inventoryItemCode),
 	).Scan(&item.ID, &item.ProductCode, &item.Name, &item.Unit, &item.MinimumStockLevel)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -91,8 +92,8 @@ func (repository *InventoryItemRepository) Save(ctx context.Context, businessYea
 func (repository *InventoryItemRepository) Search(
 	ctx context.Context,
 	businessYear string,
-	productCode *string,
-	productName *string,
+	inventoryItemCode *string,
+	inventoryItemName *string,
 	similarName *string,
 	sortBy *string,
 	sortDirection *string,
@@ -119,8 +120,8 @@ func (repository *InventoryItemRepository) Search(
 
 	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("inventoryItemCode", lib.OptionalLikePattern(inventoryItemCode)),
+		sql.Named("inventoryItemName", lib.WordsLikePattern(inventoryItemName)),
 	}
 	if similaritySearch == "" {
 		return repository.searchInventoryItemsNormally(
@@ -138,8 +139,8 @@ func (repository *InventoryItemRepository) Search(
 func (repository *InventoryItemRepository) SearchLowStock(
 	ctx context.Context,
 	businessYear string,
-	productCode *string,
-	productName *string,
+	inventoryItemCode *string,
+	inventoryItemName *string,
 	sortBy *string,
 	sortDirection *string,
 	page int,
@@ -160,7 +161,7 @@ func (repository *InventoryItemRepository) SearchLowStock(
 	}
 	return repository.searchLowStockInventoryItems(
 		ctx, fmt.Sprintf("BIRO%s3", businessYear), fmt.Sprintf("BIRO%s5", businessYear),
-		productCode, productName, orderBy, page, pageSize,
+		inventoryItemCode, inventoryItemName, orderBy, page, pageSize,
 	)
 }
 
@@ -168,15 +169,15 @@ func (repository *InventoryItemRepository) searchLowStockInventoryItems(
 	ctx context.Context,
 	inventoryDatabase string,
 	receiptDatabase string,
-	productCode *string,
-	productName *string,
+	inventoryItemCode *string,
+	inventoryItemName *string,
 	orderBy string,
 	page int,
 	pageSize int,
 ) (*InventoryItemPage, error) {
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("inventoryItemCode", lib.OptionalLikePattern(inventoryItemCode)),
+		sql.Named("inventoryItemName", lib.WordsLikePattern(inventoryItemName)),
 	}
 	fromAndFilters := fmt.Sprintf(`
 		FROM [%s].[dbo].[ArtikelNabava] inventory
@@ -189,8 +190,8 @@ func (repository *InventoryItemRepository) searchLowStockInventoryItems(
 			WHERE ISNULL(item.Deleted, 0) = 0
 			GROUP BY item.Artikel
 		) stock ON stock.ProductCode = inventory.Artikel
-		WHERE (@productCode = '' OR inventory.Artikel LIKE @productCode ESCAPE '\')
-		  AND (@productName = '' OR inventory.Opis LIKE @productName ESCAPE '\')
+		WHERE (@inventoryItemCode = '' OR inventory.Artikel LIKE @inventoryItemCode ESCAPE '\')
+		  AND (@inventoryItemName = '' OR inventory.Opis LIKE @inventoryItemName ESCAPE '\')
 		  AND inventory.MinimalnaZaloga > 0
 		  AND COALESCE(stock.CurrentStock, 0) <= inventory.MinimalnaZaloga * 1.2`,
 		inventoryDatabase, receiptDatabase, receiptDatabase)
@@ -248,8 +249,8 @@ func (repository *InventoryItemRepository) searchInventoryItemsNormally(
 	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[ArtikelNabava]
-		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
-		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')`, databaseName),
+		WHERE (@inventoryItemCode = '' OR Artikel LIKE @inventoryItemCode ESCAPE '\')
+		  AND (@inventoryItemName = '' OR Opis LIKE @inventoryItemName ESCAPE '\')`, databaseName),
 		arguments...,
 	).Scan(&totalCount)
 	if err != nil {
@@ -263,8 +264,8 @@ func (repository *InventoryItemRepository) searchInventoryItemsNormally(
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT RecNo, Artikel, Opis, Enota, MinimalnaZaloga
 		FROM [%s].[dbo].[ArtikelNabava]
-		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
-		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')
+		WHERE (@inventoryItemCode = '' OR Artikel LIKE @inventoryItemCode ESCAPE '\')
+		  AND (@inventoryItemName = '' OR Opis LIKE @inventoryItemName ESCAPE '\')
 		ORDER BY %s
 		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, orderBy),
 		arguments...,
@@ -315,8 +316,8 @@ func (repository *InventoryItemRepository) searchInventoryItemsBySimilarity(
 		CROSS APPLY (VALUES (EDIT_DISTANCE(
 			Normalized.SearchName, Normalized.ProductName, @maximumDistance + 1
 		))) AS Similarity(Distance)
-		WHERE (@productCode = '' OR Artikel LIKE @productCode ESCAPE '\')
-		  AND (@productName = '' OR Opis LIKE @productName ESCAPE '\')
+		WHERE (@inventoryItemCode = '' OR Artikel LIKE @inventoryItemCode ESCAPE '\')
+		  AND (@inventoryItemName = '' OR Opis LIKE @inventoryItemName ESCAPE '\')
 		  AND Opis IS NOT NULL
 		  AND Similarity.Distance <= @maximumDistance`
 
@@ -386,7 +387,7 @@ func inventoryItemOrderBy(sortBy *string, sortDirection *string) (string, error)
 	}
 
 	columns := map[string]string{
-		"productCode":       "Artikel",
+		"inventoryItemCode": "Artikel",
 		"name":              "Opis",
 		"unit":              "Enota",
 		"minimumStockLevel": "MinimalnaZaloga",

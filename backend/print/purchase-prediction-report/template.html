@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8">
+    <title>Napoved nakupov</title>
+    <style>{{.CSS}}</style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>Napoved nakupov</h1>
+            <p>Poslovno leto {{.Document.BusinessYear}} · {{.Document.ResultPage}}</p>
+        </div>
+        <p class="generated">Izdelano {{.Document.GeneratedAt}}</p>
+    </header>
+    <table>
+        <thead>
+            <tr>
+                <th>Šifra izdelka</th>
+                <th>Naziv izdelka</th>
+                <th class="number">Povp. pogostost naročila (dni)</th>
+                <th class="number">Dni od zadnjega naročila</th>
+                <th class="number">7 dni</th>
+                <th class="number">14 dni</th>
+                <th class="number">30 dni</th>
+            </tr>
+        </thead>
+        {{range .Document.Customers}}
+        <tbody class="customer-group">
+            <tr class="customer"><td colspan="7">{{.Name}}</td></tr>
+            {{range .Rows}}
+            <tr>
+                <td>{{.ProductCode}}</td><td>{{.ProductName}}</td>
+                <td class="number">{{.AverageFrequency}}</td><td class="number">{{.DaysSinceLast}}</td>
+                <td class="number">{{.Score7}}</td><td class="number">{{.Score14}}</td><td class="number">{{.Score30}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+        {{else}}
+        <tbody><tr><td colspan="7" class="empty">Za izbrane pogoje ni napovedi.</td></tr></tbody>
+        {{end}}
+    </table>
+</body>
+</html>

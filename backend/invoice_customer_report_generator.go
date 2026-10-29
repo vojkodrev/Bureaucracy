@@ -17,19 +17,18 @@ type invoiceCustomerReportDocument struct {
 	GeneratedAt  string
 	ResultPage   string
 	Customers    []invoiceCustomerReportSection
-	Total        string
-	Unpaid       string
-	PastDue      string
-	Paid         string
+	Summary      []invoiceCustomerReportTotal
 }
 
 type invoiceCustomerReportSection struct {
-	Customer         string
-	Invoices         []invoiceReportRow
-	TotalPaid        string
-	TotalOutstanding string
-	TotalOverdue     string
-	TotalInvoiced    string
+	Customer string
+	Invoices []invoiceReportRow
+	Totals   []invoiceCustomerReportTotal
+}
+
+type invoiceCustomerReportTotal struct {
+	Label  string
+	Amount string
 }
 
 //go:embed print/invoice-customer-report/template.html
@@ -57,6 +56,7 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 	businessYear int,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	paymentStatus string,
 ) ([]byte, error) {
 	if summaryPage == nil {
 		return nil, fmt.Errorf("invoice customer summary page is required")
@@ -83,12 +83,14 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 			})
 		}
 		customers = append(customers, invoiceCustomerReportSection{
-			Customer:         invoiceCustomerReportName(summary.CustomerCode, summary.CustomerName),
-			Invoices:         rows,
-			TotalPaid:        formatMoneyAmount(summary.TotalPaid),
-			TotalOutstanding: formatMoneyAmount(summary.TotalOutstanding),
-			TotalOverdue:     formatMoneyAmount(summary.TotalOverdue),
-			TotalInvoiced:    formatMoneyAmount(summary.TotalInvoiced),
+			Customer: invoiceCustomerReportName(summary.CustomerCode, summary.CustomerName),
+			Invoices: rows,
+			Totals: invoiceCustomerReportTotals(paymentStatus, []invoiceCustomerReportTotal{
+				{Label: "Plačano", Amount: formatMoneyAmount(summary.TotalPaid)},
+				{Label: "Neplačano", Amount: formatMoneyAmount(summary.TotalOutstanding)},
+				{Label: "Od tega zapadlo", Amount: formatMoneyAmount(summary.TotalOverdue)},
+				{Label: "Skupaj zaračunano", Amount: formatMoneyAmount(summary.TotalInvoiced)},
+			}),
 		})
 	}
 	totals := calculateInvoiceReportTotals(invoices, time.Now())
@@ -100,10 +102,12 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 		GeneratedAt:  time.Now().Format("2.1.2006 15:04"),
 		ResultPage:   fmt.Sprintf("Stran rezultatov %d od %d", summaryPage.Page, summaryPage.TotalPages),
 		Customers:    customers,
-		Total:        formatMoneyAmount(totals.Total),
-		Unpaid:       formatMoneyAmount(totals.Unpaid),
-		PastDue:      formatMoneyAmount(totals.PastDue),
-		Paid:         formatMoneyAmount(totals.Paid),
+		Summary: invoiceCustomerReportTotals(paymentStatus, []invoiceCustomerReportTotal{
+			{Label: "Skupni znesek", Amount: formatMoneyAmount(totals.Total)},
+			{Label: "Neplačano", Amount: formatMoneyAmount(totals.Unpaid)},
+			{Label: "Zapadlo", Amount: formatMoneyAmount(totals.PastDue)},
+			{Label: "Plačano", Amount: formatMoneyAmount(totals.Paid)},
+		}),
 	}
 	var renderedHTML bytes.Buffer
 	if err := generator.template.Execute(&renderedHTML, struct {
@@ -113,6 +117,17 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 		return nil, fmt.Errorf("render invoice customer report HTML: %w", err)
 	}
 	return generator.pdfRenderer.Render(ctx, renderedHTML.Bytes())
+}
+
+func invoiceCustomerReportTotals(paymentStatus string, totals []invoiceCustomerReportTotal) []invoiceCustomerReportTotal {
+	switch strings.TrimSpace(paymentStatus) {
+	case "paid":
+		totals = totals[3:4]
+	case "overdue":
+		totals = totals[2:3]
+		totals[0].Label = "Skupaj zapadlo"
+	}
+	return totals
 }
 
 func invoiceCustomerReportName(code *string, name *string) string {

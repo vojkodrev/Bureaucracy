@@ -15,7 +15,7 @@ import { useInventoryItemSave } from "./hooks/useInventoryItemSave";
 import { useUnsavedInventoryItemGuard } from "./hooks/useUnsavedInventoryItemGuard";
 
 export default function InventoryItemPage() {
-    const { productCode: routeProductCode } = useParams();
+    const { inventoryItemCode: routeInventoryItemCode } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const draftState = useInventoryItemDraft();
@@ -24,7 +24,7 @@ export default function InventoryItemPage() {
         draftState.hasUnsavedChanges,
     );
     const loader = useInventoryItemLoader({
-        routeProductCode,
+        routeInventoryItemCode,
         defaultName: searchParams.get("name") ?? "",
         defaultUnit: searchParams.get("unit") ?? "",
         replaceDraft: setDraft,
@@ -44,7 +44,7 @@ export default function InventoryItemPage() {
     const save = useInventoryItemSave({
         itemId: loader.itemId,
         draft,
-        routeProductCode,
+        routeInventoryItemCode,
         isLoading: loader.isLoading,
         loadError: loader.error,
         isDuplicating: duplicate.isDuplicating,
@@ -57,7 +57,7 @@ export default function InventoryItemPage() {
         reloadAfterSave: loader.reloadAfterSave,
     });
     const revert = useInventoryItemRevert({
-        routeProductCode,
+        routeInventoryItemCode,
         hasUnsavedChanges: draftState.hasUnsavedChanges,
         isDuplicating: duplicate.isDuplicating,
         clearSaveError: () => save.setSaveError(null),
@@ -95,7 +95,7 @@ export default function InventoryItemPage() {
                 }}
             />
             <InventoryItemUsageAlert
-                productCode={routeProductCode ?? draft.productCode}
+                inventoryItemCode={routeInventoryItemCode ?? draft.inventoryItemCode}
                 goodsReceiptCount={save.goodsReceiptCountWarning}
                 onOpenChange={(open) => {
                     if (!open) save.setGoodsReceiptCountWarning(null);
@@ -107,8 +107,8 @@ export default function InventoryItemPage() {
             <DuplicateIdentifierAlert
                 open={save.duplicateCodeWarning}
                 recordName="inventory item"
-                identifierLabel="Product code"
-                identifier={draft.productCode.trim()}
+                identifierLabel="Inventory item code"
+                identifier={draft.inventoryItemCode.trim()}
                 onOpenChange={save.setDuplicateCodeWarning}
             />
             <UnsavedInventoryItemAlerts
@@ -138,7 +138,7 @@ export default function InventoryItemPage() {
             </div>
             <InventoryItemRelatedData
                 itemId={loader.itemId}
-                productCode={draft.productCode}
+                inventoryItemCode={draft.inventoryItemCode}
                 name={draft.name}
                 unit={draft.unit}
                 hasUnsavedChanges={draftState.hasUnsavedChanges}

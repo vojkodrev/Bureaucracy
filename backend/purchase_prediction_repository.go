@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"bureaucracy/backend/lib"
 )
 
 type PurchasePredictionRepository struct{ database *sql.DB }
@@ -39,10 +41,11 @@ func (repository *PurchasePredictionRepository) Search(
 		return &trimmed
 	}
 	customerCode, customerName = trim(customerCode), trim(customerName)
-	productCode, productName = trim(productCode), trim(productName)
+	productCode = trim(productCode)
+	productNamePattern := lib.WordsLikePattern(productName)
 	arguments := []any{
 		sql.Named("customerCode", customerCode), sql.Named("customerName", customerName),
-		sql.Named("productCode", productCode), sql.Named("productName", productName),
+		sql.Named("productCode", productCode), sql.Named("productName", productNamePattern),
 		sql.Named("offset", (page-1)*pageSize), sql.Named("pageSize", pageSize),
 	}
 
@@ -61,7 +64,7 @@ func (repository *PurchasePredictionRepository) Search(
 				AND (@customerCode IS NULL OR r.customer_code LIKE '%%' + @customerCode + '%%')
 				AND (@customerName IS NULL OR c.Partner LIKE '%%' + @customerName + '%%')
 				AND (@productCode IS NULL OR r.product_code LIKE '%%' + @productCode + '%%')
-				AND (@productName IS NULL OR p.Opis LIKE '%%' + @productName + '%%')
+				AND (@productName = '' OR p.Opis LIKE @productName ESCAPE '\')
 			GROUP BY r.customer_code
 		), paged AS (
 			SELECT customer_code FROM matching_customers
@@ -99,7 +102,7 @@ func (repository *PurchasePredictionRepository) Search(
 			AND (@customerCode IS NULL OR r.customer_code LIKE '%%' + @customerCode + '%%')
 			AND (@customerName IS NULL OR c.Partner LIKE '%%' + @customerName + '%%')
 			AND (@productCode IS NULL OR r.product_code LIKE '%%' + @productCode + '%%')
-			AND (@productName IS NULL OR p.Opis LIKE '%%' + @productName + '%%')`, databaseName, databaseName)
+			AND (@productName = '' OR p.Opis LIKE @productName ESCAPE '\')`, databaseName, databaseName)
 	countRow := repository.database.QueryRowContext(
 		ctx, countQuery, arguments...,
 	)

@@ -12,7 +12,6 @@ type InventoryItemSearchProps = {
     mode: ComponentMode;
     showSearchFields?: boolean;
     similarName?: string;
-    showGoodsReceiptCount?: boolean;
     onInventoryItemSelect?: (item: InventoryItem) => void;
 };
 
@@ -20,7 +19,6 @@ export default function InventoryItemSearch({
     mode,
     showSearchFields = true,
     similarName,
-    showGoodsReceiptCount = false,
     onInventoryItemSelect,
 }: InventoryItemSearchProps) {
     const searchState = useInventoryItemSearchState(mode, similarName);
@@ -31,7 +29,6 @@ export default function InventoryItemSearch({
         similarName,
     );
     const goodsReceiptCounts = useInventoryItemGoodsReceiptCounts(
-        showGoodsReceiptCount,
         itemPage,
         searchKey,
     );
@@ -64,7 +61,6 @@ export default function InventoryItemSearch({
                     isLoading={isLoading}
                     mode={mode}
                     showSearchFields={showSearchFields}
-                    showGoodsReceiptCount={showGoodsReceiptCount}
                     goodsReceiptCounts={goodsReceiptCounts.counts}
                     goodsReceiptCountsLoading={goodsReceiptCounts.isLoading}
                     goodsReceiptCountsError={goodsReceiptCounts.error}

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type BankStatementRepository struct {
@@ -405,6 +406,24 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 			}
 		}
 	}
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`UPDATE existingEntry
+		SET existingEntry.Stevilka=NULL
+		FROM [%s].[dbo].[BankaZR] existingEntry
+		WHERE NULLIF(LTRIM(RTRIM(existingEntry.Stevilka)), '') IS NOT NULL
+		  AND NOT EXISTS (
+			SELECT 1 FROM #SavedBankEntries saved
+			WHERE saved.RecNo=existingEntry.RecNo
+		  )
+		  AND EXISTS (
+			SELECT 1
+			FROM #SavedBankEntries saved
+			INNER JOIN [%s].[dbo].[BankaZR] savedEntry ON savedEntry.RecNo=saved.RecNo
+			WHERE NULLIF(LTRIM(RTRIM(savedEntry.Stevilka)), '') IS NOT NULL
+			  AND UPPER(LTRIM(RTRIM(savedEntry.Stevilka)))=UPPER(LTRIM(RTRIM(existingEntry.Stevilka)))
+		  )`, databaseName, databaseName))
+	if err != nil {
+		return nil, fmt.Errorf("clear document numbers moved to saved bank statement: %w", err)
+	}
 	if oldDate != nil && oldAccount != nil {
 		_, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE transactionDetails
 			FROM [Bureaucracy].[dbo].[bank_statement_transaction_details] transactionDetails
@@ -650,11 +669,11 @@ func (repository *BankStatementRepository) Search(
 		sql.Named("dateFrom", nullableTime(dateFrom)),
 		sql.Named("dateTo", nullableTime(dateTo)),
 		sql.Named("statementNumber", statementNumber),
-		sql.Named("documentNumber", optionalLikePattern(documentNumber)),
-		sql.Named("reference", optionalLikePattern(reference)),
+		sql.Named("documentNumber", lib.OptionalLikePattern(documentNumber)),
+		sql.Named("reference", lib.OptionalLikePattern(reference)),
 		sql.Named("bankAccount", bankAccountValue),
-		sql.Named("customerID", optionalLikePattern(customerID)),
-		sql.Named("customerName", optionalLikePattern(customerName)),
+		sql.Named("customerID", lib.OptionalLikePattern(customerID)),
+		sql.Named("customerName", lib.OptionalLikePattern(customerName)),
 	}
 	transactionFilter := `
 		(@dateFrom IS NULL OR transactionRow.Datum >= @dateFrom)

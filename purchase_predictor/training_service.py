@@ -40,20 +40,7 @@ class TrainingService:
         categorical = self._feature_builder.categorical_columns
 
         for horizon in self._dataset_builder.horizons:
-            result = self._dataset_builder.build(purchases, horizon)
-            dataset = result.frame
-            if (
-                result.new_snapshot_count == 0
-                and self._model_repository.is_current(
-                    horizon, dataset["cutoff_date"].max()
-                )
-            ):
-                self._logger.info(
-                    "Skipping %d-day model training because its dataset has no new snapshots",
-                    horizon,
-                )
-                del result, dataset
-                continue
+            dataset = self._dataset_builder.build(purchases, horizon)
 
             train, validation, test = self._chronological_split(dataset)
             target = "purchased_within_horizon"
@@ -117,7 +104,6 @@ class TrainingService:
                 "Published trained %d-day model to %s", horizon, output
             )
             del (
-                result,
                 dataset,
                 train,
                 validation,

@@ -37,6 +37,7 @@ func NewHTTPServer(
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
 	bankStatementReportHandler *BankStatementReportHandler,
+	purchasePredictionReportHandler *PurchasePredictionReportHandler,
 	fileHandler *FileHandler,
 ) *HTTPServer {
 	if config.Environment == "production" {
@@ -70,6 +71,7 @@ func NewHTTPServer(
 	storage.Use(RequireAnyRole(adminRole, storageRole))
 	storage.POST("/api/file", fileHandler.UploadImage)
 	storage.GET("/api/file/:fileId", fileHandler.Display)
+	storage.GET("/api/purchase-predictions/report/pdf", purchasePredictionReportHandler.Handle)
 
 	admin := protected.Group("/")
 	admin.Use(RequireAnyRole(adminRole))

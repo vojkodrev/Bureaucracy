@@ -1,5 +1,25 @@
+import type { BankStatementEntry } from '@/lib/bank-statement-types'
+
 export function normalizeInvoiceNumber(value: string) {
     return value.trim().toUpperCase()
+}
+
+export function duplicateInvoiceNumbers(entries: BankStatementEntry[]) {
+    const counts = new Map<string, number>()
+
+    for (const entry of entries) {
+        const documentNumber = entry.documentNumber?.trim()
+        if (!documentNumber) continue
+
+        const normalized = normalizeInvoiceNumber(documentNumber)
+        counts.set(normalized, (counts.get(normalized) ?? 0) + 1)
+    }
+
+    return new Set(
+        [...counts.entries()]
+            .filter(([, count]) => count > 1)
+            .map(([documentNumber]) => documentNumber),
+    )
 }
 
 export function hasPaymentDateMismatch(

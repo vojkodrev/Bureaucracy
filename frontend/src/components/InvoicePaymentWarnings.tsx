@@ -11,6 +11,8 @@ type InvoicePaymentWarningsProps = {
     dateTooltip?: ReactNode
     amountMismatch?: boolean
     amountTooltip?: ReactNode
+    duplicate?: boolean
+    duplicateTooltip?: ReactNode
 }
 
 function InvoicePaymentWarnings({
@@ -20,6 +22,8 @@ function InvoicePaymentWarnings({
     dateTooltip,
     amountMismatch = false,
     amountTooltip,
+    duplicate = false,
+    duplicateTooltip,
 }: InvoicePaymentWarningsProps) {
     return (
         <>
@@ -53,6 +57,22 @@ function InvoicePaymentWarnings({
                         {paidAmount == null ? '—' : formatCurrency(paidAmount)} paid, amount mismatch
                     </TooltipTrigger>
                     <TooltipContent>{amountTooltip}</TooltipContent>
+                </Tooltip>
+            )}
+            {duplicate && (
+                <Tooltip>
+                    <TooltipTrigger
+                        render={(
+                            <Link
+                                to={href}
+                                className="relative z-20 inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-rose-100 px-2 py-1 font-medium text-rose-950 hover:underline dark:bg-rose-900 dark:text-rose-100"
+                            />
+                        )}
+                    >
+                        <AlertTriangleIcon className="size-4 shrink-0" aria-hidden="true" />
+                        Booked more than once
+                    </TooltipTrigger>
+                    <TooltipContent>{duplicateTooltip}</TooltipContent>
                 </Tooltip>
             )}
         </>

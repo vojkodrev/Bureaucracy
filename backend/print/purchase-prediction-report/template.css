@@ -1,0 +1,25 @@
+@page {
+    size: A4 landscape;
+    margin: 10mm 12mm 12mm;
+    @bottom-right { content: "Stran " counter(page) " / " counter(pages); font: 8pt Arial, sans-serif; color: #555; }
+}
+html, body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+body { font-size: 8pt; }
+header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 5mm; }
+h1 { margin: 0 0 1mm; font-size: 16pt; }
+header p { margin: 0; }
+.generated { color: #555; font-size: 7pt; }
+table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th, td { padding: 1mm 1.5mm; border: 0.2mm solid #777; vertical-align: middle; }
+th { background: #eee; font-size: 7pt; line-height: 1.1; text-align: left; }
+th:nth-child(1) { width: 13%; }
+th:nth-child(2) { width: 31%; }
+th:nth-child(3) { width: 16%; }
+th:nth-child(4) { width: 14%; }
+th:nth-child(5), th:nth-child(6), th:nth-child(7) { width: 8.66%; }
+.number { text-align: right; }
+.customer td { background: #ddd; font-weight: 700; border-top-width: 0.6mm; }
+.customer-group { break-inside: avoid; break-inside: avoid-page; page-break-inside: avoid; }
+.empty { height: 18mm; color: #666; text-align: center; }

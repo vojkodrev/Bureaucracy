@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Plus, Scissors, Trash2 } from "lucide-react";
+import { ClipboardPaste, Copy, Pencil, Plus, Scissors, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +24,51 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import type { BankStatementEntry } from "@/lib/bank-statement-types";
+import { toast } from "@/lib/toast";
 import AddEditTransactionDialog from "./AddEditTransactionDialog";
 import SplitInflowDialog from "./SplitInflowDialog";
+
+const TRANSACTION_ROW_CLIPBOARD_TYPE = "bureaucracy/bank-statement-transaction-row";
+
+type TransactionRowClipboardData = {
+    type: typeof TRANSACTION_ROW_CLIPBOARD_TYPE;
+    version: 1;
+    entry: BankStatementEntry;
+};
+
+const isNullableNumber = (value: unknown): value is number | null =>
+    value === null || (typeof value === "number" && Number.isFinite(value));
+const isNullableString = (value: unknown): value is string | null =>
+    value === null || typeof value === "string";
+
+function isTransactionRowClipboardData(
+    value: unknown,
+): value is TransactionRowClipboardData {
+    if (typeof value !== "object" || value === null) return false;
+    const payload = value as Record<string, unknown>;
+    if (
+        payload.type !== TRANSACTION_ROW_CLIPBOARD_TYPE ||
+        payload.version !== 1 ||
+        typeof payload.entry !== "object" ||
+        payload.entry === null
+    ) return false;
+
+    const entry = payload.entry as Record<string, unknown>;
+    return typeof entry.id === "number" &&
+        typeof entry.statementId === "number" &&
+        isNullableNumber(entry.statementNumber) &&
+        isNullableString(entry.paymentDate) &&
+        isNullableString(entry.customerId) &&
+        isNullableString(entry.customerName) &&
+        isNullableString(entry.transactionType) &&
+        isNullableNumber(entry.transactionTypeId) &&
+        isNullableNumber(entry.outflow) &&
+        isNullableNumber(entry.inflow) &&
+        isNullableString(entry.documentNumber) &&
+        isNullableString(entry.reference) &&
+        isNullableString(entry.endToEndId) &&
+        isNullableString(entry.purpose);
+}
 
 type Props = {
     entries: BankStatementEntry[];
@@ -39,6 +82,16 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
     const [splittingIndex, setSplittingIndex] = useState<number | null>(null);
     const editing =
         editingIndex == null ? null : (entries[editingIndex] ?? null);
+    const appendEntry = (entry: BankStatementEntry) => onChange([
+        ...entries,
+        {
+            ...entry,
+            id: Math.min(0, ...entries.map(({ id }) => id)) - 1,
+            statementId: 0,
+            statementNumber: null,
+            paymentDate: statementDate?.toISOString() ?? null,
+        },
+    ]);
     const save = (entry: BankStatementEntry) => {
         const dated = {
             ...entry,
@@ -86,22 +139,74 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
         onChange(nextEntries);
         setSplittingIndex(null);
     };
+    const copyEntry = async (entry: BankStatementEntry) => {
+        try {
+            const payload: TransactionRowClipboardData = {
+                type: TRANSACTION_ROW_CLIPBOARD_TYPE,
+                version: 1,
+                entry,
+            };
+            await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            toast.add({
+                title: "Transaction row copied",
+                description: "The bank statement transaction was copied as JSON.",
+                type: "success",
+            });
+        } catch {
+            toast.add({
+                title: "Transaction row could not be copied",
+                description: "Clipboard access was unavailable.",
+                type: "error",
+            });
+        }
+    };
+    const pasteEntry = async () => {
+        try {
+            const payload: unknown = JSON.parse(await navigator.clipboard.readText());
+            if (!isTransactionRowClipboardData(payload)) {
+                throw new Error("Invalid transaction row clipboard data");
+            }
+            appendEntry(payload.entry);
+            toast.add({
+                title: "Transaction row pasted",
+                description: "The copied transaction was added to the bank statement.",
+                type: "success",
+            });
+        } catch {
+            toast.add({
+                title: "Transaction row could not be pasted",
+                description: "Copy a transaction row from a bank statement and try again.",
+                type: "error",
+            });
+        }
+    };
     return (
         <Card>
             <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>Transactions</CardTitle>
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                        setEditingIndex(null);
-                        setDialogMounted(true);
-                        setDialogOpen(true);
-                    }}
-                >
-                    <Plus />
-                    Add transaction
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                            setEditingIndex(null);
+                            setDialogMounted(true);
+                            setDialogOpen(true);
+                        }}
+                    >
+                        <Plus />
+                        Add transaction
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { void pasteEntry(); }}
+                    >
+                        <ClipboardPaste />
+                        Paste transaction
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -200,6 +305,15 @@ function StatementTransactions({ entries, statementDate, onChange }: Props) {
                                                 <Scissors />
                                             </Button>
                                         )}
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label="Copy transaction"
+                                            onClick={() => { void copyEntry(entry); }}
+                                        >
+                                            <Copy />
+                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger
                                                 render={

@@ -85,7 +85,6 @@ function ProductRelatedData({
                     <ProductSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
-                        showInvoiceCount={!storageOnly}
                         similarName={productName}
                         onProductSelect={(product) => {
                             if (product.productCode) onProductSelect(product.productCode)

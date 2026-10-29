@@ -74,7 +74,7 @@ function createRouter() {
                     element: <InventoryItemSearchPage />,
                 },
                 {
-                    path: "/inventory-item/:productCode?",
+                    path: "/inventory-item/:inventoryItemCode?",
                     element: <InventoryItemPage />,
                 },
                 { path: "/price-quotes/search", element: <PriceQuoteSearchPage /> },

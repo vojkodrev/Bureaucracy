@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 	"github.com/google/uuid"
 )
 
@@ -22,38 +23,38 @@ func NewGoodsReceiptRepository(database *sql.DB) *GoodsReceiptRepository {
 func (repository *GoodsReceiptRepository) ItemCounts(
 	ctx context.Context,
 	businessYear string,
-	productCodes []string,
+	inventoryItemCodes []string,
 ) ([]*InventoryItemGoodsReceiptCount, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
 
-	uniqueCodes := make([]string, 0, len(productCodes))
-	seenCodes := make(map[string]struct{}, len(productCodes))
-	for _, productCode := range productCodes {
-		productCode = strings.TrimSpace(productCode)
-		if productCode == "" {
+	uniqueCodes := make([]string, 0, len(inventoryItemCodes))
+	seenCodes := make(map[string]struct{}, len(inventoryItemCodes))
+	for _, inventoryItemCode := range inventoryItemCodes {
+		inventoryItemCode = strings.TrimSpace(inventoryItemCode)
+		if inventoryItemCode == "" {
 			continue
 		}
-		if _, exists := seenCodes[productCode]; exists {
+		if _, exists := seenCodes[inventoryItemCode]; exists {
 			continue
 		}
-		seenCodes[productCode] = struct{}{}
-		uniqueCodes = append(uniqueCodes, productCode)
+		seenCodes[inventoryItemCode] = struct{}{}
+		uniqueCodes = append(uniqueCodes, inventoryItemCode)
 	}
 	if len(uniqueCodes) == 0 {
 		return []*InventoryItemGoodsReceiptCount{}, nil
 	}
 	if len(uniqueCodes) > 10000 {
-		return nil, fmt.Errorf("productCodes must contain at most 10000 values")
+		return nil, fmt.Errorf("inventoryItemCodes must contain at most 10000 values")
 	}
 
 	parameters := make([]string, len(uniqueCodes))
 	arguments := make([]any, len(uniqueCodes))
-	for index, productCode := range uniqueCodes {
-		parameterName := fmt.Sprintf("productCode%d", index)
+	for index, inventoryItemCode := range uniqueCodes {
+		parameterName := fmt.Sprintf("inventoryItemCode%d", index)
 		parameters[index] = "@" + parameterName
-		arguments[index] = sql.Named(parameterName, productCode)
+		arguments[index] = sql.Named(parameterName, inventoryItemCode)
 	}
 
 	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
@@ -88,8 +89,8 @@ func (repository *GoodsReceiptRepository) ItemCounts(
 func (repository *GoodsReceiptRepository) Search(
 	ctx context.Context,
 	businessYear string,
-	productCode *string,
-	productName *string,
+	inventoryItemCode *string,
+	inventoryItemName *string,
 	receivedFrom *time.Time,
 	receivedTo *time.Time,
 	sortBy *string,
@@ -117,23 +118,23 @@ func (repository *GoodsReceiptRepository) Search(
 	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
 	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
 	arguments := []any{
-		sql.Named("productCode", optionalLikePattern(productCode)),
-		sql.Named("productName", optionalLikePattern(productName)),
+		sql.Named("inventoryItemCode", lib.OptionalLikePattern(inventoryItemCode)),
+		sql.Named("inventoryItemName", lib.WordsLikePattern(inventoryItemName)),
 		sql.Named("receivedFrom", nullableTime(receivedFrom)),
 		sql.Named("receivedTo", nullableTime(receivedTo)),
 	}
 	filters := fmt.Sprintf(`
 		WHERE (@receivedFrom IS NULL OR d.Datum >= @receivedFrom)
 		  AND (@receivedTo IS NULL OR d.Datum < DATEADD(day, 1, @receivedTo))
-		  AND ((@productCode = '' AND @productName = '') OR EXISTS (
+		  AND ((@inventoryItemCode = '' AND @inventoryItemName = '') OR EXISTS (
 		      SELECT 1
 		      FROM [%s].[dbo].[DobavaSpecifikacija] ds
 		      LEFT JOIN [%s].[dbo].[ArtikelNabava] inventory ON inventory.Artikel = ds.Artikel
 		      WHERE ds.Stevilka = d.Stevilka
 		        AND ISNULL(ds.MPO, '') = ISNULL(d.MPO, '')
 		        AND ISNULL(ds.Deleted, 0) = 0
-		        AND (@productCode = '' OR ds.Artikel LIKE @productCode ESCAPE '\')
-		        AND (@productName = '' OR inventory.Opis LIKE @productName ESCAPE '\')
+		        AND (@inventoryItemCode = '' OR ds.Artikel LIKE @inventoryItemCode ESCAPE '\')
+		        AND (@inventoryItemName = '' OR inventory.Opis LIKE @inventoryItemName ESCAPE '\')
 		  ))`, receiptDatabase, inventoryDatabase)
 
 	var totalCount int
@@ -296,14 +297,14 @@ func (repository *GoodsReceiptRepository) loadItemPhotos(ctx context.Context, bu
 func (repository *GoodsReceiptRepository) LatestInventoryItemPhotos(
 	ctx context.Context,
 	businessYear string,
-	productCode string,
+	inventoryItemCode string,
 ) ([]*GoodsReceiptItemPhoto, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
-	productCode = strings.TrimSpace(productCode)
-	if productCode == "" {
-		return nil, fmt.Errorf("productCode is required")
+	inventoryItemCode = strings.TrimSpace(inventoryItemCode)
+	if inventoryItemCode == "" {
+		return nil, fmt.Errorf("inventoryItemCode is required")
 	}
 	businessYearID, err := strconv.Atoi(businessYear)
 	if err != nil {
@@ -321,7 +322,7 @@ func (repository *GoodsReceiptRepository) LatestInventoryItemPhotos(
 				AND ISNULL(d.MPO, '') = ISNULL(candidateItem.MPO, '')
 			WHERE candidatePhoto.business_year_id = @businessYearID
 			  AND ISNULL(candidateItem.Deleted, 0) = 0
-			  AND candidateItem.Artikel = @productCode
+			  AND candidateItem.Artikel = @inventoryItemCode
 			  AND candidateItem.Kolicina > 0
 			ORDER BY d.Datum DESC, d.RecNo DESC
 		)
@@ -334,12 +335,12 @@ func (repository *GoodsReceiptRepository) LatestInventoryItemPhotos(
 			ON photo.business_year_id = @businessYearID
 			AND photo.goods_receipt_item_id = item.RecNo
 		WHERE ISNULL(item.Deleted, 0) = 0
-		  AND item.Artikel = @productCode
+		  AND item.Artikel = @inventoryItemCode
 		  AND item.Kolicina > 0
 		ORDER BY photo.created_at, photo.file_id`,
 		receiptDatabase, receiptDatabase, receiptDatabase),
 		sql.Named("businessYearID", businessYearID),
-		sql.Named("productCode", productCode))
+		sql.Named("inventoryItemCode", inventoryItemCode))
 	if err != nil {
 		return nil, fmt.Errorf("get latest inventory item photos: %w", err)
 	}

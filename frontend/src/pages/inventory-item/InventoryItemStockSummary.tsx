@@ -14,28 +14,28 @@ import {
 } from "./inventory-item-api";
 
 type Props = {
-    productCode: string;
+    inventoryItemCode: string;
     unit: string;
 };
 
-export default function InventoryItemStockSummary({ productCode, unit }: Props) {
+export default function InventoryItemStockSummary({ inventoryItemCode, unit }: Props) {
     const [result, setResult] = useState<{
-        productCode: string;
+        inventoryItemCode: string;
         stock: InventoryItemStock[];
         error: string | null;
-    }>({ productCode: "", stock: [], error: null });
-    const isLoading = result.productCode !== productCode;
+    }>({ inventoryItemCode: "", stock: [], error: null });
+    const isLoading = result.inventoryItemCode !== inventoryItemCode;
     const stock = isLoading ? null : result.stock;
     const error = isLoading ? null : result.error;
 
     useEffect(() => {
         const controller = new AbortController();
-        void fetchInventoryItemStock(productCode, controller.signal)
-            .then((stock) => setResult({ productCode, stock, error: null }))
+        void fetchInventoryItemStock(inventoryItemCode, controller.signal)
+            .then((stock) => setResult({ inventoryItemCode, stock, error: null }))
             .catch((requestError: unknown) => {
                 if (requestError instanceof DOMException && requestError.name === "AbortError") return;
                 setResult({
-                    productCode,
+                    inventoryItemCode,
                     stock: [],
                     error: requestError instanceof Error
                         ? requestError.message
@@ -43,7 +43,7 @@ export default function InventoryItemStockSummary({ productCode, unit }: Props) 
                 });
             });
         return () => controller.abort();
-    }, [productCode]);
+    }, [inventoryItemCode]);
 
     const formatQuantity = (quantity: number) =>
         `${quantity.toLocaleString("en-IE")} ${unit.trim()}`.trim();

@@ -9,17 +9,22 @@ import {
 } from '@/components/ui/table'
 import { formatCurrency } from '@/lib/formatters'
 import type { Invoice } from '@/lib/invoice-types'
+import type { PaymentStatus } from './types'
 
 type InvoiceSearchSummaryProps = {
     invoices: Invoice[]
+    paymentStatus: PaymentStatus
 }
 
-function InvoiceSearchSummary({ invoices }: InvoiceSearchSummaryProps) {
+function InvoiceSearchSummary({ invoices, paymentStatus }: InvoiceSearchSummaryProps) {
     const summary = useMemo(() => {
         const total = invoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0)
         const unpaidInvoices = invoices.filter((invoice) => !invoice.paymentDate)
         const pastDueInvoices = unpaidInvoices.filter(
-            (invoice) => invoice.dueDate && new Date(invoice.dueDate) < new Date(),
+            (invoice) => {
+                const effectiveDueDate = invoice.dueDate ?? invoice.issueDate
+                return effectiveDueDate && new Date(effectiveDueDate) < new Date()
+            },
         )
         const paidInvoices = invoices.filter((invoice) => invoice.paymentDate)
 
@@ -30,6 +35,18 @@ function InvoiceSearchSummary({ invoices }: InvoiceSearchSummaryProps) {
             paid: paidInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
         }
     }, [invoices])
+
+    const allRows = [
+        ['Total amount', summary.total],
+        ['Unpaid', summary.unpaid],
+        ['Past due', summary.pastDue],
+        ['Paid', summary.paid],
+    ] as const
+    const rows = paymentStatus === 'paid'
+        ? allRows.slice(3, 4)
+        : paymentStatus === 'overdue'
+            ? [['Total overdue', summary.pastDue] as const]
+            : allRows
 
     return (
         <div className="mt-8 max-w-sm">
@@ -42,30 +59,14 @@ function InvoiceSearchSummary({ invoices }: InvoiceSearchSummaryProps) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow>
-                        <TableCell>Total amount</TableCell>
-                        <TableCell className="text-right font-medium">
-                            {formatCurrency(summary.total)}
-                        </TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Unpaid</TableCell>
-                        <TableCell className="text-right font-medium">
-                            {formatCurrency(summary.unpaid)}
-                        </TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Past due</TableCell>
-                        <TableCell className="text-right font-medium">
-                            {formatCurrency(summary.pastDue)}
-                        </TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Paid</TableCell>
-                        <TableCell className="text-right font-medium">
-                            {formatCurrency(summary.paid)}
-                        </TableCell>
-                    </TableRow>
+                    {rows.map(([label, amount]) => (
+                        <TableRow key={label}>
+                            <TableCell>{label}</TableCell>
+                            <TableCell className="text-right font-medium">
+                                {formatCurrency(amount)}
+                            </TableCell>
+                        </TableRow>
+                    ))}
                 </TableBody>
             </Table>
         </div>

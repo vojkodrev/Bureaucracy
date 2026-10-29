@@ -59,7 +59,8 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 	now := time.Now()
 	grouped := make(map[string][]*Invoice)
 	for _, invoice := range invoicePage.Invoices {
-		if invoice == nil || invoice.PaymentDate != nil || invoice.DueDate == nil || !invoice.DueDate.Before(now) {
+		dueDate := effectiveInvoiceDueDate(invoice)
+		if invoice == nil || invoice.PaymentDate != nil || dueDate == nil || !dueDate.Before(now) {
 			continue
 		}
 		key := trimmedString(invoice.CustomerCode) + "\x00" + trimmedString(invoice.CustomerName)
@@ -81,7 +82,7 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 			total += amount
 			rows = append(rows, invoiceReminderRow{
 				InvoiceNumber: invoice.InvoiceNumber + "/" + fmt.Sprint(businessYear),
-				IssueDate:     formatDocumentDate(invoice.IssueDate), DueDate: formatDocumentDate(invoice.DueDate),
+				IssueDate:     formatDocumentDate(invoice.IssueDate), DueDate: formatDocumentDate(effectiveInvoiceDueDate(invoice)),
 				Amount: formatMoneyAmount(amount),
 			})
 		}

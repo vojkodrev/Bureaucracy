@@ -5,8 +5,8 @@ export const inventoryItemSortColumns: {
     label: string
     alignRight?: boolean
 }[] = [
-    { key: 'productCode', label: 'Product code' },
-    { key: 'name', label: 'Name' },
+    { key: 'inventoryItemCode', label: 'Inventory item code' },
+    { key: 'name', label: 'Inventory item name' },
     { key: 'unit', label: 'Unit' },
     { key: 'minimumStockLevel', label: 'Minimum stock level', alignRight: true },
 ]

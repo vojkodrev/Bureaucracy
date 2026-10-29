@@ -7,27 +7,27 @@ import {
     type InventoryItemPhotoSource,
 } from "./inventory-item-api";
 
-type Props = { productCode: string };
+type Props = { inventoryItemCode: string };
 
-export default function InventoryItemPhotos({ productCode }: Props) {
+export default function InventoryItemPhotos({ inventoryItemCode }: Props) {
     const [result, setResult] = useState<{
-        productCode: string;
+        inventoryItemCode: string;
         source: InventoryItemPhotoSource | null;
         error: string | null;
-    }>({ productCode: "", source: null, error: null });
-    const isLoading = result.productCode !== productCode;
+    }>({ inventoryItemCode: "", source: null, error: null });
+    const isLoading = result.inventoryItemCode !== inventoryItemCode;
     const source = isLoading ? null : result.source;
     const error = isLoading ? null : result.error;
 
     useEffect(() => {
         const controller = new AbortController();
-        void fetchLatestInventoryItemPhotos(productCode, controller.signal)
-            .then((source) => setResult({ productCode, source, error: null }))
+        void fetchLatestInventoryItemPhotos(inventoryItemCode, controller.signal)
+            .then((source) => setResult({ inventoryItemCode, source, error: null }))
             .catch((requestError: unknown) => {
                 if (requestError instanceof DOMException &&
                     requestError.name === "AbortError") return;
                 setResult({
-                    productCode,
+                    inventoryItemCode,
                     source: null,
                     error: requestError instanceof Error
                         ? requestError.message
@@ -35,7 +35,7 @@ export default function InventoryItemPhotos({ productCode }: Props) {
                 });
             });
         return () => controller.abort();
-    }, [productCode]);
+    }, [inventoryItemCode]);
 
     return (
         <div className="p-4">
@@ -59,7 +59,7 @@ export default function InventoryItemPhotos({ productCode }: Props) {
                     photos={source.photos.map((photo) => ({
                         id: photo.fileId,
                         src: goodsReceiptPhotoUrl(photo.fileId),
-                        alt: `Inventory item ${productCode}`,
+                        alt: `Inventory item ${inventoryItemCode}`,
                     }))}
                 />
             )}

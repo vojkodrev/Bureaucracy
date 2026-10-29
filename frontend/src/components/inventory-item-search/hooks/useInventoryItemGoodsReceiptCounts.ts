@@ -9,39 +9,36 @@ type GoodsReceiptCountResult = {
 };
 
 export function useInventoryItemGoodsReceiptCounts(
-    enabled: boolean,
     itemPage: InventoryItemPage | null,
     searchKey: string,
 ) {
-    const productCodes = useMemo(
+    const inventoryItemCodes = useMemo(
         () =>
             itemPage?.items.flatMap(({ productCode }) =>
                 productCode ? [productCode] : [],
             ) ?? [],
         [itemPage],
     );
-    const requestKey =
-        enabled && itemPage
-            ? `${searchKey}:${productCodes.join(",")}`
-            : "__disabled__";
+    const requestKey = itemPage
+        ? `${searchKey}:${inventoryItemCodes.join(",")}`
+        : "__initial__";
     const [result, setResult] = useState<GoodsReceiptCountResult>({
         key: "__initial__",
         counts: {},
         error: false,
     });
-    const hasProductCodes = productCodes.length > 0;
+    const hasInventoryItemCodes = inventoryItemCodes.length > 0;
     const isLoading =
-        enabled &&
         itemPage != null &&
-        hasProductCodes &&
+        hasInventoryItemCodes &&
         result.key !== requestKey;
 
     useEffect(() => {
-        if (!enabled || !itemPage || productCodes.length === 0) return;
+        if (!itemPage || inventoryItemCodes.length === 0) return;
 
         const controller = new AbortController();
         void fetchInventoryItemGoodsReceiptCounts(
-            productCodes,
+            inventoryItemCodes,
             controller.signal,
         )
             .then((counts) =>
@@ -56,11 +53,11 @@ export function useInventoryItemGoodsReceiptCounts(
                 setResult({ key: requestKey, counts: {}, error: true });
             });
         return () => controller.abort();
-    }, [enabled, itemPage, productCodes, requestKey]);
+    }, [itemPage, inventoryItemCodes, requestKey]);
 
     return {
-        counts: hasProductCodes ? result.counts : {},
+        counts: hasInventoryItemCodes ? result.counts : {},
         isLoading,
-        error: hasProductCodes && result.error,
+        error: hasInventoryItemCodes && result.error,
     };
 }

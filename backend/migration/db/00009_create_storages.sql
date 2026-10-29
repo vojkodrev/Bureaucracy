@@ -15,10 +15,18 @@ CREATE TABLE [dbo].[storages]
 GO
 
 INSERT INTO [dbo].[storages] ([code], [description])
-VALUES
+SELECT [source].[code], [source].[description]
+FROM (VALUES
     (N'K', N'Skladišče končnih izdelkov'),
     (N'B', N'Skladišče 27'),
     (N'S', N'Skladišče 33, 40 Srb'),
     (N'O', N'Skladišče ofset'),
-    (N'Z', N'Skladišče zvitki');
+    (N'Z', N'Skladišče zvitki')
+) AS [source] ([code], [description])
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM [dbo].[storages] AS [existing]
+    WHERE [existing].[code] = [source].[code]
+);
 GO

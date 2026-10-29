@@ -15,8 +15,8 @@ export function inventoryItemSearchFromParams(
         : ''
 
     return {
-        productCode: params.get('productCode') ?? '',
-        productName: params.get('productName') ?? '',
+        inventoryItemCode: params.get('inventoryItemCode') ?? '',
+        inventoryItemName: params.get('inventoryItemName') ?? '',
         resultsView: params.get('resultsView') === 'lowStock' ? 'lowStock' : 'itemList',
         page: params.get('page') ?? String(defaultPage),
         pageSize: params.get('pageSize') ?? String(defaultPageSize),
@@ -29,8 +29,8 @@ export function inventoryItemSearchToParams(
     search: InventoryItemSearchCriteria,
 ): URLSearchParams {
     const params = new URLSearchParams()
-    if (search.productCode) params.set('productCode', search.productCode)
-    if (search.productName) params.set('productName', search.productName)
+    if (search.inventoryItemCode) params.set('inventoryItemCode', search.inventoryItemCode)
+    if (search.inventoryItemName) params.set('inventoryItemName', search.inventoryItemName)
     if (search.resultsView !== 'itemList') params.set('resultsView', search.resultsView)
     params.set('page', search.page)
     params.set('pageSize', search.pageSize)

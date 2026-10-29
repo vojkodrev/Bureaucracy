@@ -225,6 +225,8 @@ export async function sendInvoiceRemindersEmail(
     url.pathname = '/api/invoices/reminders/email'
     url.searchParams.delete('_')
     const form = new FormData()
+    url.searchParams.forEach((value, key) => form.append(key, value))
+    url.search = ''
     form.set('recipient', fields.recipient)
     form.set('bcc', fields.bcc)
     form.set('subject', fields.subject)

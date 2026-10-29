@@ -14,8 +14,8 @@ type Response = {
 const query = `
     query SearchGoodsReceipts(
         $businessYear: String!
-        $productCode: String
-        $productName: String
+        $inventoryItemCode: String
+        $inventoryItemName: String
         $receivedFrom: Time
         $receivedTo: Time
         $sortBy: String
@@ -25,8 +25,8 @@ const query = `
     ) {
         searchGoodsReceipts(
             businessYear: $businessYear
-            productCode: $productCode
-            productName: $productName
+            inventoryItemCode: $inventoryItemCode
+            inventoryItemName: $inventoryItemName
             receivedFrom: $receivedFrom
             receivedTo: $receivedTo
             sortBy: $sortBy
@@ -53,8 +53,8 @@ const query = `
 export async function fetchGoodsReceiptSearch(search: GoodsReceiptSearchCriteria, signal?: AbortSignal) {
     const result = await postGraphql<Response>(query, {
         businessYear: getSelectedBusinessYear(),
-        productCode: optionalFilter(search.productCode),
-        productName: optionalFilter(search.productName),
+        inventoryItemCode: optionalFilter(search.inventoryItemCode),
+        inventoryItemName: optionalFilter(search.inventoryItemName),
         receivedFrom: optionalDate(search.from),
         receivedTo: optionalDate(search.to),
         sortBy: search.sortBy || null,

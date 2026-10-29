@@ -5,12 +5,12 @@ import { defaultPage, defaultPageSize } from '@/lib/pagination'
 import { goodsReceiptSearchFromParams, goodsReceiptSearchToParams } from '../goods-receipt-search-params'
 import type { GoodsReceiptSearchCriteria, GoodsReceiptSortColumn } from '../types'
 
-export function useGoodsReceiptSearchState(mode: ComponentMode, defaultProductCode?: string) {
+export function useGoodsReceiptSearchState(mode: ComponentMode, defaultInventoryItemCode?: string) {
     const [params, setParams] = useSearchParams()
     const pageSearch = useMemo(() => goodsReceiptSearchFromParams(params), [params])
     const initialDialogSearch = () => ({
         ...goodsReceiptSearchFromParams(new URLSearchParams()),
-        productCode: defaultProductCode ?? '',
+        inventoryItemCode: defaultInventoryItemCode ?? '',
     })
     const [dialogSearch, setDialogSearch] = useState<GoodsReceiptSearchCriteria>(initialDialogSearch)
     const search = mode === ComponentMode.Page ? pageSearch : dialogSearch

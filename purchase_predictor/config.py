@@ -32,6 +32,7 @@ class AppConfig:
     training_end_date: date | None
     warmup_months: int
     active_pair_months: int
+    cache_exclude_recent_months: int
     model_directory: Path
     model_iterations: int
     model_learning_rate: float
@@ -66,6 +67,9 @@ class AppConfig:
             training_end_date=_optional_date("TRAINING_END_DATE"),
             warmup_months=int(os.getenv("WARMUP_MONTHS", "12")),
             active_pair_months=int(os.getenv("ACTIVE_PAIR_MONTHS", "24")),
+            cache_exclude_recent_months=int(
+                os.getenv("CACHE_EXCLUDE_RECENT_MONTHS", "6")
+            ),
             model_directory=model_directory,
             model_iterations=int(os.getenv("MODEL_ITERATIONS", "500")),
             model_learning_rate=float(os.getenv("MODEL_LEARNING_RATE", "0.05")),

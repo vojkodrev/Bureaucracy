@@ -124,7 +124,7 @@ func calculateInvoiceReportTotals(invoices []*Invoice, now time.Time) invoiceRep
 			continue
 		}
 		totals.Unpaid += amount
-		if invoice.DueDate != nil && invoice.DueDate.Before(now) {
+		if dueDate := effectiveInvoiceDueDate(invoice); dueDate != nil && dueDate.Before(now) {
 			totals.PastDue += amount
 		}
 	}

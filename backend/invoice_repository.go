@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bureaucracy/backend/graph/model"
+	"bureaucracy/backend/lib"
 )
 
 type InvoiceRepository struct {
@@ -584,11 +585,11 @@ func (repository *InvoiceRepository) Search(
 		return nil, err
 	}
 
-	invoiceNumberPattern := optionalLikePattern(invoiceNumber)
-	customerIDPattern := optionalLikePattern(customerID)
-	customerNamePattern := optionalLikePattern(customerName)
-	productCodePattern := optionalLikePattern(productCode)
-	productNamePattern := optionalLikePattern(productName)
+	invoiceNumberPattern := lib.OptionalLikePattern(invoiceNumber)
+	customerIDPattern := lib.OptionalLikePattern(customerID)
+	customerNamePattern := lib.WordsLikePattern(customerName)
+	productCodePattern := lib.OptionalLikePattern(productCode)
+	productNamePattern := lib.WordsLikePattern(productName)
 	queryArguments := []any{
 		sql.Named("invoiceNumber", invoiceNumberPattern),
 		sql.Named("customerID", customerIDPattern),
@@ -621,7 +622,7 @@ func (repository *InvoiceRepository) Search(
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		  AND (@paymentStatus = 'all'
-		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))`, databaseName, databaseName, productDatabaseName),
 		queryArguments...,
@@ -669,7 +670,7 @@ func (repository *InvoiceRepository) Search(
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
 		  AND (@paymentStatus = 'all'
-		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND DatumZapadlosti < CAST(GETDATE() AS date))
+		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
@@ -773,17 +774,4 @@ func nullableTime(value *time.Time) sql.NullTime {
 	}
 
 	return sql.NullTime{Time: *value, Valid: true}
-}
-
-func optionalLikePattern(value *string) string {
-	if value == nil || strings.TrimSpace(*value) == "" {
-		return ""
-	}
-
-	return "%" + escapeLike(strings.TrimSpace(*value)) + "%"
-}
-
-func escapeLike(value string) string {
-	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`, `[`, `\[`)
-	return replacer.Replace(value)
 }

@@ -9,7 +9,6 @@ type InvoiceCountResult = {
 }
 
 export function useProductInvoiceCounts(
-    enabled: boolean,
     productPage: ProductPage | null,
     searchKey: string,
 ) {
@@ -18,7 +17,7 @@ export function useProductInvoiceCounts(
             ?? [],
         [productPage],
     )
-    const requestKey = enabled && productPage
+    const requestKey = productPage
         ? `${searchKey}:${productCodes.join(',')}`
         : '__disabled__'
     const [result, setResult] = useState<InvoiceCountResult>({
@@ -27,10 +26,10 @@ export function useProductInvoiceCounts(
         error: false,
     })
     const hasProductCodes = productCodes.length > 0
-    const isLoading = enabled && productPage != null && hasProductCodes && result.key !== requestKey
+    const isLoading = productPage != null && hasProductCodes && result.key !== requestKey
 
     useEffect(() => {
-        if (!enabled || !productPage) return
+        if (!productPage) return
         if (productCodes.length === 0) return
 
         const controller = new AbortController()
@@ -41,7 +40,7 @@ export function useProductInvoiceCounts(
                 setResult({ key: requestKey, counts: {}, error: true })
             })
         return () => controller.abort()
-    }, [enabled, productCodes, productPage, requestKey])
+    }, [productCodes, productPage, requestKey])
 
     return {
         counts: hasProductCodes ? result.counts : {},

@@ -44,9 +44,12 @@ such as `/var/opt/mssql/backups` on Linux or macOS-hosted containers, or
 `H:\backups` on Windows. Because `BACKUP DATABASE` runs on SQL Server, this path
 refers to the SQL Server host or container, not necessarily the backend host.
 The job asks SQL Server to create the directory when it does not exist. Each
-online, non-system database is written to `<database-name>.bak`. Daily backups
-are appended as separate backup sets, allowing a specific backup position to be
-selected during restore.
+online, non-system database gets a full backup in `<database-name>.bak` every
+Sunday and differential backups in `<database-name>.diff.bak` on the other
+days. A database without a full backup made by this job gets a full backup
+instead of a differential one. The weekly full file is replaced; differential
+backup sets are appended until the next full backup. To restore, apply the full
+backup first and then the selected differential backup.
 
 Invoice PDFs are served as inline documents from
 `GET /api/invoices/:invoiceNumber/pdf`. The placeholder implementation does

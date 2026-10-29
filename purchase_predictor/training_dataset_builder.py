@@ -1,7 +1,6 @@
 import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from datetime import date, timedelta
 from types import SimpleNamespace
 
@@ -12,14 +11,9 @@ from injector import inject, singleton
 from config import AppConfig
 from domain import Purchase
 from feature_builder import FeatureBuilder
+from progress_timer import ProgressTimer
 from training_dataset_cache import TrainingDatasetCache
-
-
-@dataclass(frozen=True)
-class TrainingDataset:
-    frame: pd.DataFrame
-    new_snapshot_count: int
-
+from training_dates import label_date_range
 
 @singleton
 class TrainingDatasetBuilder:
@@ -37,7 +31,7 @@ class TrainingDatasetBuilder:
         self._dataset_cache = dataset_cache
         self._logger = logging.getLogger(type(self).__name__)
 
-    def build(self, purchases: list[Purchase], horizon: int) -> TrainingDataset:
+    def build(self, purchases: list[Purchase], horizon: int) -> pd.DataFrame:
         if horizon not in self.horizons:
             raise ValueError(f"Unsupported prediction horizon: {horizon}")
 
@@ -46,9 +40,7 @@ class TrainingDatasetBuilder:
         if events.empty:
             raise ValueError("No purchases were returned from MSSQL")
 
-        latest_date = events["service_date"].max().date()
-        configured_end = self._config.training_end_date or date.today()
-        label_end = min(configured_end, latest_date)
+        label_end = date.today()
         first_date = events["service_date"].min().date()
         first_cutoff = first_date + relativedelta(months=self._config.warmup_months)
         all_pair_groups = {
@@ -61,56 +53,56 @@ class TrainingDatasetBuilder:
         with self._dataset_cache.session() as cache:
             final_cutoff = label_end - timedelta(days=horizon)
             cached = cache.load(horizon, first_cutoff, final_cutoff)
-
-            cutoffs: list[date] = []
-            cutoff = first_cutoff
-            while cutoff <= final_cutoff:
-                cutoffs.append(cutoff)
-                cutoff += timedelta(days=horizon)
+            cutoffs = self._cutoffs(first_cutoff, final_cutoff, horizon)
 
             missing_cutoffs = [cutoff for cutoff in cutoffs if cutoff not in cached]
             built: dict[date, pd.DataFrame] = {}
+            cache_before = date.today() - relativedelta(
+                months=self._config.cache_exclude_recent_months
+            )
+            progress_timer = ProgressTimer()
             worker_count = min(os.cpu_count() or 1, len(missing_cutoffs) or 1)
-            if worker_count == 1:
-                snapshots = (
-                    self._build_snapshot(
-                        cutoff,
-                        horizon,
-                        purchase_lines,
-                        events,
-                        all_pair_groups,
-                    )
-                    for cutoff in missing_cutoffs
+            with ProcessPoolExecutor(
+                max_workers=worker_count,
+                initializer=_initialize_snapshot_worker,
+                initargs=(
+                    self._config.active_pair_months,
+                    purchase_lines,
+                    events,
+                    all_pair_groups,
+                ),
+            ) as executor:
+                snapshots = executor.map(
+                    _build_snapshot_in_worker,
+                    ((cutoff, horizon) for cutoff in missing_cutoffs),
                 )
-                for cutoff, snapshot in zip(missing_cutoffs, snapshots):
-                    cache.save(horizon, cutoff, snapshot)
-                    built[cutoff] = snapshot
-            else:
-                with ProcessPoolExecutor(
-                    max_workers=worker_count,
-                    initializer=_initialize_snapshot_worker,
-                    initargs=(
-                        self._config.active_pair_months,
-                        purchase_lines,
-                        events,
-                        all_pair_groups,
-                    ),
-                ) as executor:
-                    snapshots = executor.map(
-                        _build_snapshot_in_worker,
-                        ((cutoff, horizon) for cutoff in missing_cutoffs),
-                    )
-                    for cutoff, snapshot in zip(missing_cutoffs, snapshots):
-                        # Keep the pyodbc connection in the parent process.
+                for completed, (cutoff, result) in enumerate(
+                    zip(missing_cutoffs, snapshots), start=1
+                ):
+                    snapshot, label_from, label_to = result
+                    if cutoff < cache_before:
                         cache.save(horizon, cutoff, snapshot)
-                        built[cutoff] = snapshot
+                    built[cutoff] = snapshot
+                    elapsed, remaining = progress_timer.update(
+                        completed, len(missing_cutoffs)
+                    )
+                    self._logger.info(
+                        "Built %d-day training snapshot for cutoff %s "
+                        "(label dates %s to %s): %d/%d, elapsed %s, remaining %s",
+                        horizon,
+                        cutoff,
+                        label_from,
+                        label_to,
+                        completed,
+                        len(missing_cutoffs),
+                        elapsed,
+                        remaining,
+                    )
 
             frames = [
                 cached[cutoff] if cutoff in cached else built[cutoff]
                 for cutoff in cutoffs
             ]
-            new_snapshot_count = len(built)
-
         dataset = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         if dataset.empty:
             raise ValueError(
@@ -121,7 +113,32 @@ class TrainingDatasetBuilder:
             len(dataset),
             horizon,
         )
-        return TrainingDataset(dataset, new_snapshot_count)
+        return dataset
+
+    @staticmethod
+    def _cutoffs(first_cutoff: date, final_cutoff: date, horizon: int) -> list[date]:
+        if horizon in (7, 14):
+            if first_cutoff > final_cutoff:
+                return []
+            cutoff = final_cutoff - timedelta(days=(final_cutoff.weekday() + 1) % 7)
+            cutoffs: list[date] = []
+            while cutoff >= first_cutoff:
+                cutoffs.append(cutoff)
+                cutoff -= timedelta(days=horizon)
+            return list(reversed(cutoffs))
+
+        elif horizon == 30:
+            if first_cutoff > final_cutoff:
+                return []
+            cutoff = date(final_cutoff.year, final_cutoff.month, 1)
+            cutoffs: list[date] = []
+            while cutoff >= first_cutoff:
+                cutoffs.append(cutoff)
+                cutoff -= relativedelta(months=1)
+            return list(reversed(cutoffs))
+
+        else:
+            raise ValueError(f"Unsupported prediction horizon: {horizon}")
 
     def _build_snapshot(
         self,
@@ -130,10 +147,8 @@ class TrainingDatasetBuilder:
         purchase_lines: pd.DataFrame,
         events: pd.DataFrame,
         all_pair_groups: dict[tuple[object, object], pd.DataFrame],
-    ) -> pd.DataFrame:
-        self._logger.info(
-            "Building %d-day training snapshot for cutoff %s", horizon, cutoff
-        )
+    ) -> tuple[pd.DataFrame, date, date]:
+        label_from, label_to = label_date_range(cutoff, horizon)
         history = events[events["service_date"] <= pd.Timestamp(cutoff)]
         invoice_history = purchase_lines[
             purchase_lines["service_date"] <= pd.Timestamp(cutoff)
@@ -169,21 +184,18 @@ class TrainingDatasetBuilder:
                 product_history=product_groups[product_code],
             )
             next_dates = all_pair_groups[(customer_code, product_code)]["service_date"]
-            next_dates = next_dates[next_dates > pd.Timestamp(cutoff)]
-            next_date = next_dates.min() if not next_dates.empty else pd.NaT
-            days_to_next = (
-                (next_date - pd.Timestamp(cutoff)).days if pd.notna(next_date) else None
-            )
+            label_dates = next_dates[
+                (next_dates >= pd.Timestamp(label_from))
+                & (next_dates <= pd.Timestamp(label_to))
+            ]
 
             row = {
                 **features,
                 "cutoff_date": cutoff,
-                "purchased_within_horizon": int(
-                    days_to_next is not None and days_to_next <= horizon
-                ),
+                "purchased_within_horizon": int(not label_dates.empty),
             }
             rows.append(row)
-        return pd.DataFrame(rows)
+        return pd.DataFrame(rows), label_from, label_to
 
     @staticmethod
     def _purchase_lines(purchases: list[Purchase]) -> pd.DataFrame:
@@ -238,7 +250,9 @@ def _initialize_snapshot_worker(
     _snapshot_pair_groups = all_pair_groups
 
 
-def _build_snapshot_in_worker(arguments: tuple[date, int]) -> pd.DataFrame:
+def _build_snapshot_in_worker(
+    arguments: tuple[date, int],
+) -> tuple[pd.DataFrame, date, date]:
     if (
         _snapshot_worker is None
         or _snapshot_purchase_lines is None

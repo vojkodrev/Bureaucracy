@@ -15,9 +15,10 @@ import {
 type BankStatementSearchResultGroupProps = {
     entries: BankStatementEntry[]
     invoicePayments: Record<string, BankStatementInvoicePayment>
+    duplicateDocuments: Set<string>
 }
 
-function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatementSearchResultGroupProps) {
+function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDocuments }: BankStatementSearchResultGroupProps) {
     const statement = entries[0]
     const netMovement = entries.reduce(
         (sum, entry) => sum + (entry.inflow ?? 0) - (entry.outflow ?? 0),
@@ -51,6 +52,9 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
                         entry.inflow,
                     )
                     : false
+                const duplicate = entry.documentNumber
+                    ? duplicateDocuments.has(normalizeInvoiceNumber(entry.documentNumber))
+                    : false
                 return (
                 <TableRow key={entry.id}>
                     <TableCell>{formatDate(entry.paymentDate)}</TableCell>
@@ -76,18 +80,22 @@ function BankStatementSearchResultGroup({ entries, invoicePayments }: BankStatem
                                     {entry.documentNumber}
                                 </Button>
                             ) : '—'}
-                            {entry.documentNumber && invoicePayment
-                                && (paymentDateMismatch || paidAmountMismatch) && (
+                            {entry.documentNumber
+                                && (duplicate || (invoicePayment && (paymentDateMismatch || paidAmountMismatch))) && (
                                 <InvoicePaymentWarnings
-                                    paidAmount={invoicePayment.paidAmount}
+                                    paidAmount={invoicePayment?.paidAmount ?? null}
                                     href={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
                                     dateIssue={paymentDateMismatch ? 'mismatch' : undefined}
                                     dateTooltip={(
-                                        <>Transaction date {formatDate(entry.paymentDate)} does not match invoice payment date {formatDate(invoicePayment.paymentDate)}. Click to open invoice {entry.documentNumber}.</>
+                                        <>Transaction date {formatDate(entry.paymentDate)} does not match invoice payment date {formatDate(invoicePayment?.paymentDate ?? null)}. Click to open invoice {entry.documentNumber}.</>
                                     )}
                                     amountMismatch={paidAmountMismatch}
                                     amountTooltip={(
-                                        <>Invoice amount {invoicePayment.amount == null ? '—' : formatCurrency(invoicePayment.amount)}, paid amount {invoicePayment.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
+                                        <>Invoice amount {invoicePayment?.amount == null ? '—' : formatCurrency(invoicePayment.amount)}, paid amount {invoicePayment?.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
+                                    )}
+                                    duplicate={duplicate}
+                                    duplicateTooltip={(
+                                        <>Document {entry.documentNumber} is booked in more than one bank transaction. Click to open the invoice.</>
                                     )}
                                 />
                             )}

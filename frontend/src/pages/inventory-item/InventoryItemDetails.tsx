@@ -3,18 +3,18 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 type Props = {
-    productCode: string;
+    inventoryItemCode: string;
     name: string;
     unit: string;
     minimumStockLevel: string;
     onChange: (
-        field: "productCode" | "name" | "unit" | "minimumStockLevel",
+        field: "inventoryItemCode" | "name" | "unit" | "minimumStockLevel",
         value: string,
     ) => void;
 };
 
 export default function InventoryItemDetails({
-    productCode,
+    inventoryItemCode,
     name,
     unit,
     minimumStockLevel,
@@ -29,21 +29,21 @@ export default function InventoryItemDetails({
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="inventory-item-code">
-                            Product code
+                            Inventory item code
                         </FieldLabel>
                         <Input
                             id="inventory-item-code"
                             maxLength={25}
                             required
-                            value={productCode}
+                            value={inventoryItemCode}
                             onChange={(event) =>
-                                onChange("productCode", event.target.value)
+                                onChange("inventoryItemCode", event.target.value)
                             }
                         />
                     </Field>
                     <Field>
                         <FieldLabel htmlFor="inventory-item-name">
-                            Name
+                            Inventory item name
                         </FieldLabel>
                         <Input
                             id="inventory-item-name"

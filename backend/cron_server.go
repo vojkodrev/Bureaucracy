@@ -40,6 +40,7 @@ func NewCronServer(
 	fileStorageCleanupHandler *FileStorageCleanupJobHandler,
 	purchasePredictorTrainingHandler *PurchasePredictorTrainingJobHandler,
 	purchasePredictorPredictionHandler *PurchasePredictorPredictionJobHandler,
+	purchasePredictionCleanupHandler *PurchasePredictionCleanupJobHandler,
 ) (*CronServer, error) {
 	jobs, err := loadCronJobConfig(cronJobsConfig)
 	if err != nil {
@@ -51,6 +52,7 @@ func NewCronServer(
 		fileStorageCleanupHandler.Name():          fileStorageCleanupHandler,
 		purchasePredictorTrainingHandler.Name():   purchasePredictorTrainingHandler,
 		purchasePredictorPredictionHandler.Name(): purchasePredictorPredictionHandler,
+		purchasePredictionCleanupHandler.Name():   purchasePredictionCleanupHandler,
 	}
 	jobContext, cancel := context.WithCancel(context.Background())
 	scheduler := cron.New(cron.WithChain(

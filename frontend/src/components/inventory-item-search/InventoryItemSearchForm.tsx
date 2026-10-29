@@ -18,8 +18,8 @@ export default function InventoryItemSearchForm({ search, onSubmit, onReset, sho
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
         onSubmit({
-            productCode: String(formData.get('productCode') ?? '').trim(),
-            productName: String(formData.get('productName') ?? '').trim(),
+            inventoryItemCode: String(formData.get('inventoryItemCode') ?? '').trim(),
+            inventoryItemName: String(formData.get('inventoryItemName') ?? '').trim(),
             resultsView: formData.get('resultsView') === 'lowStock' ? 'lowStock' : 'itemList',
             page: '1',
             pageSize: search.pageSize,
@@ -35,22 +35,22 @@ export default function InventoryItemSearchForm({ search, onSubmit, onReset, sho
                     <FieldGroup>
                         <div className="grid gap-6 sm:grid-cols-2">
                             <Field>
-                                <FieldLabel htmlFor="inventory-product-code">Product code</FieldLabel>
+                                <FieldLabel htmlFor="inventory-item-code">Inventory item code</FieldLabel>
                                 <Input
-                                    id="inventory-product-code"
+									id="inventory-item-code"
                                     type="search"
-                                    name="productCode"
-                                    defaultValue={search.productCode}
+                                    name="inventoryItemCode"
+                                    defaultValue={search.inventoryItemCode}
                                     autoComplete="off"
                                 />
                             </Field>
                             <Field>
-                                <FieldLabel htmlFor="inventory-product-name">Name</FieldLabel>
+                                <FieldLabel htmlFor="inventory-item-name">Inventory item name</FieldLabel>
                                 <Input
-                                    id="inventory-product-name"
+									id="inventory-item-name"
                                     type="search"
-                                    name="productName"
-                                    defaultValue={search.productName}
+                                    name="inventoryItemName"
+                                    defaultValue={search.inventoryItemName}
                                     autoComplete="off"
                                 />
                             </Field>

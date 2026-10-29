@@ -12,7 +12,6 @@ type ProductSearchProps = {
     mode: ComponentMode
     onProductSelect?: (product: Product) => void
     showSearchFields?: boolean
-    showInvoiceCount?: boolean
     similarName?: string
 }
 
@@ -20,7 +19,6 @@ function ProductSearch({
     mode,
     onProductSelect,
     showSearchFields = true,
-    showInvoiceCount = false,
     similarName,
 }: ProductSearchProps) {
     const searchState = useProductSearchState(mode, similarName)
@@ -31,7 +29,7 @@ function ProductSearch({
         similarName,
     )
     const selection = useProductSearchSelection(onProductSelect)
-    const invoiceCounts = useProductInvoiceCounts(showInvoiceCount, productPage, searchKey)
+    const invoiceCounts = useProductInvoiceCounts(productPage, searchKey)
 
     function updateSearchAndClearSelection(nextSearch: typeof search) {
         selection.clearSelection()
@@ -62,7 +60,6 @@ function ProductSearch({
                     isLoading={isLoading}
                     mode={mode}
                     showSearchFields={showSearchFields}
-                    showInvoiceCount={showInvoiceCount}
                     selectedProductId={selection.selectedProductId}
                     invoiceCounts={invoiceCounts.counts}
                     invoiceCountsLoading={invoiceCounts.isLoading}

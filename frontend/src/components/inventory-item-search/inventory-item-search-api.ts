@@ -28,8 +28,8 @@ type InventoryItemGoodsReceiptCountsResponse = {
 const itemListQuery = `
     query SearchInventoryItems(
         $businessYear: String!
-        $productCode: String
-        $productName: String
+        $inventoryItemCode: String
+        $inventoryItemName: String
         $similarName: String
         $sortBy: String
         $sortDirection: String
@@ -38,8 +38,8 @@ const itemListQuery = `
     ) {
         searchInventoryItems(
             businessYear: $businessYear
-            productCode: $productCode
-            productName: $productName
+            inventoryItemCode: $inventoryItemCode
+            inventoryItemName: $inventoryItemName
             similarName: $similarName
             sortBy: $sortBy
             sortDirection: $sortDirection
@@ -58,8 +58,8 @@ const itemListQuery = `
 const lowStockQuery = `
     query SearchLowStockInventoryItems(
         $businessYear: String!
-        $productCode: String
-        $productName: String
+        $inventoryItemCode: String
+        $inventoryItemName: String
         $sortBy: String
         $sortDirection: String
         $page: Int
@@ -67,8 +67,8 @@ const lowStockQuery = `
     ) {
         searchInventoryItems: searchLowStockInventoryItems(
             businessYear: $businessYear
-            productCode: $productCode
-            productName: $productName
+            inventoryItemCode: $inventoryItemCode
+            inventoryItemName: $inventoryItemName
             sortBy: $sortBy
             sortDirection: $sortDirection
             page: $page
@@ -117,8 +117,8 @@ async function fetchLowStockInventoryItemSearch(
 function searchVariables(search: InventoryItemSearchCriteria) {
     return {
         businessYear: getSelectedBusinessYear(),
-        productCode: optionalFilter(search.productCode),
-        productName: optionalFilter(search.productName),
+        inventoryItemCode: optionalFilter(search.inventoryItemCode),
+        inventoryItemName: optionalFilter(search.inventoryItemName),
         sortBy: search.sortBy || null,
         sortDirection: search.sortDirection || null,
         page: positiveInteger(search.page, defaultPage),
@@ -130,8 +130,8 @@ function searchVariables(search: InventoryItemSearchCriteria) {
 }
 
 const inventoryItemGoodsReceiptCountsQuery = `
-    query InventoryItemGoodsReceiptCounts($businessYear: String!, $productCodes: [String!]!) {
-        inventoryItemGoodsReceiptCounts(businessYear: $businessYear, productCodes: $productCodes) {
+    query InventoryItemGoodsReceiptCounts($businessYear: String!, $inventoryItemCodes: [String!]!) {
+        inventoryItemGoodsReceiptCounts(businessYear: $businessYear, inventoryItemCodes: $inventoryItemCodes) {
             productCode
             goodsReceiptCount
         }
@@ -139,12 +139,12 @@ const inventoryItemGoodsReceiptCountsQuery = `
 `
 
 export async function fetchInventoryItemGoodsReceiptCounts(
-    productCodes: string[],
+    inventoryItemCodes: string[],
     signal?: AbortSignal,
 ): Promise<Record<string, number>> {
     const result = await postGraphql<InventoryItemGoodsReceiptCountsResponse>(
         inventoryItemGoodsReceiptCountsQuery,
-        { businessYear: getSelectedBusinessYear(), productCodes },
+        { businessYear: getSelectedBusinessYear(), inventoryItemCodes },
         signal,
     )
     return Object.fromEntries(

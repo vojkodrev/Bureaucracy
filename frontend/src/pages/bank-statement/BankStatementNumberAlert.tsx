@@ -9,7 +9,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export type BankStatementNumberWarning = "duplicate" | "historical" | "skipped";
+export enum BankStatementNumberWarning {
+    Duplicate = "duplicate",
+    Historical = "historical",
+    Skipped = "skipped",
+}
 
 type Props = {
     warning: BankStatementNumberWarning | null;
@@ -18,8 +22,8 @@ type Props = {
 };
 
 function BankStatementNumberAlert({ warning, onOpenChange, onConfirm }: Props) {
-    const skipsNumbers = warning === "skipped";
-    const isDuplicate = warning === "duplicate";
+    const skipsNumbers = warning === BankStatementNumberWarning.Skipped;
+    const isDuplicate = warning === BankStatementNumberWarning.Duplicate;
 
     return (
         <AlertDialog open={warning !== null} onOpenChange={onOpenChange}>
@@ -37,7 +41,7 @@ function BankStatementNumberAlert({ warning, onOpenChange, onConfirm }: Props) {
                             ? "A bank statement with this number already exists for this business year. Choose a different statement number before saving."
                             : skipsNumbers
                             ? "This statement number leaves a gap in the sequence for this business year."
-                            : "This is not the latest statement for this business year. Saving it will update a historical accounting record."}
+                            : "This statement date is earlier than another statement in this business year. Saving it will update a historical accounting record."}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

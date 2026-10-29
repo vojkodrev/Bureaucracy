@@ -31,7 +31,7 @@ func (handler *InvoiceReportHandler) Handle(context *gin.Context) {
 	filename := invoiceReportFilename(issuedFrom, issuedTo)
 	if context.Query("resultsView") == "customer" {
 		summaryPage := summarizeInvoicesByCustomer(invoicePage, time.Now())
-		pdf, err = handler.customerGenerator.Generate(context.Request.Context(), summaryPage, businessYear, issuedFrom, issuedTo)
+		pdf, err = handler.customerGenerator.Generate(context.Request.Context(), summaryPage, businessYear, issuedFrom, issuedTo, context.Query("paymentStatus"))
 		filename = invoiceCustomerReportFilename(issuedFrom, issuedTo)
 	} else {
 		pdf, err = handler.generator.Generate(context.Request.Context(), invoicePage, businessYear, issuedFrom, issuedTo)

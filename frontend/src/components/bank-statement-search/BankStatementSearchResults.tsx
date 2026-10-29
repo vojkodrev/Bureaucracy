@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table'
 import type { BankStatementEntry, BankStatementInvoicePayment, BankStatementPage } from '@/lib/bank-statement-types'
 import BankStatementSearchResultGroup from './BankStatementSearchResultGroup'
+import { duplicateInvoiceNumbers } from './invoice-payment-mismatches'
 import type { BankStatementSearchCriteria } from './types'
 
 type BankStatementSearchResultsProps = {
@@ -33,6 +34,7 @@ function BankStatementSearchResults({
     onPageSizeChange,
     onSort,
 }: BankStatementSearchResultsProps) {
+    const duplicateDocuments = duplicateInvoiceNumbers(statementPage?.entries ?? [])
     const firstStatement = statementPage && statementPage.totalCount > 0
         ? (statementPage.page - 1) * statementPage.pageSize + 1
         : 0
@@ -89,6 +91,7 @@ function BankStatementSearchResults({
                             key={entries[0].statementId}
                             entries={entries}
                             invoicePayments={invoicePayments}
+                            duplicateDocuments={duplicateDocuments}
                         />
                     ))}
                 </TableBody>

@@ -23,7 +23,6 @@ type ProductSearchResultsProps = {
     isLoading: boolean
     mode: ComponentMode
     showSearchFields: boolean
-    showInvoiceCount: boolean
     selectedProductId: number | null
     invoiceCounts: Record<string, number>
     invoiceCountsLoading: boolean
@@ -41,7 +40,6 @@ function ProductSearchResults({
     isLoading,
     mode,
     showSearchFields,
-    showInvoiceCount,
     selectedProductId,
     invoiceCounts,
     invoiceCountsLoading,
@@ -60,7 +58,7 @@ function ProductSearchResults({
     const isPageMode = mode === ComponentMode.Page
     const showPricing = !isStorageOnlyUser()
     const visibleColumns = productSortColumns.filter(({ containsPricing }) => showPricing || !containsPricing)
-    const columnCount = visibleColumns.length + (showInvoiceCount ? 1 : 0)
+    const columnCount = visibleColumns.length + 1
 
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
@@ -88,9 +86,7 @@ function ProductSearchResults({
                                 onSort={() => onSort(key)}
                             />
                         ))}
-                        {showInvoiceCount && (
-                            <TableHead className="text-right">Invoices</TableHead>
-                        )}
+                        <TableHead className="text-right">Invoices</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -160,21 +156,19 @@ function ProductSearchResults({
                             {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.taxRate == null ? '—' : `${product.taxRate}%`}
                             </SearchResultCell>}
-                            {showInvoiceCount && (
-                                <SearchResultCell
-                                    to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
-                                    linkLabel={`Open product ${product.productCode}`}
-                                    className="text-right"
-                                >
-                                    {invoiceCountsLoading
-                                        ? '…'
-                                        : invoiceCountsError
-                                            ? '—'
-                                            : product.productCode
-                                                ? invoiceCounts[product.productCode] ?? 0
-                                                : 0}
-                                </SearchResultCell>
-                            )}
+                            <SearchResultCell
+                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                linkLabel={`Open product ${product.productCode}`}
+                                className="text-right"
+                            >
+                                {invoiceCountsLoading
+                                    ? '…'
+                                    : invoiceCountsError
+                                        ? '—'
+                                        : product.productCode
+                                            ? invoiceCounts[product.productCode] ?? 0
+                                            : 0}
+                            </SearchResultCell>
                         </TableRow>
                     ))}
                 </TableBody>

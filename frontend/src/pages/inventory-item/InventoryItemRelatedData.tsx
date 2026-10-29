@@ -10,11 +10,10 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ComponentMode } from "@/lib/component-mode";
-import { isStorageOnlyUser } from "@/lib/auth";
 
 type Props = {
     itemId: number | null;
-    productCode: string;
+    inventoryItemCode: string;
     name: string;
     unit: string;
     hasUnsavedChanges: boolean;
@@ -25,7 +24,7 @@ type Props = {
 
 export default function InventoryItemRelatedData({
     itemId,
-    productCode,
+    inventoryItemCode,
     name,
     unit,
     hasUnsavedChanges,
@@ -34,14 +33,13 @@ export default function InventoryItemRelatedData({
     onGoodsReceiptSelect,
 }: Props) {
     if (itemId == null || hasUnsavedChanges || !name.trim()) return null;
-    const storageOnly = isStorageOnlyUser();
     return (
         <Accordion className="mt-6" defaultValue={["stock-summary"]}>
             <AccordionItem value="stock-summary">
                 <AccordionTrigger>Stock summary</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemStockSummary
-                        productCode={productCode}
+                        inventoryItemCode={inventoryItemCode}
                         unit={unit}
                     />
                 </AccordionContent>
@@ -49,7 +47,7 @@ export default function InventoryItemRelatedData({
             <AccordionItem value="photos">
                 <AccordionTrigger>Photos</AccordionTrigger>
                 <AccordionContent keepMounted>
-                    <InventoryItemPhotos productCode={productCode} />
+                    <InventoryItemPhotos inventoryItemCode={inventoryItemCode} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="similar-inventory-items">
@@ -58,7 +56,6 @@ export default function InventoryItemRelatedData({
                     <InventoryItemSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
-                        showGoodsReceiptCount
                         similarName={name}
                         onInventoryItemSelect={(item) => {
                             if (item.productCode)
@@ -71,11 +68,11 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Goods receipts</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <GoodsReceiptSearch
-                        key={productCode}
+                        key={inventoryItemCode}
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
                         showSummary={false}
-                        defaultProductCode={productCode}
+                        defaultInventoryItemCode={inventoryItemCode}
                         onGoodsReceiptSelect={(receipt) =>
                             onGoodsReceiptSelect(receipt.receiptNumber)
                         }
@@ -88,7 +85,6 @@ export default function InventoryItemRelatedData({
                     <ProductSearch
                         mode={ComponentMode.Dialog}
                         showSearchFields={false}
-                        showInvoiceCount={!storageOnly}
                         similarName={name}
                         onProductSelect={(product) => {
                             if (product.productCode)

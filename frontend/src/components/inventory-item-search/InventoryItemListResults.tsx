@@ -14,7 +14,6 @@ type Props = {
     isLoading: boolean;
     mode: ComponentMode;
     showSearchFields: boolean;
-    showGoodsReceiptCount: boolean;
     goodsReceiptCounts: Record<string, number>;
     goodsReceiptCountsLoading: boolean;
     goodsReceiptCountsError: boolean;
@@ -25,12 +24,12 @@ type Props = {
 };
 
 export default function InventoryItemListResults({
-    search, itemPage, items, isLoading, mode, showSearchFields, showGoodsReceiptCount,
+    search, itemPage, items, isLoading, mode, showSearchFields,
     goodsReceiptCounts, goodsReceiptCountsLoading, goodsReceiptCountsError,
     onPageChange, onPageSizeChange, onSort, onInventoryItemSelect,
 }: Props) {
     const isPageMode = mode === ComponentMode.Page;
-    const columnCount = inventoryItemSortColumns.length + (showGoodsReceiptCount ? 1 : 0);
+    const columnCount = inventoryItemSortColumns.length + 1;
     const firstItem = itemPage && itemPage.totalCount > 0
         ? (itemPage.page - 1) * itemPage.pageSize + 1 : 0;
     const lastItem = itemPage
@@ -51,7 +50,7 @@ export default function InventoryItemListResults({
                         direction={search.sortBy === key ? search.sortDirection : ""}
                         alignRight={alignRight} onSort={() => onSort(key)} />
                 ))}
-                {showGoodsReceiptCount && <TableHead className="text-right">Goods receipts</TableHead>}
+                <TableHead className="text-right">Goods receipts</TableHead>
             </TableRow></TableHeader>
             <TableBody>
                 {isLoading && !items.length && <EmptyRow columns={columnCount}>Loading inventory items…</EmptyRow>}
@@ -74,12 +73,10 @@ export default function InventoryItemListResults({
                             <SearchResultCell to={to} linkLabel={label}>{item.name ?? "—"}</SearchResultCell>
                             <SearchResultCell to={to} linkLabel={label}>{item.unit ?? "—"}</SearchResultCell>
                             <SearchResultCell to={to} linkLabel={label} className="text-right tabular-nums">{item.minimumStockLevel?.toLocaleString("en-IE") ?? "—"}</SearchResultCell>
-                            {showGoodsReceiptCount && (
-                                <SearchResultCell to={to} linkLabel={label} className="text-right tabular-nums">
-                                    {goodsReceiptCountsLoading ? "…" : goodsReceiptCountsError ? "—"
-                                        : item.productCode ? goodsReceiptCounts[item.productCode] ?? 0 : 0}
-                                </SearchResultCell>
-                            )}
+                            <SearchResultCell to={to} linkLabel={label} className="text-right tabular-nums">
+                                {goodsReceiptCountsLoading ? "…" : goodsReceiptCountsError ? "—"
+                                    : item.productCode ? goodsReceiptCounts[item.productCode] ?? 0 : 0}
+                            </SearchResultCell>
                         </TableRow>
                     );
                 })}

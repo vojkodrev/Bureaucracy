@@ -11,7 +11,7 @@ type Props = {
     mode: ComponentMode
     showSearchFields?: boolean
     showSummary?: boolean
-    defaultProductCode?: string
+    defaultInventoryItemCode?: string
     onGoodsReceiptSelect?: (receipt: GoodsReceipt) => void
 }
 
@@ -19,10 +19,10 @@ export default function GoodsReceiptSearch({
     mode,
     showSearchFields = true,
     showSummary = true,
-    defaultProductCode,
+    defaultInventoryItemCode,
     onGoodsReceiptSelect,
 }: Props) {
-    const state = useGoodsReceiptSearchState(mode, defaultProductCode)
+    const state = useGoodsReceiptSearchState(mode, defaultInventoryItemCode)
     const result = useGoodsReceiptSearchResults(state.search, state.searchKey)
 
     return (

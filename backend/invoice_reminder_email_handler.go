@@ -24,6 +24,7 @@ func (handler *InvoiceReminderEmailHandler) Send(context *gin.Context) {
 	if !ok {
 		return
 	}
+	exposeDocumentEmailParametersToQuery(context)
 	invoicePage, businessYear, ok := loadInvoiceReminderPage(context, handler.invoices, handler.businessYears)
 	if !ok {
 		return
