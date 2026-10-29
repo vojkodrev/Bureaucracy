@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"time"
+
+	"bureaucracy/backend/lib"
+)
 
 func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *InvoiceCustomerSummaryPage {
 	summaryPage := &InvoiceCustomerSummaryPage{
@@ -59,12 +63,5 @@ func effectiveInvoiceDueDate(invoice *Invoice) *time.Time {
 }
 
 func optionalStringEqual(left *string, right *string) bool {
-	return stringOrEmpty(left) == stringOrEmpty(right)
-}
-
-func stringOrEmpty(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
+	return lib.StringOrEmpty(left) == lib.StringOrEmpty(right)
 }

@@ -8,10 +8,10 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"sort"
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"bureaucracy/backend/furs"
+	"bureaucracy/backend/lib"
 	"github.com/beevik/etree"
 	"github.com/google/uuid"
 	"github.com/hooklift/gowsdl/soap"
@@ -40,19 +41,23 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, invoice *Invoice, 
 	if err := client.validateConfig(); err != nil {
 		return "", "", err
 	}
-	amount := valueOrZero(invoice.Amount)
-	fursInvoiceNumber := fursSequenceNumber(invoice.InvoiceNumber)
+	fursInvoice := invoice
+	if isFURSTestURL(client.config.FURSURL) {
+		fursInvoice = anonymizedFURSInvoice(invoice)
+	}
+	amount := float64OrZero(fursInvoice.Amount)
+	fursInvoiceNumber := fursSequenceNumber(fursInvoice.InvoiceNumber)
 	issueText := issuedAt.Format("02.01.2006 15:04:05")
 	zoiInput := client.config.FURSTaxNumber + issueText + fursInvoiceNumber +
 		client.config.FURSBusinessPremiseID + client.config.FURSElectronicDeviceID + fmt.Sprintf("%.2f", amount)
-	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, sha256Digest([]byte(zoiInput)))
+	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, lib.SHA256Digest([]byte(zoiInput)))
 	if err != nil {
 		return "", "", fmt.Errorf("sign ZOI: %w", err)
 	}
 	zoiHash := md5.Sum(signature)
 	zoi := hex.EncodeToString(zoiHash[:])
 
-	typedRequest := buildFURSInvoiceRequest(client.config, invoice, issuedAt, zoi)
+	typedRequest := buildFURSInvoiceRequest(client.config, fursInvoice, issuedAt, zoi)
 	typedXML, err := xml.Marshal(typedRequest)
 	if err != nil {
 		return "", "", fmt.Errorf("marshal WSDL invoice request: %w", err)
@@ -86,11 +91,11 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, invoice *Invoice, 
 	}}}
 	soapClient := soap.NewClient(client.config.FURSURL, soap.WithHTTPClient(httpClient))
 	response := &furs.InvoiceResponse{}
-	if err := soapClient.CallContext(ctx, "/invoices", rawXML{payload: payload}, response); err != nil {
+	if err := soapClient.CallContext(ctx, "/invoices", furs.RawXML(payload), response); err != nil {
 		return "", "", fmt.Errorf("send invoice to FURS: %w", err)
 	}
 	if response.Error != nil {
-		return "", "", fmt.Errorf("FURS rejected invoice: %s: %s", pointerText(response.Error.ErrorCode), pointerText(response.Error.ErrorMessage))
+		return "", "", fmt.Errorf("FURS rejected invoice: %s: %s", lib.StringOrEmpty(response.Error.ErrorCode), lib.StringOrEmpty(response.Error.ErrorMessage))
 	}
 	if response.UniqueInvoiceID == nil || strings.TrimSpace(string(*response.UniqueInvoiceID)) == "" {
 		return "", "", fmt.Errorf("FURS response did not contain EOR")
@@ -137,7 +142,7 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 	premise := furs.BusinessPremiseIDType(config.FURSBusinessPremiseID)
 	device := furs.ElectronicDeviceIDType(config.FURSElectronicDeviceID)
 	numbering := furs.NumberingStructureTypeB
-	amount := furs.AmountType(valueOrZero(invoice.Amount))
+	amount := furs.AmountType(float64OrZero(invoice.Amount))
 	messageID := furs.UUIDType(uuid.NewString())
 	var customerVATNumber *furs.CustomerVATType
 	if invoice.CustomerTaxID != nil && strings.TrimSpace(*invoice.CustomerTaxID) != "" {
@@ -152,8 +157,8 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 			continue
 		}
 		total := totals[*item.TaxRate]
-		total.taxable += valueOrZero(item.NetAmount)
-		total.tax += valueOrZero(item.GrossAmount) - valueOrZero(item.NetAmount)
+		total.taxable += float64OrZero(item.NetAmount)
+		total.tax += float64OrZero(item.GrossAmount) - float64OrZero(item.NetAmount)
 		totals[*item.TaxRate] = total
 	}
 	rates := make([]float64, 0, len(totals))
@@ -176,31 +181,6 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 	}}
 }
 
-type rawXML struct{ payload []byte }
-
-func (value rawXML) MarshalXML(encoder *xml.Encoder, _ xml.StartElement) error {
-	decoder := xml.NewDecoder(strings.NewReader(string(value.payload)))
-	for {
-		token, err := decoder.Token()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-		if err := encoder.EncodeToken(token); err != nil {
-			return err
-		}
-	}
-}
-
-func pointerText[T ~string](value *T) string {
-	if value == nil {
-		return ""
-	}
-	return string(*value)
-}
-
 func fursSequenceNumber(invoiceNumber string) string {
 	value := strings.TrimLeft(strings.TrimSpace(invoiceNumber), "0")
 	if value == "" {
@@ -209,15 +189,35 @@ func fursSequenceNumber(invoiceNumber string) string {
 	return value
 }
 
-func valueOrZero(value *float64) float64 {
-	if value == nil {
-		return 0
-	}
-	return *value
+func isFURSTestURL(value string) bool {
+	return strings.Contains(strings.ToLower(value), "test")
 }
 
-func sha256Digest(value []byte) []byte {
-	hash := crypto.SHA256.New()
-	_, _ = hash.Write(value)
-	return hash.Sum(nil)
+func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
+	digest := lib.SHA256Digest([]byte(fmt.Sprintf("%d:%s", invoice.ID, invoice.InvoiceNumber)))
+	invoiceNumber := binary.BigEndian.Uint64(digest[:8])%9_000_000_000_000_000_000 + 1_000_000_000_000_000_000
+	items := make([]*InvoiceItem, 0, len(invoice.Items))
+	amount := 0.0
+	for index, item := range invoice.Items {
+		if item == nil {
+			continue
+		}
+		itemDigest := lib.SHA256Digest([]byte(fmt.Sprintf("%d:%s:%d", invoice.ID, invoice.InvoiceNumber, index)))
+		factor := 0.95 + float64(binary.BigEndian.Uint16(itemDigest[:2]))/65535*0.10
+		netAmount := lib.RoundCurrency(float64OrZero(item.NetAmount) * factor)
+		grossAmount := lib.RoundCurrency(float64OrZero(item.GrossAmount) * factor)
+		amount += grossAmount
+		items = append(items, &InvoiceItem{
+			TaxRate:     item.TaxRate,
+			NetAmount:   &netAmount,
+			GrossAmount: &grossAmount,
+		})
+	}
+	amount = lib.RoundCurrency(amount)
+	return &Invoice{
+		ID:            invoice.ID,
+		InvoiceNumber: fmt.Sprintf("%d", invoiceNumber),
+		Amount:        &amount,
+		Items:         items,
+	}
 }
