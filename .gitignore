@@ -46,6 +46,7 @@ certs/**/*.key
 certs/**/*.srl
 certs/**/*.cnf
 *.pfx
+*.p12
 *.publishsettings
 *.pubxml.user
 
