@@ -10,6 +10,9 @@ CREATE TABLE [dbo].[furs_soap_requests]
     [request_url] nvarchar(500) NOT NULL,
     [soap_action] nvarchar(100) NOT NULL,
     [payload] nvarchar(max) NOT NULL,
+    [response_status_code] int NULL,
+    [response_payload] nvarchar(max) NULL,
+    [responded_at] datetime2(7) NULL,
     [created_at] datetime2(7) NOT NULL
         CONSTRAINT [DF_furs_soap_requests_created_at] DEFAULT SYSUTCDATETIME(),
     CONSTRAINT [PK_furs_soap_requests] PRIMARY KEY ([id])
