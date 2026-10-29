@@ -37,6 +37,13 @@ type AppConfig struct {
 	KeycloakCACertFile          string
 	TLSCertFile                 string
 	TLSKeyFile                  string
+	FURSURL                     string
+	FURSCertificateFile         string
+	FURSCertificatePassword     string
+	FURSTaxNumber               string
+	FURSOperatorTaxNumber       string
+	FURSBusinessPremiseID       string
+	FURSElectronicDeviceID      string
 }
 
 func NewAppConfig() *AppConfig {
@@ -70,6 +77,13 @@ func NewAppConfig() *AppConfig {
 		KeycloakCACertFile:          envOrDefault("KEYCLOAK_CA_CERT_FILE", "../certs/local-https/bureaucracy-ca.crt"),
 		TLSCertFile:                 envOrDefault("TLS_CERT_FILE", "../certs/local-https/bureaucracy.crt"),
 		TLSKeyFile:                  envOrDefault("TLS_KEY_FILE", "../certs/local-https/bureaucracy.key"),
+		FURSURL:                     strings.TrimRight(envOrDefault("FURS_URL", "https://blagajne-test.fu.gov.si:9002/v1/cash_registers"), "/"),
+		FURSCertificateFile:         strings.TrimSpace(os.Getenv("FURS_CERTIFICATE_FILE")),
+		FURSCertificatePassword:     os.Getenv("FURS_CERTIFICATE_PASSWORD"),
+		FURSTaxNumber:               strings.TrimSpace(os.Getenv("FURS_TAX_NUMBER")),
+		FURSOperatorTaxNumber:       strings.TrimSpace(os.Getenv("FURS_OPERATOR_TAX_NUMBER")),
+		FURSBusinessPremiseID:       strings.TrimSpace(os.Getenv("FURS_BUSINESS_PREMISE_ID")),
+		FURSElectronicDeviceID:      strings.TrimSpace(os.Getenv("FURS_ELECTRONIC_DEVICE_ID")),
 	}
 }
 

@@ -153,6 +153,22 @@ export async function downloadInvoiceHalcom(invoiceNumber: string, businessYear:
     await downloadInvoiceFile(invoiceHalcomUrl(invoiceNumber, businessYear), `invoice-${invoiceNumber}-halcom.zip`, 'Halcom')
 }
 
+export type InvoiceTaxConfirmation = { zoi: string; eor: string }
+
+export async function confirmInvoiceTax(invoiceNumber: string, businessYear: string): Promise<InvoiceTaxConfirmation> {
+    const url = new URL(graphqlUrl)
+    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/tax-confirmation`
+    url.search = ''
+    url.hash = ''
+    const form = new FormData()
+    form.set('businessYear', businessYear)
+    const response = await apiFetch(url, { method: 'POST', body: form })
+    const body = await response.json().catch(() => null) as (InvoiceTaxConfirmation & { error?: string }) | null
+    if (!response.ok) throw new Error(body?.error ?? `Tax confirmation failed (${response.status})`)
+    if (!body?.zoi || !body.eor) throw new Error('Tax confirmation response is incomplete')
+    return body
+}
+
 export async function postSaveInvoice(variables: Record<string, unknown>) {
     return postGraphql<{
         data?: { saveInvoice: { id: number; invoiceNumber: string } }

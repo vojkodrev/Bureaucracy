@@ -28,6 +28,7 @@ func NewHTTPServer(
 	invoicePrintHandler *InvoicePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
 	invoiceHalcomHandler *InvoiceHalcomHandler,
+	invoiceTaxConfirmationHandler *InvoiceTaxConfirmationHandler,
 	priceQuotePrintHandler *PriceQuotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceReminderHandler *InvoiceReminderHandler,
@@ -79,6 +80,7 @@ func NewHTTPServer(
 	admin.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
 	admin.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
 	admin.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
+	admin.POST("/api/invoices/:invoiceNumber/tax-confirmation", invoiceTaxConfirmationHandler.Handle)
 	admin.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
 	admin.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	admin.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)

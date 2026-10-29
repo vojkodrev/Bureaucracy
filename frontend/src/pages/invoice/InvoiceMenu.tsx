@@ -1,4 +1,4 @@
-import { Copy, Download, FileCode2, Landmark, Mail, Printer, Save, Undo2 } from 'lucide-react'
+import { BadgeCheck, Copy, Download, FileCode2, Landmark, Mail, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -22,6 +22,8 @@ type InvoiceMenuProps = {
     isDuplicating: boolean
     isExportingXml: boolean
     isExportingHalcom: boolean
+    canTaxConfirm: boolean
+    isTaxConfirming: boolean
     onSave: () => void
     onPrint: () => void
     onEmail: () => void
@@ -29,9 +31,10 @@ type InvoiceMenuProps = {
     onExportHalcom: () => void
     onRevert: () => void
     onDuplicate: () => void
+    onTaxConfirm: () => void
 }
 
-function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate, isSaving, isDuplicating, isExportingXml, isExportingHalcom, onSave, onPrint, onEmail, onExportXml, onExportHalcom, onRevert, onDuplicate }: InvoiceMenuProps) {
+function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate, isSaving, isDuplicating, isExportingXml, isExportingHalcom, canTaxConfirm, isTaxConfirming, onSave, onPrint, onEmail, onExportXml, onExportHalcom, onRevert, onDuplicate, onTaxConfirm }: InvoiceMenuProps) {
     return (
         <Menubar className="w-fit">
             <MenubarMenu>
@@ -47,6 +50,9 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, can
                     </MenubarItem>
                     <MenubarItem disabled={!canEmail} onClick={onEmail}>
                         <Mail />Send email
+                    </MenubarItem>
+                    <MenubarItem disabled={!canTaxConfirm || isTaxConfirming} onClick={onTaxConfirm}>
+                        <BadgeCheck />{isTaxConfirming ? 'Tax confirming…' : 'Tax confirmation'}
                     </MenubarItem>
                     <MenubarSub>
                         <MenubarSubTrigger disabled={!canExportXml}>

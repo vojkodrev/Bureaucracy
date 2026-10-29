@@ -17,6 +17,7 @@ import InvoiceSummary from './InvoiceSummary'
 import PaidInvoiceEmailAlert from './PaidInvoiceEmailAlert'
 import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
+import TaxConfirmationAlert from './TaxConfirmationAlert'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
 import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
@@ -29,6 +30,7 @@ import { useInvoicePrint } from './hooks/useInvoicePrint'
 import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
 import { useInvoiceXmlExport } from './hooks/useInvoiceXmlExport'
+import { useInvoiceTaxConfirmation } from './hooks/useInvoiceTaxConfirmation'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
 function InvoicePage() {
@@ -89,6 +91,10 @@ function InvoicePage() {
         clearSaveError: () => save.setSaveError(null),
         clearPrintError: () => print.setPrintError(null), reload: loader.reload,
     })
+    const taxConfirmation = useInvoiceTaxConfirmation({
+        invoiceNumber: draft.invoiceNumber,
+        canConfirm: print.canPrint,
+    })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
@@ -104,6 +110,7 @@ function InvoicePage() {
         ['duplicate-number', 'Duplicate invoice number could not be loaded', 'A number could not be assigned to the duplicate.', loader.requestErrors.duplicateInvoiceNumber],
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate invoice due date could not be calculated.', loader.requestErrors.customerPaymentTerm],
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
+        ['tax-confirmation', 'Invoice could not be tax confirmed', 'The invoice was not confirmed by FURS.', taxConfirmation.error],
     ] as const
 
     return <div className="max-w-6xl p-4">
@@ -115,6 +122,7 @@ function InvoicePage() {
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 isExportingHalcom={halcomExport.isExporting}
+                canTaxConfirm={print.canPrint} isTaxConfirming={taxConfirmation.isConfirming}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
@@ -122,6 +130,7 @@ function InvoicePage() {
                 onEmail={email.requestEmail} onRevert={revert.requestRevert}
                 onExportXml={() => { void xmlExport.exportXml() }}
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}
+                onTaxConfirm={taxConfirmation.request}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
@@ -145,6 +154,9 @@ function InvoicePage() {
         <PaidInvoiceEmailAlert open={email.confirmingPaidInvoiceEmail}
             onOpenChange={email.setConfirmingPaidInvoiceEmail}
             onConfirm={email.confirmPaidInvoiceEmail} />
+        <TaxConfirmationAlert open={taxConfirmation.dialogOpen} pending={taxConfirmation.isConfirming}
+            onOpenChange={taxConfirmation.setDialogOpen}
+            onConfirm={() => { void taxConfirmation.confirm() }} />
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
