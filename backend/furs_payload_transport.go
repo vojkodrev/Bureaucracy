@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"bureaucracy/backend/furs"
 )
 
 type FURSPayloadTransport struct {
@@ -22,6 +24,9 @@ func (transport *FURSPayloadTransport) RoundTrip(request *http.Request) (*http.R
 		return nil, fmt.Errorf("read FURS SOAP payload: %w", err)
 	}
 	_ = request.Body.Close()
+	if err := furs.ValidateSOAPInvoice(payload); err != nil {
+		return nil, err
+	}
 	request.Body = io.NopCloser(bytes.NewReader(payload))
 	request.ContentLength = int64(len(payload))
 	requestID, err := transport.requests.Create(request.Context(), FURSSOAPRequest{

@@ -21,10 +21,10 @@ import (
 	"bureaucracy/backend/furs"
 	"bureaucracy/backend/lib"
 	"github.com/beevik/etree"
+	pkcs12legacy "github.com/gematik/zero-lab/go/pkcs12/legacy"
 	"github.com/google/uuid"
 	"github.com/hooklift/gowsdl/soap"
 	dsig "github.com/russellhaering/goxmldsig"
-	"golang.org/x/crypto/pkcs12"
 )
 
 const fursNamespace = "http://www.fu.gov.si/"
@@ -50,7 +50,7 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	if isFURSTestURL(client.config.FURSURL) {
 		fursInvoice = anonymizedFURSInvoice(invoice)
 	}
-	amount := float64OrZero(fursInvoice.Amount)
+	amount := lib.RoundCurrency(float64OrZero(fursInvoice.Amount))
 	fursInvoiceNumber := fursSequenceNumber(fursInvoice.InvoiceNumber)
 	issueText := issuedAt.Format("02.01.2006 15:04:05")
 	zoiInput := client.config.FURSTaxNumber + issueText + fursInvoiceNumber +
@@ -72,11 +72,14 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 		return "", "", fmt.Errorf("parse WSDL invoice request: %w", err)
 	}
 	requestElement := requestDocument.Root()
+	prefixFURSRequest(requestElement)
+	removeEmptyFURSInvoiceReferences(requestElement)
 	signingContext, err := dsig.NewSigningContext(privateKey, [][]byte{certificate.Raw})
 	if err != nil {
 		return "", "", fmt.Errorf("create XML signing context: %w", err)
 	}
 	signingContext.IdAttribute = "Id"
+	signingContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
 	signingContext.Prefix = "ds"
 	signedRequest, err := signingContext.SignEnveloped(requestElement)
 	if err != nil {
@@ -112,6 +115,38 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	return zoi, strings.TrimSpace(string(*response.UniqueInvoiceID)), nil
 }
 
+func removeEmptyFURSInvoiceReferences(requestElement *etree.Element) {
+	for _, element := range requestElement.ChildElements() {
+		if element.Tag == "Invoice" {
+			for _, invoiceElement := range element.ChildElements() {
+				isReference := invoiceElement.Tag == "ReferenceInvoice" || invoiceElement.Tag == "ReferenceSalesBook"
+				if isReference && len(invoiceElement.ChildElements()) == 0 && strings.TrimSpace(invoiceElement.Text()) == "" {
+					element.RemoveChild(invoiceElement)
+				}
+			}
+		}
+	}
+}
+
+func prefixFURSRequest(element *etree.Element) {
+	prefixFURSElements(element)
+	element.CreateAttr("xmlns:fu", fursNamespace)
+}
+
+func prefixFURSElements(element *etree.Element) {
+	for _, child := range element.ChildElements() {
+		prefixFURSElements(child)
+	}
+	element.Space = "fu"
+	attributes := element.Attr[:0]
+	for _, attribute := range element.Attr {
+		if attribute.Key != "xmlns" && attribute.Space != "xmlns" {
+			attributes = append(attributes, attribute)
+		}
+	}
+	element.Attr = attributes
+}
+
 func (client *FURSClient) credentials() (*rsa.PrivateKey, *x509.Certificate, error) {
 	if strings.TrimSpace(client.config.FURSCertificateFile) == "" {
 		return nil, nil, fmt.Errorf("FURS_CERTIFICATE_FILE is required")
@@ -120,9 +155,21 @@ func (client *FURSClient) credentials() (*rsa.PrivateKey, *x509.Certificate, err
 	if err != nil {
 		return nil, nil, fmt.Errorf("read FURS certificate: %w", err)
 	}
-	key, certificate, err := pkcs12.Decode(contents, client.config.FURSCertificatePassword)
+	bags, err := pkcs12legacy.Decode(contents, []byte(client.config.FURSCertificatePassword))
 	if err != nil {
 		return nil, nil, fmt.Errorf("decode FURS certificate: %w", err)
+	}
+	pairs := bags.FindMatchingPairs()
+	if len(pairs) != 1 {
+		return nil, nil, fmt.Errorf("FURS certificate must contain exactly one matching private key and certificate; found %d", len(pairs))
+	}
+	certificate, err := x509.ParseCertificate(pairs[0].Certificate.Raw)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse FURS certificate: %w", err)
+	}
+	key, err := x509.ParsePKCS8PrivateKey(pairs[0].PrivateKey.Raw)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse FURS private key: %w", err)
 	}
 	privateKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
@@ -151,7 +198,7 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 	premise := furs.BusinessPremiseIDType(config.FURSBusinessPremiseID)
 	device := furs.ElectronicDeviceIDType(config.FURSElectronicDeviceID)
 	numbering := furs.NumberingStructureTypeB
-	amount := furs.AmountType(float64OrZero(invoice.Amount))
+	amount := furs.AmountType(lib.RoundCurrency(float64OrZero(invoice.Amount)))
 	messageID := furs.UUIDType(uuid.NewString())
 	var customerVATNumber *furs.CustomerVATType
 	if invoice.CustomerTaxID != nil && strings.TrimSpace(*invoice.CustomerTaxID) != "" {
@@ -165,10 +212,11 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 		if item == nil || item.TaxRate == nil {
 			continue
 		}
-		total := totals[*item.TaxRate]
+		rate := lib.RoundCurrency(*item.TaxRate)
+		total := totals[rate]
 		total.taxable += float64OrZero(item.NetAmount)
 		total.tax += float64OrZero(item.GrossAmount) - float64OrZero(item.NetAmount)
-		totals[*item.TaxRate] = total
+		totals[rate] = total
 	}
 	rates := make([]float64, 0, len(totals))
 	for rate := range totals {
@@ -177,9 +225,9 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 	sort.Float64s(rates)
 	for _, rate := range rates {
 		total := totals[rate]
-		taxRate := furs.TaxRateType(rate)
-		taxable := furs.TaxableAmountType(total.taxable)
-		tax := furs.TaxAmountType(total.tax)
+		taxRate := furs.TaxRateType(lib.RoundCurrency(rate))
+		taxable := furs.TaxableAmountType(lib.RoundCurrency(total.taxable))
+		tax := furs.TaxAmountType(lib.RoundCurrency(total.tax))
 		taxes.VAT = append(taxes.VAT, &furs.VATType{TaxRate: &taxRate, TaxableAmount: &taxable, TaxAmount: &tax})
 	}
 	return &furs.InvoiceRequest{Id: "test", Header: &furs.HeaderType{MessageID: &messageID, DateTime: soap.CreateXsdDateTime(issuedAt, false)}, Invoice: &furs.InvoiceType{
