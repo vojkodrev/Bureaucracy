@@ -39,7 +39,7 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, can
         <Menubar className="w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-44">
                     <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
                         <MenubarShortcut>Ctrl+S</MenubarShortcut>
@@ -50,9 +50,6 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, can
                     </MenubarItem>
                     <MenubarItem disabled={!canEmail} onClick={onEmail}>
                         <Mail />Send email
-                    </MenubarItem>
-                    <MenubarItem disabled={!canTaxConfirm || isTaxConfirming} onClick={onTaxConfirm}>
-                        <BadgeCheck />{isTaxConfirming ? 'Tax confirming…' : 'Tax confirmation'}
                     </MenubarItem>
                     <MenubarSub>
                         <MenubarSubTrigger disabled={!canExportXml}>
@@ -67,6 +64,9 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, can
                             </MenubarItem>
                         </MenubarSubContent>
                     </MenubarSub>
+                    <MenubarItem disabled={!canTaxConfirm || isTaxConfirming} onClick={onTaxConfirm}>
+                        <BadgeCheck />{isTaxConfirming ? 'Tax confirming…' : 'Tax confirmation'}
+                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
