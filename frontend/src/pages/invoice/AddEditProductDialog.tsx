@@ -41,7 +41,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     const grossUnitPrice = unitPriceValue == null || taxRateValue == null ? null : unitPriceValue * (1 + taxRateValue / 100)
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&
-        quantityValue > 0 &&
+        quantityValue !== 0 &&
         unitPriceValue != null &&
         unitPriceValue >= 0 &&
         taxCode.trim().length > 0 &&
@@ -74,7 +74,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
                     <ProductPickerField id="new-product-code" label="Product code" name="newProductCode" productCode={code} onProductCodeChange={setCode} onProductNameChange={setName} onProductUnitChange={setUnit} onProductNetPriceChange={(value) => setNetPrice(value == null ? '' : String(value))} onProductTaxRateChange={(value) => setTaxRate(value == null ? '' : String(value))} onProductTaxCodeChange={setTaxCode} />
                     <Field><FieldLabel htmlFor="new-product-name">Product name</FieldLabel><Input id="new-product-name" value={name} onChange={(event) => setName(event.target.value)} /></Field>
                     <Field><FieldLabel htmlFor="new-product-unit">Unit</FieldLabel><Input id="new-product-unit" value={unit} onChange={(event) => setUnit(event.target.value)} /></Field>
-                    <Field className="sm:col-start-1"><FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel><NumberInput id="new-product-quantity" min="0" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field>
+                    <Field className="sm:col-start-1"><FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel><NumberInput id="new-product-quantity" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field>
                 </div>
                 <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
                     <Field><FieldLabel htmlFor="new-product-net-unit-price">Net unit price</FieldLabel><NumberInput id="new-product-net-unit-price" min="0" step="0.01" value={netPrice} onChange={(event) => setNetPrice(event.target.value)} /></Field>
