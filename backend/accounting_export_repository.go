@@ -36,13 +36,15 @@ func NewAccountingExportRepository(database *sql.DB) *AccountingExportRepository
 func (repository *AccountingExportRepository) List(
 	ctx context.Context,
 	businessYear string,
-	month time.Month,
 	year int,
+	month *time.Month,
+	numberFrom string,
+	numberTo string,
 ) ([]AccountingExportRow, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
-	if month < time.January || month > time.December {
+	if month != nil && (*month < time.January || *month > time.December) {
 		return nil, fmt.Errorf("month must be between 1 and 12")
 	}
 	if year < 1 || year > 9999 {
@@ -51,8 +53,12 @@ func (repository *AccountingExportRepository) List(
 
 	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	masterDataDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	from := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
-	to := from.AddDate(0, 1, 0)
+	var from, to any
+	if month != nil {
+		monthStart := time.Date(year, *month, 1, 0, 0, 0, 0, time.Local)
+		from = monthStart
+		to = monthStart.AddDate(0, 1, 0)
+	}
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			rac.DatumIzstavitve,
@@ -78,10 +84,14 @@ func (repository *AccountingExportRepository) List(
 		) amounts
 		LEFT JOIN [%s].[dbo].[Partner] par ON rac.SifraPartnerja = par.Sifra
 		LEFT JOIN [%s].[dbo].[Artikel] art ON art.Artikel = racspec.Artikel
-		WHERE rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to
+		WHERE (@from IS NULL OR (rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to))
+			AND (@numberFrom = '' OR rac.Stevilka >= @numberFrom)
+			AND (@numberTo = '' OR rac.Stevilka <= @numberTo)
 		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
 		sql.Named("from", from),
 		sql.Named("to", to),
+		sql.Named("numberFrom", numberFrom),
+		sql.Named("numberTo", numberTo),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query accounting export: %w", err)
