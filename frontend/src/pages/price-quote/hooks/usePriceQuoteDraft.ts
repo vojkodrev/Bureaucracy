@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import type { InvoiceItem } from '@/lib/invoice-types'
+import { sumCurrency } from '@/lib/numbers'
 
 export type PriceQuoteDraft = {
     quoteNumber: string
@@ -51,6 +52,6 @@ export function usePriceQuoteDraft() {
         markUnsaved: () => setCleanDraft('__unsaved__'),
         clearCleanDraft: () => setCleanDraft(null),
         hasUnsavedChanges: cleanDraft !== null && serializedDraft !== cleanDraft,
-        totalIncludingVat: draft.items.reduce((total, item) => total + (item.grossAmount ?? 0), 0),
+        totalIncludingVat: sumCurrency(draft.items.map((item) => item.grossAmount)),
     }
 }

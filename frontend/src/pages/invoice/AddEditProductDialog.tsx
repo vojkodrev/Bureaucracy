@@ -7,6 +7,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NumberInput } from '@/components/ui/number-input'
 import type { InvoiceItem } from '@/lib/invoice-types'
+import { roundCurrency } from '@/lib/numbers'
 
 type AddEditProductDialogProps = {
     open: boolean
@@ -34,10 +35,14 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     const taxRateValue = optionalNumber(taxRate)
     const discountValue = optionalNumber(discount) ?? 0
     const netValue = quantityValue == null || unitPriceValue == null ? null : quantityValue * unitPriceValue
-    const discountAmount = netValue == null ? null : netValue * discountValue / 100
-    const taxBase = netValue == null || discountAmount == null ? null : netValue - discountAmount
-    const taxAmount = taxBase == null || taxRateValue == null ? null : taxBase * taxRateValue / 100
-    const grossValue = taxBase == null || taxAmount == null ? null : taxBase + taxAmount
+    const discountAmount = netValue == null ? null : roundCurrency(netValue * discountValue / 100)
+    const taxBase = netValue == null ? null : roundCurrency(netValue * (1 - discountValue / 100))
+    const taxAmount = taxBase == null || taxRateValue == null
+        ? null
+        : roundCurrency(taxBase * taxRateValue / 100)
+    const grossValue = taxBase == null || taxAmount == null
+        ? null
+        : roundCurrency(taxBase + taxAmount)
     const grossUnitPrice = unitPriceValue == null || taxRateValue == null ? null : unitPriceValue * (1 + taxRateValue / 100)
     const canSave = code.trim().length > 0 &&
         quantityValue != null &&

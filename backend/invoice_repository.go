@@ -227,6 +227,14 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 		if item.TaxCode == "" {
 			return nil, fmt.Errorf("taxCode is required for invoice item %d", index+1)
 		}
+		if item.NetAmount != nil {
+			value := lib.RoundCurrency(*item.NetAmount)
+			item.NetAmount = &value
+		}
+		if item.GrossAmount != nil {
+			value := lib.RoundCurrency(*item.GrossAmount)
+			item.GrossAmount = &value
+		}
 	}
 
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
@@ -344,10 +352,10 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 			if item.Discount != nil {
 				discount = *item.Discount
 			}
-			goodsAmount += *item.NetAmount * (1 - discount/100)
+			goodsAmount += lib.RoundCurrency(*item.NetAmount * (1 - discount/100))
 		}
 		if item.GrossAmount != nil {
-			amount += *item.GrossAmount
+			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
 	}
 	return []any{
@@ -360,7 +368,7 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 		sql.Named("purchaseOrderNumber", input.PurchaseOrderNumber),
 		sql.Named("deliveryNoteNumber", input.DeliveryNoteNumber),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
-		sql.Named("amount", amount), sql.Named("goodsAmount", goodsAmount),
+		sql.Named("amount", lib.RoundCurrency(amount)), sql.Named("goodsAmount", lib.RoundCurrency(goodsAmount)),
 	}
 }
 

@@ -149,6 +149,14 @@ func (repository *PriceQuoteRepository) Save(
 		if strings.TrimSpace(item.TaxCode) == "" {
 			return nil, fmt.Errorf("taxCode is required for price quote item %d", index+1)
 		}
+		if item.NetAmount != nil {
+			value := lib.RoundCurrency(*item.NetAmount)
+			item.NetAmount = &value
+		}
+		if item.GrossAmount != nil {
+			value := lib.RoundCurrency(*item.GrossAmount)
+			item.GrossAmount = &value
+		}
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	tx, err := repository.database.BeginTx(ctx, nil)
@@ -252,7 +260,7 @@ func priceQuoteArguments(input model.PriceQuoteInput, id int) []any {
 	amount := 0.0
 	for _, item := range input.Items {
 		if item.GrossAmount != nil {
-			amount += *item.GrossAmount
+			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
 	}
 	return []any{sql.Named("id", id), sql.Named("quoteNumber", input.QuoteNumber),
@@ -260,7 +268,7 @@ func priceQuoteArguments(input model.PriceQuoteInput, id int) []any {
 		sql.Named("customerCode", input.CustomerCode), sql.Named("customerName", input.CustomerName),
 		sql.Named("customerAddress", input.CustomerAddress), sql.Named("customerCity", input.CustomerCity),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
-		sql.Named("amount", amount)}
+		sql.Named("amount", lib.RoundCurrency(amount))}
 }
 
 func priceQuoteItemArguments(

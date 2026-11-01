@@ -5,6 +5,16 @@ export function numberOrNull(value: string): number | null {
     return Number.isFinite(number) ? number : null
 }
 
+export function roundCurrency(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+export function sumCurrency(values: Array<number | null | undefined>): number {
+    return roundCurrency(
+        values.reduce<number>((sum, value) => sum + roundCurrency(value ?? 0), 0),
+    )
+}
+
 export function isOptionalNonNegativeNumber(value: string): boolean {
     if (!value.trim()) return true
     const number = Number(value)

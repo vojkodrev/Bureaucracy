@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { dateForApi } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
-import { nextPaddedNumber } from '@/lib/numbers'
+import { nextPaddedNumber, roundCurrency } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import {
     fetchLatestPriceQuoteNumber, fetchPriceQuoteExists, savePriceQuote,
@@ -52,8 +52,9 @@ export function usePriceQuoteSave({
                     // original amount is essential for reconstructing the unit price when
                     // the discount is 100%.
                     netAmount: item.unitPrice == null || item.quantity == null
-                        ? null : item.unitPrice * item.quantity,
-                    grossAmount: item.grossAmount,
+                        ? null : roundCurrency(item.unitPrice * item.quantity),
+                    grossAmount: item.grossAmount == null
+                        ? null : roundCurrency(item.grossAmount),
                 })),
             })
             const saved = result.data?.savePriceQuote
