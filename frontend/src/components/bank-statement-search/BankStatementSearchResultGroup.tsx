@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters'
 import {
     hasPaidAmountMismatch,
     hasPaymentDateMismatch,
+    isPartialCustomerInvoicePayment,
     normalizeInvoiceNumber,
 } from './invoice-payment-mismatches'
 
@@ -39,6 +40,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                 </SearchResultCell>
             </TableRow>
             {entries.map((entry) => {
+                const suppressInvoiceWarnings = isPartialCustomerInvoicePayment(entry)
                 const invoicePayment = entry.documentNumber
                     ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
                     : undefined
@@ -80,7 +82,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                                     {entry.documentNumber}
                                 </Button>
                             ) : '—'}
-                            {entry.documentNumber
+                            {!suppressInvoiceWarnings && entry.documentNumber
                                 && (duplicate || (invoicePayment && (paymentDateMismatch || paidAmountMismatch))) && (
                                 <InvoicePaymentWarnings
                                     paidAmount={invoicePayment?.paidAmount ?? null}

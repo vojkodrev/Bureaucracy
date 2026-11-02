@@ -23,6 +23,9 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 }
 
 const invoiceUpdateBatchSize = 1000
+const invoicePaymentUpdateBatchSize = 500
+
+const partialCustomerInvoicePaymentType = "Plačilo računa kupca - delni"
 
 func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error) {
 	if !businessYearPattern.MatchString(businessYear) {
@@ -117,57 +120,140 @@ func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, inv
 }
 
 // updatePaidInvoices synchronizes incoming bank statement entries with issued
-// invoices. The paid amount is always recorded, while the payment date is only
-// set when that amount matches the invoice total to currency precision. An
+// invoices. Partial customer payments are aggregated across bank statements and
+// use the latest transaction date. Other payments keep the existing behavior:
+// their date is set only when the paid amount matches the invoice total. An
 // unmatched document number is allowed because bank statements can also contain
 // transactions that do not belong to an invoice.
-func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
+func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput, oldInvoiceNumbers []string) error {
 	type invoicePayment struct {
 		invoiceNumber string
 		paidAmount    float64
+		paymentDate   time.Time
+		partial       bool
+		aggregate     bool
+		current       bool
 	}
 
-	payments := make([]invoicePayment, 0, len(entries))
-	paymentIndexes := make(map[string]int, len(entries))
+	bankDatabaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	var partialPaymentCode sql.NullInt64
+	if err := tx.QueryRowContext(ctx, fmt.Sprintf(`SELECT MAX(NumSifra)
+		FROM [%s].[dbo].[BankaZRVD]
+		WHERE IME=@partialPaymentType`, bankDatabaseName),
+		sql.Named("partialPaymentType", partialCustomerInvoicePaymentType)).Scan(&partialPaymentCode); err != nil {
+		return fmt.Errorf("find partial customer invoice payment type: %w", err)
+	}
+
+	payments := make([]invoicePayment, 0, len(entries)+len(oldInvoiceNumbers))
+	paymentIndexes := make(map[string]int, len(entries)+len(oldInvoiceNumbers))
+	addPayment := func(invoiceNumber string, paidAmount float64, date time.Time, aggregate bool, current bool) {
+		invoiceNumber = strings.TrimSpace(invoiceNumber)
+		key := strings.ToUpper(invoiceNumber)
+		if key == "" {
+			return
+		}
+		payment := invoicePayment{invoiceNumber: invoiceNumber, paidAmount: paidAmount, paymentDate: date, aggregate: aggregate, current: current}
+		if index, exists := paymentIndexes[key]; exists {
+			payments[index] = payment
+			return
+		}
+		paymentIndexes[key] = len(payments)
+		payments = append(payments, payment)
+	}
 	for _, entry := range entries {
 		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
 			continue
 		}
-		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
-		if invoiceNumber == "" {
-			continue
+		aggregate := partialPaymentCode.Valid && entry.TransactionTypeID != nil && int64(*entry.TransactionTypeID) == partialPaymentCode.Int64
+		addPayment(*entry.DocumentNumber, *entry.Inflow, paymentDate, aggregate, true)
+	}
+	for _, invoiceNumber := range oldInvoiceNumbers {
+		key := strings.ToUpper(strings.TrimSpace(invoiceNumber))
+		if _, exists := paymentIndexes[key]; !exists {
+			addPayment(invoiceNumber, 0, paymentDate, true, false)
 		}
-		payment := invoicePayment{invoiceNumber: invoiceNumber, paidAmount: *entry.Inflow}
-		if index, exists := paymentIndexes[invoiceNumber]; exists {
-			payments[index] = payment
-			continue
-		}
-		paymentIndexes[invoiceNumber] = len(payments)
-		payments = append(payments, payment)
 	}
 
+	aggregatePayments := make([]invoicePayment, 0, len(payments))
+	for _, payment := range payments {
+		if payment.aggregate {
+			aggregatePayments = append(aggregatePayments, payment)
+		}
+	}
+	for start := 0; start < len(aggregatePayments); start += invoiceUpdateBatchSize {
+		end := min(start+invoiceUpdateBatchSize, len(aggregatePayments))
+		placeholders := make([]string, 0, end-start)
+		arguments := make([]any, 0, end-start+1)
+		arguments = append(arguments, sql.Named("partialPaymentType", partialCustomerInvoicePaymentType))
+		for index, payment := range aggregatePayments[start:end] {
+			name := fmt.Sprintf("invoiceNumber%d", index)
+			placeholders = append(placeholders, "@"+name)
+			arguments = append(arguments, sql.Named(name, strings.ToUpper(payment.invoiceNumber)))
+		}
+		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`SELECT UPPER(LTRIM(RTRIM(transactionRow.Stevilka))),
+			SUM(transactionRow.VDobro), MAX(transactionRow.Datum)
+			FROM [%s].[dbo].[BankaZR] transactionRow
+			INNER JOIN [%s].[dbo].[BankaZRVD] transactionType
+				ON transactionType.NumSifra=transactionRow.VrstaDogodka
+			WHERE transactionType.IME=@partialPaymentType
+				AND transactionRow.VDobro > 0
+				AND UPPER(LTRIM(RTRIM(transactionRow.Stevilka))) IN (%s)
+			GROUP BY UPPER(LTRIM(RTRIM(transactionRow.Stevilka)))`, bankDatabaseName, bankDatabaseName, strings.Join(placeholders, ", ")), arguments...)
+		if err != nil {
+			return fmt.Errorf("aggregate partial customer invoice payments: %w", err)
+		}
+		for rows.Next() {
+			var invoiceNumber string
+			var paidAmount float64
+			var latestPaymentDate time.Time
+			if err := rows.Scan(&invoiceNumber, &paidAmount, &latestPaymentDate); err != nil {
+				rows.Close()
+				return fmt.Errorf("scan partial customer invoice payments: %w", err)
+			}
+			if index, exists := paymentIndexes[invoiceNumber]; exists {
+				payments[index].paidAmount = paidAmount
+				payments[index].paymentDate = latestPaymentDate
+				payments[index].partial = true
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return fmt.Errorf("read partial customer invoice payments: %w", err)
+		}
+		rows.Close()
+	}
+	updatedPayments := payments[:0]
+	for _, payment := range payments {
+		if payment.current || payment.partial {
+			updatedPayments = append(updatedPayments, payment)
+		}
+	}
+	payments = updatedPayments
+
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	for start := 0; start < len(payments); start += invoiceUpdateBatchSize {
-		end := min(start+invoiceUpdateBatchSize, len(payments))
+	for start := 0; start < len(payments); start += invoicePaymentUpdateBatchSize {
+		end := min(start+invoicePaymentUpdateBatchSize, len(payments))
 		values := make([]string, 0, end-start)
-		arguments := make([]any, 0, (end-start)*2+1)
-		arguments = append(arguments, sql.Named("paymentDate", paymentDate))
+		arguments := make([]any, 0, (end-start)*4)
 		for index, payment := range payments[start:end] {
 			numberName := fmt.Sprintf("invoiceNumber%d", index)
 			amountName := fmt.Sprintf("paidAmount%d", index)
-			values = append(values, fmt.Sprintf("(@%s, @%s)", numberName, amountName))
-			arguments = append(arguments, sql.Named(numberName, payment.invoiceNumber), sql.Named(amountName, payment.paidAmount))
+			dateName := fmt.Sprintf("paymentDate%d", index)
+			partialName := fmt.Sprintf("partial%d", index)
+			values = append(values, fmt.Sprintf("(@%s, @%s, @%s, @%s)", numberName, amountName, dateName, partialName))
+			arguments = append(arguments, sql.Named(numberName, payment.invoiceNumber), sql.Named(amountName, payment.paidAmount), sql.Named(dateName, payment.paymentDate), sql.Named(partialName, payment.partial))
 		}
 		query := fmt.Sprintf(`UPDATE invoice
 			SET invoice.PlacanoSIT=payment.PaidAmount,
 				invoice.DatumPlacila=CASE
+					WHEN payment.IsPartial=1 THEN payment.PaymentDate
 					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek, 2)=ROUND(payment.PaidAmount, 2)
-					THEN @paymentDate
+					THEN payment.PaymentDate
 					ELSE NULL
 				END
 			FROM [%s].[dbo].[Racuni] invoice
-			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount)
-				ON LTRIM(RTRIM(invoice.Stevilka))=payment.InvoiceNumber`, databaseName, strings.Join(values, ", "))
+			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount, PaymentDate, IsPartial)
+				ON UPPER(LTRIM(RTRIM(invoice.Stevilka)))=UPPER(payment.InvoiceNumber)`, databaseName, strings.Join(values, ", "))
 		if _, err := tx.ExecContext(ctx, query, arguments...); err != nil {
 			return fmt.Errorf("update paid invoices: %w", err)
 		}

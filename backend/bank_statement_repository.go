@@ -420,7 +420,25 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 			INNER JOIN [%s].[dbo].[BankaZR] savedEntry ON savedEntry.RecNo=saved.RecNo
 			WHERE NULLIF(LTRIM(RTRIM(savedEntry.Stevilka)), '') IS NOT NULL
 			  AND UPPER(LTRIM(RTRIM(savedEntry.Stevilka)))=UPPER(LTRIM(RTRIM(existingEntry.Stevilka)))
-		  )`, databaseName, databaseName))
+		  )
+		  AND NOT (
+			EXISTS (
+				SELECT 1
+				FROM [%s].[dbo].[BankaZRVD] existingType
+				WHERE existingType.NumSifra=existingEntry.VrstaDogodka
+				  AND existingType.IME=@partialPaymentType
+			)
+			AND EXISTS (
+				SELECT 1
+				FROM #SavedBankEntries saved
+				INNER JOIN [%s].[dbo].[BankaZR] savedEntry ON savedEntry.RecNo=saved.RecNo
+				INNER JOIN [%s].[dbo].[BankaZRVD] savedType ON savedType.NumSifra=savedEntry.VrstaDogodka
+				WHERE savedType.IME=@partialPaymentType
+				  AND NULLIF(LTRIM(RTRIM(savedEntry.Stevilka)), '') IS NOT NULL
+				  AND UPPER(LTRIM(RTRIM(savedEntry.Stevilka)))=UPPER(LTRIM(RTRIM(existingEntry.Stevilka)))
+			)
+		  )`, databaseName, databaseName, databaseName, databaseName, databaseName),
+		sql.Named("partialPaymentType", partialCustomerInvoicePaymentType))
 	if err != nil {
 		return nil, fmt.Errorf("clear document numbers moved to saved bank statement: %w", err)
 	}
@@ -448,7 +466,7 @@ func (repository *BankStatementRepository) Save(ctx context.Context, businessYea
 	if err = clearPaidInvoices(ctx, tx, businessYear, oldInvoiceNumbers); err != nil {
 		return nil, err
 	}
-	if err = updatePaidInvoices(ctx, tx, businessYear, input.StatementDate, input.Entries); err != nil {
+	if err = updatePaidInvoices(ctx, tx, businessYear, input.StatementDate, input.Entries, oldInvoiceNumbers); err != nil {
 		return nil, err
 	}
 	if err = tx.Commit(); err != nil {

@@ -1,5 +1,11 @@
 import type { BankStatementEntry } from '@/lib/bank-statement-types'
 
+const PARTIAL_CUSTOMER_INVOICE_PAYMENT_TYPE = 'Plačilo računa kupca - delni'
+
+export function isPartialCustomerInvoicePayment(entry: BankStatementEntry) {
+    return entry.transactionType?.trim() === PARTIAL_CUSTOMER_INVOICE_PAYMENT_TYPE
+}
+
 export function normalizeInvoiceNumber(value: string) {
     return value.trim().toUpperCase()
 }
