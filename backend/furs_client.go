@@ -101,7 +101,10 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 		base: baseTransport, requests: client.requests, businessYearID: businessYearID,
 		invoiceID: invoice.ID, invoiceNumber: invoice.InvoiceNumber,
 	}}
-	soapClient := soap.NewClient(client.config.FURSURL, soap.WithHTTPClient(httpClient))
+	soapClient := soap.NewClient(client.config.FURSURL,
+		soap.WithHTTPClient(httpClient),
+		soap.WithHTTPHeaders(map[string]string{"Accept": "text/xml"}),
+	)
 	response := &furs.InvoiceResponse{}
 	if err := soapClient.CallContext(ctx, "/invoices", furs.RawXML(payload), response); err != nil {
 		return "", "", fmt.Errorf("send invoice to FURS: %w", err)
@@ -214,8 +217,10 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 		}
 		rate := lib.RoundCurrency(*item.TaxRate)
 		total := totals[rate]
-		total.taxable += float64OrZero(item.NetAmount)
-		total.tax += float64OrZero(item.GrossAmount) - float64OrZero(item.NetAmount)
+		taxable := lib.RoundCurrency(float64OrZero(item.NetAmount))
+		gross := lib.RoundCurrency(float64OrZero(item.GrossAmount))
+		total.taxable += taxable
+		total.tax += lib.RoundCurrency(gross - taxable)
 		totals[rate] = total
 	}
 	rates := make([]float64, 0, len(totals))
