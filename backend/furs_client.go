@@ -262,7 +262,9 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 		return fmt.Errorf("invoice %s has no calculated FURS total", invoiceNumber)
 	}
 
+	inputNetTotal := lib.CurrencyCents(float64OrZero(invoice.GoodsAmount))
 	inputTotal := lib.CurrencyCents(float64OrZero(invoice.Amount))
+	inputTaxTotal := inputTotal - inputNetTotal
 	inputLineTotal := int64(0)
 	for _, item := range invoice.Items {
 		if item != nil {
@@ -279,6 +281,7 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 			invoiceNumber, float64(inputTotal)/100)
 	}
 
+	calculatedNetTotal := int64(0)
 	calculatedTaxTotal := int64(0)
 	if request.Invoice.TaxesPerSeller != nil {
 		for _, vat := range request.Invoice.TaxesPerSeller.VAT {
@@ -293,12 +296,26 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 			if vat.TaxAmount != nil {
 				tax = float64(*vat.TaxAmount)
 			}
-			calculatedTaxTotal += lib.CurrencyCents(taxable) + lib.CurrencyCents(tax)
+			calculatedNetTotal += lib.CurrencyCents(taxable)
+			calculatedTaxTotal += lib.CurrencyCents(tax)
 		}
 	}
-	if calculatedTaxTotal != inputLineTotal {
-		return fmt.Errorf("invoice %s calculated FURS tax total %.2f does not match input line total %.2f",
-			invoiceNumber, float64(calculatedTaxTotal)/100, float64(inputLineTotal)/100)
+	if calculatedNetTotal != inputNetTotal {
+		return fmt.Errorf("invoice %s calculated FURS net total %.2f does not match input net total %.2f",
+			invoiceNumber, float64(calculatedNetTotal)/100, float64(inputNetTotal)/100)
+	}
+	if calculatedTaxTotal != inputTaxTotal {
+		return fmt.Errorf("invoice %s calculated FURS VAT total %.2f does not match input VAT total %.2f",
+			invoiceNumber, float64(calculatedTaxTotal)/100, float64(inputTaxTotal)/100)
+	}
+	calculatedGrossTotal := calculatedNetTotal + calculatedTaxTotal
+	if calculatedGrossTotal != inputLineTotal {
+		return fmt.Errorf("invoice %s calculated FURS gross total %.2f does not match input line total %.2f",
+			invoiceNumber, float64(calculatedGrossTotal)/100, float64(inputLineTotal)/100)
+	}
+	if requestTotal != calculatedGrossTotal {
+		return fmt.Errorf("invoice %s calculated FURS total %.2f does not match net total %.2f plus VAT %.2f",
+			invoiceNumber, float64(requestTotal)/100, float64(calculatedNetTotal)/100, float64(calculatedTaxTotal)/100)
 	}
 	return nil
 }
@@ -319,7 +336,7 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 	digest := lib.SHA256Digest([]byte(fmt.Sprintf("%d:%s", invoice.ID, invoice.InvoiceNumber)))
 	invoiceNumber := binary.BigEndian.Uint64(digest[:8])%9_000_000_000_000_000_000 + 1_000_000_000_000_000_000
 	items := make([]*InvoiceItem, 0, len(invoice.Items))
-	amount := 0.0
+	goodsAmount, amount := 0.0, 0.0
 	for index, item := range invoice.Items {
 		if item == nil {
 			continue
@@ -328,6 +345,7 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 		factor := 0.95 + float64(binary.BigEndian.Uint16(itemDigest[:2]))/65535*0.10
 		netAmount := lib.RoundCurrency(float64OrZero(item.NetAmount) * factor)
 		grossAmount := lib.RoundCurrency(float64OrZero(item.GrossAmount) * factor)
+		goodsAmount += netAmount
 		amount += grossAmount
 		items = append(items, &InvoiceItem{
 			TaxRate:     item.TaxRate,
@@ -335,10 +353,12 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 			GrossAmount: &grossAmount,
 		})
 	}
+	goodsAmount = lib.RoundCurrency(goodsAmount)
 	amount = lib.RoundCurrency(amount)
 	return &Invoice{
 		ID:            invoice.ID,
 		InvoiceNumber: fmt.Sprintf("%d", invoiceNumber),
+		GoodsAmount:   &goodsAmount,
 		Amount:        &amount,
 		Items:         items,
 	}
