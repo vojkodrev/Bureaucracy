@@ -18,6 +18,9 @@ type AddEditProductDialogProps = {
 
 const optionalNumber = (value: string) => value.trim() && Number.isFinite(Number(value)) ? Number(value) : null
 const decimalValue = (value: number | null) => value == null ? '' : value.toFixed(2)
+const editableNumberValue = (value: number | null) => value == null
+    ? ''
+    : String(Number(value.toPrecision(15)))
 
 function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProductDialogProps) {
     const effectiveTaxRate = item?.taxRate ?? (item?.unitPrice && item.unitTaxAmount != null ? item.unitTaxAmount / item.unitPrice * 100 : null)
@@ -25,7 +28,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     const [name, setName] = useState(item?.productName ?? '')
     const [unit, setUnit] = useState(item?.unit ?? '')
     const [quantity, setQuantity] = useState(item?.quantity == null ? '' : String(item.quantity))
-    const [netPrice, setNetPrice] = useState(item?.unitPrice == null ? '' : String(item.unitPrice))
+    const [netPrice, setNetPrice] = useState(editableNumberValue(item?.unitPrice ?? null))
     const [taxRate, setTaxRate] = useState(effectiveTaxRate == null ? '' : String(effectiveTaxRate))
     const [taxCode, setTaxCode] = useState(item?.taxCode ?? '')
     const [discount, setDiscount] = useState(item?.discount == null ? '0' : String(item.discount))
@@ -83,7 +86,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
             <DialogContent showCloseButton={false} className="sm:max-w-3xl">
                 <DialogHeader><DialogTitle>{item ? 'Edit product' : 'Add product'}</DialogTitle><DialogDescription>Search for a product or change the line details.</DialogDescription></DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_8rem]">
-                    <ProductPickerField id="new-product-code" label="Product code" name="newProductCode" productCode={code} onProductCodeChange={setCode} onProductNameChange={setName} onProductUnitChange={setUnit} onProductNetPriceChange={(value) => setNetPrice(value == null ? '' : String(value))} onProductTaxRateChange={(value) => setTaxRate(value == null ? '' : String(value))} onProductTaxCodeChange={setTaxCode} />
+                    <ProductPickerField id="new-product-code" label="Product code" name="newProductCode" productCode={code} onProductCodeChange={setCode} onProductNameChange={setName} onProductUnitChange={setUnit} onProductNetPriceChange={(value) => setNetPrice(editableNumberValue(value))} onProductTaxRateChange={(value) => setTaxRate(value == null ? '' : String(value))} onProductTaxCodeChange={setTaxCode} />
                     <Field><FieldLabel htmlFor="new-product-name">Product name</FieldLabel><Input id="new-product-name" value={name} onChange={(event) => setName(event.target.value)} /></Field>
                     <Field><FieldLabel htmlFor="new-product-unit">Unit</FieldLabel><Input id="new-product-unit" value={unit} onChange={(event) => setUnit(event.target.value)} /></Field>
                     <Field className="sm:col-start-1"><FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel><NumberInput id="new-product-quantity" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field>
