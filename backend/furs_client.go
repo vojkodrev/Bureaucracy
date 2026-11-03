@@ -12,7 +12,6 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
-	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -263,19 +262,19 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 		return fmt.Errorf("invoice %s has no calculated FURS total", invoiceNumber)
 	}
 
-	inputTotal := currencyCents(float64OrZero(invoice.Amount))
+	inputTotal := lib.CurrencyCents(float64OrZero(invoice.Amount))
 	inputLineTotal := int64(0)
 	for _, item := range invoice.Items {
 		if item != nil {
-			inputLineTotal += currencyCents(float64OrZero(item.GrossAmount))
+			inputLineTotal += lib.CurrencyCents(float64OrZero(item.GrossAmount))
 		}
 	}
-	requestTotal := currencyCents(float64(*request.Invoice.InvoiceAmount))
+	requestTotal := lib.CurrencyCents(float64(*request.Invoice.InvoiceAmount))
 	if requestTotal != inputTotal {
 		return fmt.Errorf("invoice %s calculated FURS total %.2f does not match input total %.2f",
 			invoiceNumber, float64(requestTotal)/100, float64(inputTotal)/100)
 	}
-	if request.Invoice.PaymentAmount == nil || currencyCents(float64(*request.Invoice.PaymentAmount)) != inputTotal {
+	if request.Invoice.PaymentAmount == nil || lib.CurrencyCents(float64(*request.Invoice.PaymentAmount)) != inputTotal {
 		return fmt.Errorf("invoice %s calculated FURS payment total does not match input total %.2f",
 			invoiceNumber, float64(inputTotal)/100)
 	}
@@ -294,7 +293,7 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 			if vat.TaxAmount != nil {
 				tax = float64(*vat.TaxAmount)
 			}
-			calculatedTaxTotal += currencyCents(taxable) + currencyCents(tax)
+			calculatedTaxTotal += lib.CurrencyCents(taxable) + lib.CurrencyCents(tax)
 		}
 	}
 	if calculatedTaxTotal != inputLineTotal {
@@ -302,10 +301,6 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 			invoiceNumber, float64(calculatedTaxTotal)/100, float64(inputLineTotal)/100)
 	}
 	return nil
-}
-
-func currencyCents(value float64) int64 {
-	return int64(math.Round(value * 100))
 }
 
 func fursSequenceNumber(invoiceNumber string) string {

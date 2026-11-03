@@ -7,22 +7,21 @@ import (
 )
 
 func validateInvoiceGrossTotal(invoice *Invoice) error {
-	itemTotal := 0.0
+	itemTotal := int64(0)
 	for _, item := range invoice.Items {
 		if item != nil {
-			itemTotal += lib.RoundCurrency(float64OrZero(item.GrossAmount))
+			itemTotal += lib.CurrencyCents(float64OrZero(item.GrossAmount))
 		}
 	}
-	itemTotal = lib.RoundCurrency(itemTotal)
-	return validateCalculatedInvoiceGrossTotal(invoice, itemTotal, "line")
+	return validateCalculatedInvoiceGrossTotal(invoice, float64(itemTotal)/100, "line")
 }
 
 func validateCalculatedInvoiceGrossTotal(invoice *Invoice, calculatedTotal float64, calculatedTotalName string) error {
-	headerTotal := lib.RoundCurrency(float64OrZero(invoice.Amount))
-	calculatedTotal = lib.RoundCurrency(calculatedTotal)
-	if headerTotal != calculatedTotal {
+	headerTotal := lib.CurrencyCents(float64OrZero(invoice.Amount))
+	calculatedTotalCents := lib.CurrencyCents(calculatedTotal)
+	if headerTotal != calculatedTotalCents {
 		return fmt.Errorf("invoice %s total %.2f does not match %s total %.2f",
-			invoice.InvoiceNumber, headerTotal, calculatedTotalName, calculatedTotal)
+			invoice.InvoiceNumber, float64(headerTotal)/100, calculatedTotalName, float64(calculatedTotalCents)/100)
 	}
 	return nil
 }
@@ -30,8 +29,8 @@ func validateCalculatedInvoiceGrossTotal(invoice *Invoice, calculatedTotal float
 func validateAccountingExportGrossTotals(rows []AccountingExportRow) error {
 	type invoiceTotal struct {
 		number string
-		header float64
-		items  float64
+		header int64
+		items  int64
 	}
 	totals := make(map[string]*invoiceTotal)
 	order := make([]string, 0)
@@ -42,20 +41,19 @@ func validateAccountingExportGrossTotals(rows []AccountingExportRow) error {
 			if !row.InvoiceGross.Valid {
 				return fmt.Errorf("invoice %s has no total", number)
 			}
-			total = &invoiceTotal{number: number, header: lib.RoundCurrency(row.InvoiceGross.Float64)}
+			total = &invoiceTotal{number: number, header: lib.CurrencyCents(row.InvoiceGross.Float64)}
 			totals[number] = total
 			order = append(order, number)
 		}
 		if row.ItemGross.Valid {
-			total.items += lib.RoundCurrency(row.ItemGross.Float64)
+			total.items += lib.CurrencyCents(row.ItemGross.Float64)
 		}
 	}
 	for _, number := range order {
 		total := totals[number]
-		itemTotal := lib.RoundCurrency(total.items)
-		if total.header != itemTotal {
+		if total.header != total.items {
 			return fmt.Errorf("invoice %s total %.2f does not match line total %.2f",
-				total.number, total.header, itemTotal)
+				total.number, float64(total.header)/100, float64(total.items)/100)
 		}
 	}
 	return nil
