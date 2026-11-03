@@ -60,6 +60,12 @@ func validateCalculatedInvoiceTotals(invoice *Invoice, netTotal, taxTotal, gross
 		return fmt.Errorf("invoice %s input gross total %.2f does not match print gross total %.2f",
 			invoice.InvoiceNumber, float64(inputGrossTotal)/100, float64(printGrossTotal)/100)
 	}
+	inputTaxTotal := inputGrossTotal - inputNetTotal
+	printTaxTotal := lib.CurrencyCents(taxTotal)
+	if inputTaxTotal != printTaxTotal {
+		return fmt.Errorf("invoice %s input VAT total %.2f does not match print VAT total %.2f",
+			invoice.InvoiceNumber, float64(inputTaxTotal)/100, float64(printTaxTotal)/100)
+	}
 	if printNetTotal != calculated.net {
 		return fmt.Errorf("invoice %s print net total %.2f does not match calculated line net total %.2f",
 			invoice.InvoiceNumber, float64(printNetTotal)/100, float64(calculated.net)/100)
@@ -68,7 +74,6 @@ func validateCalculatedInvoiceTotals(invoice *Invoice, netTotal, taxTotal, gross
 		return fmt.Errorf("invoice %s print gross total %.2f does not match calculated line gross total %.2f",
 			invoice.InvoiceNumber, float64(printGrossTotal)/100, float64(calculated.gross)/100)
 	}
-	printTaxTotal := lib.CurrencyCents(taxTotal)
 	if printTaxTotal != calculated.vat {
 		return fmt.Errorf("invoice %s print VAT total %.2f does not match calculated line VAT total %.2f",
 			invoice.InvoiceNumber, float64(printTaxTotal)/100, float64(calculated.vat)/100)
