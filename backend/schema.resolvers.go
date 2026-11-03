@@ -42,6 +42,15 @@ func (r *mutationResolver) SavePriceQuote(ctx context.Context, businessYear stri
 	return r.PriceQuotes.Save(ctx, businessYear, priceQuote)
 }
 
+// SaveDeliveryNote is the resolver for the saveDeliveryNote field.
+func (r *mutationResolver) SaveDeliveryNote(
+	ctx context.Context,
+	businessYear string,
+	deliveryNote model.DeliveryNoteInput,
+) (*DeliveryNote, error) {
+	return r.DeliveryNotes.Save(ctx, businessYear, deliveryNote)
+}
+
 // SaveProduct is the resolver for the saveProduct field.
 func (r *mutationResolver) SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error) {
 	return r.Products.Save(ctx, businessYear, product)
@@ -194,6 +203,23 @@ func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear
 	return r.PriceQuotes.GetTextTemplate(ctx, businessYear)
 }
 
+// DeliveryNote is the resolver for the deliveryNote field.
+func (r *queryResolver) DeliveryNote(
+	ctx context.Context,
+	businessYear string,
+	deliveryNoteNumber string,
+) (*DeliveryNote, error) {
+	return r.DeliveryNotes.GetByNumber(ctx, businessYear, deliveryNoteNumber)
+}
+
+// DeliveryNoteTextTemplate is the resolver for the deliveryNoteTextTemplate field.
+func (r *queryResolver) DeliveryNoteTextTemplate(
+	ctx context.Context,
+	businessYear string,
+) (*DeliveryNoteTextTemplate, error) {
+	return r.DeliveryNotes.GetTextTemplate(ctx, businessYear)
+}
+
 // Product is the resolver for the product field.
 func (r *queryResolver) Product(ctx context.Context, businessYear string, productCode string) (*Product, error) {
 	return r.Products.GetByCode(ctx, businessYear, productCode)
@@ -260,6 +286,47 @@ func (r *queryResolver) SearchPriceQuotes(ctx context.Context, businessYear stri
 	return r.PriceQuotes.Search(ctx, businessYear, quoteNumber, customerID, customerName,
 		productCode, productName, issuedFrom, issuedTo, sortBy, sortDirection,
 		resultPage, resultPageSize)
+}
+
+// SearchDeliveryNotes is the resolver for the searchDeliveryNotes field.
+func (r *queryResolver) SearchDeliveryNotes(
+	ctx context.Context,
+	businessYear string,
+	deliveryNoteNumber *string,
+	customerID *string,
+	customerName *string,
+	productCode *string,
+	productName *string,
+	issuedFrom *time.Time,
+	issuedTo *time.Time,
+	sortBy *string,
+	sortDirection *string,
+	page *int,
+	pageSize *int,
+) (*DeliveryNotePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.DeliveryNotes.Search(
+		ctx,
+		businessYear,
+		deliveryNoteNumber,
+		customerID,
+		customerName,
+		productCode,
+		productName,
+		issuedFrom,
+		issuedTo,
+		sortBy,
+		sortDirection,
+		resultPage,
+		resultPageSize,
+	)
 }
 
 // SearchProducts is the resolver for the searchProducts field.

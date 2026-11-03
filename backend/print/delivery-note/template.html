@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="sl">
+<head><meta charset="utf-8"><title>{{.Document.Title}}</title><style>{{.CSS}}</style></head>
+<body><main>
+    {{template "document-header" .Header}}
+    <section class="overview"><div class="details">
+        <strong>Dobavnica:</strong><strong>{{.Document.InvoiceNumber}}</strong>
+        <strong>Datum izdaje:</strong><span>{{.Document.IssueDate}}</span>
+        <strong>Datum dobave:</strong><span>{{.Document.DueDate}}</span>
+        <strong>Kraj izdaje:</strong><span>{{.Document.IssuePlace}}</span>
+    </div></section>
+    <section class="body">
+        {{if .Document.Customer.TaxID}}<p>Ident. št. za DDV: {{.Document.Customer.TaxID}}</p>{{end}}
+        <p class="intro">{{.Document.IntroText}}</p>
+        <table class="items {{if .WithoutAmounts}}without-amounts{{end}}"><thead><tr>
+            <th>Št.</th><th>Opis</th><th>Količina</th><th>Enota</th>
+            {{if not .WithoutAmounts}}<th>Cena brez DDV</th><th>Popust</th><th>Davek</th><th>Znesek</th>{{end}}
+        </tr></thead><tbody>{{range .Document.Items}}<tr>
+            <td>{{.Sequence}}</td><td>{{.Description}}</td><td>{{.Quantity}}</td><td>{{.Unit}}</td>
+            {{if not $.WithoutAmounts}}
+            <td>{{.UnitPrice}}</td>
+            <td>{{.Discount}}</td>
+            <td>{{.TaxRate}}</td>
+            <td>{{.NetAmount}}</td>
+            {{end}}
+        </tr>{{end}}</tbody></table>
+        {{if not .WithoutAmounts}}<div class="totals">
+            <strong>Znesek brez DDV</strong><strong>{{.Document.NetTotal}}</strong>
+            <strong>DDV</strong><strong>{{.Document.TaxTotal}}</strong>
+            <strong>Skupaj z DDV</strong><strong>{{.Document.GrossTotal}}</strong>
+        </div>{{end}}
+        <p class="closing">{{.Document.ClosingText}}</p>
+        <div class="acceptance">
+            <div>Blago izdal:<br><br>________________________</div>
+            <div>Blago prevzel:<br><br>________________________</div>
+        </div>
+    </section>
+    <footer class="document-footer">
+        DREVI d.o.o., Ob železnici 16, 1000 Ljubljana ·
+        Ident. št. za DDV: SI35954086
+    </footer>
+</main></body></html>

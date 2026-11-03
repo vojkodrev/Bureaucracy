@@ -50,6 +50,32 @@ type CustomerInput struct {
 	Discount           *float64 `json:"discount,omitempty"`
 }
 
+type DeliveryNoteInput struct {
+	ID                 *int                     `json:"id,omitempty"`
+	DeliveryNoteNumber string                   `json:"deliveryNoteNumber"`
+	IssueDate          *time.Time               `json:"issueDate,omitempty"`
+	DeliveryDate       *time.Time               `json:"deliveryDate,omitempty"`
+	CustomerCode       *string                  `json:"customerCode,omitempty"`
+	CustomerName       *string                  `json:"customerName,omitempty"`
+	CustomerAddress    *string                  `json:"customerAddress,omitempty"`
+	CustomerCity       *string                  `json:"customerCity,omitempty"`
+	IntroductoryText   *string                  `json:"introductoryText,omitempty"`
+	ClosingText        *string                  `json:"closingText,omitempty"`
+	WithoutAmounts     bool                     `json:"withoutAmounts"`
+	Items              []*DeliveryNoteItemInput `json:"items"`
+}
+
+type DeliveryNoteItemInput struct {
+	ID          *int     `json:"id,omitempty"`
+	Sequence    *int     `json:"sequence,omitempty"`
+	ProductCode string   `json:"productCode"`
+	TaxCode     string   `json:"taxCode"`
+	Quantity    *float64 `json:"quantity,omitempty"`
+	Discount    *float64 `json:"discount,omitempty"`
+	NetAmount   *float64 `json:"netAmount,omitempty"`
+	GrossAmount *float64 `json:"grossAmount,omitempty"`
+}
+
 type GoodsReceiptInput struct {
 	ID            *int                     `json:"id,omitempty"`
 	ReceiptNumber string                   `json:"receiptNumber"`

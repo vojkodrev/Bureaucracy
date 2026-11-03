@@ -234,6 +234,64 @@ type PriceQuoteTextTemplate {
   closingText: String
 }
 
+type DeliveryNote {
+  id: Int!
+  deliveryNoteNumber: String!
+  issueDate: Time
+  deliveryDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerPostalCode: String
+  customerCity: String
+  customerCountry: String
+  currency: String
+  amount: Float
+  introductoryText: String
+  closingText: String
+  withoutAmounts: Boolean!
+  items: [InvoiceItem!]!
+}
+
+type DeliveryNotePage {
+  deliveryNotes: [DeliveryNote!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+type DeliveryNoteTextTemplate {
+  introductoryText: String
+  closingText: String
+}
+
+input DeliveryNoteItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+}
+
+input DeliveryNoteInput {
+  id: Int
+  deliveryNoteNumber: String!
+  issueDate: Time
+  deliveryDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  introductoryText: String
+  closingText: String
+  withoutAmounts: Boolean!
+  items: [DeliveryNoteItemInput!]!
+}
+
 input PriceQuoteItemInput {
   id: Int
   sequence: Int
@@ -544,6 +602,10 @@ type Query {
 
   priceQuoteTextTemplate(businessYear: String!): PriceQuoteTextTemplate!
 
+  deliveryNote(businessYear: String!, deliveryNoteNumber: String!): DeliveryNote
+
+  deliveryNoteTextTemplate(businessYear: String!): DeliveryNoteTextTemplate!
+
   product(
     businessYear: String!
     productCode: String!
@@ -611,6 +673,21 @@ type Query {
     pageSize: Int = 20
   ): PriceQuotePage!
 
+  searchDeliveryNotes(
+    businessYear: String!
+    deliveryNoteNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    issuedFrom: Time
+    issuedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): DeliveryNotePage!
+
   searchProducts(
     businessYear: String!
     productCode: String
@@ -665,6 +742,7 @@ type Mutation {
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
   savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
+  saveDeliveryNote(businessYear: String!, deliveryNote: DeliveryNoteInput!): DeliveryNote!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
   saveInventoryItem(businessYear: String!, inventoryItem: InventoryItemInput!): InventoryItem!
 }

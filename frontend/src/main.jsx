@@ -21,6 +21,8 @@ import {
     InventoryItemPage,
     PriceQuoteSearchPage,
     PriceQuotePage,
+    DeliveryNoteSearchPage,
+    DeliveryNotePage,
     ImportBankStatementsPage,
     LayoutPage,
     ProductPage,
@@ -79,6 +81,14 @@ function createRouter() {
                 },
                 { path: "/price-quotes/search", element: <PriceQuoteSearchPage /> },
                 { path: "/price-quote/:quoteNumber?", element: <PriceQuotePage /> },
+                {
+                    path: "/delivery-notes/search",
+                    element: <DeliveryNoteSearchPage />,
+                },
+                {
+                    path: "/delivery-note/:deliveryNoteNumber?",
+                    element: <DeliveryNotePage />,
+                },
                 { path: "/invoice/:invoiceNumber?", element: <InvoicePage /> },
                 { path: "/products/search", element: <ProductSearchPage /> },
                 { path: "/purchase-predictor/search", element: <PurchasePredictionSearchPage /> },

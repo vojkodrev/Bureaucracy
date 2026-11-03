@@ -104,6 +104,14 @@ const sections: Section[] = [
         entityLabel: "Price quote",
     },
     {
+        key: "delivery-notes",
+        label: "Delivery notes",
+        icon: PackageCheck,
+        searchPath: "/delivery-notes/search",
+        entityPath: "/delivery-note",
+        entityLabel: "Delivery note",
+    },
+    {
         key: "invoices",
         label: "Invoices",
         icon: FileText,
@@ -129,7 +137,13 @@ const sections: Section[] = [
 const sectionGroups = [
     {
         label: "Billing",
-        sectionKeys: ["customers", "products", "price-quotes", "invoices"],
+        sectionKeys: [
+            "customers",
+            "products",
+            "price-quotes",
+            "delivery-notes",
+            "invoices",
+        ],
     },
     {
         label: "Storage",

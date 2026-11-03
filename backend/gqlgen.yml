@@ -102,6 +102,15 @@ models:
   PriceQuoteTextTemplate:
     model:
       - bureaucracy/backend.PriceQuoteTextTemplate
+  DeliveryNote:
+    model:
+      - bureaucracy/backend.DeliveryNote
+  DeliveryNotePage:
+    model:
+      - bureaucracy/backend.DeliveryNotePage
+  DeliveryNoteTextTemplate:
+    model:
+      - bureaucracy/backend.DeliveryNoteTextTemplate
   InvoiceItem:
     model:
       - bureaucracy/backend.InvoiceItem

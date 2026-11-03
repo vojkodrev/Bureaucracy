@@ -141,6 +141,38 @@ type ComplexityRoot struct {
 		TotalPages func(childComplexity int) int
 	}
 
+	DeliveryNote struct {
+		Amount             func(childComplexity int) int
+		ClosingText        func(childComplexity int) int
+		Currency           func(childComplexity int) int
+		CustomerAddress    func(childComplexity int) int
+		CustomerCity       func(childComplexity int) int
+		CustomerCode       func(childComplexity int) int
+		CustomerCountry    func(childComplexity int) int
+		CustomerName       func(childComplexity int) int
+		CustomerPostalCode func(childComplexity int) int
+		DeliveryDate       func(childComplexity int) int
+		DeliveryNoteNumber func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		IntroductoryText   func(childComplexity int) int
+		IssueDate          func(childComplexity int) int
+		Items              func(childComplexity int) int
+		WithoutAmounts     func(childComplexity int) int
+	}
+
+	DeliveryNotePage struct {
+		DeliveryNotes func(childComplexity int) int
+		Page          func(childComplexity int) int
+		PageSize      func(childComplexity int) int
+		TotalCount    func(childComplexity int) int
+		TotalPages    func(childComplexity int) int
+	}
+
+	DeliveryNoteTextTemplate struct {
+		ClosingText      func(childComplexity int) int
+		IntroductoryText func(childComplexity int) int
+	}
+
 	GoodsReceipt struct {
 		ID            func(childComplexity int) int
 		Items         func(childComplexity int) int
@@ -275,6 +307,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
 		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
+		SaveDeliveryNote    func(childComplexity int, businessYear string, deliveryNote model.DeliveryNoteInput) int
 		SaveGoodsReceipt    func(childComplexity int, businessYear string, goodsReceipt model.GoodsReceiptInput) int
 		SaveInventoryItem   func(childComplexity int, businessYear string, inventoryItem model.InventoryItemInput) int
 		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
@@ -371,6 +404,8 @@ type ComplexityRoot struct {
 		Countries                       func(childComplexity int, businessYear string) int
 		CurrentBusinessYear             func(childComplexity int) int
 		Customer                        func(childComplexity int, businessYear string, customerID string) int
+		DeliveryNote                    func(childComplexity int, businessYear string, deliveryNoteNumber string) int
+		DeliveryNoteTextTemplate        func(childComplexity int, businessYear string) int
 		GoodsReceipt                    func(childComplexity int, businessYear string, receiptNumber string) int
 		GoodsReceiptStorages            func(childComplexity int, businessYear string) int
 		InventoryItem                   func(childComplexity int, businessYear string, inventoryItemCode string) int
@@ -386,6 +421,7 @@ type ComplexityRoot struct {
 		ProductInvoiceCounts            func(childComplexity int, businessYear string, productCodes []string) int
 		SearchBankStatements            func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, reference *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers                 func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchDeliveryNotes             func(childComplexity int, businessYear string, deliveryNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchGoodsReceipts             func(childComplexity int, businessYear string, inventoryItemCode *string, inventoryItemName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInventoryItems            func(childComplexity int, businessYear string, inventoryItemCode *string, inventoryItemName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchInvoices                  func(childComplexity int, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -421,6 +457,7 @@ type MutationResolver interface {
 	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
 	SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error)
+	SaveDeliveryNote(ctx context.Context, businessYear string, deliveryNote model.DeliveryNoteInput) (*DeliveryNote, error)
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
 	SaveInventoryItem(ctx context.Context, businessYear string, inventoryItem model.InventoryItemInput) (*InventoryItem, error)
 }
@@ -449,12 +486,15 @@ type QueryResolver interface {
 	InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error)
 	PriceQuote(ctx context.Context, businessYear string, quoteNumber string) (*PriceQuote, error)
 	PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error)
+	DeliveryNote(ctx context.Context, businessYear string, deliveryNoteNumber string) (*DeliveryNote, error)
+	DeliveryNoteTextTemplate(ctx context.Context, businessYear string) (*DeliveryNoteTextTemplate, error)
 	Product(ctx context.Context, businessYear string, productCode string) (*Product, error)
 	Customer(ctx context.Context, businessYear string, customerID string) (*Customer, error)
 	SearchCustomers(ctx context.Context, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CustomerPage, error)
 	SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error)
 	SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error)
 	SearchPriceQuotes(ctx context.Context, businessYear string, quoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*PriceQuotePage, error)
+	SearchDeliveryNotes(ctx context.Context, businessYear string, deliveryNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*DeliveryNotePage, error)
 	SearchProducts(ctx context.Context, businessYear string, productCode *string, productName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*ProductPage, error)
 	SearchInventoryItems(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, similarName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error)
 	SearchLowStockInventoryItems(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InventoryItemPage, error)
@@ -906,6 +946,147 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.CustomerPage.TotalPages(childComplexity), true
+
+	case "DeliveryNote.amount":
+		if e.ComplexityRoot.DeliveryNote.Amount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.Amount(childComplexity), true
+	case "DeliveryNote.closingText":
+		if e.ComplexityRoot.DeliveryNote.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.ClosingText(childComplexity), true
+	case "DeliveryNote.currency":
+		if e.ComplexityRoot.DeliveryNote.Currency == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.Currency(childComplexity), true
+	case "DeliveryNote.customerAddress":
+		if e.ComplexityRoot.DeliveryNote.CustomerAddress == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerAddress(childComplexity), true
+	case "DeliveryNote.customerCity":
+		if e.ComplexityRoot.DeliveryNote.CustomerCity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerCity(childComplexity), true
+	case "DeliveryNote.customerCode":
+		if e.ComplexityRoot.DeliveryNote.CustomerCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerCode(childComplexity), true
+	case "DeliveryNote.customerCountry":
+		if e.ComplexityRoot.DeliveryNote.CustomerCountry == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerCountry(childComplexity), true
+	case "DeliveryNote.customerName":
+		if e.ComplexityRoot.DeliveryNote.CustomerName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerName(childComplexity), true
+	case "DeliveryNote.customerPostalCode":
+		if e.ComplexityRoot.DeliveryNote.CustomerPostalCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.CustomerPostalCode(childComplexity), true
+	case "DeliveryNote.deliveryDate":
+		if e.ComplexityRoot.DeliveryNote.DeliveryDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.DeliveryDate(childComplexity), true
+	case "DeliveryNote.deliveryNoteNumber":
+		if e.ComplexityRoot.DeliveryNote.DeliveryNoteNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.DeliveryNoteNumber(childComplexity), true
+	case "DeliveryNote.id":
+		if e.ComplexityRoot.DeliveryNote.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.ID(childComplexity), true
+	case "DeliveryNote.introductoryText":
+		if e.ComplexityRoot.DeliveryNote.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.IntroductoryText(childComplexity), true
+	case "DeliveryNote.issueDate":
+		if e.ComplexityRoot.DeliveryNote.IssueDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.IssueDate(childComplexity), true
+	case "DeliveryNote.items":
+		if e.ComplexityRoot.DeliveryNote.Items == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.Items(childComplexity), true
+	case "DeliveryNote.withoutAmounts":
+		if e.ComplexityRoot.DeliveryNote.WithoutAmounts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNote.WithoutAmounts(childComplexity), true
+
+	case "DeliveryNotePage.deliveryNotes":
+		if e.ComplexityRoot.DeliveryNotePage.DeliveryNotes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNotePage.DeliveryNotes(childComplexity), true
+	case "DeliveryNotePage.page":
+		if e.ComplexityRoot.DeliveryNotePage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNotePage.Page(childComplexity), true
+	case "DeliveryNotePage.pageSize":
+		if e.ComplexityRoot.DeliveryNotePage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNotePage.PageSize(childComplexity), true
+	case "DeliveryNotePage.totalCount":
+		if e.ComplexityRoot.DeliveryNotePage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNotePage.TotalCount(childComplexity), true
+	case "DeliveryNotePage.totalPages":
+		if e.ComplexityRoot.DeliveryNotePage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNotePage.TotalPages(childComplexity), true
+
+	case "DeliveryNoteTextTemplate.closingText":
+		if e.ComplexityRoot.DeliveryNoteTextTemplate.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNoteTextTemplate.ClosingText(childComplexity), true
+	case "DeliveryNoteTextTemplate.introductoryText":
+		if e.ComplexityRoot.DeliveryNoteTextTemplate.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeliveryNoteTextTemplate.IntroductoryText(childComplexity), true
 
 	case "GoodsReceipt.id":
 		if e.ComplexityRoot.GoodsReceipt.ID == nil {
@@ -1477,6 +1658,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveCustomer(childComplexity, args["businessYear"].(string), args["customer"].(model.CustomerInput)), true
+	case "Mutation.saveDeliveryNote":
+		if e.ComplexityRoot.Mutation.SaveDeliveryNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveDeliveryNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveDeliveryNote(childComplexity, args["businessYear"].(string), args["deliveryNote"].(model.DeliveryNoteInput)), true
 	case "Mutation.saveGoodsReceipt":
 		if e.ComplexityRoot.Mutation.SaveGoodsReceipt == nil {
 			break
@@ -1975,6 +2167,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Customer(childComplexity, args["businessYear"].(string), args["customerId"].(string)), true
+	case "Query.deliveryNote":
+		if e.ComplexityRoot.Query.DeliveryNote == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deliveryNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.DeliveryNote(childComplexity, args["businessYear"].(string), args["deliveryNoteNumber"].(string)), true
+	case "Query.deliveryNoteTextTemplate":
+		if e.ComplexityRoot.Query.DeliveryNoteTextTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deliveryNoteTextTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.DeliveryNoteTextTemplate(childComplexity, args["businessYear"].(string)), true
 	case "Query.goodsReceipt":
 		if e.ComplexityRoot.Query.GoodsReceipt == nil {
 			break
@@ -2141,6 +2355,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SearchCustomers(childComplexity, args["businessYear"].(string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.searchDeliveryNotes":
+		if e.ComplexityRoot.Query.SearchDeliveryNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchDeliveryNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SearchDeliveryNotes(childComplexity, args["businessYear"].(string), args["deliveryNoteNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchGoodsReceipts":
 		if e.ComplexityRoot.Query.SearchGoodsReceipts == nil {
 			break
@@ -2290,6 +2515,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBankStatementEntryInput,
 		ec.unmarshalInputBankStatementInput,
 		ec.unmarshalInputCustomerInput,
+		ec.unmarshalInputDeliveryNoteInput,
+		ec.unmarshalInputDeliveryNoteItemInput,
 		ec.unmarshalInputGoodsReceiptInput,
 		ec.unmarshalInputGoodsReceiptItemInput,
 		ec.unmarshalInputInventoryItemInput,
@@ -2594,6 +2821,70 @@ func (ec *executionContext) childFields_CustomerPage(ctx context.Context, field 
 		return ec.fieldContext_CustomerPage_totalPages(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type CustomerPage", field.Name)
+}
+
+func (ec *executionContext) childFields_DeliveryNote(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_DeliveryNote_id(ctx, field)
+	case "deliveryNoteNumber":
+		return ec.fieldContext_DeliveryNote_deliveryNoteNumber(ctx, field)
+	case "issueDate":
+		return ec.fieldContext_DeliveryNote_issueDate(ctx, field)
+	case "deliveryDate":
+		return ec.fieldContext_DeliveryNote_deliveryDate(ctx, field)
+	case "customerCode":
+		return ec.fieldContext_DeliveryNote_customerCode(ctx, field)
+	case "customerName":
+		return ec.fieldContext_DeliveryNote_customerName(ctx, field)
+	case "customerAddress":
+		return ec.fieldContext_DeliveryNote_customerAddress(ctx, field)
+	case "customerPostalCode":
+		return ec.fieldContext_DeliveryNote_customerPostalCode(ctx, field)
+	case "customerCity":
+		return ec.fieldContext_DeliveryNote_customerCity(ctx, field)
+	case "customerCountry":
+		return ec.fieldContext_DeliveryNote_customerCountry(ctx, field)
+	case "currency":
+		return ec.fieldContext_DeliveryNote_currency(ctx, field)
+	case "amount":
+		return ec.fieldContext_DeliveryNote_amount(ctx, field)
+	case "introductoryText":
+		return ec.fieldContext_DeliveryNote_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_DeliveryNote_closingText(ctx, field)
+	case "withoutAmounts":
+		return ec.fieldContext_DeliveryNote_withoutAmounts(ctx, field)
+	case "items":
+		return ec.fieldContext_DeliveryNote_items(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type DeliveryNote", field.Name)
+}
+
+func (ec *executionContext) childFields_DeliveryNotePage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "deliveryNotes":
+		return ec.fieldContext_DeliveryNotePage_deliveryNotes(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_DeliveryNotePage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_DeliveryNotePage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_DeliveryNotePage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_DeliveryNotePage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type DeliveryNotePage", field.Name)
+}
+
+func (ec *executionContext) childFields_DeliveryNoteTextTemplate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "introductoryText":
+		return ec.fieldContext_DeliveryNoteTextTemplate_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_DeliveryNoteTextTemplate_closingText(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type DeliveryNoteTextTemplate", field.Name)
 }
 
 func (ec *executionContext) childFields_GoodsReceipt(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3196,6 +3487,28 @@ func (ec *executionContext) field_Mutation_saveCustomer_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveDeliveryNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "deliveryNote",
+		func(ctx context.Context, v any) (model.DeliveryNoteInput, error) {
+			return ec.unmarshalNDeliveryNoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["deliveryNote"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveGoodsReceipt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3537,6 +3850,42 @@ func (ec *executionContext) field_Query_customer_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["customerId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_deliveryNoteTextTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_deliveryNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "deliveryNoteNumber",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["deliveryNoteNumber"] = arg1
 	return args, nil
 }
 
@@ -3963,6 +4312,108 @@ func (ec *executionContext) field_Query_searchCustomers_args(ctx context.Context
 		return nil, err
 	}
 	args["pageSize"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchDeliveryNotes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "deliveryNoteNumber",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["deliveryNoteNumber"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerName"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedFrom"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedTo"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg11
 	return args, nil
 }
 
@@ -6325,6 +6776,553 @@ func (ec *executionContext) _CustomerPage_totalPages(ctx context.Context, field 
 }
 func (ec *executionContext) fieldContext_CustomerPage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("CustomerPage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_id(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_deliveryNoteNumber(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_deliveryNoteNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeliveryNoteNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_deliveryNoteNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_issueDate(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_issueDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IssueDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_issueDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_deliveryDate(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_deliveryDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeliveryDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_deliveryDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerCode(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerName(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerAddress(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerAddress(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerAddress, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerPostalCode(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerPostalCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerPostalCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerPostalCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerCity(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerCity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerCity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_customerCountry(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_customerCountry(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCountry, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_customerCountry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_currency(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_currency(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Currency, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_currency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_amount(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_amount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Amount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_introductoryText(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_closingText(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_withoutAmounts(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_withoutAmounts(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.WithoutAmounts, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_withoutAmounts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNote", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNote_items(ctx context.Context, field graphql.CollectedField, obj *DeliveryNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNote_items(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*InvoiceItem) graphql.Marshaler {
+			return ec.marshalNInvoiceItem2ᚕᚖbureaucracyᚋbackendᚐInvoiceItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNote_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryNote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryNotePage_deliveryNotes(ctx context.Context, field graphql.CollectedField, obj *DeliveryNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNotePage_deliveryNotes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DeliveryNotes, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*DeliveryNote) graphql.Marshaler {
+			return ec.marshalNDeliveryNote2ᚕᚖbureaucracyᚋbackendᚐDeliveryNoteᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNotePage_deliveryNotes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryNotePage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeliveryNote(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryNotePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *DeliveryNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNotePage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNotePage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNotePage_page(ctx context.Context, field graphql.CollectedField, obj *DeliveryNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNotePage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNotePage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNotePage_pageSize(ctx context.Context, field graphql.CollectedField, obj *DeliveryNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNotePage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNotePage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNotePage_totalPages(ctx context.Context, field graphql.CollectedField, obj *DeliveryNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNotePage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNotePage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNoteTextTemplate_introductoryText(ctx context.Context, field graphql.CollectedField, obj *DeliveryNoteTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNoteTextTemplate_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNoteTextTemplate_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNoteTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _DeliveryNoteTextTemplate_closingText(ctx context.Context, field graphql.CollectedField, obj *DeliveryNoteTextTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DeliveryNoteTextTemplate_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_DeliveryNoteTextTemplate_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DeliveryNoteTextTemplate", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _GoodsReceipt_id(ctx context.Context, field graphql.CollectedField, obj *GoodsReceipt) (ret graphql.Marshaler) {
@@ -8710,6 +9708,50 @@ func (ec *executionContext) fieldContext_Mutation_savePriceQuote(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveDeliveryNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveDeliveryNote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveDeliveryNote(ctx, fc.Args["businessYear"].(string), fc.Args["deliveryNote"].(model.DeliveryNoteInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *DeliveryNote) graphql.Marshaler {
+			return ec.marshalNDeliveryNote2ᚖbureaucracyᚋbackendᚐDeliveryNote(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveDeliveryNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeliveryNote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveDeliveryNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_saveProduct(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10965,6 +12007,94 @@ func (ec *executionContext) fieldContext_Query_priceQuoteTextTemplate(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_deliveryNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_deliveryNote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().DeliveryNote(ctx, fc.Args["businessYear"].(string), fc.Args["deliveryNoteNumber"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *DeliveryNote) graphql.Marshaler {
+			return ec.marshalODeliveryNote2ᚖbureaucracyᚋbackendᚐDeliveryNote(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_deliveryNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeliveryNote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deliveryNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_deliveryNoteTextTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_deliveryNoteTextTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().DeliveryNoteTextTemplate(ctx, fc.Args["businessYear"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *DeliveryNoteTextTemplate) graphql.Marshaler {
+			return ec.marshalNDeliveryNoteTextTemplate2ᚖbureaucracyᚋbackendᚐDeliveryNoteTextTemplate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_deliveryNoteTextTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeliveryNoteTextTemplate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deliveryNoteTextTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_product(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11223,6 +12353,50 @@ func (ec *executionContext) fieldContext_Query_searchPriceQuotes(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_searchPriceQuotes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchDeliveryNotes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_searchDeliveryNotes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SearchDeliveryNotes(ctx, fc.Args["businessYear"].(string), fc.Args["deliveryNoteNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *DeliveryNotePage) graphql.Marshaler {
+			return ec.marshalNDeliveryNotePage2ᚖbureaucracyᚋbackendᚐDeliveryNotePage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_searchDeliveryNotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DeliveryNotePage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchDeliveryNotes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -13096,6 +14270,192 @@ func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeliveryNoteInput(ctx context.Context, obj any) (model.DeliveryNoteInput, error) {
+	var it model.DeliveryNoteInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "deliveryNoteNumber", "issueDate", "deliveryDate", "customerCode", "customerName", "customerAddress", "customerCity", "introductoryText", "closingText", "withoutAmounts", "items"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "deliveryNoteNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deliveryNoteNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeliveryNoteNumber = data
+		case "issueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("issueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IssueDate = data
+		case "deliveryDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deliveryDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeliveryDate = data
+		case "customerCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCode"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCode = data
+		case "customerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerName = data
+		case "customerAddress":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerAddress"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerAddress = data
+		case "customerCity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCity"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCity = data
+		case "introductoryText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("introductoryText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IntroductoryText = data
+		case "closingText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("closingText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClosingText = data
+		case "withoutAmounts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("withoutAmounts"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WithoutAmounts = data
+		case "items":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+			data, err := ec.unmarshalNDeliveryNoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Items = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDeliveryNoteItemInput(ctx context.Context, obj any) (model.DeliveryNoteItemInput, error) {
+	var it model.DeliveryNoteItemInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "sequence", "productCode", "taxCode", "quantity", "discount", "netAmount", "grossAmount"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "sequence":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sequence"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sequence = data
+		case "productCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductCode = data
+		case "taxCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taxCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaxCode = data
+		case "quantity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quantity = data
+		case "discount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Discount = data
+		case "netAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("netAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetAmount = data
+		case "grossAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grossAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GrossAmount = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputGoodsReceiptInput(ctx context.Context, obj any) (model.GoodsReceiptInput, error) {
 	var it model.GoodsReceiptInput
 	if obj == nil {
@@ -14472,6 +15832,220 @@ func (ec *executionContext) _CustomerPage(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var deliveryNoteImplementors = []string{"DeliveryNote"}
+
+func (ec *executionContext) _DeliveryNote(ctx context.Context, sel ast.SelectionSet, obj *DeliveryNote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deliveryNoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeliveryNote")
+		case "id":
+			out.Values[i] = ec._DeliveryNote_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deliveryNoteNumber":
+			out.Values[i] = ec._DeliveryNote_deliveryNoteNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "issueDate":
+			out.Values[i] = ec._DeliveryNote_issueDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "deliveryDate":
+			out.Values[i] = ec._DeliveryNote_deliveryDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCode":
+			out.Values[i] = ec._DeliveryNote_customerCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerName":
+			out.Values[i] = ec._DeliveryNote_customerName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerAddress":
+			out.Values[i] = ec._DeliveryNote_customerAddress(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerPostalCode":
+			out.Values[i] = ec._DeliveryNote_customerPostalCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCity":
+			out.Values[i] = ec._DeliveryNote_customerCity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCountry":
+			out.Values[i] = ec._DeliveryNote_customerCountry(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "currency":
+			out.Values[i] = ec._DeliveryNote_currency(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._DeliveryNote_amount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "introductoryText":
+			out.Values[i] = ec._DeliveryNote_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._DeliveryNote_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "withoutAmounts":
+			out.Values[i] = ec._DeliveryNote_withoutAmounts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "items":
+			out.Values[i] = ec._DeliveryNote_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var deliveryNotePageImplementors = []string{"DeliveryNotePage"}
+
+func (ec *executionContext) _DeliveryNotePage(ctx context.Context, sel ast.SelectionSet, obj *DeliveryNotePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deliveryNotePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeliveryNotePage")
+		case "deliveryNotes":
+			out.Values[i] = ec._DeliveryNotePage_deliveryNotes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._DeliveryNotePage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._DeliveryNotePage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._DeliveryNotePage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._DeliveryNotePage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var deliveryNoteTextTemplateImplementors = []string{"DeliveryNoteTextTemplate"}
+
+func (ec *executionContext) _DeliveryNoteTextTemplate(ctx context.Context, sel ast.SelectionSet, obj *DeliveryNoteTextTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deliveryNoteTextTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeliveryNoteTextTemplate")
+		case "introductoryText":
+			out.Values[i] = ec._DeliveryNoteTextTemplate_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._DeliveryNoteTextTemplate_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var goodsReceiptImplementors = []string{"GoodsReceipt"}
 
 func (ec *executionContext) _GoodsReceipt(ctx context.Context, sel ast.SelectionSet, obj *GoodsReceipt) graphql.Marshaler {
@@ -15437,6 +17011,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "savePriceQuote":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_savePriceQuote(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveDeliveryNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveDeliveryNote(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -16520,6 +18101,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deliveryNote":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deliveryNote(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deliveryNoteTextTemplate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deliveryNoteTextTemplate(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "product":
 			field := field
 
@@ -16640,6 +18265,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchPriceQuotes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchDeliveryNotes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchDeliveryNotes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -17626,6 +19273,88 @@ func (ec *executionContext) marshalNCustomerPage2ᚖbureaucracyᚋbackendᚐCust
 	return ec._CustomerPage(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDeliveryNote2bureaucracyᚋbackendᚐDeliveryNote(ctx context.Context, sel ast.SelectionSet, v DeliveryNote) graphql.Marshaler {
+	return ec._DeliveryNote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeliveryNote2ᚕᚖbureaucracyᚋbackendᚐDeliveryNoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*DeliveryNote) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDeliveryNote2ᚖbureaucracyᚋbackendᚐDeliveryNote(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDeliveryNote2ᚖbureaucracyᚋbackendᚐDeliveryNote(ctx context.Context, sel ast.SelectionSet, v *DeliveryNote) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeliveryNote(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDeliveryNoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteInput(ctx context.Context, v any) (model.DeliveryNoteInput, error) {
+	res, err := ec.unmarshalInputDeliveryNoteInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDeliveryNoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteItemInputᚄ(ctx context.Context, v any) ([]*model.DeliveryNoteItemInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.DeliveryNoteItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNDeliveryNoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNDeliveryNoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐDeliveryNoteItemInput(ctx context.Context, v any) (*model.DeliveryNoteItemInput, error) {
+	res, err := ec.unmarshalInputDeliveryNoteItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDeliveryNotePage2bureaucracyᚋbackendᚐDeliveryNotePage(ctx context.Context, sel ast.SelectionSet, v DeliveryNotePage) graphql.Marshaler {
+	return ec._DeliveryNotePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeliveryNotePage2ᚖbureaucracyᚋbackendᚐDeliveryNotePage(ctx context.Context, sel ast.SelectionSet, v *DeliveryNotePage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeliveryNotePage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDeliveryNoteTextTemplate2bureaucracyᚋbackendᚐDeliveryNoteTextTemplate(ctx context.Context, sel ast.SelectionSet, v DeliveryNoteTextTemplate) graphql.Marshaler {
+	return ec._DeliveryNoteTextTemplate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeliveryNoteTextTemplate2ᚖbureaucracyᚋbackendᚐDeliveryNoteTextTemplate(ctx context.Context, sel ast.SelectionSet, v *DeliveryNoteTextTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeliveryNoteTextTemplate(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18571,6 +20300,13 @@ func (ec *executionContext) marshalOCustomer2ᚖbureaucracyᚋbackendᚐCustomer
 		return graphql.Null
 	}
 	return ec._Customer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODeliveryNote2ᚖbureaucracyᚋbackendᚐDeliveryNote(ctx context.Context, sel ast.SelectionSet, v *DeliveryNote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeliveryNote(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
