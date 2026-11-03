@@ -7,7 +7,6 @@ import (
 )
 
 func validateInvoiceGrossTotal(invoice *Invoice) error {
-	headerTotal := lib.RoundCurrency(float64OrZero(invoice.Amount))
 	itemTotal := 0.0
 	for _, item := range invoice.Items {
 		if item != nil {
@@ -15,9 +14,15 @@ func validateInvoiceGrossTotal(invoice *Invoice) error {
 		}
 	}
 	itemTotal = lib.RoundCurrency(itemTotal)
-	if headerTotal != itemTotal {
-		return fmt.Errorf("invoice %s total %.2f does not match line total %.2f",
-			invoice.InvoiceNumber, headerTotal, itemTotal)
+	return validateCalculatedInvoiceGrossTotal(invoice, itemTotal, "line")
+}
+
+func validateCalculatedInvoiceGrossTotal(invoice *Invoice, calculatedTotal float64, calculatedTotalName string) error {
+	headerTotal := lib.RoundCurrency(float64OrZero(invoice.Amount))
+	calculatedTotal = lib.RoundCurrency(calculatedTotal)
+	if headerTotal != calculatedTotal {
+		return fmt.Errorf("invoice %s total %.2f does not match %s total %.2f",
+			invoice.InvoiceNumber, headerTotal, calculatedTotalName, calculatedTotal)
 	}
 	return nil
 }

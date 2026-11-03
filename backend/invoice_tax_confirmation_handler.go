@@ -53,10 +53,6 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		c.JSON(http.StatusOK, existing)
 		return
 	}
-	if err := validateInvoiceGrossTotal(invoice); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		return
-	}
 	issuedAt := time.Now().Truncate(time.Second)
 	zoi, eor, err := handler.furs.ConfirmInvoice(c.Request.Context(), businessYearID, invoice, issuedAt)
 	if err != nil {

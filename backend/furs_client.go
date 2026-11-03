@@ -12,6 +12,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -66,6 +67,9 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	zoi := hex.EncodeToString(zoiHash[:])
 
 	typedRequest := buildFURSInvoiceRequest(client.config, fursInvoice, issuedAt, zoi)
+	if err := validateFURSInvoiceTotal(fursInvoice, typedRequest); err != nil {
+		return "", "", err
+	}
 	typedXML, err := xml.Marshal(typedRequest)
 	if err != nil {
 		return "", "", fmt.Errorf("marshal WSDL invoice request: %w", err)
@@ -248,6 +252,60 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 		CustomerVATNumber: customerVATNumber,
 		InvoiceAmount:     &amount, PaymentAmount: &amount, TaxesPerSeller: taxes, OperatorTaxNumber: &operatorNumberType, ProtectedID: zoi,
 	}}
+}
+
+func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) error {
+	if invoice == nil {
+		return fmt.Errorf("cannot validate calculated FURS total without invoice input data")
+	}
+	invoiceNumber := invoice.InvoiceNumber
+	if request == nil || request.Invoice == nil || request.Invoice.InvoiceAmount == nil {
+		return fmt.Errorf("invoice %s has no calculated FURS total", invoiceNumber)
+	}
+
+	inputTotal := currencyCents(float64OrZero(invoice.Amount))
+	inputLineTotal := int64(0)
+	for _, item := range invoice.Items {
+		if item != nil {
+			inputLineTotal += currencyCents(float64OrZero(item.GrossAmount))
+		}
+	}
+	requestTotal := currencyCents(float64(*request.Invoice.InvoiceAmount))
+	if requestTotal != inputTotal {
+		return fmt.Errorf("invoice %s calculated FURS total %.2f does not match input total %.2f",
+			invoiceNumber, float64(requestTotal)/100, float64(inputTotal)/100)
+	}
+	if request.Invoice.PaymentAmount == nil || currencyCents(float64(*request.Invoice.PaymentAmount)) != inputTotal {
+		return fmt.Errorf("invoice %s calculated FURS payment total does not match input total %.2f",
+			invoiceNumber, float64(inputTotal)/100)
+	}
+
+	calculatedTaxTotal := int64(0)
+	if request.Invoice.TaxesPerSeller != nil {
+		for _, vat := range request.Invoice.TaxesPerSeller.VAT {
+			if vat == nil {
+				continue
+			}
+			taxable := 0.0
+			if vat.TaxableAmount != nil {
+				taxable = float64(*vat.TaxableAmount)
+			}
+			tax := 0.0
+			if vat.TaxAmount != nil {
+				tax = float64(*vat.TaxAmount)
+			}
+			calculatedTaxTotal += currencyCents(taxable) + currencyCents(tax)
+		}
+	}
+	if calculatedTaxTotal != inputLineTotal {
+		return fmt.Errorf("invoice %s calculated FURS tax total %.2f does not match input line total %.2f",
+			invoiceNumber, float64(calculatedTaxTotal)/100, float64(inputLineTotal)/100)
+	}
+	return nil
+}
+
+func currencyCents(value float64) int64 {
+	return int64(math.Round(value * 100))
 }
 
 func fursSequenceNumber(invoiceNumber string) string {

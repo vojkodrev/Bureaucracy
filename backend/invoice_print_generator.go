@@ -10,6 +10,8 @@ import (
 	"html/template"
 	"sort"
 	"strings"
+
+	"bureaucracy/backend/lib"
 )
 
 type invoicePrintDocument struct {
@@ -95,7 +97,10 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		return nil, fmt.Errorf("invoice is required")
 	}
 	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
-	printItems, taxSummaries := buildPrintItems(invoice.Items)
+	printItems, taxSummaries, calculatedGrossTotal := buildPrintItems(invoice.Items)
+	if err := validateCalculatedInvoiceGrossTotal(invoice, calculatedGrossTotal, "print"); err != nil {
+		return nil, err
+	}
 	netTotal := float64OrZero(invoice.GoodsAmount)
 	grossTotal := float64OrZero(invoice.Amount)
 	if invoice.GoodsAmount == nil {
@@ -195,7 +200,7 @@ func foreignCustomerCountry(code *string, name *string) string {
 	return valueOrDefault(name, trimmedString(code))
 }
 
-func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax) {
+func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax, float64) {
 	printItems := make([]invoicePrintItem, 0, len(items))
 	taxGroups := make(map[float64][2]float64)
 	for index, item := range items {
@@ -231,8 +236,10 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 	}
 	sort.Float64s(rates)
 	taxes := make([]invoicePrintTax, 0, len(rates))
+	calculatedGrossTotal := 0.0
 	for _, rate := range rates {
 		amounts := taxGroups[rate]
+		calculatedGrossTotal += lib.RoundCurrency(amounts[0]) + lib.RoundCurrency(amounts[1])
 		taxes = append(taxes, invoicePrintTax{
 			Description: "DDV " + formatPercentage(rate),
 			Rate:        formatMoneyAmount(rate),
@@ -240,7 +247,7 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 			TaxAmount:   formatMoneyAmount(amounts[1]),
 		})
 	}
-	return printItems, taxes
+	return printItems, taxes, lib.RoundCurrency(calculatedGrossTotal)
 }
 
 func sumInvoiceNet(items []*InvoiceItem) float64 {
