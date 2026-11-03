@@ -599,7 +599,11 @@ func (repository *InvoiceRepository) getItems(
 				(CAST(COALESCE(pd.Procent, a.Davek) AS float) / 100),
 			rs.Kolicina,
 			CAST(rs.Rabat AS float),
-			rs.ZnesekBrezDavka * (1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100),
+			-- ZnesekBrezDavka is the persisted, rounded pre-discount amount. Keep
+			-- the derived taxable amount at currency precision for every consumer,
+			-- including the invoice editor and FURS reporting.
+			ROUND(rs.ZnesekBrezDavka *
+				(1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100), 2),
 			rs.Znesek
 		FROM [%s].[dbo].[RacuniSpecifikacija] rs
 		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel

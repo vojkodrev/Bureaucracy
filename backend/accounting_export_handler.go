@@ -113,6 +113,10 @@ func (handler *AccountingExportHandler) generate(context *gin.Context, monthValu
 		context.JSON(http.StatusNotFound, gin.H{"error": "no data found for the selected filters"})
 		return nil, 0, 0, false
 	}
+	if err := validateAccountingExportGrossTotals(rows); err != nil {
+		context.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return nil, 0, 0, false
+	}
 
 	return generateAccountingExport(rows), month, year, true
 }

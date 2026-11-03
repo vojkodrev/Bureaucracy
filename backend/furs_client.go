@@ -39,6 +39,9 @@ func NewFURSClient(config *AppConfig, requests *FURSSOAPRequestRepository) *FURS
 }
 
 func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int, invoice *Invoice, issuedAt time.Time) (string, string, error) {
+	if err := validateInvoiceGrossTotal(invoice); err != nil {
+		return "", "", err
+	}
 	privateKey, certificate, err := client.credentials()
 	if err != nil {
 		return "", "", err
@@ -217,6 +220,10 @@ func buildFURSInvoiceRequest(config *AppConfig, invoice *Invoice, issuedAt time.
 		}
 		rate := lib.RoundCurrency(*item.TaxRate)
 		total := totals[rate]
+		// NetAmount is the taxable amount reconstructed from the database's
+		// rounded pre-discount amount. GrossAmount is the stored line total.
+		// Deriving tax as their difference keeps every VAT group reconciled with
+		// the invoice amount, including historical invoices.
 		taxable := lib.RoundCurrency(float64OrZero(item.NetAmount))
 		gross := lib.RoundCurrency(float64OrZero(item.GrossAmount))
 		total.taxable += taxable

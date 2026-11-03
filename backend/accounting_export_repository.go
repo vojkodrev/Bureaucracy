@@ -79,8 +79,8 @@ func (repository *AccountingExportRepository) List(
 		LEFT JOIN [%s].[dbo].[RacuniSpecifikacija] racspec
 			ON racspec.Stevilka = rac.Stevilka AND ISNULL(racspec.Deleted, 0) = 0
 		OUTER APPLY (
-			SELECT racspec.ZnesekBrezDavka *
-				(1 - COALESCE(CAST(racspec.Rabat AS float), 0) / 100) AS ItemNet
+			SELECT ROUND(racspec.ZnesekBrezDavka *
+				(1 - COALESCE(CAST(racspec.Rabat AS float), 0) / 100), 2) AS ItemNet
 		) amounts
 		LEFT JOIN [%s].[dbo].[Partner] par ON rac.SifraPartnerja = par.Sifra
 		LEFT JOIN [%s].[dbo].[Artikel] art ON art.Artikel = racspec.Artikel

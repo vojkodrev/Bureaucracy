@@ -35,8 +35,15 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     const taxRateValue = optionalNumber(taxRate)
     const discountValue = optionalNumber(discount) ?? 0
     const netValue = quantityValue == null || unitPriceValue == null ? null : quantityValue * unitPriceValue
-    const discountAmount = netValue == null ? null : roundCurrency(netValue * discountValue / 100)
-    const taxBase = netValue == null ? null : roundCurrency(netValue * (1 - discountValue / 100))
+    // RacuniSpecifikacija persists the rounded pre-discount amount. Calculate the
+    // preview from that same value so saving and reloading cannot move a cent.
+    const storedNetValue = netValue == null ? null : roundCurrency(netValue)
+    const discountAmount = storedNetValue == null
+        ? null
+        : roundCurrency(storedNetValue * discountValue / 100)
+    const taxBase = storedNetValue == null
+        ? null
+        : roundCurrency(storedNetValue * (1 - discountValue / 100))
     const taxAmount = taxBase == null || taxRateValue == null
         ? null
         : roundCurrency(taxBase * taxRateValue / 100)
@@ -84,7 +91,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
                 <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
                     <Field><FieldLabel htmlFor="new-product-net-unit-price">Net unit price</FieldLabel><NumberInput id="new-product-net-unit-price" min="0" step="0.01" value={netPrice} onChange={(event) => setNetPrice(event.target.value)} /></Field>
                     <Field><FieldLabel htmlFor="new-product-tax-base">Taxable amount</FieldLabel><Input id="new-product-tax-base" value={decimalValue(taxBase)} disabled /></Field>
-                    <Field><FieldLabel htmlFor="new-product-net-value">Net amount before discount</FieldLabel><Input id="new-product-net-value" value={decimalValue(netValue)} disabled /></Field>
+                    <Field><FieldLabel htmlFor="new-product-net-value">Net amount before discount</FieldLabel><Input id="new-product-net-value" value={decimalValue(storedNetValue)} disabled /></Field>
                     <div className="grid grid-cols-2 gap-4">
                         <TaxCodeComboboxField id="new-product-tax-code" label="Tax code" value={taxCode} onChange={(selectedCode, rate) => { setTaxCode(selectedCode); setTaxRate(rate == null ? '' : String(rate)) }} />
                         <Field><FieldLabel htmlFor="new-product-tax-rate">VAT rate (%)</FieldLabel><NumberInput id="new-product-tax-rate" step="0.01" value={taxRate} disabled /></Field>

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import WarningAlert from '@/components/WarningAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -112,11 +113,21 @@ function InvoicePage() {
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
         ['tax-confirmation', 'Invoice could not be tax confirmed', 'The invoice was not confirmed by FURS.', taxConfirmation.error],
     ] as const
+    const warnings = [
+        ['invoice-total', 'Invoice total is inconsistent', 'The stored invoice total does not equal the sum of its lines.', 'Review and save the invoice to correct its total.'],
+    ] as const
+    const warningKeys = [
+        ...loader.warnings,
+    ]
+    const hasWarnings = warnings.some(([key]) => warningKeys.includes(key))
 
     return <div className="max-w-6xl p-4">
-        {errors.some(([, , , error]) => error) && <div className="mb-6 space-y-2">
+        {(errors.some(([, , , error]) => error) || hasWarnings) &&
+        <div className="mb-6 space-y-2">
             {errors.map(([key, title, description, error]) => error &&
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
+            {warnings.map(([key, title, description, warning]) => warningKeys.includes(key) &&
+                <WarningAlert key={key} title={title} description={description} warning={warning} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}

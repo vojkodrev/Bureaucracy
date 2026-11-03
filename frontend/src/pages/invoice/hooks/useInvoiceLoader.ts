@@ -4,6 +4,7 @@ import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
+import { roundCurrency, sumCurrency } from '@/lib/numbers'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
     fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
@@ -63,20 +64,34 @@ export function useInvoiceLoader({
     const clearLoadedDraft = useEffectEvent(clearCleanDraft)
     const finishNavigation = useEffectEvent(disallowNavigation)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
-    const [loadResult, setLoadResult] = useState({ requestKey: '__initial__', error: null as string | null })
+    const [loadResult, setLoadResult] = useState({
+        requestKey: '__initial__',
+        error: null as string | null,
+    })
+    const [warningResult, setWarningResult] = useState({
+        requestKey: '__initial__',
+        warnings: [] as string[],
+    })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
+    const warnings = warningResult.requestKey === requestKey ? warningResult.warnings : []
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
         const controller = new AbortController()
         void fetchInvoice(routeInvoiceNumber, controller.signal).then((invoice) => {
             const nextDraft = draftFromInvoice(invoice)
+            const headerTotal = roundCurrency(invoice.amount ?? 0)
+            const lineTotal = sumCurrency((invoice.items ?? []).map((item) => item.grossAmount))
             setInvoiceId(invoice.id ?? null)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
             setLoadResult({ requestKey, error: null })
+            setWarningResult({
+                requestKey,
+                warnings: headerTotal === lineTotal ? [] : ['invoice-total'],
+            })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false
                 toast.add({
@@ -89,6 +104,7 @@ export function useInvoiceLoader({
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
             setLoadResult({ requestKey, error: requestErrorMessage(requestError, 'Loading invoice failed') })
+            setWarningResult({ requestKey, warnings: [] })
         })
         return () => controller.abort()
     }, [requestKey, routeInvoiceNumber])
@@ -181,7 +197,7 @@ export function useInvoiceLoader({
     }
 
     return {
-        invoiceId, setInvoiceId, businessYear, setBusinessYear, isLoading, error,
+        invoiceId, setInvoiceId, businessYear, setBusinessYear, isLoading, error, warnings,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),
         preserveDuplicateDraft: () => { preserveDuplicateRef.current = true },
