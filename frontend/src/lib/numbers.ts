@@ -10,7 +10,8 @@ export function roundCurrency(value: number): number {
 }
 
 export function currencyCents(value: number): number {
-    return Math.round((value + Number.EPSILON) * 100)
+    const scaledValue = value * 100
+    return scaledValue < 0 ? -Math.round(-scaledValue) : Math.round(scaledValue)
 }
 
 export function sumCurrencyCents(values: Array<number | null | undefined>): number {

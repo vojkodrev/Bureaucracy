@@ -38,12 +38,12 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     // RacuniSpecifikacija persists the rounded pre-discount amount. Calculate the
     // preview from that same value so saving and reloading cannot move a cent.
     const storedNetValue = netValue == null ? null : roundCurrency(netValue)
-    const discountAmount = storedNetValue == null
-        ? null
-        : roundCurrency(storedNetValue * discountValue / 100)
     const taxBase = storedNetValue == null
         ? null
         : roundCurrency(storedNetValue * (1 - discountValue / 100))
+    const discountAmount = storedNetValue == null || taxBase == null
+        ? null
+        : roundCurrency(storedNetValue - taxBase)
     const taxAmount = taxBase == null || taxRateValue == null
         ? null
         : roundCurrency(taxBase * taxRateValue / 100)
