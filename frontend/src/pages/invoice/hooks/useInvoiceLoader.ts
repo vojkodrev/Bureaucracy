@@ -4,7 +4,7 @@ import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
-import { roundCurrency, sumCurrency } from '@/lib/numbers'
+import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
     fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
@@ -81,8 +81,13 @@ export function useInvoiceLoader({
         const controller = new AbortController()
         void fetchInvoice(routeInvoiceNumber, controller.signal).then((invoice) => {
             const nextDraft = draftFromInvoice(invoice)
-            const headerTotal = roundCurrency(invoice.amount ?? 0)
-            const lineTotal = sumCurrency((invoice.items ?? []).map((item) => item.grossAmount))
+            const headerTotal = currencyCents(invoice.amount ?? 0)
+            const lineTotal = sumCurrencyCents((invoice.items ?? []).map((item) => item.grossAmount))
+            const hasInconsistentLine = (invoice.items ?? []).some((item) => {
+                const netTotal = currencyCents(item.netAmount ?? 0)
+                const vatTotal = currencyCents((item.netAmount ?? 0) * (item.taxRate ?? 0) / 100)
+                return currencyCents(item.grossAmount ?? 0) !== netTotal + vatTotal
+            })
             setInvoiceId(invoice.id ?? null)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
@@ -90,7 +95,10 @@ export function useInvoiceLoader({
             setLoadResult({ requestKey, error: null })
             setWarningResult({
                 requestKey,
-                warnings: headerTotal === lineTotal ? [] : ['invoice-total'],
+                warnings: [
+                    ...(headerTotal === lineTotal ? [] : ['invoice-total']),
+                    ...(hasInconsistentLine ? ['invoice-line-total'] : []),
+                ],
             })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false

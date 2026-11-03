@@ -96,11 +96,11 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
 	}
-	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
-	printItems, taxSummaries, calculatedGrossTotal := buildPrintItems(invoice.Items)
-	if err := validateCalculatedInvoiceGrossTotal(invoice, calculatedGrossTotal, "print"); err != nil {
+	if err := validateInvoiceGrossTotal(invoice); err != nil {
 		return nil, err
 	}
+	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
+	printItems, taxSummaries, calculatedTotals := buildPrintItems(invoice.Items)
 	netTotal := float64OrZero(invoice.GoodsAmount)
 	grossTotal := float64OrZero(invoice.Amount)
 	if invoice.GoodsAmount == nil {
@@ -109,12 +109,16 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 	if invoice.Amount == nil {
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
+	taxTotal := grossTotal - netTotal
 	introText := trimmedString(invoice.IntroductoryText)
 	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" && deliveryNoteNumber != "New" {
 		if introText != "" {
 			introText += ", "
 		}
 		introText += "dob: " + deliveryNoteNumber
+	}
+	if err := validateCalculatedInvoiceTotals(invoice, netTotal, taxTotal, grossTotal, calculatedTotals); err != nil {
+		return nil, err
 	}
 	paymentQRCode, err := generateUPNQRCode(invoice, displayNumber, grossTotal)
 	if err != nil {
@@ -139,7 +143,7 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		IntroText:     introText,
 		Items:         printItems,
 		NetTotal:      formatMoneyAmount(netTotal),
-		TaxTotal:      formatMoneyAmount(grossTotal - netTotal),
+		TaxTotal:      formatMoneyAmount(taxTotal),
 		GrossTotal:    formatMoneyAmount(grossTotal),
 		AmountInWords: amountInWords(grossTotal),
 		TaxSummaries:  taxSummaries,
@@ -200,14 +204,16 @@ func foreignCustomerCountry(code *string, name *string) string {
 	return valueOrDefault(name, trimmedString(code))
 }
 
-func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax, float64) {
+func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax, calculatedInvoiceTotals) {
 	printItems := make([]invoicePrintItem, 0, len(items))
 	taxGroups := make(map[float64][2]float64)
+	calculatedTotals := calculatedInvoiceTotals{}
 	for index, item := range items {
 		if item == nil {
 			continue
 		}
 		amounts := calculateInvoiceItemAmounts(item)
+		calculatedTotals.gross += lib.CurrencyCents(amounts.GrossAmount)
 		group := taxGroups[amounts.TaxRate]
 		taxGroups[amounts.TaxRate] = [2]float64{group[0] + amounts.NetAmount, group[1] + amounts.GrossAmount - amounts.NetAmount}
 
@@ -236,10 +242,10 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 	}
 	sort.Float64s(rates)
 	taxes := make([]invoicePrintTax, 0, len(rates))
-	calculatedGrossTotal := 0.0
 	for _, rate := range rates {
 		amounts := taxGroups[rate]
-		calculatedGrossTotal += lib.RoundCurrency(amounts[0]) + lib.RoundCurrency(amounts[1])
+		calculatedTotals.net += lib.CurrencyCents(amounts[0])
+		calculatedTotals.vat += lib.CurrencyCents(amounts[1])
 		taxes = append(taxes, invoicePrintTax{
 			Description: "DDV " + formatPercentage(rate),
 			Rate:        formatMoneyAmount(rate),
@@ -247,7 +253,7 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 			TaxAmount:   formatMoneyAmount(amounts[1]),
 		})
 	}
-	return printItems, taxes, lib.RoundCurrency(calculatedGrossTotal)
+	return printItems, taxes, calculatedTotals
 }
 
 func sumInvoiceNet(items []*InvoiceItem) float64 {

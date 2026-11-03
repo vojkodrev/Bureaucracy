@@ -115,6 +115,7 @@ function InvoicePage() {
     ] as const
     const warnings = [
         ['invoice-total', 'Invoice total is inconsistent', 'The stored invoice total does not equal the sum of its lines.', 'Review and save the invoice to correct its total.'],
+        ['invoice-line-total', 'Invoice line total is inconsistent', 'At least one line gross amount does not equal its net amount plus VAT.', 'Review and save the invoice lines to correct their totals.'],
     ] as const
     const warningKeys = [
         ...loader.warnings,

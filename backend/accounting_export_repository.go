@@ -19,6 +19,8 @@ type AccountingExportRow struct {
 	ItemGross       sql.NullFloat64
 	ItemTax         sql.NullFloat64
 	ItemNet         sql.NullFloat64
+	ItemTaxRate     sql.NullFloat64
+	ItemSequence    sql.NullInt64
 	ItemDescription sql.NullString
 	CustomerTaxID   sql.NullString
 	CustomerName    sql.NullString
@@ -71,6 +73,8 @@ func (repository *AccountingExportRepository) List(
 			racspec.Znesek,
 			racspec.Znesek - amounts.ItemNet,
 			amounts.ItemNet,
+			CAST(COALESCE(pd.Procent, art.Davek) AS float),
+			racspec.Zaporedje,
 			art.Opis,
 			par.IDStevilka,
 			rac.ImePartnerja,
@@ -84,10 +88,11 @@ func (repository *AccountingExportRepository) List(
 		) amounts
 		LEFT JOIN [%s].[dbo].[Partner] par ON rac.SifraPartnerja = par.Sifra
 		LEFT JOIN [%s].[dbo].[Artikel] art ON art.Artikel = racspec.Artikel
+		LEFT JOIN [%s].[dbo].[PrometniDavek] pd ON pd.Sifra = racspec.SifraDavka
 		WHERE (@from IS NULL OR (rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to))
 			AND (@numberFrom = '' OR rac.Stevilka >= @numberFrom)
 			AND (@numberTo = '' OR rac.Stevilka <= @numberTo)
-		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
+		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
 		sql.Named("from", from),
 		sql.Named("to", to),
 		sql.Named("numberFrom", numberFrom),
@@ -104,7 +109,7 @@ func (repository *AccountingExportRepository) List(
 		if err := rows.Scan(
 			&row.IssueDate, &row.ServiceDate, &row.DueDate, &row.InvoiceNumber,
 			&row.InvoiceGross, &row.InvoiceTax, &row.InvoiceNet,
-			&row.ItemGross, &row.ItemTax, &row.ItemNet, &row.ItemDescription,
+			&row.ItemGross, &row.ItemTax, &row.ItemNet, &row.ItemTaxRate, &row.ItemSequence, &row.ItemDescription,
 			&row.CustomerTaxID, &row.CustomerName, &row.ProductCode,
 		); err != nil {
 			return nil, fmt.Errorf("scan accounting export: %w", err)

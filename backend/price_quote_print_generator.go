@@ -39,7 +39,7 @@ func (generator *PriceQuotePrintGenerator) Generate(
 		return nil, fmt.Errorf("price quote is required")
 	}
 	displayNumber := fmt.Sprintf("%s-%d", quote.QuoteNumber, businessYear)
-	items, taxes := buildPrintItems(quote.Items)
+	items, taxes, _ := buildPrintItems(quote.Items)
 	netTotal := sumInvoiceNet(quote.Items)
 	grossTotal := float64OrZero(quote.Amount)
 	if quote.Amount == nil {
