@@ -26,6 +26,7 @@ func NewHTTPServer(
 	authMiddleware *AuthMiddleware,
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
+	creditNotePrintHandler *CreditNotePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
 	invoiceHalcomHandler *InvoiceHalcomHandler,
 	invoiceTaxConfirmationHandler *InvoiceTaxConfirmationHandler,
@@ -35,6 +36,7 @@ func NewHTTPServer(
 	invoiceReminderHandler *InvoiceReminderHandler,
 	invoiceReminderEmailHandler *InvoiceReminderEmailHandler,
 	invoiceEmailHandler *InvoiceEmailHandler,
+	creditNoteEmailHandler *CreditNoteEmailHandler,
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
@@ -79,6 +81,8 @@ func NewHTTPServer(
 	admin.Use(RequireAnyRole(adminRole))
 	admin.GET("/", gin.WrapH(playgroundHandler))
 	admin.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	admin.GET("/api/credit-notes/:creditNoteNumber/pdf", creditNotePrintHandler.Handle)
+	admin.POST("/api/credit-notes/:creditNoteNumber/email", creditNoteEmailHandler.Send)
 	admin.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
 	admin.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
 	admin.POST("/api/invoices/:invoiceNumber/tax-confirmation", invoiceTaxConfirmationHandler.Handle)

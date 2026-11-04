@@ -193,6 +193,63 @@ type InvoiceItem {
   discount: Float
   netAmount: Float
   grossAmount: Float
+  originalInvoiceNumber: String
+}
+
+type CreditNote {
+  id: Int!
+  creditNoteNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerPostalCode: String
+  customerCity: String
+  customerCountry: String
+  currency: String
+  amount: Float
+  goodsAmount: Float
+  introductoryText: String
+  closingText: String
+  cancelled: Boolean
+  items: [InvoiceItem!]!
+}
+
+type CreditNotePage {
+  creditNotes: [CreditNote!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+input CreditNoteItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+  originalInvoiceNumber: String
+}
+
+input CreditNoteInput {
+  id: Int
+  creditNoteNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  introductoryText: String
+  closingText: String
+  items: [CreditNoteItemInput!]!
 }
 
 type InvoicePage {
@@ -596,6 +653,24 @@ type Query {
     invoiceNumber: String!
   ): Invoice
 
+  creditNote(businessYear: String!, creditNoteNumber: String!): CreditNote
+
+  searchCreditNotes(
+    businessYear: String!
+    creditNoteNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    originalInvoiceNumber: String
+    issuedFrom: Time
+    issuedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): CreditNotePage!
+
   invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
 
   priceQuote(businessYear: String!, quoteNumber: String!): PriceQuote
@@ -741,6 +816,7 @@ type Mutation {
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
+  saveCreditNote(businessYear: String!, creditNote: CreditNoteInput!): CreditNote!
   savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
   saveDeliveryNote(businessYear: String!, deliveryNote: DeliveryNoteInput!): DeliveryNote!
   saveProduct(businessYear: String!, product: ProductInput!): Product!

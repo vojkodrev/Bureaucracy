@@ -17,6 +17,7 @@ const labels: Record<string, string> = {
     "/inventory-items/search": "Inventory item search",
     "/inventory-item": "Inventory item",
     "/invoices/search": "Invoice search",
+    "/credit-notes/search": "Credit note search",
     "/goods-receipts/search": "Goods receipt search",
     "/price-quotes/search": "Price quote search",
     "/delivery-notes/search": "Delivery note search",
@@ -58,6 +59,13 @@ function getBreadcrumbContext(pathname: string): BreadcrumbContext {
             editLabel: "Invoice",
             searchPath: "/invoices/search",
             searchLabel: "Invoice search",
+        },
+        {
+            prefix: "/credit-note/",
+            editPath: "/credit-note",
+            editLabel: "Credit note",
+            searchPath: "/credit-notes/search",
+            searchLabel: "Credit note search",
         },
         {
             prefix: "/price-quote/",

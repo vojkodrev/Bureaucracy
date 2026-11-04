@@ -34,6 +34,7 @@ export type InvoiceItem = {
     discount: number | null
     netAmount: number | null
     grossAmount: number | null
+    originalInvoiceNumber?: string | null
 }
 
 export type InvoicePage = {

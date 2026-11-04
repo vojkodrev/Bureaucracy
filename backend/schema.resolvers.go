@@ -37,17 +37,18 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SaveCreditNote is the resolver for the saveCreditNote field.
+func (r *mutationResolver) SaveCreditNote(ctx context.Context, businessYear string, creditNote model.CreditNoteInput) (*CreditNote, error) {
+	return r.CreditNotes.Save(ctx, businessYear, creditNote)
+}
+
 // SavePriceQuote is the resolver for the savePriceQuote field.
 func (r *mutationResolver) SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error) {
 	return r.PriceQuotes.Save(ctx, businessYear, priceQuote)
 }
 
 // SaveDeliveryNote is the resolver for the saveDeliveryNote field.
-func (r *mutationResolver) SaveDeliveryNote(
-	ctx context.Context,
-	businessYear string,
-	deliveryNote model.DeliveryNoteInput,
-) (*DeliveryNote, error) {
+func (r *mutationResolver) SaveDeliveryNote(ctx context.Context, businessYear string, deliveryNote model.DeliveryNoteInput) (*DeliveryNote, error) {
 	return r.DeliveryNotes.Save(ctx, businessYear, deliveryNote)
 }
 
@@ -188,6 +189,39 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
 }
 
+// CreditNote is the resolver for the creditNote field.
+func (r *queryResolver) CreditNote(ctx context.Context, businessYear string, creditNoteNumber string) (*CreditNote, error) {
+	return r.CreditNotes.GetByNumber(ctx, businessYear, creditNoteNumber)
+}
+
+// SearchCreditNotes is the resolver for the searchCreditNotes field.
+func (r *queryResolver) SearchCreditNotes(ctx context.Context, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CreditNotePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.CreditNotes.Search(
+		ctx,
+		businessYear,
+		creditNoteNumber,
+		customerID,
+		customerName,
+		productCode,
+		productName,
+		originalInvoiceNumber,
+		issuedFrom,
+		issuedTo,
+		sortBy,
+		sortDirection,
+		resultPage,
+		resultPageSize,
+	)
+}
+
 // InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
 func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
 	return r.Invoices.GetTextTemplate(ctx, businessYear)
@@ -204,19 +238,12 @@ func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear
 }
 
 // DeliveryNote is the resolver for the deliveryNote field.
-func (r *queryResolver) DeliveryNote(
-	ctx context.Context,
-	businessYear string,
-	deliveryNoteNumber string,
-) (*DeliveryNote, error) {
+func (r *queryResolver) DeliveryNote(ctx context.Context, businessYear string, deliveryNoteNumber string) (*DeliveryNote, error) {
 	return r.DeliveryNotes.GetByNumber(ctx, businessYear, deliveryNoteNumber)
 }
 
 // DeliveryNoteTextTemplate is the resolver for the deliveryNoteTextTemplate field.
-func (r *queryResolver) DeliveryNoteTextTemplate(
-	ctx context.Context,
-	businessYear string,
-) (*DeliveryNoteTextTemplate, error) {
+func (r *queryResolver) DeliveryNoteTextTemplate(ctx context.Context, businessYear string) (*DeliveryNoteTextTemplate, error) {
 	return r.DeliveryNotes.GetTextTemplate(ctx, businessYear)
 }
 
@@ -289,21 +316,7 @@ func (r *queryResolver) SearchPriceQuotes(ctx context.Context, businessYear stri
 }
 
 // SearchDeliveryNotes is the resolver for the searchDeliveryNotes field.
-func (r *queryResolver) SearchDeliveryNotes(
-	ctx context.Context,
-	businessYear string,
-	deliveryNoteNumber *string,
-	customerID *string,
-	customerName *string,
-	productCode *string,
-	productName *string,
-	issuedFrom *time.Time,
-	issuedTo *time.Time,
-	sortBy *string,
-	sortDirection *string,
-	page *int,
-	pageSize *int,
-) (*DeliveryNotePage, error) {
+func (r *queryResolver) SearchDeliveryNotes(ctx context.Context, businessYear string, deliveryNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*DeliveryNotePage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page

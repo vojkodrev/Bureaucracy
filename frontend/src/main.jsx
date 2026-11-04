@@ -15,6 +15,8 @@ import {
     ExportDataPage,
     InvoicePage,
     InvoiceSearchPage,
+    CreditNoteSearchPage,
+    CreditNotePage,
     GoodsReceiptSearchPage,
     GoodsReceiptPage,
     InventoryItemSearchPage,
@@ -66,6 +68,8 @@ function createRouter() {
                 { path: "/customers/search", element: <CustomerSearchPage /> },
                 { path: "/customer/:customerId?", element: <CustomerPage /> },
                 { path: "/invoices/search", element: <InvoiceSearchPage /> },
+                { path: "/credit-notes/search", element: <CreditNoteSearchPage /> },
+                { path: "/credit-note/:creditNoteNumber?", element: <CreditNotePage /> },
                 { path: "/goods-receipts/search", element: <GoodsReceiptSearchPage /> },
                 {
                     path: "/goods-receipt/:receiptNumber?",

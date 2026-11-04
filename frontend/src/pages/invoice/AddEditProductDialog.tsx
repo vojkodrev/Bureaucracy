@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ProductPickerField from '@/components/product-search/ProductPickerField'
+import InvoicePickerField from '@/components/invoice-search/InvoicePickerField'
 import TaxCodeComboboxField from '@/components/TaxCodeComboboxField'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -14,6 +15,7 @@ type AddEditProductDialogProps = {
     item: InvoiceItem | null
     onOpenChange: (open: boolean) => void
     onSave: (item: InvoiceItem) => void
+    showOriginalInvoice?: boolean
 }
 
 const optionalNumber = (value: string) => value.trim() && Number.isFinite(Number(value)) ? Number(value) : null
@@ -22,7 +24,13 @@ const editableNumberValue = (value: number | null) => value == null
     ? ''
     : String(Number(value.toPrecision(15)))
 
-function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProductDialogProps) {
+function AddEditProductDialog({
+    open,
+    item,
+    onOpenChange,
+    onSave,
+    showOriginalInvoice = false,
+}: AddEditProductDialogProps) {
     const effectiveTaxRate = item?.taxRate ?? (item?.unitPrice && item.unitTaxAmount != null ? item.unitTaxAmount / item.unitPrice * 100 : null)
     const [code, setCode] = useState(item?.productCode ?? '')
     const [name, setName] = useState(item?.productName ?? '')
@@ -32,6 +40,9 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
     const [taxRate, setTaxRate] = useState(effectiveTaxRate == null ? '' : String(effectiveTaxRate))
     const [taxCode, setTaxCode] = useState(item?.taxCode ?? '')
     const [discount, setDiscount] = useState(item?.discount == null ? '0' : String(item.discount))
+    const [originalInvoiceNumber, setOriginalInvoiceNumber] = useState(
+        item?.originalInvoiceNumber ?? '',
+    )
 
     const quantityValue = optionalNumber(quantity)
     const unitPriceValue = optionalNumber(netPrice)
@@ -79,6 +90,7 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
         discount: discountValue,
         netAmount: taxBase,
         grossAmount: grossValue,
+        originalInvoiceNumber: originalInvoiceNumber.trim() || null,
     })
 
     return (
@@ -90,6 +102,15 @@ function AddEditProductDialog({ open, item, onOpenChange, onSave }: AddEditProdu
                     <Field><FieldLabel htmlFor="new-product-name">Product name</FieldLabel><Input id="new-product-name" value={name} onChange={(event) => setName(event.target.value)} /></Field>
                     <Field><FieldLabel htmlFor="new-product-unit">Unit</FieldLabel><Input id="new-product-unit" value={unit} onChange={(event) => setUnit(event.target.value)} /></Field>
                     <Field className="sm:col-start-1"><FieldLabel htmlFor="new-product-quantity">Quantity</FieldLabel><NumberInput id="new-product-quantity" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} /></Field>
+                    {showOriginalInvoice && (
+                        <InvoicePickerField
+                            id="new-product-original-invoice"
+                            label="Original invoice"
+                            name="originalInvoiceNumber"
+                            invoiceNumber={originalInvoiceNumber}
+                            onInvoiceNumberChange={setOriginalInvoiceNumber}
+                        />
+                    )}
                 </div>
                 <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
                     <Field><FieldLabel htmlFor="new-product-net-unit-price">Net unit price</FieldLabel><NumberInput id="new-product-net-unit-price" min="0" step="0.01" value={netPrice} onChange={(event) => setNetPrice(event.target.value)} /></Field>

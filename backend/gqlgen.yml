@@ -114,6 +114,12 @@ models:
   InvoiceItem:
     model:
       - bureaucracy/backend.InvoiceItem
+  CreditNote:
+    model:
+      - bureaucracy/backend.CreditNote
+  CreditNotePage:
+    model:
+      - bureaucracy/backend.CreditNotePage
   Product:
     model:
       - bureaucracy/backend.Product

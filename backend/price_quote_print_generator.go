@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+
+	"bureaucracy/backend/lib"
 )
 
 //go:embed print/price-quote/template.html
@@ -68,7 +70,8 @@ func (generator *PriceQuotePrintGenerator) Generate(
 		},
 		IntroText: trimmedString(quote.IntroductoryText), Items: items,
 		NetTotal: formatMoneyAmount(netTotal), TaxTotal: formatMoneyAmount(taxTotal),
-		GrossTotal: formatMoneyAmount(grossTotal), AmountInWords: amountInWords(grossTotal),
+		GrossTotal:    formatMoneyAmount(grossTotal),
+		AmountInWords: lib.SlovenianAmountInWords(grossTotal),
 		TaxSummaries:  taxes,
 		ClosingText:   strings.ReplaceAll(trimmedString(quote.ClosingText), "#ŠTEVILKA#", displayNumber),
 		PaymentQRCode: paymentQRCode,

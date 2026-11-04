@@ -23,6 +23,8 @@ export const GoodsReceiptPage = lazy(
     () => import("./goods-receipt/GoodsReceiptPage"),
 );
 export const InvoicePage = lazy(() => import("./invoice/InvoicePage"));
+export const CreditNoteSearchPage = lazy(() => import("./CreditNoteSearchPage"));
+export const CreditNotePage = lazy(() => import("./credit-note/CreditNotePage"));
 export const InventoryItemSearchPage = lazy(
     () => import("./InventoryItemSearchPage"),
 );

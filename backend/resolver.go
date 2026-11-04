@@ -8,6 +8,7 @@ type Resolver struct {
 	CountryRepository      *CountryRepository
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
+	CreditNotes            *CreditNoteRepository
 	InventoryItems         *InventoryItemRepository
 	GoodsReceipts          *GoodsReceiptRepository
 	PriceQuotes            *PriceQuoteRepository
@@ -24,6 +25,7 @@ func NewResolver(
 	countries *CountryRepository,
 	customers *CustomerRepository,
 	invoices *InvoiceRepository,
+	creditNotes *CreditNoteRepository,
 	inventoryItems *InventoryItemRepository,
 	goodsReceipts *GoodsReceiptRepository,
 	priceQuotes *PriceQuoteRepository,
@@ -39,6 +41,7 @@ func NewResolver(
 		CountryRepository:      countries,
 		Customers:              customers,
 		Invoices:               invoices,
+		CreditNotes:            creditNotes,
 		InventoryItems:         inventoryItems,
 		GoodsReceipts:          goodsReceipts,
 		PriceQuotes:            priceQuotes,

@@ -120,6 +120,14 @@ const sections: Section[] = [
         entityLabel: "Invoice",
     },
     {
+        key: "credit-notes",
+        label: "Credit notes",
+        icon: FileText,
+        searchPath: "/credit-notes/search",
+        entityPath: "/credit-note",
+        entityLabel: "Credit note",
+    },
+    {
         key: "bank-statements",
         label: "Bank statements",
         icon: Landmark,
@@ -143,6 +151,7 @@ const sectionGroups = [
             "price-quotes",
             "delivery-notes",
             "invoices",
+            "credit-notes",
         ],
     },
     {

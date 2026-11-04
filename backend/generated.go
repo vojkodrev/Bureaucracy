@@ -114,6 +114,35 @@ type ComplexityRoot struct {
 		Name func(childComplexity int) int
 	}
 
+	CreditNote struct {
+		Amount             func(childComplexity int) int
+		Cancelled          func(childComplexity int) int
+		ClosingText        func(childComplexity int) int
+		CreditNoteNumber   func(childComplexity int) int
+		Currency           func(childComplexity int) int
+		CustomerAddress    func(childComplexity int) int
+		CustomerCity       func(childComplexity int) int
+		CustomerCode       func(childComplexity int) int
+		CustomerCountry    func(childComplexity int) int
+		CustomerName       func(childComplexity int) int
+		CustomerPostalCode func(childComplexity int) int
+		DueDate            func(childComplexity int) int
+		GoodsAmount        func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		IntroductoryText   func(childComplexity int) int
+		IssueDate          func(childComplexity int) int
+		Items              func(childComplexity int) int
+		ServiceDate        func(childComplexity int) int
+	}
+
+	CreditNotePage struct {
+		CreditNotes func(childComplexity int) int
+		Page        func(childComplexity int) int
+		PageSize    func(childComplexity int) int
+		TotalCount  func(childComplexity int) int
+		TotalPages  func(childComplexity int) int
+	}
+
 	Customer struct {
 		Address            func(childComplexity int) int
 		BIC                func(childComplexity int) int
@@ -271,19 +300,20 @@ type ComplexityRoot struct {
 	}
 
 	InvoiceItem struct {
-		Discount      func(childComplexity int) int
-		GrossAmount   func(childComplexity int) int
-		ID            func(childComplexity int) int
-		NetAmount     func(childComplexity int) int
-		ProductCode   func(childComplexity int) int
-		ProductName   func(childComplexity int) int
-		Quantity      func(childComplexity int) int
-		Sequence      func(childComplexity int) int
-		TaxCode       func(childComplexity int) int
-		TaxRate       func(childComplexity int) int
-		Unit          func(childComplexity int) int
-		UnitPrice     func(childComplexity int) int
-		UnitTaxAmount func(childComplexity int) int
+		Discount              func(childComplexity int) int
+		GrossAmount           func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		NetAmount             func(childComplexity int) int
+		OriginalInvoiceNumber func(childComplexity int) int
+		ProductCode           func(childComplexity int) int
+		ProductName           func(childComplexity int) int
+		Quantity              func(childComplexity int) int
+		Sequence              func(childComplexity int) int
+		TaxCode               func(childComplexity int) int
+		TaxRate               func(childComplexity int) int
+		Unit                  func(childComplexity int) int
+		UnitPrice             func(childComplexity int) int
+		UnitTaxAmount         func(childComplexity int) int
 	}
 
 	InvoicePage struct {
@@ -306,6 +336,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
+		SaveCreditNote      func(childComplexity int, businessYear string, creditNote model.CreditNoteInput) int
 		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
 		SaveDeliveryNote    func(childComplexity int, businessYear string, deliveryNote model.DeliveryNoteInput) int
 		SaveGoodsReceipt    func(childComplexity int, businessYear string, goodsReceipt model.GoodsReceiptInput) int
@@ -402,6 +433,7 @@ type ComplexityRoot struct {
 		BusinessYear                    func(childComplexity int, code string) int
 		BusinessYears                   func(childComplexity int, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		Countries                       func(childComplexity int, businessYear string) int
+		CreditNote                      func(childComplexity int, businessYear string, creditNoteNumber string) int
 		CurrentBusinessYear             func(childComplexity int) int
 		Customer                        func(childComplexity int, businessYear string, customerID string) int
 		DeliveryNote                    func(childComplexity int, businessYear string, deliveryNoteNumber string) int
@@ -420,6 +452,7 @@ type ComplexityRoot struct {
 		Product                         func(childComplexity int, businessYear string, productCode string) int
 		ProductInvoiceCounts            func(childComplexity int, businessYear string, productCodes []string) int
 		SearchBankStatements            func(childComplexity int, businessYear string, dateFrom *time.Time, dateTo *time.Time, statementNumber *int, documentNumber *string, reference *string, bankAccount *string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
+		SearchCreditNotes               func(childComplexity int, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchCustomers                 func(childComplexity int, businessYear string, customerID *string, customerName *string, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchDeliveryNotes             func(childComplexity int, businessYear string, deliveryNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
 		SearchGoodsReceipts             func(childComplexity int, businessYear string, inventoryItemCode *string, inventoryItemName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) int
@@ -456,6 +489,7 @@ type MutationResolver interface {
 	SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error)
 	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
+	SaveCreditNote(ctx context.Context, businessYear string, creditNote model.CreditNoteInput) (*CreditNote, error)
 	SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error)
 	SaveDeliveryNote(ctx context.Context, businessYear string, deliveryNote model.DeliveryNoteInput) (*DeliveryNote, error)
 	SaveProduct(ctx context.Context, businessYear string, product model.ProductInput) (*Product, error)
@@ -483,6 +517,8 @@ type QueryResolver interface {
 	BusinessYears(ctx context.Context, sortBy *string, sortDirection *string, page *int, pageSize *int) (*BusinessYearPage, error)
 	Countries(ctx context.Context, businessYear string) ([]*Country, error)
 	Invoice(ctx context.Context, businessYear string, invoiceNumber string) (*Invoice, error)
+	CreditNote(ctx context.Context, businessYear string, creditNoteNumber string) (*CreditNote, error)
+	SearchCreditNotes(ctx context.Context, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CreditNotePage, error)
 	InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error)
 	PriceQuote(ctx context.Context, businessYear string, quoteNumber string) (*PriceQuote, error)
 	PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error)
@@ -818,6 +854,146 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Country.Name(childComplexity), true
+
+	case "CreditNote.amount":
+		if e.ComplexityRoot.CreditNote.Amount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.Amount(childComplexity), true
+	case "CreditNote.cancelled":
+		if e.ComplexityRoot.CreditNote.Cancelled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.Cancelled(childComplexity), true
+	case "CreditNote.closingText":
+		if e.ComplexityRoot.CreditNote.ClosingText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.ClosingText(childComplexity), true
+	case "CreditNote.creditNoteNumber":
+		if e.ComplexityRoot.CreditNote.CreditNoteNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CreditNoteNumber(childComplexity), true
+	case "CreditNote.currency":
+		if e.ComplexityRoot.CreditNote.Currency == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.Currency(childComplexity), true
+	case "CreditNote.customerAddress":
+		if e.ComplexityRoot.CreditNote.CustomerAddress == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerAddress(childComplexity), true
+	case "CreditNote.customerCity":
+		if e.ComplexityRoot.CreditNote.CustomerCity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerCity(childComplexity), true
+	case "CreditNote.customerCode":
+		if e.ComplexityRoot.CreditNote.CustomerCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerCode(childComplexity), true
+	case "CreditNote.customerCountry":
+		if e.ComplexityRoot.CreditNote.CustomerCountry == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerCountry(childComplexity), true
+	case "CreditNote.customerName":
+		if e.ComplexityRoot.CreditNote.CustomerName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerName(childComplexity), true
+	case "CreditNote.customerPostalCode":
+		if e.ComplexityRoot.CreditNote.CustomerPostalCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.CustomerPostalCode(childComplexity), true
+	case "CreditNote.dueDate":
+		if e.ComplexityRoot.CreditNote.DueDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.DueDate(childComplexity), true
+	case "CreditNote.goodsAmount":
+		if e.ComplexityRoot.CreditNote.GoodsAmount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.GoodsAmount(childComplexity), true
+	case "CreditNote.id":
+		if e.ComplexityRoot.CreditNote.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.ID(childComplexity), true
+	case "CreditNote.introductoryText":
+		if e.ComplexityRoot.CreditNote.IntroductoryText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.IntroductoryText(childComplexity), true
+	case "CreditNote.issueDate":
+		if e.ComplexityRoot.CreditNote.IssueDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.IssueDate(childComplexity), true
+	case "CreditNote.items":
+		if e.ComplexityRoot.CreditNote.Items == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.Items(childComplexity), true
+	case "CreditNote.serviceDate":
+		if e.ComplexityRoot.CreditNote.ServiceDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.ServiceDate(childComplexity), true
+
+	case "CreditNotePage.creditNotes":
+		if e.ComplexityRoot.CreditNotePage.CreditNotes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNotePage.CreditNotes(childComplexity), true
+	case "CreditNotePage.page":
+		if e.ComplexityRoot.CreditNotePage.Page == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNotePage.Page(childComplexity), true
+	case "CreditNotePage.pageSize":
+		if e.ComplexityRoot.CreditNotePage.PageSize == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNotePage.PageSize(childComplexity), true
+	case "CreditNotePage.totalCount":
+		if e.ComplexityRoot.CreditNotePage.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNotePage.TotalCount(childComplexity), true
+	case "CreditNotePage.totalPages":
+		if e.ComplexityRoot.CreditNotePage.TotalPages == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNotePage.TotalPages(childComplexity), true
 
 	case "Customer.address":
 		if e.ComplexityRoot.Customer.Address == nil {
@@ -1524,6 +1700,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.InvoiceItem.NetAmount(childComplexity), true
+	case "InvoiceItem.originalInvoiceNumber":
+		if e.ComplexityRoot.InvoiceItem.OriginalInvoiceNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.InvoiceItem.OriginalInvoiceNumber(childComplexity), true
 	case "InvoiceItem.productCode":
 		if e.ComplexityRoot.InvoiceItem.ProductCode == nil {
 			break
@@ -1647,6 +1829,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveBankStatement(childComplexity, args["businessYear"].(string), args["statement"].(model.BankStatementInput)), true
+	case "Mutation.saveCreditNote":
+		if e.ComplexityRoot.Mutation.SaveCreditNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveCreditNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveCreditNote(childComplexity, args["businessYear"].(string), args["creditNote"].(model.CreditNoteInput)), true
 	case "Mutation.saveCustomer":
 		if e.ComplexityRoot.Mutation.SaveCustomer == nil {
 			break
@@ -2150,6 +2343,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Countries(childComplexity, args["businessYear"].(string)), true
+	case "Query.creditNote":
+		if e.ComplexityRoot.Query.CreditNote == nil {
+			break
+		}
+
+		args, err := ec.field_Query_creditNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.CreditNote(childComplexity, args["businessYear"].(string), args["creditNoteNumber"].(string)), true
 	case "Query.currentBusinessYear":
 		if e.ComplexityRoot.Query.CurrentBusinessYear == nil {
 			break
@@ -2344,6 +2548,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.SearchBankStatements(childComplexity, args["businessYear"].(string), args["dateFrom"].(*time.Time), args["dateTo"].(*time.Time), args["statementNumber"].(*int), args["documentNumber"].(*string), args["reference"].(*string), args["bankAccount"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
+	case "Query.searchCreditNotes":
+		if e.ComplexityRoot.Query.SearchCreditNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchCreditNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.SearchCreditNotes(childComplexity, args["businessYear"].(string), args["creditNoteNumber"].(*string), args["customerId"].(*string), args["customerName"].(*string), args["productCode"].(*string), args["productName"].(*string), args["originalInvoiceNumber"].(*string), args["issuedFrom"].(*time.Time), args["issuedTo"].(*time.Time), args["sortBy"].(*string), args["sortDirection"].(*string), args["page"].(*int), args["pageSize"].(*int)), true
 	case "Query.searchCustomers":
 		if e.ComplexityRoot.Query.SearchCustomers == nil {
 			break
@@ -2514,6 +2729,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBankStatementEntryInput,
 		ec.unmarshalInputBankStatementInput,
+		ec.unmarshalInputCreditNoteInput,
+		ec.unmarshalInputCreditNoteItemInput,
 		ec.unmarshalInputCustomerInput,
 		ec.unmarshalInputDeliveryNoteInput,
 		ec.unmarshalInputDeliveryNoteItemInput,
@@ -2767,6 +2984,64 @@ func (ec *executionContext) childFields_Country(ctx context.Context, field graph
 		return ec.fieldContext_Country_name(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Country", field.Name)
+}
+
+func (ec *executionContext) childFields_CreditNote(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_CreditNote_id(ctx, field)
+	case "creditNoteNumber":
+		return ec.fieldContext_CreditNote_creditNoteNumber(ctx, field)
+	case "issueDate":
+		return ec.fieldContext_CreditNote_issueDate(ctx, field)
+	case "serviceDate":
+		return ec.fieldContext_CreditNote_serviceDate(ctx, field)
+	case "dueDate":
+		return ec.fieldContext_CreditNote_dueDate(ctx, field)
+	case "customerCode":
+		return ec.fieldContext_CreditNote_customerCode(ctx, field)
+	case "customerName":
+		return ec.fieldContext_CreditNote_customerName(ctx, field)
+	case "customerAddress":
+		return ec.fieldContext_CreditNote_customerAddress(ctx, field)
+	case "customerPostalCode":
+		return ec.fieldContext_CreditNote_customerPostalCode(ctx, field)
+	case "customerCity":
+		return ec.fieldContext_CreditNote_customerCity(ctx, field)
+	case "customerCountry":
+		return ec.fieldContext_CreditNote_customerCountry(ctx, field)
+	case "currency":
+		return ec.fieldContext_CreditNote_currency(ctx, field)
+	case "amount":
+		return ec.fieldContext_CreditNote_amount(ctx, field)
+	case "goodsAmount":
+		return ec.fieldContext_CreditNote_goodsAmount(ctx, field)
+	case "introductoryText":
+		return ec.fieldContext_CreditNote_introductoryText(ctx, field)
+	case "closingText":
+		return ec.fieldContext_CreditNote_closingText(ctx, field)
+	case "cancelled":
+		return ec.fieldContext_CreditNote_cancelled(ctx, field)
+	case "items":
+		return ec.fieldContext_CreditNote_items(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CreditNote", field.Name)
+}
+
+func (ec *executionContext) childFields_CreditNotePage(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "creditNotes":
+		return ec.fieldContext_CreditNotePage_creditNotes(ctx, field)
+	case "totalCount":
+		return ec.fieldContext_CreditNotePage_totalCount(ctx, field)
+	case "page":
+		return ec.fieldContext_CreditNotePage_page(ctx, field)
+	case "pageSize":
+		return ec.fieldContext_CreditNotePage_pageSize(ctx, field)
+	case "totalPages":
+		return ec.fieldContext_CreditNotePage_totalPages(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type CreditNotePage", field.Name)
 }
 
 func (ec *executionContext) childFields_Customer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3109,6 +3384,8 @@ func (ec *executionContext) childFields_InvoiceItem(ctx context.Context, field g
 		return ec.fieldContext_InvoiceItem_netAmount(ctx, field)
 	case "grossAmount":
 		return ec.fieldContext_InvoiceItem_grossAmount(ctx, field)
+	case "originalInvoiceNumber":
+		return ec.fieldContext_InvoiceItem_originalInvoiceNumber(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type InvoiceItem", field.Name)
 }
@@ -3462,6 +3739,28 @@ func (ec *executionContext) field_Mutation_saveBankStatement_args(ctx context.Co
 		return nil, err
 	}
 	args["statement"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveCreditNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "creditNote",
+		func(ctx context.Context, v any) (model.CreditNoteInput, error) {
+			return ec.unmarshalNCreditNoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["creditNote"] = arg1
 	return args, nil
 }
 
@@ -3828,6 +4127,28 @@ func (ec *executionContext) field_Query_countries_args(ctx context.Context, rawA
 		return nil, err
 	}
 	args["businessYear"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_creditNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "creditNoteNumber",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["creditNoteNumber"] = arg1
 	return args, nil
 }
 
@@ -4218,6 +4539,116 @@ func (ec *executionContext) field_Query_searchBankStatements_args(ctx context.Co
 		return nil, err
 	}
 	args["customerName"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortBy"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["sortDirection"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["page"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["pageSize"] = arg12
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchCreditNotes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "creditNoteNumber",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["creditNoteNumber"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["customerName"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "originalInvoiceNumber",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["originalInvoiceNumber"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedFrom"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+		func(ctx context.Context, v any) (*time.Time, error) {
+			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["issuedTo"] = arg8
 	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6284,6 +6715,553 @@ func (ec *executionContext) _Country_name(ctx context.Context, field graphql.Col
 }
 func (ec *executionContext) fieldContext_Country_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Country", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_id(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_creditNoteNumber(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_creditNoteNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreditNoteNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_creditNoteNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_issueDate(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_issueDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IssueDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_issueDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_serviceDate(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_serviceDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ServiceDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_serviceDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_dueDate(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_dueDate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DueDate, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *time.Time) graphql.Marshaler {
+			return ec.marshalOTime2ᚖtimeᚐTime(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_dueDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Time does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerCode(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerName(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerAddress(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerAddress(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerAddress, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerPostalCode(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerPostalCode(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerPostalCode, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerPostalCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerCity(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerCity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerCity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_customerCountry(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_customerCountry(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CustomerCountry, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_customerCountry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_currency(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_currency(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Currency, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_currency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_amount(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_amount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Amount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_goodsAmount(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_goodsAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.GoodsAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
+			return ec.marshalOFloat2ᚖfloat64(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_goodsAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_introductoryText(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_introductoryText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.IntroductoryText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_introductoryText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_closingText(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_closingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ClosingText, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_closingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_cancelled(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_cancelled(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Cancelled, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *bool) graphql.Marshaler {
+			return ec.marshalOBoolean2ᚖbool(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_cancelled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNote_items(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNote_items(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*InvoiceItem) graphql.Marshaler {
+			return ec.marshalNInvoiceItem2ᚕᚖbureaucracyᚋbackendᚐInvoiceItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNote_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CreditNote",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_InvoiceItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CreditNotePage_creditNotes(ctx context.Context, field graphql.CollectedField, obj *CreditNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNotePage_creditNotes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreditNotes, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*CreditNote) graphql.Marshaler {
+			return ec.marshalNCreditNote2ᚕᚖbureaucracyᚋbackendᚐCreditNoteᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNotePage_creditNotes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CreditNotePage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CreditNote(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CreditNotePage_totalCount(ctx context.Context, field graphql.CollectedField, obj *CreditNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNotePage_totalCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNotePage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNotePage_page(ctx context.Context, field graphql.CollectedField, obj *CreditNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNotePage_page(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Page, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNotePage_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNotePage_pageSize(ctx context.Context, field graphql.CollectedField, obj *CreditNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNotePage_pageSize(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.PageSize, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNotePage_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _CreditNotePage_totalPages(ctx context.Context, field graphql.CollectedField, obj *CreditNotePage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_CreditNotePage_totalPages(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TotalPages, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_CreditNotePage_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("CreditNotePage", field, false, false, errors.New("field of type Int does not have child fields"))
 }
 
 func (ec *executionContext) _Customer_id(ctx context.Context, field graphql.CollectedField, obj *Customer) (ret graphql.Marshaler) {
@@ -9228,6 +10206,29 @@ func (ec *executionContext) fieldContext_InvoiceItem_grossAmount(_ context.Conte
 	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
+func (ec *executionContext) _InvoiceItem_originalInvoiceNumber(ctx context.Context, field graphql.CollectedField, obj *InvoiceItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_InvoiceItem_originalInvoiceNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OriginalInvoiceNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_InvoiceItem_originalInvoiceNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("InvoiceItem", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
 func (ec *executionContext) _InvoicePage_invoices(ctx context.Context, field graphql.CollectedField, obj *InvoicePage) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -9658,6 +10659,50 @@ func (ec *executionContext) fieldContext_Mutation_saveInvoice(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_saveInvoice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveCreditNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveCreditNote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveCreditNote(ctx, fc.Args["businessYear"].(string), fc.Args["creditNote"].(model.CreditNoteInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *CreditNote) graphql.Marshaler {
+			return ec.marshalNCreditNote2ᚖbureaucracyᚋbackendᚐCreditNote(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveCreditNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CreditNote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveCreditNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -11869,6 +12914,94 @@ func (ec *executionContext) fieldContext_Query_invoice(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_invoice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_creditNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_creditNote(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().CreditNote(ctx, fc.Args["businessYear"].(string), fc.Args["creditNoteNumber"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *CreditNote) graphql.Marshaler {
+			return ec.marshalOCreditNote2ᚖbureaucracyᚋbackendᚐCreditNote(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_creditNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CreditNote(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_creditNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchCreditNotes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_searchCreditNotes(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().SearchCreditNotes(ctx, fc.Args["businessYear"].(string), fc.Args["creditNoteNumber"].(*string), fc.Args["customerId"].(*string), fc.Args["customerName"].(*string), fc.Args["productCode"].(*string), fc.Args["productName"].(*string), fc.Args["originalInvoiceNumber"].(*string), fc.Args["issuedFrom"].(*time.Time), fc.Args["issuedTo"].(*time.Time), fc.Args["sortBy"].(*string), fc.Args["sortDirection"].(*string), fc.Args["page"].(*int), fc.Args["pageSize"].(*int))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *CreditNotePage) graphql.Marshaler {
+			return ec.marshalNCreditNotePage2ᚖbureaucracyᚋbackendᚐCreditNotePage(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_searchCreditNotes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_CreditNotePage(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchCreditNotes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14135,6 +15268,199 @@ func (ec *executionContext) unmarshalInputBankStatementInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreditNoteInput(ctx context.Context, obj any) (model.CreditNoteInput, error) {
+	var it model.CreditNoteInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "creditNoteNumber", "issueDate", "serviceDate", "dueDate", "customerCode", "customerName", "customerAddress", "customerCity", "introductoryText", "closingText", "items"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "creditNoteNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creditNoteNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreditNoteNumber = data
+		case "issueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("issueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IssueDate = data
+		case "serviceDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceDate = data
+		case "dueDate":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dueDate"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DueDate = data
+		case "customerCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCode"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCode = data
+		case "customerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerName = data
+		case "customerAddress":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerAddress"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerAddress = data
+		case "customerCity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerCity"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CustomerCity = data
+		case "introductoryText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("introductoryText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IntroductoryText = data
+		case "closingText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("closingText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClosingText = data
+		case "items":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+			data, err := ec.unmarshalNCreditNoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Items = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreditNoteItemInput(ctx context.Context, obj any) (model.CreditNoteItemInput, error) {
+	var it model.CreditNoteItemInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "sequence", "productCode", "taxCode", "quantity", "discount", "netAmount", "grossAmount", "originalInvoiceNumber"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "sequence":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sequence"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sequence = data
+		case "productCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProductCode = data
+		case "taxCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taxCode"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaxCode = data
+		case "quantity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Quantity = data
+		case "discount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Discount = data
+		case "netAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("netAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetAmount = data
+		case "grossAmount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grossAmount"))
+			data, err := ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GrossAmount = data
+		case "originalInvoiceNumber":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originalInvoiceNumber"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OriginalInvoiceNumber = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCustomerInput(ctx context.Context, obj any) (model.CustomerInput, error) {
 	var it model.CustomerInput
 	if obj == nil {
@@ -15661,6 +16987,187 @@ func (ec *executionContext) _Country(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var creditNoteImplementors = []string{"CreditNote"}
+
+func (ec *executionContext) _CreditNote(ctx context.Context, sel ast.SelectionSet, obj *CreditNote) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, creditNoteImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CreditNote")
+		case "id":
+			out.Values[i] = ec._CreditNote_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "creditNoteNumber":
+			out.Values[i] = ec._CreditNote_creditNoteNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "issueDate":
+			out.Values[i] = ec._CreditNote_issueDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "serviceDate":
+			out.Values[i] = ec._CreditNote_serviceDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "dueDate":
+			out.Values[i] = ec._CreditNote_dueDate(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCode":
+			out.Values[i] = ec._CreditNote_customerCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerName":
+			out.Values[i] = ec._CreditNote_customerName(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerAddress":
+			out.Values[i] = ec._CreditNote_customerAddress(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerPostalCode":
+			out.Values[i] = ec._CreditNote_customerPostalCode(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCity":
+			out.Values[i] = ec._CreditNote_customerCity(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "customerCountry":
+			out.Values[i] = ec._CreditNote_customerCountry(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "currency":
+			out.Values[i] = ec._CreditNote_currency(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._CreditNote_amount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "goodsAmount":
+			out.Values[i] = ec._CreditNote_goodsAmount(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "introductoryText":
+			out.Values[i] = ec._CreditNote_introductoryText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "closingText":
+			out.Values[i] = ec._CreditNote_closingText(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "cancelled":
+			out.Values[i] = ec._CreditNote_cancelled(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "items":
+			out.Values[i] = ec._CreditNote_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
+var creditNotePageImplementors = []string{"CreditNotePage"}
+
+func (ec *executionContext) _CreditNotePage(ctx context.Context, sel ast.SelectionSet, obj *CreditNotePage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, creditNotePageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferredFieldSet := graphql.NewFieldSet(nil)
+	deferLabelToView := make(map[string]*graphql.FieldSetView)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CreditNotePage")
+		case "creditNotes":
+			out.Values[i] = ec._CreditNotePage_creditNotes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._CreditNotePage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._CreditNotePage_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageSize":
+			out.Values[i] = ec._CreditNotePage_pageSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalPages":
+			out.Values[i] = ec._CreditNotePage_totalPages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferLabelToView), math.MaxInt32)))
+
+	ec.ProcessDeferredGroup(graphql.DeferredGroup{
+		Defers:   deferLabelToView,
+		Path:     graphql.GetPath(ctx),
+		FieldSet: deferredFieldSet,
+		Context:  ctx,
+	})
+
+	return out
+}
+
 var customerImplementors = []string{"Customer"}
 
 func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet, obj *Customer) graphql.Marshaler {
@@ -16788,6 +18295,11 @@ func (ec *executionContext) _InvoiceItem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
+		case "originalInvoiceNumber":
+			out.Values[i] = ec._InvoiceItem_originalInvoiceNumber(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17004,6 +18516,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveInvoice":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveInvoice(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveCreditNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveCreditNote(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -18024,6 +19543,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}()
 				res = ec._Query_invoice(ctx, field)
 				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "creditNote":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_creditNote(ctx, field)
+				if res == graphql.RequiredNull {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchCreditNotes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchCreditNotes(ctx, field)
+				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
 				return res
@@ -19224,6 +20787,74 @@ func (ec *executionContext) marshalNCountry2ᚖbureaucracyᚋbackendᚐCountry(c
 	return ec._Country(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCreditNote2bureaucracyᚋbackendᚐCreditNote(ctx context.Context, sel ast.SelectionSet, v CreditNote) graphql.Marshaler {
+	return ec._CreditNote(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCreditNote2ᚕᚖbureaucracyᚋbackendᚐCreditNoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*CreditNote) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCreditNote2ᚖbureaucracyᚋbackendᚐCreditNote(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCreditNote2ᚖbureaucracyᚋbackendᚐCreditNote(ctx context.Context, sel ast.SelectionSet, v *CreditNote) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CreditNote(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNCreditNoteInput2bureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteInput(ctx context.Context, v any) (model.CreditNoteInput, error) {
+	res, err := ec.unmarshalInputCreditNoteInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreditNoteItemInput2ᚕᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteItemInputᚄ(ctx context.Context, v any) ([]*model.CreditNoteItemInput, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*model.CreditNoteItemInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNCreditNoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNCreditNoteItemInput2ᚖbureaucracyᚋbackendᚋgraphᚋmodelᚐCreditNoteItemInput(ctx context.Context, v any) (*model.CreditNoteItemInput, error) {
+	res, err := ec.unmarshalInputCreditNoteItemInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCreditNotePage2bureaucracyᚋbackendᚐCreditNotePage(ctx context.Context, sel ast.SelectionSet, v CreditNotePage) graphql.Marshaler {
+	return ec._CreditNotePage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCreditNotePage2ᚖbureaucracyᚋbackendᚐCreditNotePage(ctx context.Context, sel ast.SelectionSet, v *CreditNotePage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CreditNotePage(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNCustomer2bureaucracyᚋbackendᚐCustomer(ctx context.Context, sel ast.SelectionSet, v Customer) graphql.Marshaler {
 	return ec._Customer(ctx, sel, &v)
 }
@@ -20293,6 +21924,13 @@ func (ec *executionContext) marshalOBusinessYear2ᚖbureaucracyᚋbackendᚐBusi
 		return graphql.Null
 	}
 	return ec._BusinessYear(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOCreditNote2ᚖbureaucracyᚋbackendᚐCreditNote(ctx context.Context, sel ast.SelectionSet, v *CreditNote) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CreditNote(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOCustomer2ᚖbureaucracyᚋbackendᚐCustomer(ctx context.Context, sel ast.SelectionSet, v *Customer) graphql.Marshaler {

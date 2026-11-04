@@ -27,7 +27,12 @@ func (handler *InvoiceEmailHandler) Send(context *gin.Context) {
 	if !ok {
 		return
 	}
-	pdf, err := handler.generator.Generate(context.Request.Context(), invoice, year)
+	pdf, err := handler.generator.Generate(
+		context.Request.Context(),
+		invoice,
+		year,
+		InvoicePrintDocument,
+	)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate the invoice PDF"})
 		return

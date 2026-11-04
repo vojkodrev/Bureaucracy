@@ -13,7 +13,7 @@ type ErrorResponse = { error?: string }
 const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 export async function sendDocumentEmail(
-    resource: 'invoices' | 'price-quotes',
+    resource: 'invoices' | 'price-quotes' | 'credit-notes',
     documentNumber: string,
     fields: DocumentEmailFields,
 ): Promise<void> {

@@ -31,6 +31,7 @@ const parameterLabels: Record<string, string> = {
     statementNumber: "Statement number",
     from: "Date from",
     invoiceNumber: "Invoice number",
+    creditNoteNumber: "Credit note number",
     quoteNumber: "Quote number",
     page: "Page",
     pageSize: "Page size",
@@ -79,6 +80,7 @@ function breadcrumbLabel(pathname: string) {
         "/inventory-items/search": "Inventory item search",
         "/inventory-item": "Inventory item",
         "/invoices/search": "Invoice search",
+        "/credit-notes/search": "Credit note search",
         "/goods-receipts/search": "Goods receipt search",
         "/goods-receipt": "Goods receipt",
         "/price-quotes/search": "Price quote search",
@@ -90,6 +92,7 @@ function breadcrumbLabel(pathname: string) {
     const entities = [
         ["/goods-receipt", "Goods receipt"],
         ["/invoice", "Invoice"],
+        ["/credit-note", "Credit note"],
         ["/price-quote", "Price quote"],
         ["/delivery-note", "Delivery note"],
         ["/product", "Product"],
