@@ -95,7 +95,7 @@ export default function AddEditInventoryItemDialog({
             >
                 <DialogHeader>
                     <DialogTitle>
-                        {item ? "Edit stock item" : "Add stock item"}
+                        {item ? "Edit inventory item" : "Add inventory item"}
                     </DialogTitle>
                     <DialogDescription>
                         Select an inventory item and enter the stock movement
@@ -106,7 +106,7 @@ export default function AddEditInventoryItemDialog({
                     <InventoryItemPickerField
                         id="goods-receipt-item-code"
                         label="Inventory item code"
-                        name="stockItemCode"
+                        name="inventoryItemCode"
                         inventoryItemCode={code}
                         onInventoryItemCodeChange={setCode}
                         onInventoryItemNameChange={setDescription}
@@ -193,7 +193,7 @@ export default function AddEditInventoryItemDialog({
                             photos,
                         })}
                     >
-                        {item ? "Save changes" : "Add stock item"}
+                        {item ? "Save changes" : "Add inventory item"}
                     </Button>
                 </DialogFooter>
                 {cameraOpen && (

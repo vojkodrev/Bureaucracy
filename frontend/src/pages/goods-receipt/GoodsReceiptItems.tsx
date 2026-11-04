@@ -59,9 +59,9 @@ export default function GoodsReceiptItems({
     return (
         <Card>
             <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Received stock items</CardTitle>
+                <CardTitle>Received inventory items</CardTitle>
                 <Button type="button" size="sm" onClick={openNew}>
-                    <Plus /> Add stock item
+                    <Plus /> Add inventory item
                 </Button>
             </CardHeader>
             <CardContent>
@@ -84,7 +84,7 @@ export default function GoodsReceiptItems({
                             <MessageRow>Loading receipt items…</MessageRow>
                         )}
                         {!isLoading && items.length === 0 && (
-                            <MessageRow>No stock items added.</MessageRow>
+                            <MessageRow>No inventory items added.</MessageRow>
                         )}
                         {!isLoading && items.map((item, index) => (
                             <TableRow key={`${item.id}-${index}`}>
