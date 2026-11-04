@@ -3,6 +3,10 @@ import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
+import { toast } from '@/lib/toast'
+import {
+    takeInvoiceForCreditNote,
+} from '@/pages/invoice/invoice-credit-note-conversion'
 import {
     fetchCreditNote,
     fetchNextCreditNoteNumber,
@@ -125,8 +129,32 @@ export function useCreditNoteLoader(options: Options) {
             void fetchNextCreditNoteNumber(controller.signal)
                 .then((creditNoteNumber) => {
                     const nextDraft = { ...initialDraft, creditNoteNumber }
-                    replaceDraft(nextDraft)
+                    const invoice = takeInvoiceForCreditNote()
+                    const convertedDraft: CreditNoteDraft = invoice ? {
+                        ...nextDraft,
+                        customerId: invoice.customerId,
+                        customerName: invoice.customerName,
+                        customerAddress: invoice.customerAddress,
+                        customerPostalCode: invoice.customerPostalCode,
+                        customerCity: invoice.customerCity,
+                        customerCountry: invoice.customerCountry,
+                        introductoryText: invoice.introductoryText,
+                        closingText: invoice.closingText,
+                        items: invoice.items.map((item, index) => ({
+                            ...item,
+                            id: -index - 1,
+                        })),
+                    } : nextDraft
+                    replaceDraft(convertedDraft)
                     markClean(nextDraft)
+                    if (invoice) {
+                        toast.add({
+                            title: 'Invoice converted',
+                            description: 'The credit note draft has been ' +
+                                'populated. Review and save it when ready.',
+                            type: 'success',
+                        })
+                    }
                     setRequestErrors((current) => ({
                         ...current,
                         nextCreditNoteNumber: undefined,

@@ -19,8 +19,9 @@ import PaidInvoiceEmailAlert from './PaidInvoiceEmailAlert'
 import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import TaxConfirmationAlert from './TaxConfirmationAlert'
-import { useInvoiceDraft } from './hooks/useInvoiceDraft'
+import { useInvoiceCreditNoteConversion } from './hooks/useInvoiceCreditNoteConversion'
 import { useInvoiceDeliveryNoteConversion } from './hooks/useInvoiceDeliveryNoteConversion'
+import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
 import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
 import { useInvoiceEmail } from './hooks/useInvoiceEmail'
@@ -52,6 +53,9 @@ function InvoicePage() {
         setDueDate: (value) => setField('dueDate', value),
     })
     const deliveryNoteConversion = useInvoiceDeliveryNoteConversion({
+        draft, navigate, allowNavigation: guard.allowNavigation,
+    })
+    const creditNoteConversion = useInvoiceCreditNoteConversion({
         draft, navigate, allowNavigation: guard.allowNavigation,
     })
 
@@ -117,6 +121,12 @@ function InvoicePage() {
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
         ['tax-confirmation', 'Invoice could not be tax confirmed', 'The invoice was not confirmed by FURS.', taxConfirmation.error],
         ['convert', 'Invoice could not be converted', 'The delivery note draft could not be prepared.', deliveryNoteConversion.error],
+        [
+            'convert-credit-note',
+            'Invoice could not be converted',
+            'The credit note draft could not be prepared.',
+            creditNoteConversion.error,
+        ],
     ] as const
     const warnings = [
         ['invoice-total', 'Invoice total is inconsistent', 'The stored invoice total does not equal the sum of its lines.', 'Review and save the invoice to correct its total.'],
@@ -149,6 +159,7 @@ function InvoicePage() {
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}
                 onTaxConfirm={taxConfirmation.request}
                 onConvertToDeliveryNote={deliveryNoteConversion.convertToDeliveryNote}
+                onConvertToCreditNote={creditNoteConversion.convertToCreditNote}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
