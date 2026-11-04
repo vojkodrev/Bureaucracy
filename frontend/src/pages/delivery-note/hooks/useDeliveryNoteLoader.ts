@@ -3,10 +3,13 @@ import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
+import {
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
 import { takeInvoiceForDeliveryNote } from '@/pages/invoice/invoice-delivery-note-conversion'
 import {
     fetchDeliveryNote,
-    fetchDeliveryNoteTextTemplate,
     fetchNextDeliveryNoteNumber,
 } from '@/pages/delivery-note-search/delivery-note-search-api'
 import type { DeliveryNote } from '@/pages/delivery-note-search/types'
@@ -150,8 +153,8 @@ export function useDeliveryNoteLoader(options: Options) {
             textTemplate: undefined,
         }))
         const controller = new AbortController()
-        const templatePromise = fetchDeliveryNoteTextTemplate(
-            controller.signal,
+        const templatePromise = fetchTextTemplate(
+            TextTemplateDocumentType.DeliveryNote, controller.signal,
         ).catch((requestError: unknown) => {
             if (!wasAborted(requestError)) {
                 setRequestErrors((current) => ({

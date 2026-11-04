@@ -194,11 +194,6 @@ func (r *queryResolver) CreditNote(ctx context.Context, businessYear string, cre
 	return r.CreditNotes.GetByNumber(ctx, businessYear, creditNoteNumber)
 }
 
-// CreditNoteTextTemplate is the resolver for the creditNoteTextTemplate field.
-func (r *queryResolver) CreditNoteTextTemplate(ctx context.Context, businessYear string) (*CreditNoteTextTemplate, error) {
-	return r.CreditNotes.GetTextTemplate(ctx, businessYear)
-}
-
 // SearchCreditNotes is the resolver for the searchCreditNotes field.
 func (r *queryResolver) SearchCreditNotes(ctx context.Context, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CreditNotePage, error) {
 	resultPage := 1
@@ -227,9 +222,9 @@ func (r *queryResolver) SearchCreditNotes(ctx context.Context, businessYear stri
 	)
 }
 
-// InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
-func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
-	return r.Invoices.GetTextTemplate(ctx, businessYear)
+// TextTemplate is the resolver for the textTemplate field.
+func (r *queryResolver) TextTemplate(ctx context.Context, businessYear string, documentType model.TextTemplateDocumentType) (*TextTemplate, error) {
+	return r.TextTemplates.Get(ctx, businessYear, string(documentType))
 }
 
 // PriceQuote is the resolver for the priceQuote field.
@@ -237,19 +232,9 @@ func (r *queryResolver) PriceQuote(ctx context.Context, businessYear string, quo
 	return r.PriceQuotes.GetByNumber(ctx, businessYear, quoteNumber)
 }
 
-// PriceQuoteTextTemplate is the resolver for the priceQuoteTextTemplate field.
-func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error) {
-	return r.PriceQuotes.GetTextTemplate(ctx, businessYear)
-}
-
 // DeliveryNote is the resolver for the deliveryNote field.
 func (r *queryResolver) DeliveryNote(ctx context.Context, businessYear string, deliveryNoteNumber string) (*DeliveryNote, error) {
 	return r.DeliveryNotes.GetByNumber(ctx, businessYear, deliveryNoteNumber)
-}
-
-// DeliveryNoteTextTemplate is the resolver for the deliveryNoteTextTemplate field.
-func (r *queryResolver) DeliveryNoteTextTemplate(ctx context.Context, businessYear string) (*DeliveryNoteTextTemplate, error) {
-	return r.DeliveryNotes.GetTextTemplate(ctx, businessYear)
 }
 
 // Product is the resolver for the product field.

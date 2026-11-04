@@ -38,12 +38,6 @@ const latestInvoiceQuery = `
     }
 `
 
-const invoiceTextTemplateQuery = `
-    query InvoiceTextTemplate($businessYear: String!) {
-        invoiceTextTemplate(businessYear: $businessYear) { introductoryText closingText }
-    }
-`
-
 const customerPaymentTermQuery = `
     query CustomerPaymentTerm($businessYear: String!, $customerId: String!) {
         customer(businessYear: $businessYear, customerId: $customerId) { paymentTerm }
@@ -83,14 +77,6 @@ export async function fetchLatestInvoiceNumber(
 
 export async function fetchNextInvoiceNumber(signal?: AbortSignal, businessYear = getSelectedBusinessYear()) {
     return nextPaddedNumber(await fetchLatestInvoiceNumber(signal, businessYear), 5)
-}
-
-export async function fetchInvoiceTextTemplate(signal?: AbortSignal) {
-    const result = await postGraphql<{
-        data?: { invoiceTextTemplate: { introductoryText: string | null; closingText: string | null } }
-        errors?: { message: string }[]
-    }>(invoiceTextTemplateQuery, { businessYear: getSelectedBusinessYear() }, signal)
-    return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
 }
 
 export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string) {

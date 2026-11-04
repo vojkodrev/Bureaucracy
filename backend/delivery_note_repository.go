@@ -17,29 +17,6 @@ func NewDeliveryNoteRepository(database *sql.DB) *DeliveryNoteRepository {
 	return &DeliveryNoteRepository{database: database}
 }
 
-func (repository *DeliveryNoteRepository) GetTextTemplate(
-	ctx context.Context,
-	businessYear string,
-) (*DeliveryNoteTextTemplate, error) {
-	if !businessYearPattern.MatchString(businessYear) {
-		return nil, fmt.Errorf("businessYear must contain only digits")
-	}
-	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	result := &DeliveryNoteTextTemplate{}
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(UvodDobavnica, 0) <> 0 ORDER BY RecNo),
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(KonecDobavnica, 0) <> 0 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
-		&result.IntroductoryText, &result.ClosingText,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("get delivery note text template: %w", err)
-	}
-	return result, nil
-}
-
 func (repository *DeliveryNoteRepository) GetByNumber(
 	ctx context.Context,
 	businessYear string,

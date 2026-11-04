@@ -5,10 +5,14 @@ import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
+import {
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
 import { takeDeliveryNoteForInvoice } from '@/pages/delivery-note/delivery-note-invoice-conversion'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
-    fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
+    fetchInvoice, fetchNextInvoiceNumber,
 } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
@@ -141,7 +145,10 @@ export function useInvoiceLoader({
             ...current, nextInvoiceNumber: undefined, invoiceTextTemplate: undefined,
         }))
         const controller = new AbortController()
-        const templatePromise = fetchInvoiceTextTemplate(controller.signal).catch((requestError: unknown) => {
+        const templatePromise = fetchTextTemplate(
+            TextTemplateDocumentType.Invoice,
+            controller.signal,
+        ).catch((requestError: unknown) => {
             if (!wasAborted(requestError)) setRequestErrors((current) => ({
                 ...current,
                 invoiceTextTemplate: requestErrorMessage(requestError, 'Loading invoice text template failed'),

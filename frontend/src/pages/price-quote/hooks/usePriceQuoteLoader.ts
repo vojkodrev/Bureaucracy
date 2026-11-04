@@ -5,7 +5,11 @@ import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import {
-    fetchNextPriceQuoteNumber, fetchPriceQuote, fetchPriceQuoteTextTemplate,
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
+import {
+    fetchNextPriceQuoteNumber, fetchPriceQuote,
 } from '@/pages/price-quote-search/price-quote-search-api'
 import type { PriceQuote } from '@/pages/price-quote-search/types'
 import type { PriceQuoteDraft } from './usePriceQuoteDraft'
@@ -134,7 +138,10 @@ export function usePriceQuoteLoader({
             ...current, nextPriceQuoteNumber: undefined, priceQuoteTextTemplate: undefined,
         }))
         const controller = new AbortController()
-        const templatePromise = fetchPriceQuoteTextTemplate(controller.signal)
+        const templatePromise = fetchTextTemplate(
+            TextTemplateDocumentType.PriceQuote,
+            controller.signal,
+        )
             .catch((requestError: unknown) => {
                 if (!wasAborted(requestError)) setRequestErrors((current) => ({
                     ...current,

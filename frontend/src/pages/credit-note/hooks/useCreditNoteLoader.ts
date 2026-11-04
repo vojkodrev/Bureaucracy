@@ -5,11 +5,14 @@ import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import {
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
+import {
     takeInvoiceForCreditNote,
 } from '@/pages/invoice/invoice-credit-note-conversion'
 import {
     fetchCreditNote,
-    fetchCreditNoteTextTemplate,
     fetchNextCreditNoteNumber,
 } from '../credit-note-api'
 import type { CreditNote } from '../types'
@@ -127,7 +130,10 @@ export function useCreditNoteLoader(options: Options) {
             }
             replaceDraft(initialDraft)
             clearCleanDraft()
-            const templatePromise = fetchCreditNoteTextTemplate(controller.signal)
+            const templatePromise = fetchTextTemplate(
+                TextTemplateDocumentType.CreditNote,
+                controller.signal,
+            )
                 .catch((reason: unknown) => {
                     if (!controller.signal.aborted) {
                         setRequestErrors((current) => ({

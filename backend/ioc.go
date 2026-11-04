@@ -9,6 +9,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewAppConfig),
 		fx.Provide(NewAuthMiddleware),
 		fx.Provide(NewDatabase),
+		fx.Provide(NewTextTemplateRepository),
 		fx.Provide(NewDatabaseMigrator),
 		fx.Provide(NewDatabaseBackupJobHandler),
 		fx.Provide(NewFileStorageCleanupJobHandler),

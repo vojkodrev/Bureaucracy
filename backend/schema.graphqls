@@ -225,7 +225,14 @@ type CreditNotePage {
   totalPages: Int!
 }
 
-type CreditNoteTextTemplate {
+enum TextTemplateDocumentType {
+  INVOICE
+  PRICE_QUOTE
+  DELIVERY_NOTE
+  CREDIT_NOTE
+}
+
+type TextTemplate {
   introductoryText: String
   closingText: String
 }
@@ -291,11 +298,6 @@ type PriceQuotePage {
   totalPages: Int!
 }
 
-type PriceQuoteTextTemplate {
-  introductoryText: String
-  closingText: String
-}
-
 type DeliveryNote {
   id: Int!
   deliveryNoteNumber: String!
@@ -321,11 +323,6 @@ type DeliveryNotePage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
-}
-
-type DeliveryNoteTextTemplate {
-  introductoryText: String
-  closingText: String
 }
 
 input DeliveryNoteItemInput {
@@ -395,11 +392,6 @@ type InvoiceCustomerSummaryPage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
-}
-
-type InvoiceTextTemplate {
-  introductoryText: String
-  closingText: String
 }
 
 input InvoiceItemInput {
@@ -660,8 +652,6 @@ type Query {
 
   creditNote(businessYear: String!, creditNoteNumber: String!): CreditNote
 
-  creditNoteTextTemplate(businessYear: String!): CreditNoteTextTemplate!
-
   searchCreditNotes(
     businessYear: String!
     creditNoteNumber: String
@@ -678,15 +668,14 @@ type Query {
     pageSize: Int = 20
   ): CreditNotePage!
 
-  invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
+  textTemplate(
+    businessYear: String!
+    documentType: TextTemplateDocumentType!
+  ): TextTemplate!
 
   priceQuote(businessYear: String!, quoteNumber: String!): PriceQuote
 
-  priceQuoteTextTemplate(businessYear: String!): PriceQuoteTextTemplate!
-
   deliveryNote(businessYear: String!, deliveryNoteNumber: String!): DeliveryNote
-
-  deliveryNoteTextTemplate(businessYear: String!): DeliveryNoteTextTemplate!
 
   product(
     businessYear: String!

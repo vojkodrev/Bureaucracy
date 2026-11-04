@@ -17,29 +17,6 @@ func NewCreditNoteRepository(database *sql.DB) *CreditNoteRepository {
 	return &CreditNoteRepository{database: database}
 }
 
-func (repository *CreditNoteRepository) GetTextTemplate(
-	ctx context.Context,
-	businessYear string,
-) (*CreditNoteTextTemplate, error) {
-	if !businessYearPattern.MatchString(businessYear) {
-		return nil, fmt.Errorf("businessYear must contain only digits")
-	}
-	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	template := &CreditNoteTextTemplate{}
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(UvodDobropis, 0) <> 0 ORDER BY RecNo),
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(KonecDobropis, 0) <> 0 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
-		&template.IntroductoryText, &template.ClosingText,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("get credit note text template: %w", err)
-	}
-	return template, nil
-}
-
 func (repository *CreditNoteRepository) GetByNumber(
 	ctx context.Context,
 	businessYear string,

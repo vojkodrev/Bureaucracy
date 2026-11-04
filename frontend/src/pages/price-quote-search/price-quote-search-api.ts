@@ -72,10 +72,6 @@ const customerPaymentTermQuery = `
     }
 `
 
-const templateQuery = `query PriceQuoteTextTemplate($businessYear: String!) {
-    priceQuoteTextTemplate(businessYear: $businessYear) { introductoryText closingText }
-}`
-
 const saveMutation = `mutation SavePriceQuote($businessYear: String!, $priceQuote: PriceQuoteInput!) {
     savePriceQuote(businessYear: $businessYear, priceQuote: $priceQuote) { id quoteNumber }
 }`
@@ -125,22 +121,6 @@ export async function fetchCustomerPaymentTerm(customerId: string, businessYear:
         data?: { customer: { paymentTerm: number | null } | null }
     }>(customerPaymentTermQuery, { businessYear, customerId })
     return result.data?.customer?.paymentTerm ?? null
-}
-
-export async function fetchPriceQuoteTextTemplate(signal?: AbortSignal) {
-    const result = await postGraphql<{
-        data?: {
-            priceQuoteTextTemplate: {
-                introductoryText: string | null
-                closingText: string | null
-            }
-        }
-    }>(
-        templateQuery,
-        { businessYear: getSelectedBusinessYear() },
-        signal,
-    )
-    return result.data?.priceQuoteTextTemplate ?? { introductoryText: null, closingText: null }
 }
 
 export async function savePriceQuote(priceQuote: Record<string, unknown>) {

@@ -17,6 +17,7 @@ type Resolver struct {
 	PurchasePredictions    *PurchasePredictionRepository
 	Storages               *StorageRepository
 	TaxCodeRepository      *TaxCodeRepository
+	TextTemplates          *TextTemplateRepository
 }
 
 func NewResolver(
@@ -34,6 +35,7 @@ func NewResolver(
 	purchasePredictions *PurchasePredictionRepository,
 	storages *StorageRepository,
 	taxCodes *TaxCodeRepository,
+	textTemplates *TextTemplateRepository,
 ) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
@@ -50,5 +52,6 @@ func NewResolver(
 		PurchasePredictions:    purchasePredictions,
 		Storages:               storages,
 		TaxCodeRepository:      taxCodes,
+		TextTemplates:          textTemplates,
 	}
 }

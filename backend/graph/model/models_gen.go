@@ -255,3 +255,62 @@ func (e BankStatementDateDirection) MarshalJSON() ([]byte, error) {
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
 }
+
+type TextTemplateDocumentType string
+
+const (
+	TextTemplateDocumentTypeInvoice      TextTemplateDocumentType = "INVOICE"
+	TextTemplateDocumentTypePriceQuote   TextTemplateDocumentType = "PRICE_QUOTE"
+	TextTemplateDocumentTypeDeliveryNote TextTemplateDocumentType = "DELIVERY_NOTE"
+	TextTemplateDocumentTypeCreditNote   TextTemplateDocumentType = "CREDIT_NOTE"
+)
+
+var AllTextTemplateDocumentType = []TextTemplateDocumentType{
+	TextTemplateDocumentTypeInvoice,
+	TextTemplateDocumentTypePriceQuote,
+	TextTemplateDocumentTypeDeliveryNote,
+	TextTemplateDocumentTypeCreditNote,
+}
+
+func (e TextTemplateDocumentType) IsValid() bool {
+	switch e {
+	case TextTemplateDocumentTypeInvoice, TextTemplateDocumentTypePriceQuote, TextTemplateDocumentTypeDeliveryNote, TextTemplateDocumentTypeCreditNote:
+		return true
+	}
+	return false
+}
+
+func (e TextTemplateDocumentType) String() string {
+	return string(e)
+}
+
+func (e *TextTemplateDocumentType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TextTemplateDocumentType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TextTemplateDocumentType", str)
+	}
+	return nil
+}
+
+func (e TextTemplateDocumentType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TextTemplateDocumentType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TextTemplateDocumentType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}

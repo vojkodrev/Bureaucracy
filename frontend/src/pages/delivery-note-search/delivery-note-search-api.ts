@@ -88,14 +88,6 @@ const latestQuery = `
     }
 `
 
-const templateQuery = `
-    query DeliveryNoteTextTemplate($businessYear: String!) {
-        deliveryNoteTextTemplate(businessYear: $businessYear) {
-            introductoryText closingText
-        }
-    }
-`
-
 const saveMutation = `
     mutation SaveDeliveryNote(
         $businessYear: String!
@@ -190,25 +182,6 @@ export async function fetchNextDeliveryNoteNumber(
 ): Promise<string> {
     const latest = await fetchLatestDeliveryNoteNumber(signal, businessYear)
     return nextPaddedNumber(latest, 5)
-}
-
-export async function fetchDeliveryNoteTextTemplate(
-    signal?: AbortSignal,
-) {
-    const result = await postGraphql<{
-        data?: {
-            deliveryNoteTextTemplate: {
-                introductoryText: string | null
-                closingText: string | null
-            }
-        }
-    }>(templateQuery, {
-        businessYear: getSelectedBusinessYear(),
-    }, signal)
-    return result.data?.deliveryNoteTextTemplate ?? {
-        introductoryText: null,
-        closingText: null,
-    }
 }
 
 export async function saveDeliveryNote(
