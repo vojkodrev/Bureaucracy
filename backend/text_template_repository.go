@@ -26,7 +26,7 @@ func (repository *TextTemplateRepository) Get(
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
 
-	introductoryFlag, closingFlag, includePaymentReference, err := textTemplateColumns(documentType)
+	introductoryCondition, closingCondition, includePaymentReference, err := textTemplateConditions(documentType)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +43,10 @@ func (repository *TextTemplateRepository) Get(
 	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
 		SELECT
 			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(%s, 0) <> 0 ORDER BY RecNo),
+			 WHERE %s ORDER BY RecNo),
 			(SELECT TOP 1 %s FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(%s, 0) <> 0 ORDER BY RecNo)`,
-		databaseName, introductoryFlag, closingText, databaseName, closingFlag,
+			 WHERE %s ORDER BY RecNo)`,
+		databaseName, introductoryCondition, closingText, databaseName, closingCondition,
 	)).Scan(&template.IntroductoryText, &template.ClosingText)
 	if err != nil {
 		return nil, fmt.Errorf("get %s text template: %w", documentType, err)
@@ -54,16 +54,16 @@ func (repository *TextTemplateRepository) Get(
 	return template, nil
 }
 
-func textTemplateColumns(documentType string) (string, string, bool, error) {
+func textTemplateConditions(documentType string) (string, string, bool, error) {
 	switch documentType {
 	case "INVOICE":
-		return "UvodRacun", "KonecRacun", true, nil
+		return "ISNULL(UvodRacun, 0) <> 0", "ISNULL(KonecRacun, 0) <> 0", true, nil
 	case "PRICE_QUOTE":
-		return "UvodPredracun", "KonecPredracun", true, nil
+		return "ISNULL(UvodPredracun, 0) <> 0", "ISNULL(KonecPredracun, 0) <> 0", true, nil
 	case "DELIVERY_NOTE":
-		return "UvodDobavnica", "KonecDobavnica", false, nil
+		return "ISNULL(UvodDobavnica, 0) <> 0", "ISNULL(KonecDobavnica, 0) <> 0", false, nil
 	case "CREDIT_NOTE":
-		return "UvodDobropis", "KonecDobropis", false, nil
+		return "Vrsta = N'UvodDobropis'", "Vrsta = N'KonecDobropis'", false, nil
 	default:
 		return "", "", false, fmt.Errorf("unsupported text template document type %q", documentType)
 	}
