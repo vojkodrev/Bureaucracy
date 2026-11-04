@@ -99,6 +99,12 @@ export default function CreditNotePage() {
             'The credit note business-year details are unavailable.',
             loader.requestErrors.businessYear,
         ],
+        [
+            'text-template',
+            'Credit note text template could not be loaded',
+            'The introductory and closing text defaults are unavailable.',
+            loader.requestErrors.textTemplate,
+        ],
     ] as const
     const warnings = [
         [

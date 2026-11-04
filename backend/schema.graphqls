@@ -225,6 +225,11 @@ type CreditNotePage {
   totalPages: Int!
 }
 
+type CreditNoteTextTemplate {
+  introductoryText: String
+  closingText: String
+}
+
 input CreditNoteItemInput {
   id: Int
   sequence: Int
@@ -654,6 +659,8 @@ type Query {
   ): Invoice
 
   creditNote(businessYear: String!, creditNoteNumber: String!): CreditNote
+
+  creditNoteTextTemplate(businessYear: String!): CreditNoteTextTemplate!
 
   searchCreditNotes(
     businessYear: String!

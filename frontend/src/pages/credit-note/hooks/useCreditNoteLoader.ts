@@ -9,6 +9,7 @@ import {
 } from '@/pages/invoice/invoice-credit-note-conversion'
 import {
     fetchCreditNote,
+    fetchCreditNoteTextTemplate,
     fetchNextCreditNoteNumber,
 } from '../credit-note-api'
 import type { CreditNote } from '../types'
@@ -44,7 +45,7 @@ type Options = {
 }
 
 type CreditNoteRequestErrors = Partial<Record<
-    'nextCreditNoteNumber' | 'businessYear',
+    'nextCreditNoteNumber' | 'textTemplate' | 'businessYear',
     string
 >>
 
@@ -126,9 +127,29 @@ export function useCreditNoteLoader(options: Options) {
             }
             replaceDraft(initialDraft)
             clearCleanDraft()
-            void fetchNextCreditNoteNumber(controller.signal)
-                .then((creditNoteNumber) => {
-                    const nextDraft = { ...initialDraft, creditNoteNumber }
+            const templatePromise = fetchCreditNoteTextTemplate(controller.signal)
+                .catch((reason: unknown) => {
+                    if (!controller.signal.aborted) {
+                        setRequestErrors((current) => ({
+                            ...current,
+                            textTemplate: reason instanceof Error
+                                ? reason.message
+                                : 'Loading credit note text template failed',
+                        }))
+                    }
+                    return { introductoryText: null, closingText: null }
+                })
+            void Promise.all([
+                fetchNextCreditNoteNumber(controller.signal),
+                templatePromise,
+            ])
+                .then(([creditNoteNumber, template]) => {
+                    const nextDraft = {
+                        ...initialDraft,
+                        creditNoteNumber,
+                        introductoryText: template.introductoryText ?? '',
+                        closingText: template.closingText ?? '',
+                    }
                     const invoice = takeInvoiceForCreditNote()
                     const convertedDraft: CreditNoteDraft = invoice ? {
                         ...nextDraft,
@@ -138,8 +159,10 @@ export function useCreditNoteLoader(options: Options) {
                         customerPostalCode: invoice.customerPostalCode,
                         customerCity: invoice.customerCity,
                         customerCountry: invoice.customerCountry,
-                        introductoryText: invoice.introductoryText,
-                        closingText: invoice.closingText,
+                        introductoryText: [
+                            nextDraft.introductoryText, invoice.introductoryText,
+                        ].filter(Boolean).join('\n'),
+                        closingText: nextDraft.closingText || invoice.closingText,
                         items: invoice.items.map((item, index) => ({
                             ...item,
                             id: -index - 1,
@@ -158,6 +181,7 @@ export function useCreditNoteLoader(options: Options) {
                     setRequestErrors((current) => ({
                         ...current,
                         nextCreditNoteNumber: undefined,
+                        textTemplate: undefined,
                     }))
                 })
                 .catch((reason: unknown) => {

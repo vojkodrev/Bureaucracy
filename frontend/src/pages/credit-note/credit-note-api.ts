@@ -31,6 +31,12 @@ const latestCreditNoteQuery = `query LatestCreditNote($businessYear: String!) {
     }
 }`
 
+const textTemplateQuery = `query CreditNoteTextTemplate($businessYear: String!) {
+    creditNoteTextTemplate(businessYear: $businessYear) {
+        introductoryText closingText
+    }
+}`
+
 const saveMutation = `mutation SaveCreditNote(
     $businessYear: String!, $creditNote: CreditNoteInput!
 ) {
@@ -77,6 +83,23 @@ export async function fetchLatestCreditNoteNumber(
 
 export async function fetchNextCreditNoteNumber(signal?: AbortSignal) {
     return nextPaddedNumber(await fetchLatestCreditNoteNumber(signal), 5)
+}
+
+export async function fetchCreditNoteTextTemplate(signal?: AbortSignal) {
+    const result = await postGraphql<{
+        data?: {
+            creditNoteTextTemplate: {
+                introductoryText: string | null
+                closingText: string | null
+            }
+        }
+    }>(textTemplateQuery, {
+        businessYear: getSelectedBusinessYear(),
+    }, signal)
+    return result.data?.creditNoteTextTemplate ?? {
+        introductoryText: null,
+        closingText: null,
+    }
 }
 
 export async function saveCreditNote(creditNote: Record<string, unknown>) {

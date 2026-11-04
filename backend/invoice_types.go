@@ -84,6 +84,11 @@ type CreditNotePage struct {
 	TotalPages  int           `json:"totalPages"`
 }
 
+type CreditNoteTextTemplate struct {
+	IntroductoryText *string `json:"introductoryText"`
+	ClosingText      *string `json:"closingText"`
+}
+
 type InvoicePage struct {
 	Invoices   []*Invoice `json:"invoices"`
 	TotalCount int        `json:"totalCount"`

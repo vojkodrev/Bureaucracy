@@ -120,6 +120,9 @@ models:
   CreditNotePage:
     model:
       - bureaucracy/backend.CreditNotePage
+  CreditNoteTextTemplate:
+    model:
+      - bureaucracy/backend.CreditNoteTextTemplate
   Product:
     model:
       - bureaucracy/backend.Product

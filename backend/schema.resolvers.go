@@ -194,6 +194,11 @@ func (r *queryResolver) CreditNote(ctx context.Context, businessYear string, cre
 	return r.CreditNotes.GetByNumber(ctx, businessYear, creditNoteNumber)
 }
 
+// CreditNoteTextTemplate is the resolver for the creditNoteTextTemplate field.
+func (r *queryResolver) CreditNoteTextTemplate(ctx context.Context, businessYear string) (*CreditNoteTextTemplate, error) {
+	return r.CreditNotes.GetTextTemplate(ctx, businessYear)
+}
+
 // SearchCreditNotes is the resolver for the searchCreditNotes field.
 func (r *queryResolver) SearchCreditNotes(ctx context.Context, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CreditNotePage, error) {
 	resultPage := 1
