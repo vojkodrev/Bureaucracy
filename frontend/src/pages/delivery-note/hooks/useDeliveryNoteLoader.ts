@@ -3,6 +3,7 @@ import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
+import { takeInvoiceForDeliveryNote } from '@/pages/invoice/invoice-delivery-note-conversion'
 import {
     fetchDeliveryNote,
     fetchDeliveryNoteTextTemplate,
@@ -173,8 +174,30 @@ export function useDeliveryNoteLoader(options: Options) {
                 introductoryText: template.introductoryText ?? '',
                 closingText: template.closingText ?? '',
             }
-            replaceLoadedDraft(nextDraft)
+            const invoice = takeInvoiceForDeliveryNote()
+            const convertedDraft: DeliveryNoteDraft = invoice ? {
+                ...nextDraft,
+                customerId: invoice.customerId,
+                customerName: invoice.customerName,
+                customerAddress: invoice.customerAddress,
+                customerPostalCode: invoice.customerPostalCode,
+                customerCity: invoice.customerCity,
+                customerCountry: invoice.customerCountry,
+                introductoryText: [
+                    nextDraft.introductoryText, invoice.introductoryText,
+                ].filter(Boolean).join('\n'),
+                closingText: nextDraft.closingText || invoice.closingText,
+                items: invoice.items.map((item, index) => ({
+                    ...item, id: -index - 1,
+                })),
+            } : nextDraft
+            replaceLoadedDraft(convertedDraft)
             markLoadedDraftClean(nextDraft)
+            if (invoice) toast.add({
+                title: 'Invoice converted',
+                description: 'The delivery note draft has been populated. Review and save it when ready.',
+                type: 'success',
+            })
         }).catch((requestError: unknown) => {
             if (!wasAborted(requestError)) {
                 setRequestErrors((current) => ({

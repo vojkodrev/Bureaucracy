@@ -20,6 +20,7 @@ import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
 import TaxConfirmationAlert from './TaxConfirmationAlert'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
+import { useInvoiceDeliveryNoteConversion } from './hooks/useInvoiceDeliveryNoteConversion'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
 import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
 import { useInvoiceEmail } from './hooks/useInvoiceEmail'
@@ -49,6 +50,9 @@ function InvoicePage() {
         customerId: draft.customerId,
         invoiceDate: draft.invoiceDate,
         setDueDate: (value) => setField('dueDate', value),
+    })
+    const deliveryNoteConversion = useInvoiceDeliveryNoteConversion({
+        draft, navigate, allowNavigation: guard.allowNavigation,
     })
 
     const save = useInvoiceSave({
@@ -112,6 +116,7 @@ function InvoicePage() {
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate invoice due date could not be calculated.', loader.requestErrors.customerPaymentTerm],
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
         ['tax-confirmation', 'Invoice could not be tax confirmed', 'The invoice was not confirmed by FURS.', taxConfirmation.error],
+        ['convert', 'Invoice could not be converted', 'The delivery note draft could not be prepared.', deliveryNoteConversion.error],
     ] as const
     const warnings = [
         ['invoice-total', 'Invoice total is inconsistent', 'The stored invoice total does not equal the sum of its lines.', 'Review and save the invoice to correct its total.'],
@@ -143,6 +148,7 @@ function InvoicePage() {
                 onExportXml={() => { void xmlExport.exportXml() }}
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}
                 onTaxConfirm={taxConfirmation.request}
+                onConvertToDeliveryNote={deliveryNoteConversion.convertToDeliveryNote}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
