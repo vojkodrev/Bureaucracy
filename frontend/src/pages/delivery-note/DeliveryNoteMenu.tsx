@@ -1,4 +1,4 @@
-import { Copy, Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, FileOutput, Printer, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -19,6 +19,7 @@ type Props = {
     onPrint: () => void
     onRevert: () => void
     onDuplicate: () => void
+    onConvertToInvoice: () => void
 }
 
 export default function DeliveryNoteMenu(props: Props) {
@@ -47,7 +48,7 @@ export default function DeliveryNoteMenu(props: Props) {
             </MenubarMenu>
             <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-52 whitespace-nowrap">
                     <MenubarItem
                         disabled={!props.canRevert}
                         onClick={props.onRevert}
@@ -63,6 +64,10 @@ export default function DeliveryNoteMenu(props: Props) {
                     >
                         <Copy />
                         {props.isDuplicating ? 'Duplicating…' : 'Duplicate'}
+                    </MenubarItem>
+                    <MenubarItem onClick={props.onConvertToInvoice}>
+                        <FileOutput />
+                        Convert to invoice
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

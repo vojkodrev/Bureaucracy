@@ -13,6 +13,7 @@ import DeliveryNoteNumberAlert from './DeliveryNoteNumberAlert'
 import DeliveryNoteSummary from './DeliveryNoteSummary'
 import { useDeliveryNoteDraft } from './hooks/useDeliveryNoteDraft'
 import { useDeliveryNoteDuplicate } from './hooks/useDeliveryNoteDuplicate'
+import { useDeliveryNoteInvoiceConversion } from './hooks/useDeliveryNoteInvoiceConversion'
 import { useDeliveryNoteKeyboardShortcuts } from './hooks/useDeliveryNoteKeyboardShortcuts'
 import { useDeliveryNoteLoader } from './hooks/useDeliveryNoteLoader'
 import { useDeliveryNoteNumberNavigation } from './hooks/useDeliveryNoteNumberNavigation'
@@ -40,6 +41,12 @@ export default function DeliveryNotePage() {
         routeNumber,
         navigate,
     )
+    const invoiceConversion = useDeliveryNoteInvoiceConversion({
+        draft,
+        businessYear: loader.businessYear,
+        navigate,
+        allowNavigation: guard.allowNavigation,
+    })
     const save = useDeliveryNoteSave({
         deliveryNoteId: loader.deliveryNoteId,
         draft,
@@ -141,6 +148,12 @@ export default function DeliveryNotePage() {
             'The duplicate draft could not be prepared.',
             loader.requestErrors.currentBusinessYear,
         ],
+        [
+            'convert',
+            'Delivery note could not be converted',
+            'The invoice draft could not be prepared.',
+            invoiceConversion.error,
+        ],
     ] as const
 
     return (
@@ -175,6 +188,7 @@ export default function DeliveryNotePage() {
                     onPrint={print.printDeliveryNote}
                     onRevert={revert.requestRevert}
                     onDuplicate={() => { void duplicate.duplicate() }}
+                    onConvertToInvoice={invoiceConversion.convertToInvoice}
                 />
                 <Button
                     type="button"

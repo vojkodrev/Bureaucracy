@@ -5,6 +5,7 @@ import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
+import { takeDeliveryNoteForInvoice } from '@/pages/delivery-note/delivery-note-invoice-conversion'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
     fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
@@ -154,20 +155,23 @@ export function useInvoiceLoader({
                     introductoryText: template.introductoryText ?? '',
                     closingText: template.closingText ?? '',
                 }
-                const priceQuote = takePriceQuoteForInvoice()
-                const convertedDraft: InvoiceDraft = priceQuote ? {
+                const deliveryNote = takeDeliveryNoteForInvoice()
+                const priceQuote = deliveryNote ? null : takePriceQuoteForInvoice()
+                const source = deliveryNote ?? priceQuote
+                const convertedDraft: InvoiceDraft = source ? {
                     ...nextDraft,
-                    customerId: priceQuote.customerId,
-                    customerName: priceQuote.customerName,
-                    customerAddress: priceQuote.customerAddress,
-                    customerPostalCode: priceQuote.customerPostalCode,
-                    customerCity: priceQuote.customerCity,
-                    customerCountry: priceQuote.customerCountry,
+                    customerId: source.customerId,
+                    customerName: source.customerName,
+                    customerAddress: source.customerAddress,
+                    customerPostalCode: source.customerPostalCode,
+                    customerCity: source.customerCity,
+                    customerCountry: source.customerCountry,
+                    deliveryNoteNumber: deliveryNote?.deliveryNoteNumber ?? '',
                     introductoryText: [
-                        nextDraft.introductoryText, priceQuote.introductoryText,
+                        nextDraft.introductoryText, source.introductoryText,
                     ].filter(Boolean).join('\n'),
-                    closingText: nextDraft.closingText || priceQuote.closingText,
-                    invoiceItems: priceQuote.items.map((item, index) => ({
+                    closingText: nextDraft.closingText || source.closingText,
+                    invoiceItems: source.items.map((item, index) => ({
                         ...item, id: -index - 1,
                     })),
                 } : nextDraft
@@ -176,6 +180,11 @@ export function useInvoiceLoader({
                 markLoadedDraftClean(nextDraft)
                 if (priceQuote) toast.add({
                     title: 'Price quote converted',
+                    description: 'The invoice draft has been populated. Review and save it when ready.',
+                    type: 'success',
+                })
+                if (deliveryNote) toast.add({
+                    title: 'Delivery note converted',
                     description: 'The invoice draft has been populated. Review and save it when ready.',
                     type: 'success',
                 })
