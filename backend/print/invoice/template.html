@@ -48,35 +48,35 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th>Št.</th>
-                        <th>Opis</th>
-                        {{if $.Document.ShowOriginalInvoice}}<th>Račun</th>{{end}}
-                        <th>Količina</th>
-                        <th>Enota</th>
-                        <th>Cena brez<br>DDV</th>
-                        <th>Popust</th>
-                        <th>Znesek<br>popusta</th>
-                        <th>Cena s<br>popustom</th>
-                        <th>DDV</th>
-                        <th>Cena z DDV</th>
-                        <th>Znesek br.<br>DDV</th>
+                        <th class="item-sequence">Št.</th>
+                        <th class="item-description">Opis</th>
+                        {{if $.Document.ShowOriginalInvoice}}<th class="item-original-invoice">Račun</th>{{end}}
+                        <th class="item-quantity">Količina</th>
+                        <th class="item-unit">Enota</th>
+                        <th class="item-unit-price">Cena brez DDV</th>
+                        <th class="item-discount">Popust</th>
+                        <th class="item-discount-amount">Znesek<br>popusta</th>
+                        <th class="item-discounted-price">Cena s<br>popustom</th>
+                        <th class="item-tax-rate">DDV</th>
+                        <th class="item-price-with-tax">Cena z DDV</th>
+                        <th class="item-net-amount">Znesek br. DDV</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{range .Document.Items}}
                     <tr>
-                        <td>{{.Sequence}}</td>
-                        <td>{{.Description}}</td>
-                        {{if $.Document.ShowOriginalInvoice}}<td>{{.OriginalInvoiceNumber}}</td>{{end}}
-                        <td>{{.Quantity}}</td>
-                        <td>{{.Unit}}</td>
-                        <td>{{.UnitPrice}}</td>
-                        <td>{{.Discount}}</td>
-                        <td>{{.DiscountAmount}}</td>
-                        <td>{{.DiscountedPrice}}</td>
-                        <td>{{.TaxRate}}</td>
-                        <td>{{.UnitPriceWithTax}}</td>
-                        <td>{{.NetAmount}}</td>
+                        <td class="item-sequence">{{.Sequence}}</td>
+                        <td class="item-description">{{.Description}}</td>
+                        {{if $.Document.ShowOriginalInvoice}}<td class="item-original-invoice">{{.OriginalInvoiceNumber}}</td>{{end}}
+                        <td class="item-quantity">{{.Quantity}}</td>
+                        <td class="item-unit">{{.Unit}}</td>
+                        <td class="item-unit-price">{{.UnitPrice}}</td>
+                        <td class="item-discount">{{.Discount}}</td>
+                        <td class="item-discount-amount">{{.DiscountAmount}}</td>
+                        <td class="item-discounted-price">{{.DiscountedPrice}}</td>
+                        <td class="item-tax-rate">{{.TaxRate}}</td>
+                        <td class="item-price-with-tax">{{.UnitPriceWithTax}}</td>
+                        <td class="item-net-amount">{{.NetAmount}}</td>
                     </tr>
                     {{end}}
                 </tbody>

@@ -103,52 +103,46 @@ main {
     white-space: nowrap;
 }
 
-.items-table th:nth-child(1),
-.items-table td:nth-child(1) {
+.items-table .item-sequence {
     width: 4%;
     text-align: center;
 }
 
-.items-table th:nth-child(2),
-.items-table td:nth-child(2) {
-    width: 31%;
+.items-table .item-description {
     overflow: hidden;
     text-align: left;
-    text-overflow: ellipsis;
 }
 
-.items-table td:nth-child(2) {
+.items-table td.item-description {
     font-weight: 700;
+    font-size: 2.25mm;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.items-table th:nth-child(3),
-.items-table td:nth-child(3) {
+.items-table .item-original-invoice {
+    width: 6%;
+}
+
+.items-table .item-quantity {
     width: 7%;
 }
 
-.items-table th:nth-child(4),
-.items-table td:nth-child(4) {
+.items-table .item-unit {
     width: 6%;
     text-align: left;
 }
 
-.items-table th:nth-child(5),
-.items-table td:nth-child(5),
-.items-table th:nth-child(7),
-.items-table td:nth-child(7),
-.items-table th:nth-child(8),
-.items-table td:nth-child(8),
-.items-table th:nth-child(10),
-.items-table td:nth-child(10),
-.items-table th:nth-child(11),
-.items-table td:nth-child(11) {
-    width: 8%;
+.items-table .item-unit-price,
+.items-table .item-discount-amount,
+.items-table .item-price-with-tax,
+.items-table .item-net-amount {
+    width: 6%;
 }
 
-.items-table th:nth-child(6),
-.items-table td:nth-child(6),
-.items-table th:nth-child(9),
-.items-table td:nth-child(9) {
+.items-table .item-discount,
+.items-table .item-discounted-price,
+.items-table .item-tax-rate {
     width: 6%;
 }
 
