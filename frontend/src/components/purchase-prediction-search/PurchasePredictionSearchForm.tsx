@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent, SubmitEvent } from 'react'
+import { format, parseISO } from 'date-fns'
 import CustomerPickerField from '@/components/customer-search/CustomerPickerField'
 import ProductPickerField from '@/components/product-search/ProductPickerField'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,10 @@ import { defaultPage } from '@/lib/pagination'
 import type { PurchasePredictionSearchCriteria } from './types'
 import type { PurchasePredictionSnapshot } from '@/lib/purchase-prediction-types'
 import { ChevronDownIcon } from 'lucide-react'
+
+function snapshotLabel(name: string) {
+    return `${name} (${format(parseISO(name), 'EEEE')})`
+}
 
 type Props = {
     search: PurchasePredictionSearchCriteria
@@ -43,6 +48,8 @@ export default function PurchasePredictionSearchForm({
     useEffect(() => {
         setSnapshotId(selectedSnapshotId)
     }, [selectedSnapshotId])
+
+    const selectedSnapshot = snapshots.find(({ id }) => id === snapshotId)
 
     function submit(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -90,8 +97,9 @@ export default function PurchasePredictionSearchForm({
                                             />
                                         )}
                                     >
-                                        {snapshots.find(({ id }) => id === snapshotId)?.name
-                                            ?? 'No snapshots'}
+                                        {selectedSnapshot
+                                            ? snapshotLabel(selectedSnapshot.name)
+                                            : 'No snapshots'}
                                         <ChevronDownIcon />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
@@ -104,7 +112,7 @@ export default function PurchasePredictionSearchForm({
                                         >
                                             {snapshots.map((snapshot, index) => (
                                                 <DropdownMenuRadioItem key={snapshot.id} value={snapshot.id}>
-                                                    {snapshot.name}{index === 0 ? ' (latest)' : ''}
+                                                    {snapshotLabel(snapshot.name)}{index === 0 ? ' · latest' : ''}
                                                 </DropdownMenuRadioItem>
                                             ))}
                                         </DropdownMenuRadioGroup>
