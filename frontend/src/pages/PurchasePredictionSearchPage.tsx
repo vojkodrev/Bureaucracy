@@ -1,186 +1,81 @@
-import { useEffect, useEffectEvent, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import {
-    fetchPurchasePredictions,
-    fetchPurchasePredictionSnapshots,
-    purchasePredictionReportPdfUrl,
     PurchasePredictionSearchForm,
     PurchasePredictionSearchResults,
-    type PurchasePredictionSearchCriteria,
 } from '@/components/purchase-prediction-search'
 import PurchasePredictionSearchMenu from '@/components/purchase-prediction-search/PurchasePredictionSearchMenu'
-import { isStorageOnlyUser, openAuthenticatedUrl } from '@/lib/auth'
-import { defaultPage, defaultPageSize } from '@/lib/pagination'
-import type { PurchasePredictionPage, PurchasePredictionSnapshot } from '@/lib/purchase-prediction-types'
-
-type SearchState = {
-    key: string
-    result: PurchasePredictionPage | null
-    error: string | null
-}
-
-function fromParams(
-    params: URLSearchParams,
-): PurchasePredictionSearchCriteria {
-    return {
-        snapshotId: params.get('snapshotId') ?? '',
-        customerCode: params.get('customerCode') ?? '',
-        customerName: params.get('customerName') ?? '',
-        productCode: params.get('productCode') ?? '',
-        productName: params.get('productName') ?? '',
-        page: params.get('page') ?? String(defaultPage),
-        pageSize: params.get('pageSize') ?? String(defaultPageSize),
-    }
-}
-
-function toParams(search: PurchasePredictionSearchCriteria) {
-    const params = new URLSearchParams()
-    const filters = [
-        'snapshotId',
-        'customerCode',
-        'customerName',
-        'productCode',
-        'productName',
-    ] as const
-    for (const key of filters) {
-        if (search[key]) params.set(key, search[key])
-    }
-    params.set('page', search.page)
-    params.set('pageSize', search.pageSize)
-    return params
-}
+import { usePurchasePredictionSearchPrint } from '@/components/purchase-prediction-search/hooks/usePurchasePredictionSearchPrint'
+import { usePurchasePredictionSearchResults } from '@/components/purchase-prediction-search/hooks/usePurchasePredictionSearchResults'
+import { usePurchasePredictionSearchState } from '@/components/purchase-prediction-search/hooks/usePurchasePredictionSearchState'
+import { usePurchasePredictionSnapshots } from '@/components/purchase-prediction-search/hooks/usePurchasePredictionSnapshots'
+import { isStorageOnlyUser } from '@/lib/auth'
 
 export default function PurchasePredictionSearchPage() {
-    const [params, setParams] = useSearchParams()
-    const search = useMemo(() => fromParams(params), [params])
-    const searchKey = useMemo(
-        () => new URLSearchParams(search).toString(),
-        [search],
-    )
-    const [state, setState] = useState<SearchState>({
-        key: '',
-        result: null,
-        error: null,
+    const searchState = usePurchasePredictionSearchState()
+    const { search, searchKey } = searchState
+    const { page, isLoading, error } = usePurchasePredictionSearchResults(search, searchKey)
+    const {
+        snapshots,
+        isLoading: areSnapshotsLoading,
+        error: snapshotsError,
+    } = usePurchasePredictionSnapshots()
+    const print = usePurchasePredictionSearchPrint({
+        search,
+        hasResults: Boolean(page?.predictions.length),
+        isLoading,
+        hasError: Boolean(error),
     })
-    const [printError, setPrintError] = useState<string | null>(null)
-    const [snapshots, setSnapshots] = useState<PurchasePredictionSnapshot[]>([])
-    const isLoading = state.key !== searchKey
-    const canPrint = !isLoading && !state.error
-        && Boolean(state.result?.predictions.length)
-
-    const printReport = async () => {
-        if (!canPrint) return
-        try {
-            await openAuthenticatedUrl(purchasePredictionReportPdfUrl(search))
-            setPrintError(null)
-        } catch (error) {
-            setPrintError(error instanceof Error
-                ? error.message
-                : 'Could not open the purchase prediction report PDF.')
-        }
-    }
-    const onPrintShortcut = useEffectEvent(printReport)
-
-    useEffect(() => {
-        const controller = new AbortController()
-        void fetchPurchasePredictionSnapshots(controller.signal).then(setSnapshots)
-            .catch((error: unknown) => {
-                if (!(error instanceof DOMException && error.name === 'AbortError')) {
-                    console.error('Could not load purchase prediction snapshots', error)
-                }
-            })
-        return () => controller.abort()
-    }, [])
-
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!(event.ctrlKey || event.metaKey)
-                || event.key.toLowerCase() !== 'p') return
-            event.preventDefault()
-            onPrintShortcut()
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
-
-    useEffect(() => {
-        const controller = new AbortController()
-        void fetchPurchasePredictions(search, controller.signal)
-            .then((result) => {
-                setState({ key: searchKey, result, error: null })
-            })
-            .catch((error: unknown) => {
-                if (
-                    error instanceof DOMException
-                    && error.name === 'AbortError'
-                ) return
-                setState({
-                    key: searchKey,
-                    result: null,
-                    error: error instanceof Error
-                        ? error.message
-                        : 'Purchase prediction search failed',
-                })
-            })
-        return () => controller.abort()
-    }, [search, searchKey])
-
-    function update(next: PurchasePredictionSearchCriteria) {
-        setParams(toParams(next))
-    }
 
     return (
         <div className="p-4">
-            {printError && (
+            {print.printError && (
                 <div className="mb-6 max-w-4xl">
                     <ErrorAlert
                         title="Purchase prediction report could not be printed"
                         description="The report PDF could not be opened."
-                        error={printError}
+                        error={print.printError}
                     />
                 </div>
             )}
-            {!isLoading && state.error && (
+            {!isLoading && error && (
                 <div className="mb-6 max-w-4xl">
                     <ErrorAlert
                         title="Purchase predictions could not be loaded"
                         description={
                             'The purchase prediction search could not be completed.'
                         }
-                        error={state.error}
+                        error={error}
+                    />
+                </div>
+            )}
+            {!areSnapshotsLoading && snapshotsError && (
+                <div className="mb-6 max-w-4xl">
+                    <ErrorAlert
+                        title="Purchase prediction snapshots could not be loaded"
+                        description="The available prediction dates could not be loaded."
+                        error={snapshotsError}
                     />
                 </div>
             )}
             <PurchasePredictionSearchMenu
-                disabled={!canPrint}
-                onPrint={printReport}
+                disabled={!print.canPrint}
+                onPrint={print.printReport}
             />
             <PurchasePredictionSearchForm
                 key={searchKey}
                 search={search}
                 snapshots={snapshots}
-                selectedSnapshotId={search.snapshotId || state.result?.snapshotId || ''}
-                onSubmit={update}
-                onReset={() => setParams({})}
+                selectedSnapshotId={search.snapshotId || page?.snapshotId || ''}
+                onSubmit={searchState.updateSearch}
+                onReset={searchState.clearSearch}
             />
-            {!state.error && (
+            {!error && (
                 <PurchasePredictionSearchResults
-                    result={state.result}
+                    result={page}
                     isLoading={isLoading}
                     allowCustomerNavigation={!isStorageOnlyUser()}
-                    onPageChange={(page) => update({
-                        ...search,
-                        page: String(page),
-                        pageSize: String(
-                            state.result?.pageSize ?? defaultPageSize,
-                        ),
-                    })}
-                    onPageSizeChange={(pageSize) => update({
-                        ...search,
-                        page: String(defaultPage),
-                        pageSize: String(pageSize),
-                    })}
+                    onPageChange={(nextPage) => searchState.changePage(nextPage, page?.pageSize)}
+                    onPageSizeChange={searchState.changePageSize}
                 />
             )}
         </div>
