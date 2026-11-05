@@ -168,10 +168,12 @@ export default function CreditNotePage() {
                 customerId={draft.customerId}
                 customerName={draft.customerName}
                 businessYear={loader.businessYear}
-                defaultSubject={`Drevi d.o.o. - Dobropis ${draft.creditNoteNumber}`}
+                defaultSubject={`Drevi d.o.o. - Dobropis ${loader.businessYear
+                    ? `${draft.creditNoteNumber.trim()}/${loader.businessYear}` : draft.creditNoteNumber.trim()}`}
                 defaultMessage={
                     `Pozdravljeni,\n\nv priponki vam pošiljamo dobropis ` +
-                    `${draft.creditNoteNumber}.\n\n` +
+                    `${loader.businessYear
+                        ? `${draft.creditNoteNumber.trim()}/${loader.businessYear}` : draft.creditNoteNumber.trim()}.\n\n` +
                     'Lep pozdrav, Drevi d.o.o. 041 693 605'
                 }
                 onSend={async (fields) => {
