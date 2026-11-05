@@ -11,9 +11,9 @@ import { toast } from '@/lib/toast'
 import CustomerInputFields from '../invoice/CustomerInputFields'
 import Products from '../invoice/Products'
 import PriceQuoteSummary from '../price-quote/PriceQuoteSummary'
-import UnsavedPriceQuoteAlert from '../price-quote/UnsavedPriceQuoteAlert'
 import CreditNoteGeneralInformation from './CreditNoteGeneralInformation'
 import CreditNoteMenu from './CreditNoteMenu'
+import UnsavedCreditNoteAlerts from './UnsavedCreditNoteAlerts'
 import { useCreditNoteDraft } from './hooks/useCreditNoteDraft'
 import { useCreditNoteKeyboardShortcuts } from './hooks/useCreditNoteKeyboardShortcuts'
 import { useCreditNoteLoader } from './hooks/useCreditNoteLoader'
@@ -47,6 +47,7 @@ export default function CreditNotePage() {
         allowNavigation: guard.allowNavigation,
     })
     const [emailOpen, setEmailOpen] = useState(false)
+    const [confirmingUnsavedEmail, setConfirmingUnsavedEmail] = useState(false)
     const print = useCreditNotePrint({
         creditNoteId: loader.creditNoteId,
         number: draft.creditNoteNumber,
@@ -54,6 +55,7 @@ export default function CreditNotePage() {
         isLoading: loader.isLoading,
         loadError: loader.error,
         isSaving: save.isSaving,
+        canSave: save.canSave,
     })
     const revert = useCreditNoteRevert({
         routeNumber,
@@ -148,12 +150,15 @@ export default function CreditNotePage() {
             <div className="mb-6">
                 <CreditNoteMenu
                     canSave={save.canSave}
-                    canPrint={print.canPrint}
+                    canPrint={print.canRequestPrint}
                     canRevert={revert.canRevert}
                     isSaving={save.isSaving}
                     onSave={() => { void save.save() }}
                     onPrint={() => { void print.printCreditNote() }}
-                    onEmail={() => setEmailOpen(true)}
+                    onEmail={() => {
+                        if (print.canPrint) setEmailOpen(true)
+                        else if (save.canSave) setConfirmingUnsavedEmail(true)
+                    }}
                     onRevert={revert.requestRevert}
                 />
             </div>
@@ -183,22 +188,27 @@ export default function CreditNotePage() {
                 }}
                 onOpenChange={setEmailOpen}
             />
-            <UnsavedPriceQuoteAlert
-                open={guard.blocker.state === 'blocked'}
-                onOpenChange={(open) => {
-                    if (!open && guard.blocker.state === 'blocked') {
-                        guard.blocker.reset()
-                    }
+            <UnsavedCreditNoteAlerts
+                isNavigationBlocked={guard.blocker.state === 'blocked'}
+                isConfirmingRevert={revert.confirmingRevert}
+                isConfirmingPrint={print.confirmingPrint}
+                isConfirmingEmail={confirmingUnsavedEmail}
+                onCancelNavigation={() => {
+                    if (guard.blocker.state === 'blocked') guard.blocker.reset()
                 }}
-                onDiscard={guard.discardAndNavigate}
-                description="This credit note has unsaved changes. If you continue, those changes will be lost."
-            />
-            <UnsavedPriceQuoteAlert
-                open={revert.confirmingRevert}
-                onOpenChange={revert.setConfirmingRevert}
-                onDiscard={revert.performRevert}
-                actionLabel="Discard and revert"
-                description="This credit note has unsaved changes. Reverting will restore its last saved version."
+                onDiscardAndNavigate={guard.discardAndNavigate}
+                onConfirmingRevertChange={revert.setConfirmingRevert}
+                onDiscardAndRevert={revert.performRevert}
+                onConfirmingPrintChange={print.setConfirmingPrint}
+                onSaveBeforePrint={() => {
+                    print.setConfirmingPrint(false)
+                    void save.save()
+                }}
+                onConfirmingEmailChange={setConfirmingUnsavedEmail}
+                onSaveBeforeEmail={() => {
+                    setConfirmingUnsavedEmail(false)
+                    void save.save()
+                }}
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <CustomerInputFields

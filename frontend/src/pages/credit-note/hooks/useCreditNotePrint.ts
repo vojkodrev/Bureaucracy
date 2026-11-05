@@ -9,19 +9,28 @@ type Options = {
     isLoading: boolean
     loadError: string | null
     isSaving: boolean
+    canSave: boolean
 }
 
 export function useCreditNotePrint(options: Options) {
     const [printError, setPrintError] = useState<string | null>(null)
+    const [confirmingPrint, setConfirmingPrint] = useState(false)
     const canPrint = options.creditNoteId != null &&
         Boolean(options.number.trim()) &&
         !options.hasUnsavedChanges &&
         !options.isLoading &&
         !options.loadError &&
         !options.isSaving
+    const canRequestPrint = Boolean(options.number.trim()) &&
+        !options.isLoading &&
+        !options.loadError &&
+        !options.isSaving
 
     async function printCreditNote() {
-        if (!canPrint) return
+        if (!canPrint) {
+            if (options.canSave) setConfirmingPrint(true)
+            return
+        }
         try {
             await openAuthenticatedUrl(creditNotePdfUrl(options.number.trim()))
             setPrintError(null)
@@ -32,5 +41,13 @@ export function useCreditNotePrint(options: Options) {
         }
     }
 
-    return { canPrint, printCreditNote, printError, setPrintError }
+    return {
+        canPrint,
+        canRequestPrint,
+        printCreditNote,
+        printError,
+        setPrintError,
+        confirmingPrint,
+        setConfirmingPrint,
+    }
 }

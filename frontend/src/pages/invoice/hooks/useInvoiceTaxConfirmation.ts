@@ -3,10 +3,11 @@ import { getSelectedBusinessYear } from '@/lib/business-year'
 import { toast } from '@/lib/toast'
 import { confirmInvoiceTax } from '../invoice-api'
 
-type Options = { invoiceNumber: string; canConfirm: boolean }
+type Options = { invoiceNumber: string; canConfirm: boolean; canSave: boolean }
 
-export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm }: Options) {
+export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm, canSave }: Options) {
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [confirmingUnsavedTaxConfirmation, setConfirmingUnsavedTaxConfirmation] = useState(false)
     const [isConfirming, setIsConfirming] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -25,5 +26,19 @@ export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm }: Options
         }
     }
 
-    return { dialogOpen, setDialogOpen, isConfirming, error, request: () => setDialogOpen(true), confirm }
+    const request = () => {
+        if (canConfirm) setDialogOpen(true)
+        else if (canSave) setConfirmingUnsavedTaxConfirmation(true)
+    }
+
+    return {
+        dialogOpen,
+        setDialogOpen,
+        confirmingUnsavedTaxConfirmation,
+        setConfirmingUnsavedTaxConfirmation,
+        isConfirming,
+        error,
+        request,
+        confirm,
+    }
 }

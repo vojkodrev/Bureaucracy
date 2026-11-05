@@ -103,6 +103,7 @@ function InvoicePage() {
     const taxConfirmation = useInvoiceTaxConfirmation({
         invoiceNumber: draft.invoiceNumber,
         canConfirm: print.canPrint,
+        canSave: save.canSave,
     })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
     const errors = [
@@ -149,7 +150,7 @@ function InvoicePage() {
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 isExportingHalcom={halcomExport.isExporting}
-                canTaxConfirm={print.canPrint} isTaxConfirming={taxConfirmation.isConfirming}
+                canTaxConfirm={print.canRequestPrint} isTaxConfirming={taxConfirmation.isConfirming}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
@@ -195,6 +196,7 @@ function InvoicePage() {
             isConfirmingEmail={email.confirmingUnsavedEmail}
             isConfirmingXmlExport={xmlExport.confirmingExport}
             isConfirmingHalcomExport={halcomExport.confirmingExport}
+            isConfirmingTaxConfirmation={taxConfirmation.confirmingUnsavedTaxConfirmation}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
@@ -213,6 +215,10 @@ function InvoicePage() {
             onConfirmingHalcomExportChange={halcomExport.setConfirmingExport}
             onSaveBeforeHalcomExport={() => {
                 halcomExport.setConfirmingExport(false); void save.requestSave()
+            }}
+            onConfirmingTaxConfirmationChange={taxConfirmation.setConfirmingUnsavedTaxConfirmation}
+            onSaveBeforeTaxConfirmation={() => {
+                taxConfirmation.setConfirmingUnsavedTaxConfirmation(false); void save.requestSave()
             }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
