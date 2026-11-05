@@ -5,6 +5,7 @@ import {
     ChevronsUpDown,
     ChevronRight,
     FileDown,
+    FileMinus2,
     FileText,
     Landmark,
     LogOut,
@@ -122,7 +123,7 @@ const sections: Section[] = [
     {
         key: "credit-notes",
         label: "Credit notes",
-        icon: FileText,
+        icon: FileMinus2,
         searchPath: "/credit-notes/search",
         entityPath: "/credit-note",
         entityLabel: "Credit note",
