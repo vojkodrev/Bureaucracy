@@ -73,6 +73,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                             {entry.documentNumber ? (
                                 <Button
                                     variant="link"
+                                    className="h-auto p-0"
                                     render={
                                         <Link
                                             to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
