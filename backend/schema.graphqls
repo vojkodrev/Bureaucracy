@@ -471,10 +471,17 @@ type PurchasePrediction {
 
 type PurchasePredictionPage {
   predictions: [PurchasePrediction!]!
+  snapshotId: ID!
+  snapshotName: String!
   totalCount: Int!
   page: Int!
   pageSize: Int!
   totalPages: Int!
+}
+
+type PurchasePredictionSnapshot {
+  id: ID!
+  name: String!
 }
 
 type InventoryItem {
@@ -575,6 +582,7 @@ type Query {
 
   searchPurchasePredictions(
     businessYear: String!
+    snapshotId: ID
     customerCode: String
     customerName: String
     productCode: String
@@ -582,6 +590,8 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): PurchasePredictionPage!
+
+  purchasePredictionSnapshots: [PurchasePredictionSnapshot!]!
 
   goodsReceipt(businessYear: String!, receiptNumber: String!): GoodsReceipt
   goodsReceiptStorages(businessYear: String!): [Storage!]!

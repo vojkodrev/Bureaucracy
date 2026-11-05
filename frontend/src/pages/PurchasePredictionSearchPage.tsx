@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import {
     fetchPurchasePredictions,
+    fetchPurchasePredictionSnapshots,
     purchasePredictionReportPdfUrl,
     PurchasePredictionSearchForm,
     PurchasePredictionSearchResults,
@@ -11,7 +12,7 @@ import {
 import PurchasePredictionSearchMenu from '@/components/purchase-prediction-search/PurchasePredictionSearchMenu'
 import { isStorageOnlyUser, openAuthenticatedUrl } from '@/lib/auth'
 import { defaultPage, defaultPageSize } from '@/lib/pagination'
-import type { PurchasePredictionPage } from '@/lib/purchase-prediction-types'
+import type { PurchasePredictionPage, PurchasePredictionSnapshot } from '@/lib/purchase-prediction-types'
 
 type SearchState = {
     key: string
@@ -23,6 +24,7 @@ function fromParams(
     params: URLSearchParams,
 ): PurchasePredictionSearchCriteria {
     return {
+        snapshotId: params.get('snapshotId') ?? '',
         customerCode: params.get('customerCode') ?? '',
         customerName: params.get('customerName') ?? '',
         productCode: params.get('productCode') ?? '',
@@ -35,6 +37,7 @@ function fromParams(
 function toParams(search: PurchasePredictionSearchCriteria) {
     const params = new URLSearchParams()
     const filters = [
+        'snapshotId',
         'customerCode',
         'customerName',
         'productCode',
@@ -61,6 +64,7 @@ export default function PurchasePredictionSearchPage() {
         error: null,
     })
     const [printError, setPrintError] = useState<string | null>(null)
+    const [snapshots, setSnapshots] = useState<PurchasePredictionSnapshot[]>([])
     const isLoading = state.key !== searchKey
     const canPrint = !isLoading && !state.error
         && Boolean(state.result?.predictions.length)
@@ -77,6 +81,17 @@ export default function PurchasePredictionSearchPage() {
         }
     }
     const onPrintShortcut = useEffectEvent(printReport)
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void fetchPurchasePredictionSnapshots(controller.signal).then(setSnapshots)
+            .catch((error: unknown) => {
+                if (!(error instanceof DOMException && error.name === 'AbortError')) {
+                    console.error('Could not load purchase prediction snapshots', error)
+                }
+            })
+        return () => controller.abort()
+    }, [])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -144,6 +159,8 @@ export default function PurchasePredictionSearchPage() {
             <PurchasePredictionSearchForm
                 key={searchKey}
                 search={search}
+                snapshots={snapshots}
+                selectedSnapshotId={search.snapshotId || state.result?.snapshotId || ''}
                 onSubmit={update}
                 onReset={() => setParams({})}
             />

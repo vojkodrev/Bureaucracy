@@ -14,9 +14,16 @@ type PurchasePrediction struct {
 }
 
 type PurchasePredictionPage struct {
-	Predictions []*PurchasePrediction `json:"predictions"`
-	TotalCount  int                   `json:"totalCount"`
-	Page        int                   `json:"page"`
-	PageSize    int                   `json:"pageSize"`
-	TotalPages  int                   `json:"totalPages"`
+	Predictions  []*PurchasePrediction `json:"predictions"`
+	SnapshotID   string                `json:"snapshotId"`
+	SnapshotName string                `json:"snapshotName"`
+	TotalCount   int                   `json:"totalCount"`
+	Page         int                   `json:"page"`
+	PageSize     int                   `json:"pageSize"`
+	TotalPages   int                   `json:"totalPages"`
+}
+
+type PurchasePredictionSnapshot struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }

@@ -68,7 +68,7 @@ func (r *purchasePredictionResolver) ID(ctx context.Context, obj *PurchasePredic
 }
 
 // SearchPurchasePredictions is the resolver for the searchPurchasePredictions field.
-func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessYear string, customerCode *string, customerName *string, productCode *string, productName *string, page *int, pageSize *int) (*PurchasePredictionPage, error) {
+func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessYear string, snapshotID *string, customerCode *string, customerName *string, productCode *string, productName *string, page *int, pageSize *int) (*PurchasePredictionPage, error) {
 	resolvedPage, resolvedPageSize := 1, 20
 	if page != nil {
 		resolvedPage = *page
@@ -76,7 +76,12 @@ func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessY
 	if pageSize != nil {
 		resolvedPageSize = *pageSize
 	}
-	return r.PurchasePredictions.Search(ctx, businessYear, customerCode, customerName, productCode, productName, resolvedPage, resolvedPageSize)
+	return r.PurchasePredictions.Search(ctx, businessYear, snapshotID, customerCode, customerName, productCode, productName, resolvedPage, resolvedPageSize)
+}
+
+// PurchasePredictionSnapshots is the resolver for the purchasePredictionSnapshots field.
+func (r *queryResolver) PurchasePredictionSnapshots(ctx context.Context) ([]*PurchasePredictionSnapshot, error) {
+	return r.PurchasePredictions.ListSnapshots(ctx)
 }
 
 // GoodsReceipt is the resolver for the goodsReceipt field.

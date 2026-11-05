@@ -4,14 +4,16 @@ go 1.26.4
 
 require (
 	github.com/99designs/gqlgen v0.17.94
+	github.com/beevik/etree v1.8.1
+	github.com/cB-Sigma/xsd v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20260714215040-dc233986426f
 	github.com/chromedp/chromedp v0.16.0
-	github.com/cB-Sigma/xsd v1.0.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/gematik/zero-lab/go/pkcs12 v0.100.0
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
+	github.com/hooklift/gowsdl v0.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/jwx-go/jwkfetch/v4 v4.0.4
 	github.com/lestrrat-go/httprc/v3 v3.0.6
@@ -19,6 +21,7 @@ require (
 	github.com/makiuchi-d/gozxing v0.1.1
 	github.com/microsoft/go-mssqldb v1.10.0
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/russellhaering/goxmldsig v1.6.1
 	github.com/vektah/gqlparser/v2 v2.5.36
 	go.uber.org/fx v1.24.0
 	golang.org/x/text v0.43.0
@@ -26,7 +29,6 @@ require (
 
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
-	github.com/beevik/etree v1.8.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
@@ -48,7 +50,6 @@ require (
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/hooklift/gowsdl v0.5.0 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
@@ -64,7 +65,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
-	github.com/russellhaering/goxmldsig v1.6.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sosodev/duration v1.4.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

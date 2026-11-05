@@ -2,6 +2,7 @@ export { default as PurchasePredictionSearchForm } from './PurchasePredictionSea
 export { default as PurchasePredictionSearchResults } from './PurchasePredictionSearchResults'
 export {
     fetchPurchasePredictions,
+    fetchPurchasePredictionSnapshots,
     purchasePredictionReportPdfUrl,
 } from './purchase-prediction-search-api'
 export type { PurchasePredictionSearchCriteria } from './types'

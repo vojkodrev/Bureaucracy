@@ -12,6 +12,7 @@ import (
 
 type purchasePredictionReportDocument struct {
 	BusinessYear int
+	SnapshotName string
 	GeneratedAt  string
 	ResultPage   string
 	Customers    []purchasePredictionReportCustomer
@@ -71,7 +72,7 @@ func (generator *PurchasePredictionReportGenerator) Generate(ctx context.Context
 			Score7: formatPredictionPercent(prediction.Score7Days), Score14: formatPredictionPercent(prediction.Score14Days), Score30: formatPredictionPercent(prediction.Score30Days),
 		})
 	}
-	document := purchasePredictionReportDocument{BusinessYear: businessYear, GeneratedAt: time.Now().Format("2.1.2006 15:04"), ResultPage: fmt.Sprintf("Stran rezultatov %d od %d", page.Page, page.TotalPages), Customers: customers}
+	document := purchasePredictionReportDocument{BusinessYear: businessYear, SnapshotName: page.SnapshotName, GeneratedAt: time.Now().Format("2.1.2006 15:04"), ResultPage: fmt.Sprintf("Stran rezultatov %d od %d", page.Page, page.TotalPages), Customers: customers}
 	var rendered bytes.Buffer
 	if err := generator.template.Execute(&rendered, struct {
 		CSS      template.CSS

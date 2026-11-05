@@ -1,4 +1,5 @@
 export type PurchasePredictionSearchCriteria = {
+    snapshotId: string
     customerCode: string
     customerName: string
     productCode: string

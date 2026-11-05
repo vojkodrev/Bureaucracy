@@ -126,6 +126,9 @@ models:
   PurchasePredictionPage:
     model:
       - bureaucracy/backend.PurchasePredictionPage
+  PurchasePredictionSnapshot:
+    model:
+      - bureaucracy/backend.PurchasePredictionSnapshot
   ProductInvoiceCount:
     model:
       - bureaucracy/backend.ProductInvoiceCount
