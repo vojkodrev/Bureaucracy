@@ -26,6 +26,7 @@ main { position: relative; box-sizing: border-box; width: 210mm; min-height: 297
 .items td { padding: 1.2mm .6mm; text-align: right; }
 .items th:nth-child(1), .items td:nth-child(1) { width: 5%; text-align: center; }
 .items th:nth-child(2), .items td:nth-child(2) { width: 37%; text-align: left; }
+.items td:nth-child(2) { font-weight: 700; }
 .items.without-amounts th:nth-child(2), .items.without-amounts td:nth-child(2) { width: 68%; }
 .totals {
     display: grid;
