@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { ClipboardPaste, Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+    ArrowDown,
+    ArrowUp,
+    ClipboardPaste,
+    Copy,
+    Pencil,
+    Plus,
+    Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -141,6 +149,16 @@ export default function GoodsReceiptItems({
             });
         }
     };
+    const moveItem = (index: number, direction: -1 | 1) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const reorderedItems = [...items];
+        [reorderedItems[index], reorderedItems[targetIndex]] = [
+            reorderedItems[targetIndex],
+            reorderedItems[index],
+        ];
+        onChange(reorderedItems);
+    };
 
     return (
         <Card>
@@ -170,7 +188,7 @@ export default function GoodsReceiptItems({
                             <TableHead className="text-right">
                                 Quantity
                             </TableHead>
-                            <TableHead className="w-24">
+                            <TableHead className="w-36">
                                 <span className="sr-only">Actions</span>
                             </TableHead>
                         </TableRow>
@@ -194,6 +212,26 @@ export default function GoodsReceiptItems({
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-1">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label={`Move ${item.productCode} up`}
+                                            disabled={index === 0}
+                                            onClick={() => moveItem(index, -1)}
+                                        >
+                                            <ArrowUp />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label={`Move ${item.productCode} down`}
+                                            disabled={index === items.length - 1}
+                                            onClick={() => moveItem(index, 1)}
+                                        >
+                                            <ArrowDown />
+                                        </Button>
                                         <Button
                                             type="button"
                                             variant="ghost"

@@ -181,10 +181,14 @@ func (repository *GoodsReceiptRepository) Search(
 			SELECT ds.RecNo, ds.Artikel, inventory.Opis, inventory.Enota, ds.Kolicina
 			FROM [%s].[dbo].[DobavaSpecifikacija] ds
 			LEFT JOIN [%s].[dbo].[ArtikelNabava] inventory ON inventory.Artikel = ds.Artikel
+			LEFT JOIN [Bureaucracy].[dbo].[goods_receipt_item_details] details
+				ON details.business_year_id=@businessYearID
+				AND details.goods_receipt_item_id=ds.RecNo
 			WHERE ds.Stevilka = @receiptNumber
 			  AND ISNULL(ds.MPO, '') = ISNULL(@mpo, '')
 			  AND ISNULL(ds.Deleted, 0) = 0
-			ORDER BY ds.RecNo`, receiptDatabase, inventoryDatabase),
+			ORDER BY COALESCE(details.sequence, ds.RecNo), ds.RecNo`, receiptDatabase, inventoryDatabase),
+			sql.Named("businessYearID", businessYear),
 			sql.Named("receiptNumber", key.receipt.ReceiptNumber), sql.Named("mpo", key.mpo))
 		if queryErr != nil {
 			return nil, fmt.Errorf("get goods receipt items: %w", queryErr)
@@ -242,8 +246,12 @@ func (repository *GoodsReceiptRepository) GetByNumber(ctx context.Context, busin
 		SELECT ds.RecNo, ds.Artikel, inventory.Opis, inventory.Enota, ds.Kolicina
 		FROM [%s].[dbo].[DobavaSpecifikacija] ds
 		LEFT JOIN [%s].[dbo].[ArtikelNabava] inventory ON inventory.Artikel=ds.Artikel
+		LEFT JOIN [Bureaucracy].[dbo].[goods_receipt_item_details] details
+			ON details.business_year_id=@businessYearID
+			AND details.goods_receipt_item_id=ds.RecNo
 		WHERE ds.Stevilka=@receiptNumber AND ISNULL(ds.MPO, '')=ISNULL(@mpo, '') AND ISNULL(ds.Deleted, 0)=0
-		ORDER BY ds.RecNo`, receiptDatabase, inventoryDatabase), sql.Named("receiptNumber", receiptNumber), sql.Named("mpo", mpo))
+		ORDER BY COALESCE(details.sequence, ds.RecNo), ds.RecNo`, receiptDatabase, inventoryDatabase),
+		sql.Named("businessYearID", businessYear), sql.Named("receiptNumber", receiptNumber), sql.Named("mpo", mpo))
 	if err != nil {
 		return nil, fmt.Errorf("get goods receipt items: %w", err)
 	}
@@ -488,6 +496,16 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 		if _, err = tx.ExecContext(ctx, `INSERT INTO #SavedGoodsReceiptItems (RecNo) VALUES (@id)`, sql.Named("id", itemID)); err != nil {
 			return nil, fmt.Errorf("retain goods receipt item %d: %w", index+1, err)
 		}
+		if _, err = tx.ExecContext(ctx, `UPDATE [Bureaucracy].[dbo].[goods_receipt_item_details]
+			SET sequence=@sequence
+			WHERE business_year_id=@businessYearID AND goods_receipt_item_id=@itemID
+			IF @@ROWCOUNT=0
+				INSERT INTO [Bureaucracy].[dbo].[goods_receipt_item_details]
+					(business_year_id,goods_receipt_item_id,sequence)
+				VALUES (@businessYearID,@itemID,@sequence)`,
+			sql.Named("businessYearID", businessYearID), sql.Named("itemID", itemID), sql.Named("sequence", index+1)); err != nil {
+			return nil, fmt.Errorf("save goods receipt item %d details: %w", index+1, err)
+		}
 		for _, fileID := range item.PhotoFileIds {
 			var available int
 			err = tx.QueryRowContext(ctx, `SELECT COUNT(*)
@@ -524,6 +542,17 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 			  AND NOT EXISTS (SELECT 1 FROM #SavedGoodsReceiptPhotos saved WHERE saved.FileID=photo.file_id)`, databaseName),
 			sql.Named("businessYearID", businessYearID), sql.Named("oldNumber", oldReceiptNumber), sql.Named("number", input.ReceiptNumber)); err != nil {
 			return nil, fmt.Errorf("remove stale goods receipt item photos: %w", err)
+		}
+		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE details
+			FROM [Bureaucracy].[dbo].[goods_receipt_item_details] details
+			INNER JOIN [%s].[dbo].[DobavaSpecifikacija] item ON item.RecNo=details.goods_receipt_item_id
+			WHERE details.business_year_id=@businessYearID
+			  AND item.Stevilka IN (@oldNumber,@number)
+			  AND ISNULL(item.MPO,'')=ISNULL(@mpo,'')
+			  AND NOT EXISTS (SELECT 1 FROM #SavedGoodsReceiptItems saved WHERE saved.RecNo=item.RecNo)`, databaseName),
+			sql.Named("businessYearID", businessYearID), sql.Named("oldNumber", oldReceiptNumber),
+			sql.Named("number", input.ReceiptNumber), sql.Named("mpo", mpo)); err != nil {
+			return nil, fmt.Errorf("remove stale goods receipt item details: %w", err)
 		}
 		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`DELETE item FROM [%s].[dbo].[DobavaSpecifikacija] item
 			WHERE item.Stevilka IN (@oldNumber,@number) AND ISNULL(item.MPO,'')=ISNULL(@mpo,'')
