@@ -34,21 +34,39 @@ type Options = {
 export function useGoodsReceiptSave(options: Options) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [validationIssues, setValidationIssues] = useState<string[]>([]);
     const [numberWarning, setNumberWarning] =
         useState<GoodsReceiptNumberWarning | null>(null);
-    const hasValidItems = options.draft.items.length > 0 &&
-        options.draft.items.every((item) =>
-            Boolean(item.productCode?.trim()) &&
-            item.quantity != null &&
-            item.quantity !== 0,
-        );
-    const canSave = Boolean(
-        options.draft.receiptNumber.trim() &&
-        options.draft.receiptDate &&
-        options.draft.storage.trim() &&
-        options.draft.receivedBy.trim() &&
-        hasValidItems,
-    ) && !options.isLoading && !options.isDuplicating && !options.loadError;
+    const canSave = !options.isLoading && !options.isDuplicating &&
+        !options.loadError;
+
+    const getValidationIssues = () => {
+        const issues: string[] = [];
+        if (!options.draft.receiptNumber.trim()) {
+            issues.push("Receipt number is required.");
+        }
+        if (!options.draft.receiptDate) {
+            issues.push("Receipt date is required.");
+        }
+        if (!options.draft.storage.trim()) {
+            issues.push("Storage is required.");
+        }
+        if (!options.draft.receivedBy.trim()) {
+            issues.push("Received by is required.");
+        }
+        if (options.draft.items.length === 0) {
+            issues.push("At least one inventory item is required.");
+        } else if (options.draft.items.some((item) =>
+            !item.productCode?.trim() ||
+            item.quantity == null ||
+            item.quantity === 0
+        )) {
+            issues.push(
+                "Every inventory item needs a code and a non-zero quantity.",
+            );
+        }
+        return issues;
+    };
 
     const performSave = async () => {
         try {
@@ -96,6 +114,11 @@ export function useGoodsReceiptSave(options: Options) {
 
     const requestSave = async () => {
         if (!canSave || isSaving) return false;
+        const issues = getValidationIssues();
+        if (issues.length > 0) {
+            setValidationIssues(issues);
+            return false;
+        }
         setIsSaving(true);
         setSaveError(null);
         options.clearDuplicateError();
@@ -147,6 +170,8 @@ export function useGoodsReceiptSave(options: Options) {
         isSaving,
         saveError,
         setSaveError,
+        validationIssues,
+        setValidationIssues,
         requestSave,
         confirmSave,
         numberWarning,
