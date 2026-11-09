@@ -40,6 +40,26 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       }
+    },
+    {
+      "clientId": "mini-cash-register-assistant",
+      "name": "Mini Cash Register Assistant",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "https://lhcfgooaihegnbmbececacnlfhmabgaf.chromiumapp.org/"
+      ],
+      "webOrigins": [
+        "https://lhcfgooaihegnbmbececacnlfhmabgaf.chromiumapp.org",
+        "chrome-extension://lhcfgooaihegnbmbececacnlfhmabgaf"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
     }
   ]
 }

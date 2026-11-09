@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini Cash Register Assistant</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <h1>Import VKR</h1>
+      <button id="login" type="button">Sign in to Bureaucracy</button>
+      <button id="logout" class="secondary" type="button" hidden>Sign out</button>
+      <label for="business-year">Business year</label>
+      <select id="business-year" disabled><option value="">Sign in first</option></select>
+      <label for="invoice">Invoice</label>
+      <select id="invoice" disabled><option value="">Select a business year</option></select>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

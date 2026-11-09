@@ -57,9 +57,10 @@ func NewHTTPServer(
 		gin.Logger(),
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
-			AllowOrigins: config.AllowedOrigins,
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
-			AllowHeaders: []string{"Content-Type", "Authorization"},
+			AllowOrigins:  config.AllowedOrigins,
+			AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+			AllowHeaders:  []string{"Content-Type", "Authorization"},
+			CustomSchemas: []string{"chrome-extension://"},
 		}),
 	)
 	router.GET("/health", func(context *gin.Context) {

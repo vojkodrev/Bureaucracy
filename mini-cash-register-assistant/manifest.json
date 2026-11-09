@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Mini Cash Register Assistant",
+  "version": "0.1.0",
+  "description": "Assists with reporting VKR invoices in Mini Blagajna.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApC3W291m2eOcy+fM0sRs+HlDJEsMRgUVsKPkKpaZFKE0B8llfhnhEgA7gu+ULSDPmdq6DWHHkpNeGjw+JVfyMEhZIxYf+ekHgxpd3xPEkjW7/qtqg1OF+KtpLN5QSWdyAHC/1/oega5X6JHtGY8Iv3DTeiqY8j8g5Scvj2SYXzEVh2EKrJKl/uyUHTs8DF4+siJ9Q6GHmld8YMDr2WRMWX038Bgh06UqtYytNa3tL9CHv7JmlTddFgKjxwdREk83Hlv0fjTN/KKPAuwXZgtTG9PaA/tVryQ8G4GSvD9H+2b2qyWbj79ii/rmJdAf+SfQugPb61IPTfRcVlvqgm9+yQIDAQAB",
+  "permissions": ["identity", "storage"],
+  "host_permissions": [
+    "https://drevi-pc:8080/*",
+    "https://drevi-pc:8180/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Mini Cash Register Assistant",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://miniblagajna.fu.gov.si/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
