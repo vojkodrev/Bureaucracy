@@ -2,6 +2,7 @@ const loginButton = document.getElementById("login");
 const logoutButton = document.getElementById("logout");
 const businessYearSelect = document.getElementById("business-year");
 const invoiceSelect = document.getElementById("invoice");
+const fillButton = document.getElementById("fill");
 const status = document.getElementById("status");
 const SELECTED_BUSINESS_YEAR_KEY = "selectedBusinessYear";
 
@@ -55,6 +56,7 @@ async function loadBusinessYears() {
 async function loadInvoices(businessYear) {
   replaceOptions(invoiceSelect, "Select an invoice", []);
   invoiceSelect.disabled = true;
+  fillButton.disabled = true;
   businessYearSelect.disabled = true;
   setStatus("Loading invoices…");
   try {
@@ -83,6 +85,7 @@ function showSignedOut() {
   replaceOptions(invoiceSelect, "Select a business year", []);
   businessYearSelect.disabled = true;
   invoiceSelect.disabled = true;
+  fillButton.disabled = true;
   setStatus("Sign in to load business years.");
 }
 
@@ -119,12 +122,38 @@ businessYearSelect.addEventListener("change", async () => {
     await chrome.storage.local.remove(SELECTED_BUSINESS_YEAR_KEY);
     replaceOptions(invoiceSelect, "Select a business year", []);
     invoiceSelect.disabled = true;
+    fillButton.disabled = true;
     setStatus("Choose a business year.");
     return;
   }
 
   await chrome.storage.local.set({ [SELECTED_BUSINESS_YEAR_KEY]: businessYear });
   await loadInvoices(businessYear);
+});
+
+invoiceSelect.addEventListener("change", () => {
+  fillButton.disabled = !invoiceSelect.value;
+});
+
+fillButton.addEventListener("click", async () => {
+  const businessYear = businessYearSelect.value;
+  const invoiceNumber = invoiceSelect.value;
+  if (!businessYear || !invoiceNumber) return;
+
+  fillButton.disabled = true;
+  setStatus("Loading invoice…");
+  try {
+    const invoice = await request({ type: "GET_INVOICE", businessYear, invoiceNumber });
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error("No active Mini Blagajna tab was found.");
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "FILL_VKR_FORM", invoice });
+    if (!response?.ok) throw new Error(response?.error || "The VKR form could not be filled.");
+    setStatus(`${response.filled} fields filled. Review the form before submitting.`);
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    fillButton.disabled = !invoiceSelect.value;
+  }
 });
 
 loadBusinessYears().catch((error) => {

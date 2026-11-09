@@ -13,5 +13,6 @@ button:hover { background: #005a70; }
 button:disabled { cursor: wait; opacity: .65; }
 button.secondary { margin-top: 8px; border: 1px solid #84949e; background: white; color: #334e5e; }
 button.secondary:hover { background: #eef1f3; }
+#fill { margin-top: 16px; }
 #status { min-height: 20px; margin: 12px 0 0; color: #596870; font-size: 13px; }
 #status.error { color: #a12622; }

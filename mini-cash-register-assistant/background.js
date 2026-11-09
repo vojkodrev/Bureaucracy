@@ -200,6 +200,33 @@ async function loadInvoices(businessYear) {
   return invoices;
 }
 
+async function loadInvoice(businessYear, invoiceNumber) {
+  const data = await graphql(`
+    query ExtensionInvoice($businessYear: String!, $invoiceNumber: String!) {
+      invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
+        invoiceNumber amount issueDate serviceDate customerCode customerName customerAddress
+        customerPostalCode customerCity customerCountry
+        items { taxRate netAmount grossAmount }
+      }
+    }
+  `, { businessYear, invoiceNumber });
+  const invoice = data?.invoice;
+  if (!invoice) throw new Error(`Invoice ${invoiceNumber} was not found.`);
+
+  let customer = null;
+  if (invoice.customerCode) {
+    const customerData = await graphql(`
+      query ExtensionInvoiceCustomer($businessYear: String!, $customerId: String!) {
+        customer(businessYear: $businessYear, customerId: $customerId) {
+          taxNumber country
+        }
+      }
+    `, { businessYear, customerId: invoice.customerCode });
+    customer = customerData?.customer ?? null;
+  }
+  return { ...invoice, customer };
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const action = message?.type === "LOGIN"
     ? login()
@@ -209,6 +236,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       ? loadBusinessYears()
       : message?.type === "GET_INVOICES"
         ? loadInvoices(message.businessYear)
+        : message?.type === "GET_INVOICE"
+          ? loadInvoice(message.businessYear, message.invoiceNumber)
         : Promise.reject(new Error("Unknown extension action."));
 
   action.then((data) => sendResponse({ ok: true, data }))
