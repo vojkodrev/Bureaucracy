@@ -3,6 +3,7 @@ const logoutButton = document.getElementById("logout");
 const businessYearSelect = document.getElementById("business-year");
 const invoiceSelect = document.getElementById("invoice");
 const status = document.getElementById("status");
+const SELECTED_BUSINESS_YEAR_KEY = "selectedBusinessYear";
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -35,7 +36,43 @@ async function loadBusinessYears() {
   businessYearSelect.disabled = options.length === 0;
   loginButton.hidden = true;
   logoutButton.hidden = false;
-  setStatus(options.length ? "Choose a business year." : "No business years found.");
+  if (!options.length) {
+    setStatus("No business years found.");
+    return;
+  }
+
+  const stored = await chrome.storage.local.get(SELECTED_BUSINESS_YEAR_KEY);
+  const selectedBusinessYear = stored[SELECTED_BUSINESS_YEAR_KEY];
+  if (selectedBusinessYear && options.some(({ value }) => value === selectedBusinessYear)) {
+    businessYearSelect.value = selectedBusinessYear;
+    await loadInvoices(selectedBusinessYear);
+    return;
+  }
+
+  setStatus("Choose a business year.");
+}
+
+async function loadInvoices(businessYear) {
+  replaceOptions(invoiceSelect, "Select an invoice", []);
+  invoiceSelect.disabled = true;
+  businessYearSelect.disabled = true;
+  setStatus("Loading invoices…");
+  try {
+    const invoices = await request({ type: "GET_INVOICES", businessYear });
+    const options = invoices.map((invoice) => ({
+      value: invoice.invoiceNumber,
+      label: `${invoice.invoiceNumber}${invoice.customerName ? ` — ${invoice.customerName}` : ""}`,
+    }));
+    replaceOptions(invoiceSelect, "Select an invoice", options);
+    invoiceSelect.disabled = options.length === 0;
+    setStatus(options.length
+      ? `${options.length} invoice${options.length === 1 ? "" : "s"} loaded.`
+      : "No invoices found.");
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    businessYearSelect.disabled = false;
+  }
 }
 
 function showSignedOut() {
@@ -67,6 +104,7 @@ logoutButton.addEventListener("click", async () => {
   setStatus("Signing out…");
   try {
     await request({ type: "LOGOUT" });
+    await chrome.storage.local.remove(SELECTED_BUSINESS_YEAR_KEY);
     showSignedOut();
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), true);
@@ -76,27 +114,17 @@ logoutButton.addEventListener("click", async () => {
 });
 
 businessYearSelect.addEventListener("change", async () => {
-  replaceOptions(invoiceSelect, "Select an invoice", []);
-  invoiceSelect.disabled = true;
-  if (!businessYearSelect.value) return setStatus("Choose a business year.");
-  businessYearSelect.disabled = true;
-  setStatus("Loading invoices…");
-  try {
-    const invoices = await request({ type: "GET_INVOICES", businessYear: businessYearSelect.value });
-    const options = invoices.map((invoice) => ({
-      value: invoice.invoiceNumber,
-      label: `${invoice.invoiceNumber}${invoice.customerName ? ` — ${invoice.customerName}` : ""}`,
-    }));
-    replaceOptions(invoiceSelect, "Select an invoice", options);
-    invoiceSelect.disabled = options.length === 0;
-    setStatus(options.length
-      ? `${options.length} invoice${options.length === 1 ? "" : "s"} loaded.`
-      : "No invoices found.");
-  } catch (error) {
-    setStatus(error instanceof Error ? error.message : String(error), true);
-  } finally {
-    businessYearSelect.disabled = false;
+  const businessYear = businessYearSelect.value;
+  if (!businessYear) {
+    await chrome.storage.local.remove(SELECTED_BUSINESS_YEAR_KEY);
+    replaceOptions(invoiceSelect, "Select a business year", []);
+    invoiceSelect.disabled = true;
+    setStatus("Choose a business year.");
+    return;
   }
+
+  await chrome.storage.local.set({ [SELECTED_BUSINESS_YEAR_KEY]: businessYear });
+  await loadInvoices(businessYear);
 });
 
 loadBusinessYears().catch((error) => {
