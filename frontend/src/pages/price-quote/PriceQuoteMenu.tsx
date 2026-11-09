@@ -50,6 +50,10 @@ export default function PriceQuoteMenu(props: Props) {
                         <Mail />
                         Send email
                     </MenubarItem>
+                    <MenubarItem onClick={props.onConvertToInvoice}>
+                        <FileOutput />
+                        Convert to invoice
+                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
@@ -68,10 +72,6 @@ export default function PriceQuoteMenu(props: Props) {
                     >
                         <Copy />
                         {props.isDuplicating ? 'Duplicating…' : 'Duplicate'}
-                    </MenubarItem>
-                    <MenubarItem onClick={props.onConvertToInvoice}>
-                        <FileOutput />
-                        Convert to invoice
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>

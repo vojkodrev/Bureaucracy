@@ -7,6 +7,7 @@ import {
     FileOutput,
     Landmark,
     Mail,
+    PackageCheck,
     Printer,
     Save,
     Undo2,
@@ -85,6 +86,19 @@ function InvoiceMenu(props: InvoiceMenuProps) {
                             </MenubarItem>
                         </MenubarSubContent>
                     </MenubarSub>
+                    <MenubarSub>
+                        <MenubarSubTrigger>
+                            <FileOutput />Convert
+                        </MenubarSubTrigger>
+                        <MenubarSubContent className="min-w-56 whitespace-nowrap">
+                            <MenubarItem onClick={onConvertToDeliveryNote}>
+                                <PackageCheck />Convert to delivery note
+                            </MenubarItem>
+                            <MenubarItem onClick={onConvertToCreditNote}>
+                                <FileMinus2 />Convert to credit note
+                            </MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
                     <MenubarItem disabled={!canTaxConfirm || isTaxConfirming} onClick={onTaxConfirm}>
                         <BadgeCheck />{isTaxConfirming ? 'Tax confirming…' : 'Tax confirmation'}
                     </MenubarItem>
@@ -99,19 +113,6 @@ function InvoiceMenu(props: InvoiceMenuProps) {
                     <MenubarItem disabled={!canDuplicate || isDuplicating} onClick={onDuplicate}>
                         <Copy />{isDuplicating ? 'Duplicating…' : 'Duplicate'}
                     </MenubarItem>
-                    <MenubarSub>
-                        <MenubarSubTrigger>
-                            <FileOutput />Convert
-                        </MenubarSubTrigger>
-                        <MenubarSubContent className="min-w-56 whitespace-nowrap">
-                            <MenubarItem onClick={onConvertToDeliveryNote}>
-                                <FileOutput />Convert to delivery note
-                            </MenubarItem>
-                            <MenubarItem onClick={onConvertToCreditNote}>
-                                <FileMinus2 />Convert to credit note
-                            </MenubarItem>
-                        </MenubarSubContent>
-                    </MenubarSub>
                 </MenubarContent>
             </MenubarMenu>
         </Menubar>

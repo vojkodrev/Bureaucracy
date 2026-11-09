@@ -44,6 +44,10 @@ export default function DeliveryNoteMenu(props: Props) {
                         Print
                         <MenubarShortcut>Ctrl+P</MenubarShortcut>
                     </MenubarItem>
+                    <MenubarItem onClick={props.onConvertToInvoice}>
+                        <FileOutput />
+                        Convert to invoice
+                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
@@ -64,10 +68,6 @@ export default function DeliveryNoteMenu(props: Props) {
                     >
                         <Copy />
                         {props.isDuplicating ? 'Duplicating…' : 'Duplicate'}
-                    </MenubarItem>
-                    <MenubarItem onClick={props.onConvertToInvoice}>
-                        <FileOutput />
-                        Convert to invoice
                     </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
