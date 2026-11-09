@@ -25,6 +25,33 @@
     return true;
   }
 
+  function setInputValue(input, value) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    setter?.call(input, String(value));
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: String(value) }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function miniBlagajnaCountryCode(code) {
+    const normalizedCode = String(code ?? "").trim().toLocaleUpperCase("sl");
+    return ({ SLO: "SI", CRO: "HR", SRB: "RS" })[normalizedCode] ?? normalizedCode;
+  }
+
+  function setComboboxValue(label, value) {
+    if (!value) return false;
+    const button = fieldForLabel(label);
+    if (!(button instanceof HTMLInputElement) || button.type !== "button") return false;
+    setInputValue(button, value);
+    button.dispatchEvent(new Event("blur", { bubbles: true }));
+    return true;
+  }
+
+  function setComboboxInput(label, code, name) {
+    const normalizedCode = miniBlagajnaCountryCode(code);
+    const displayValue = [normalizedCode, String(name ?? "").trim()].filter(Boolean).join(" - ");
+    return setComboboxValue(label, displayValue);
+  }
+
   function selectRadio(label) {
     const input = fieldForLabel(label);
     if (!(input instanceof HTMLInputElement) || input.type !== "radio") return false;
@@ -43,8 +70,17 @@
     return Number.isFinite(number) ? number.toFixed(2).replace(".", ",") : "";
   }
 
+  function cityWithoutPostalCode(city, postalCode) {
+    const normalizedCity = city?.trim() ?? "";
+    const normalizedPostalCode = postalCode?.trim() ?? "";
+    if (!normalizedPostalCode || !normalizedCity.startsWith(normalizedPostalCode)) return normalizedCity;
+    const remainder = normalizedCity.slice(normalizedPostalCode.length);
+    return /^\s/.test(remainder) ? remainder.trimStart() : normalizedCity;
+  }
+
   function customerAddress(invoice) {
-    return [invoice.customerAddress, [invoice.customerPostalCode, invoice.customerCity].filter(Boolean).join(" ")]
+    const city = cityWithoutPostalCode(invoice.customerCity, invoice.customerPostalCode);
+    return [invoice.customerAddress, [invoice.customerPostalCode, city].filter(Boolean).join(" ")]
       .filter(Boolean)
       .join(", ");
   }
@@ -64,18 +100,23 @@
     return totals;
   }
 
-  function fillVkrForm(invoice) {
+  function fillVkrForm(invoice, vkrSerialNumber, businessPremises) {
     if (!location.hash.startsWith("#/porocanje-vkr-racunov")) {
       throw new Error("Open a VKR invoice form in Mini Blagajna before filling it.");
     }
 
     let filled = 0;
     const fill = (label, value) => { if (setInput(label, value)) filled += 1; };
+    if (setComboboxValue("Poslovni prostor", businessPremises)) filled += 1;
     fill("Številka računa iz VKR", invoice.invoiceNumber);
+    fill("Serijska številka VKR (oblika: 1234-1234567)", vkrSerialNumber);
     fill("Datum izdaje računa iz VKR", formatDate(invoice.issueDate));
     fill("Datum dobave oz. oprav. stor.", formatDate(invoice.serviceDate));
     fill("Naziv", invoice.customerName);
     fill("Naslov", customerAddress(invoice));
+    const country = invoice.customer?.country || invoice.customerCountry;
+    if (setComboboxInput("Koda države kupca", country, invoice.customerCountryName)) filled += 1;
+    if (setComboboxValue("Račun izdajam v", "Račun izdajam v svojem imenu")) filled += 1;
 
     const taxNumber = invoice.customer?.taxNumber?.replace(/^SI/i, "") ?? "";
     if (taxNumber) {
@@ -109,7 +150,10 @@
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "FILL_VKR_FORM") return false;
     try {
-      sendResponse({ ok: true, filled: fillVkrForm(message.invoice) });
+      sendResponse({
+        ok: true,
+        filled: fillVkrForm(message.invoice, message.vkrSerialNumber, message.businessPremises),
+      });
     } catch (error) {
       sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) });
     }

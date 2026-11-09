@@ -220,9 +220,13 @@ async function loadInvoice(businessYear, invoiceNumber) {
         customer(businessYear: $businessYear, customerId: $customerId) {
           taxNumber country
         }
+        countries(businessYear: $businessYear) { code name }
       }
     `, { businessYear, customerId: invoice.customerCode });
     customer = customerData?.customer ?? null;
+    const countryCode = customer?.country || invoice.customerCountry;
+    const country = customerData?.countries?.find(({ code }) => code === countryCode);
+    invoice.customerCountryName = country?.name ?? null;
   }
   return { ...invoice, customer };
 }

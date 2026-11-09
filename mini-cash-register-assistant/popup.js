@@ -2,9 +2,13 @@ const loginButton = document.getElementById("login");
 const logoutButton = document.getElementById("logout");
 const businessYearSelect = document.getElementById("business-year");
 const invoiceSelect = document.getElementById("invoice");
+const vkrSerialNumberInput = document.getElementById("vkr-serial-number");
+const businessPremisesInput = document.getElementById("business-premises");
 const fillButton = document.getElementById("fill");
 const status = document.getElementById("status");
 const SELECTED_BUSINESS_YEAR_KEY = "selectedBusinessYear";
+const VKR_SERIAL_NUMBER_KEY = "vkrSerialNumber";
+const BUSINESS_PREMISES_KEY = "businessPremises";
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -135,6 +139,14 @@ invoiceSelect.addEventListener("change", () => {
   fillButton.disabled = !invoiceSelect.value;
 });
 
+vkrSerialNumberInput.addEventListener("input", () => {
+  void chrome.storage.local.set({ [VKR_SERIAL_NUMBER_KEY]: vkrSerialNumberInput.value.trim() });
+});
+
+businessPremisesInput.addEventListener("input", () => {
+  void chrome.storage.local.set({ [BUSINESS_PREMISES_KEY]: businessPremisesInput.value.trim() });
+});
+
 fillButton.addEventListener("click", async () => {
   const businessYear = businessYearSelect.value;
   const invoiceNumber = invoiceSelect.value;
@@ -146,7 +158,12 @@ fillButton.addEventListener("click", async () => {
     const invoice = await request({ type: "GET_INVOICE", businessYear, invoiceNumber });
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error("No active Mini Blagajna tab was found.");
-    const response = await chrome.tabs.sendMessage(tab.id, { type: "FILL_VKR_FORM", invoice });
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      type: "FILL_VKR_FORM",
+      invoice,
+      vkrSerialNumber: vkrSerialNumberInput.value.trim(),
+      businessPremises: businessPremisesInput.value.trim(),
+    });
     if (!response?.ok) throw new Error(response?.error || "The VKR form could not be filled.");
     setStatus(`${response.filled} fields filled. Review the form before submitting.`);
   } catch (error) {
@@ -154,6 +171,14 @@ fillButton.addEventListener("click", async () => {
   } finally {
     fillButton.disabled = !invoiceSelect.value;
   }
+});
+
+void chrome.storage.local.get(VKR_SERIAL_NUMBER_KEY).then((stored) => {
+  vkrSerialNumberInput.value = stored[VKR_SERIAL_NUMBER_KEY] ?? "";
+});
+
+void chrome.storage.local.get(BUSINESS_PREMISES_KEY).then((stored) => {
+  businessPremisesInput.value = stored[BUSINESS_PREMISES_KEY] ?? "";
 });
 
 loadBusinessYears().catch((error) => {
