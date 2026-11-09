@@ -21,13 +21,16 @@ func DivideOrZero(value float64, divisor float64) float64 {
 }
 
 func SlovenianAmountInWords(value float64) string {
-	whole := int64(value)
-	cents := int64((value-float64(whole))*100 + 0.5)
-	if cents == 100 {
-		whole++
-		cents = 0
+	totalCents := CurrencyCents(value)
+	negative := totalCents < 0
+	if negative {
+		totalCents = -totalCents
 	}
-	return slovenianInteger(whole) + fmt.Sprintf(" %02d/100", cents)
+	amountInWords := slovenianInteger(totalCents/100) + fmt.Sprintf(" %02d/100", totalCents%100)
+	if negative {
+		return "minus " + amountInWords
+	}
+	return amountInWords
 }
 
 func slovenianInteger(value int64) string {
