@@ -60,6 +60,7 @@ const searchInvoicesQuery = `
                 customerCode
                 customerName
                 amount
+                creditedAmount
                 paidAmount
                 issueDate
                 dueDate
@@ -112,6 +113,7 @@ const searchInvoicesByCustomerQuery = `
                     customerCode
                     customerName
                     amount
+                    creditedAmount
                     paidAmount
                     issueDate
                     dueDate

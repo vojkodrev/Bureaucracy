@@ -168,6 +168,7 @@ type Invoice {
   customerContact: String
   currency: String
   amount: Float
+  creditedAmount: Float!
   goodsAmount: Float
   paidAmount: Float
   purchaseOrderNumber: String

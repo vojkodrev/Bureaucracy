@@ -61,6 +61,7 @@ export function useInvoiceLoader({
     const preserveDuplicateRef = useRef(false)
     const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
+    const [creditedAmount, setCreditedAmount] = useState(0)
     const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [reloadVersion, setReloadVersion] = useState(0)
     const [requestErrors, setRequestErrors] = useState<InvoiceRequestErrors>({})
@@ -94,6 +95,7 @@ export function useInvoiceLoader({
                 return currencyCents(item.grossAmount ?? 0) !== netTotal + vatTotal
             })
             setInvoiceId(invoice.id ?? null)
+            setCreditedAmount(invoice.creditedAmount ?? 0)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
@@ -139,6 +141,7 @@ export function useInvoiceLoader({
             introductoryText: '', closingText: '', invoiceItems: [],
         }
         setInvoiceId(null)
+        setCreditedAmount(0)
         replaceLoadedDraft(initialDraft)
         clearLoadedDraft()
         setRequestErrors((current) => ({
@@ -221,7 +224,7 @@ export function useInvoiceLoader({
     }
 
     return {
-        invoiceId, setInvoiceId, businessYear, setBusinessYear, isLoading, error, warnings,
+        invoiceId, setInvoiceId, creditedAmount, businessYear, setBusinessYear, isLoading, error, warnings,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),
         preserveDuplicateDraft: () => { preserveDuplicateRef.current = true },

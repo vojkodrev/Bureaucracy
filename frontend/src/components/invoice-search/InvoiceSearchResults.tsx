@@ -8,12 +8,13 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
-import { formatCurrency, formatDate } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import type { Invoice, InvoicePage } from '@/lib/invoice-types'
 import type { InvoiceSearchCriteria, InvoiceSortColumn } from './types'
 import { invoiceSortColumns } from './types'
 import InvoicePaymentDate from './InvoicePaymentDate'
 import SearchResultCell from '@/components/SearchResultCell'
+import InvoiceAmount from './InvoiceAmount'
 
 type InvoiceSearchResultsProps = {
     invoicePage: InvoicePage | null
@@ -138,7 +139,10 @@ function InvoiceSearchResults({
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                 className="text-right"
                             >
-                                {formatCurrency(invoice.amount ?? 0)}
+                                <InvoiceAmount
+                                    amount={invoice.amount}
+                                    creditedAmount={invoice.creditedAmount}
+                                />
                             </SearchResultCell>
                             <SearchResultCell
                                 to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}

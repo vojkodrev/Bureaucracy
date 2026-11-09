@@ -24,6 +24,7 @@ type Invoice struct {
 	CustomerContact            *string        `json:"customerContact"`
 	Currency                   *string        `json:"currency"`
 	Amount                     *float64       `json:"amount"`
+	CreditedAmount             float64        `json:"creditedAmount"`
 	GoodsAmount                *float64       `json:"goodsAmount"`
 	PaidAmount                 *float64       `json:"paidAmount"`
 	PurchaseOrderNumber        *string        `json:"purchaseOrderNumber"`

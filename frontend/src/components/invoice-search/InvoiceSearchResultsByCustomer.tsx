@@ -15,6 +15,7 @@ import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoiceCustomerSummary, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 import InvoicePaymentDate from './InvoicePaymentDate'
+import InvoiceAmount from './InvoiceAmount'
 import SearchResultCell from '@/components/SearchResultCell'
 import type { PaymentStatus } from './types'
 
@@ -146,7 +147,10 @@ function InvoiceSearchResultsByCustomer({
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                             className="text-right tabular-nums"
                                         >
-                                            {formatCurrency(invoice.amount ?? 0)}
+                                            <InvoiceAmount
+                                                amount={invoice.amount}
+                                                creditedAmount={invoice.creditedAmount}
+                                            />
                                         </SearchResultCell>
                                         <SearchResultCell
                                             to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}

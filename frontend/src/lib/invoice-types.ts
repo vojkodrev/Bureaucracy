@@ -8,6 +8,7 @@ export type Invoice = {
     customerCity?: string | null
     customerCountry?: string | null
     amount: number | null
+    creditedAmount?: number
     paidAmount?: number | null
     purchaseOrderNumber?: string | null
     deliveryNoteNumber?: string | null

@@ -257,7 +257,9 @@ function InvoicePage() {
             <Field><FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
                 <Textarea id="closing-text" name="closingText" value={draft.closingText}
                     onChange={(e) => setField('closingText', e.target.value)} /></Field>
-            <InvoiceSummary total={draftState.totalIncludingVat} paidAmount={draft.paidAmount}
+            <InvoiceSummary total={draftState.totalIncludingVat}
+                creditedAmount={loader.invoiceId == null || loader.isLoading ? 0 : loader.creditedAmount}
+                paidAmount={draft.paidAmount}
                 paymentDate={draft.paymentDate} />
         </div>
     </div>

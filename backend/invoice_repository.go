@@ -482,6 +482,14 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.KontaktPartnerja,
 			r.Valuta,
 			r.Znesek,
+			COALESCE((
+				SELECT SUM(ds.Znesek)
+				FROM [%s].[dbo].[DobropisSpecifikacija] ds
+				INNER JOIN [%s].[dbo].[Dobropis] d ON d.Stevilka = ds.Stevilka
+				WHERE ISNULL(ds.Deleted, 0) = 0
+				  AND ISNULL(d.Storno, 0) = 0
+				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(r.Stevilka)))
+			), 0),
 			r.ZnesekBlaga,
 			r.PlacanoSIT,
 			r.Narocilnica,
@@ -493,7 +501,7 @@ func (repository *InvoiceRepository) GetByNumber(
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
 		LEFT JOIN [%s].[dbo].[Drzave] d ON d.OznakaDrzave = p.Drzava AND ISNULL(d.Deleted, 0) = 0
-		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
+		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, invoiceDatabaseName, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
 		sql.Named("invoiceNumber", invoiceNumber),
 	)
 
@@ -521,6 +529,7 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.CustomerContact,
 		&invoice.Currency,
 		&invoice.Amount,
+		&invoice.CreditedAmount,
 		&invoice.GoodsAmount,
 		&invoice.PaidAmount,
 		&invoice.PurchaseOrderNumber,
@@ -717,6 +726,14 @@ func (repository *InvoiceRepository) Search(
 			KontaktPartnerja,
 			Valuta,
 			Znesek,
+			COALESCE((
+				SELECT SUM(ds.Znesek)
+				FROM [%s].[dbo].[DobropisSpecifikacija] ds
+				INNER JOIN [%s].[dbo].[Dobropis] d ON d.Stevilka = ds.Stevilka
+				WHERE ISNULL(ds.Deleted, 0) = 0
+				  AND ISNULL(d.Storno, 0) = 0
+				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(Racuni.Stevilka)))
+			), 0),
 			ZnesekBlaga,
 			PlacanoSIT,
 			Sklic,
@@ -741,7 +758,7 @@ func (repository *InvoiceRepository) Search(
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, productDatabaseName, orderBy),
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -767,6 +784,7 @@ func (repository *InvoiceRepository) Search(
 			&invoice.CustomerContact,
 			&invoice.Currency,
 			&invoice.Amount,
+			&invoice.CreditedAmount,
 			&invoice.GoodsAmount,
 			&invoice.PaidAmount,
 			&invoice.PaymentReference,

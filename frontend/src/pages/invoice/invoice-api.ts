@@ -9,7 +9,7 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const invoiceQuery = `
     query Invoice($businessYear: String!, $invoiceNumber: String!) {
         invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
-            id invoiceNumber amount issueDate serviceDate dueDate paymentDate customerCode
+            id invoiceNumber amount creditedAmount issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
             paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText
             items {

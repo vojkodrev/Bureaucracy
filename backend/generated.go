@@ -253,6 +253,7 @@ type ComplexityRoot struct {
 		Amount              func(childComplexity int) int
 		Cancelled           func(childComplexity int) int
 		ClosingText         func(childComplexity int) int
+		CreditedAmount      func(childComplexity int) int
 		Currency            func(childComplexity int) int
 		CustomerAddress     func(childComplexity int) int
 		CustomerCity        func(childComplexity int) int
@@ -1457,6 +1458,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.ClosingText(childComplexity), true
+	case "Invoice.creditedAmount":
+		if e.ComplexityRoot.Invoice.CreditedAmount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.CreditedAmount(childComplexity), true
 	case "Invoice.currency":
 		if e.ComplexityRoot.Invoice.Currency == nil {
 			break
@@ -3266,6 +3273,8 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_currency(ctx, field)
 	case "amount":
 		return ec.fieldContext_Invoice_amount(ctx, field)
+	case "creditedAmount":
+		return ec.fieldContext_Invoice_creditedAmount(ctx, field)
 	case "goodsAmount":
 		return ec.fieldContext_Invoice_goodsAmount(ctx, field)
 	case "paidAmount":
@@ -9308,6 +9317,29 @@ func (ec *executionContext) _Invoice_amount(ctx context.Context, field graphql.C
 	)
 }
 func (ec *executionContext) fieldContext_Invoice_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Float does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_creditedAmount(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_creditedAmount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreditedAmount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v float64) graphql.Marshaler {
+			return ec.marshalNFloat2float64(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_creditedAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
@@ -17885,6 +17917,11 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 		case "amount":
 			out.Values[i] = ec._Invoice_amount(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "creditedAmount":
+			out.Values[i] = ec._Invoice_creditedAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "goodsAmount":
