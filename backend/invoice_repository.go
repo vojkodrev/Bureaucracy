@@ -61,15 +61,26 @@ func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, 
 			arguments = append(arguments, sql.Named(name, invoiceNumber))
 		}
 		rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
-			SELECT LTRIM(RTRIM(Stevilka)), DatumPlacila, Znesek, PlacanoSIT
-			FROM [%s].[dbo].[Racuni]
-			WHERE UPPER(LTRIM(RTRIM(Stevilka))) IN (%s)`, databaseName, strings.Join(placeholders, ", ")), arguments...)
+			SELECT LTRIM(RTRIM(invoice.Stevilka)), invoice.DatumPlacila, invoice.Znesek,
+				COALESCE((
+					SELECT SUM(item.Znesek)
+					FROM [%s].[dbo].[DobropisSpecifikacija] item
+					INNER JOIN [%s].[dbo].[Dobropis] creditNote
+						ON creditNote.Stevilka = item.Stevilka
+					WHERE ISNULL(item.Deleted, 0) = 0
+					  AND ISNULL(creditNote.Storno, 0) = 0
+					  AND UPPER(LTRIM(RTRIM(item.Racun))) =
+						UPPER(LTRIM(RTRIM(invoice.Stevilka)))
+				), 0),
+				invoice.PlacanoSIT
+			FROM [%s].[dbo].[Racuni] invoice
+			WHERE UPPER(LTRIM(RTRIM(invoice.Stevilka))) IN (%s)`, databaseName, databaseName, databaseName, strings.Join(placeholders, ", ")), arguments...)
 		if err != nil {
 			return nil, fmt.Errorf("load invoice payments for bank statements: %w", err)
 		}
 		for rows.Next() {
 			payment := &BankStatementInvoicePayment{}
-			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.Amount, &payment.PaidAmount); err != nil {
+			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.Amount, &payment.CreditedAmount, &payment.PaidAmount); err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("scan invoice payment for bank statements: %w", err)
 			}
@@ -247,13 +258,22 @@ func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, pa
 			SET invoice.PlacanoSIT=payment.PaidAmount,
 				invoice.DatumPlacila=CASE
 					WHEN payment.IsPartial=1 THEN payment.PaymentDate
-					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek, 2)=ROUND(payment.PaidAmount, 2)
+					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek - COALESCE((
+						SELECT SUM(item.Znesek)
+						FROM [%s].[dbo].[DobropisSpecifikacija] item
+						INNER JOIN [%s].[dbo].[Dobropis] creditNote
+							ON creditNote.Stevilka = item.Stevilka
+						WHERE ISNULL(item.Deleted, 0) = 0
+						  AND ISNULL(creditNote.Storno, 0) = 0
+						  AND UPPER(LTRIM(RTRIM(item.Racun))) =
+							UPPER(LTRIM(RTRIM(invoice.Stevilka)))
+					), 0), 2)=ROUND(payment.PaidAmount, 2)
 					THEN payment.PaymentDate
 					ELSE NULL
 				END
 			FROM [%s].[dbo].[Racuni] invoice
 			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount, PaymentDate, IsPartial)
-				ON UPPER(LTRIM(RTRIM(invoice.Stevilka)))=UPPER(payment.InvoiceNumber)`, databaseName, strings.Join(values, ", "))
+				ON UPPER(LTRIM(RTRIM(invoice.Stevilka)))=UPPER(payment.InvoiceNumber)`, databaseName, databaseName, databaseName, strings.Join(values, ", "))
 		if _, err := tx.ExecContext(ctx, query, arguments...); err != nil {
 			return fmt.Errorf("update paid invoices: %w", err)
 		}

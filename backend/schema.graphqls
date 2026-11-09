@@ -74,6 +74,7 @@ type BankStatementInvoicePayment {
   invoiceNumber: String!
   paymentDate: Time
   amount: Float
+  creditedAmount: Float!
   paidAmount: Float
 }
 

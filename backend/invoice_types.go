@@ -112,8 +112,9 @@ type InvoiceCustomerSummaryPage struct {
 }
 
 type BankStatementInvoicePayment struct {
-	InvoiceNumber string     `json:"invoiceNumber"`
-	PaymentDate   *time.Time `json:"paymentDate"`
-	Amount        *float64   `json:"amount"`
-	PaidAmount    *float64   `json:"paidAmount"`
+	InvoiceNumber  string     `json:"invoiceNumber"`
+	PaymentDate    *time.Time `json:"paymentDate"`
+	Amount         *float64   `json:"amount"`
+	CreditedAmount float64    `json:"creditedAmount"`
+	PaidAmount     *float64   `json:"paidAmount"`
 }

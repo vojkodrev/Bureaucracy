@@ -43,6 +43,7 @@ function InvoicePaymentMismatchAlert({
         )
         const paidAmountMismatch = hasPaidAmountMismatch(
             invoicePayment.amount,
+            invoicePayment.creditedAmount,
             invoicePayment.paidAmount,
             entry.inflow,
         )

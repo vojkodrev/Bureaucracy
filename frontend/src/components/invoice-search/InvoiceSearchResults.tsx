@@ -159,6 +159,7 @@ function InvoiceSearchResults({
                                 <InvoicePaymentDate
                                     invoiceNumber={invoice.invoiceNumber}
                                     amount={invoice.amount}
+                                    creditedAmount={invoice.creditedAmount}
                                     paidAmount={invoice.paidAmount}
                                     paymentDate={invoice.paymentDate}
                                 />

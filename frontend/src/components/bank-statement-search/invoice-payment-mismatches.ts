@@ -1,4 +1,5 @@
 import type { BankStatementEntry } from '@/lib/bank-statement-types'
+import { currencyCents } from '@/lib/numbers'
 
 const PARTIAL_CUSTOMER_INVOICE_PAYMENT_TYPE = 'Plačilo računa kupca - delni'
 
@@ -39,12 +40,16 @@ export function hasPaymentDateMismatch(
 
 export function hasPaidAmountMismatch(
     invoiceAmount: number | null,
+    creditedAmount: number,
     invoicePaidAmount: number | null,
-    transactionInflow: number | null,
+    transactionInflow: number | null = invoicePaidAmount,
 ) {
+    const amountAfterCredits = Math.max(0, currencyCents(
+        (invoiceAmount ?? 0) - creditedAmount,
+    ))
     return invoiceAmount == null
         || invoicePaidAmount == null
         || transactionInflow == null
-        || Math.round(invoiceAmount * 100) !== Math.round(invoicePaidAmount * 100)
-        || Math.round(invoicePaidAmount * 100) !== Math.round(transactionInflow * 100)
+        || amountAfterCredits !== currencyCents(invoicePaidAmount)
+        || currencyCents(invoicePaidAmount) !== currencyCents(transactionInflow)
 }
