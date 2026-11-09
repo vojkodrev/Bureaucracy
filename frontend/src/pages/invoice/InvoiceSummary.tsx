@@ -13,7 +13,7 @@ type InvoiceSummaryProps = {
 
 function InvoiceSummary({ total, creditedAmount, paidAmount, paymentDate }: InvoiceSummaryProps) {
     const credits = roundCurrency(creditedAmount)
-    const balanceDue = Math.max(0, roundCurrency(total - credits - (Number(paidAmount) || 0)))
+    const balanceDue = Math.max(0, roundCurrency(total + credits - (Number(paidAmount) || 0)))
     return (
         <Card className="ml-auto w-full lg:w-[calc(50%-0.75rem)]">
             <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
@@ -26,7 +26,7 @@ function InvoiceSummary({ total, creditedAmount, paidAmount, paymentDate }: Invo
                             <TableRow>
                                 <TableCell>Credit notes</TableCell>
                                 <TableCell className="text-right font-medium text-foreground">
-                                    −{formatCurrency(credits)}
+                                    {formatCurrency(credits)}
                                 </TableCell>
                             </TableRow>
                         )}

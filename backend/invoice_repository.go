@@ -258,7 +258,7 @@ func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, pa
 			SET invoice.PlacanoSIT=payment.PaidAmount,
 				invoice.DatumPlacila=CASE
 					WHEN payment.IsPartial=1 THEN payment.PaymentDate
-					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek - COALESCE((
+					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek + COALESCE((
 						SELECT SUM(item.Znesek)
 						FROM [%s].[dbo].[DobropisSpecifikacija] item
 						INNER JOIN [%s].[dbo].[Dobropis] creditNote

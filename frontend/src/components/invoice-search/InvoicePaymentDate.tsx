@@ -9,7 +9,7 @@ type InvoicePaymentDateProps = Pick<Invoice, 'invoiceNumber' | 'amount' | 'credi
 function InvoicePaymentDate({ invoiceNumber, amount, creditedAmount = 0, paidAmount, paymentDate }: InvoicePaymentDateProps) {
     const amountAfterCredits = amount == null
         ? null
-        : Math.max(0, roundCurrency(amount - creditedAmount))
+        : Math.max(0, roundCurrency(amount + creditedAmount))
     const isPaymentDateMissing = !paymentDate && paidAmount != null && paidAmount !== 0
     const isPaidAmountMismatch = amountAfterCredits != null
         && paidAmount != null

@@ -38,7 +38,7 @@ func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *Invoi
 
 		summary.Invoices = append(summary.Invoices, invoice)
 		amount := float64OrZero(invoice.Amount)
-		amountAfterCredits := max(0, lib.RoundCurrency(amount-invoice.CreditedAmount))
+		amountAfterCredits := max(0, lib.RoundCurrency(amount+invoice.CreditedAmount))
 		summary.TotalInvoiced += amount
 		if invoice.PaymentDate != nil {
 			summary.TotalPaid += amountAfterCredits

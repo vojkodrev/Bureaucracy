@@ -95,7 +95,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                                     )}
                                     amountMismatch={paidAmountMismatch}
                                     amountTooltip={(
-                                        <>Invoice amount after credits {invoicePayment?.amount == null ? '—' : formatCurrency(Math.max(0, invoicePayment.amount - invoicePayment.creditedAmount))}, paid amount {invoicePayment?.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
+                                        <>Invoice amount after credits {invoicePayment?.amount == null ? '—' : formatCurrency(Math.max(0, invoicePayment.amount + invoicePayment.creditedAmount))}, paid amount {invoicePayment?.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
                                     )}
                                     duplicate={duplicate}
                                     duplicateTooltip={(

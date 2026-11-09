@@ -10,13 +10,13 @@ function InvoiceAmount({ amount, creditedAmount = 0 }: InvoiceAmountProps) {
 
     if (credits === 0) return formatCurrency(invoiceAmount)
 
-    const amountDue = Math.max(0, roundCurrency(invoiceAmount - credits))
+    const amountDue = Math.max(0, roundCurrency(invoiceAmount + credits))
 
     return (
         <div className="whitespace-nowrap tabular-nums">
             <div className="font-normal">{formatCurrency(amountDue)} due</div>
             <div className="text-xs font-normal text-foreground">
-                {formatCurrency(invoiceAmount)} invoice · −{formatCurrency(credits)} credits
+                {formatCurrency(invoiceAmount)} invoice · {formatCurrency(credits)} credit notes
             </div>
         </div>
     )

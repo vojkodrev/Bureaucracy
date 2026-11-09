@@ -45,7 +45,7 @@ export function hasPaidAmountMismatch(
     transactionInflow: number | null = invoicePaidAmount,
 ) {
     const amountAfterCredits = Math.max(0, currencyCents(
-        (invoiceAmount ?? 0) - creditedAmount,
+        (invoiceAmount ?? 0) + creditedAmount,
     ))
     return invoiceAmount == null
         || invoicePaidAmount == null
