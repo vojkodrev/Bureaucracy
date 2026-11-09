@@ -6,13 +6,22 @@ const vkrSerialNumberInput = document.getElementById("vkr-serial-number");
 const businessPremisesInput = document.getElementById("business-premises");
 const fillButton = document.getElementById("fill");
 const status = document.getElementById("status");
+const debugContainer = document.getElementById("debug-container");
+const debugOutput = document.getElementById("debug");
 const SELECTED_BUSINESS_YEAR_KEY = "selectedBusinessYear";
+const SELECTED_INVOICE_KEY = "selectedInvoice";
 const VKR_SERIAL_NUMBER_KEY = "vkrSerialNumber";
 const BUSINESS_PREMISES_KEY = "businessPremises";
 
 function setStatus(message, isError = false) {
   status.textContent = message;
   status.classList.toggle("error", isError);
+}
+
+function setDebug(details = "") {
+  debugOutput.value = details;
+  debugContainer.hidden = !details;
+  debugContainer.open = Boolean(details);
 }
 
 function request(message) {
@@ -71,6 +80,13 @@ async function loadInvoices(businessYear) {
     }));
     replaceOptions(invoiceSelect, "Select an invoice", options);
     invoiceSelect.disabled = options.length === 0;
+    const stored = await chrome.storage.local.get(SELECTED_INVOICE_KEY);
+    const selectedInvoice = stored[SELECTED_INVOICE_KEY];
+    if (selectedInvoice?.businessYear === businessYear &&
+        options.some(({ value }) => value === selectedInvoice.invoiceNumber)) {
+      invoiceSelect.value = selectedInvoice.invoiceNumber;
+      fillButton.disabled = false;
+    }
     setStatus(options.length
       ? `${options.length} invoice${options.length === 1 ? "" : "s"} loaded.`
       : "No invoices found.");
@@ -111,7 +127,7 @@ logoutButton.addEventListener("click", async () => {
   setStatus("Signing out…");
   try {
     await request({ type: "LOGOUT" });
-    await chrome.storage.local.remove(SELECTED_BUSINESS_YEAR_KEY);
+    await chrome.storage.local.remove([SELECTED_BUSINESS_YEAR_KEY, SELECTED_INVOICE_KEY]);
     showSignedOut();
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), true);
@@ -135,8 +151,19 @@ businessYearSelect.addEventListener("change", async () => {
   await loadInvoices(businessYear);
 });
 
-invoiceSelect.addEventListener("change", () => {
-  fillButton.disabled = !invoiceSelect.value;
+invoiceSelect.addEventListener("change", async () => {
+  const invoiceNumber = invoiceSelect.value;
+  fillButton.disabled = !invoiceNumber;
+  if (!invoiceNumber) {
+    await chrome.storage.local.remove(SELECTED_INVOICE_KEY);
+    return;
+  }
+  await chrome.storage.local.set({
+    [SELECTED_INVOICE_KEY]: {
+      businessYear: businessYearSelect.value,
+      invoiceNumber,
+    },
+  });
 });
 
 vkrSerialNumberInput.addEventListener("input", () => {
@@ -154,6 +181,7 @@ fillButton.addEventListener("click", async () => {
 
   fillButton.disabled = true;
   setStatus("Loading invoice…");
+  setDebug();
   try {
     const invoice = await request({ type: "GET_INVOICE", businessYear, invoiceNumber });
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -164,7 +192,10 @@ fillButton.addEventListener("click", async () => {
       vkrSerialNumber: vkrSerialNumberInput.value.trim(),
       businessPremises: businessPremisesInput.value.trim(),
     });
-    if (!response?.ok) throw new Error(response?.error || "The VKR form could not be filled.");
+    if (!response?.ok) {
+      setDebug(response?.debug || "No DOM debug details were returned.");
+      throw new Error(response?.error || "The VKR form could not be filled.");
+    }
     setStatus(`${response.filled} fields filled. Review the form before submitting.`);
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), true);

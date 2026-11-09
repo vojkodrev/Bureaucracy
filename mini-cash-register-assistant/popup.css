@@ -16,3 +16,7 @@ button.secondary:hover { background: #eef1f3; }
 #fill { margin-top: 16px; }
 #status { min-height: 20px; margin: 12px 0 0; color: #596870; font-size: 13px; }
 #status.error { color: #a12622; }
+details { margin-top: 12px; }
+summary { cursor: pointer; font-weight: 700; }
+#debug { width: 100%; height: 180px; margin-top: 8px; padding: 8px; resize: vertical;
+  border: 1px solid #84949e; border-radius: 7px; font: 11px/1.35 Consolas, monospace; }

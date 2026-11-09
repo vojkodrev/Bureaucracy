@@ -37,19 +37,128 @@
     return ({ SLO: "SI", CRO: "HR", SRB: "RS" })[normalizedCode] ?? normalizedCode;
   }
 
-  function setComboboxValue(label, value) {
-    if (!value) return false;
-    const button = fieldForLabel(label);
-    if (!(button instanceof HTMLInputElement) || button.type !== "button") return false;
-    setInputValue(button, value);
-    button.dispatchEvent(new Event("blur", { bubbles: true }));
-    return true;
+  function activateElement(element) {
+    const bounds = element.getBoundingClientRect();
+    const eventOptions = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      button: 0,
+      buttons: 1,
+      clientX: bounds.left + bounds.width / 2,
+      clientY: bounds.top + bounds.height / 2,
+    };
+    element.focus();
+    element.dispatchEvent(new PointerEvent("pointerdown", { ...eventOptions, pointerId: 1, pointerType: "mouse", isPrimary: true }));
+    element.dispatchEvent(new MouseEvent("mousedown", eventOptions));
+    element.dispatchEvent(new PointerEvent("pointerup", { ...eventOptions, buttons: 0, pointerId: 1, pointerType: "mouse", isPrimary: true }));
+    element.dispatchEvent(new MouseEvent("mouseup", { ...eventOptions, buttons: 0 }));
+    element.dispatchEvent(new MouseEvent("click", { ...eventOptions, buttons: 0 }));
   }
 
-  function setComboboxInput(label, code, name) {
+  function waitForElement(find, timeout = 1500) {
+    const startedAt = Date.now();
+    return new Promise((resolve) => {
+      const check = () => {
+        const element = find();
+        if (element || Date.now() - startedAt >= timeout) {
+          resolve(element ?? null);
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+  }
+
+  async function selectComboboxOption(label, value) {
+    if (!value) return { selected: false, debug: "No option value was provided." };
+    const button = fieldForLabel(label);
+    if (!(button instanceof HTMLInputElement) || button.type !== "button") {
+      return { selected: false, debug: `Combobox input for "${label}" was not found.` };
+    }
+    const expected = String(value).trim().toLocaleLowerCase("sl");
+    if (button.value.trim().toLocaleLowerCase("sl") === expected) {
+      return { selected: true, debug: "" };
+    }
+
+    activateElement(button);
+    const select = button.closest(".form-select");
+    const opened = await waitForElement(() =>
+      button.classList.contains("opened") || select?.querySelector('.list[aria-expanded="true"]')
+        ? select
+        : null,
+    );
+    if (!opened) {
+      return {
+        selected: false,
+        debug: [
+          "The combobox did not enter its opened state after button.click().",
+          `Button HTML:\n${button.outerHTML}`,
+          `Select HTML:\n${select?.outerHTML ?? "(not found)"}`,
+        ].join("\n\n"),
+      };
+    }
+    const search = select?.querySelector('.list input[type="text"]');
+    if (search instanceof HTMLInputElement) setInputValue(search, value);
+
+    const listboxId = button.getAttribute("aria-owns");
+    const listbox = () => listboxId
+      ? document.getElementById(listboxId)
+      : select?.querySelector('ul[role="listbox"]');
+    const option = await waitForElement(() => {
+      const options = listbox()?.querySelectorAll('li, [role="option"]') ?? [];
+      return [...options].find((candidate) =>
+        candidate.textContent?.trim().toLocaleLowerCase("sl") === expected,
+      );
+    });
+    const debugDetails = () => [
+      `URL: ${location.href}`,
+      `Label: ${label}`,
+      `Expected option: ${value}`,
+      `Current button value: ${button.value}`,
+      `aria-owns: ${listboxId ?? "(missing)"}`,
+      `Button HTML:\n${button.outerHTML}`,
+      `Select HTML:\n${select?.outerHTML ?? "(not found)"}`,
+      `Listbox HTML:\n${listbox()?.outerHTML ?? "(not found)"}`,
+    ].join("\n\n").slice(0, 15000);
+    if (!(option instanceof HTMLElement)) {
+      return { selected: false, debug: debugDetails() };
+    }
+    activateElement(option);
+    let selected = await waitForElement(() =>
+      button.value.trim().toLocaleLowerCase("sl") === expected ? button : null,
+    500);
+    if (!selected && search instanceof HTMLInputElement) {
+      search.dispatchEvent(new KeyboardEvent("keydown", {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }));
+      search.dispatchEvent(new KeyboardEvent("keyup", {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }));
+      selected = await waitForElement(() =>
+        button.value.trim().toLocaleLowerCase("sl") === expected ? button : null,
+      500);
+    }
+    return { selected: Boolean(selected), debug: selected ? "" : debugDetails() };
+  }
+
+  function countryComboboxValue(code, name) {
     const normalizedCode = miniBlagajnaCountryCode(code);
-    const displayValue = [normalizedCode, String(name ?? "").trim()].filter(Boolean).join(" - ");
-    return setComboboxValue(label, displayValue);
+    return [normalizedCode, String(name ?? "").trim()].filter(Boolean).join(" - ");
   }
 
   function selectRadio(label) {
@@ -100,14 +209,22 @@
     return totals;
   }
 
-  function fillVkrForm(invoice, vkrSerialNumber, businessPremises) {
+  async function fillVkrForm(invoice, vkrSerialNumber, businessPremises) {
     if (!location.hash.startsWith("#/porocanje-vkr-racunov")) {
       throw new Error("Open a VKR invoice form in Mini Blagajna before filling it.");
     }
 
     let filled = 0;
     const fill = (label, value) => { if (setInput(label, value)) filled += 1; };
-    if (setComboboxValue("Poslovni prostor", businessPremises)) filled += 1;
+    if (businessPremises) {
+      const result = await selectComboboxOption("Poslovni prostor", businessPremises);
+      if (!result.selected) {
+        const error = new Error(`Business premises "${businessPremises}" could not be selected.`);
+        error.debug = result.debug;
+        throw error;
+      }
+      filled += 1;
+    }
     fill("Številka računa iz VKR", invoice.invoiceNumber);
     fill("Serijska številka VKR (oblika: 1234-1234567)", vkrSerialNumber);
     fill("Datum izdaje računa iz VKR", formatDate(invoice.issueDate));
@@ -115,8 +232,24 @@
     fill("Naziv", invoice.customerName);
     fill("Naslov", customerAddress(invoice));
     const country = invoice.customer?.country || invoice.customerCountry;
-    if (setComboboxInput("Koda države kupca", country, invoice.customerCountryName)) filled += 1;
-    if (setComboboxValue("Račun izdajam v", "Račun izdajam v svojem imenu")) filled += 1;
+    const countryValue = countryComboboxValue(country, invoice.customerCountryName);
+    if (countryValue) {
+      const result = await selectComboboxOption("Koda države kupca", countryValue);
+      if (!result.selected) {
+        const error = new Error(`Country "${countryValue}" could not be selected.`);
+        error.debug = result.debug;
+        throw error;
+      }
+      filled += 1;
+    }
+    const issuerValue = "Račun izdajam v svojem imenu";
+    const issuerResult = await selectComboboxOption("Račun izdajam v", issuerValue);
+    if (!issuerResult.selected) {
+      const error = new Error(`Invoice issuer "${issuerValue}" could not be selected.`);
+      error.debug = issuerResult.debug;
+      throw error;
+    }
+    filled += 1;
 
     const taxNumber = invoice.customer?.taxNumber?.replace(/^SI/i, "") ?? "";
     if (taxNumber) {
@@ -149,14 +282,13 @@
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "FILL_VKR_FORM") return false;
-    try {
-      sendResponse({
-        ok: true,
-        filled: fillVkrForm(message.invoice, message.vkrSerialNumber, message.businessPremises),
-      });
-    } catch (error) {
-      sendResponse({ ok: false, error: error instanceof Error ? error.message : String(error) });
-    }
-    return false;
+    fillVkrForm(message.invoice, message.vkrSerialNumber, message.businessPremises)
+      .then((filled) => sendResponse({ ok: true, filled }))
+      .catch((error) => sendResponse({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        debug: error?.debug ?? "",
+      }));
+    return true;
   });
 })();
