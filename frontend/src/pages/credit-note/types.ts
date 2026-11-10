@@ -14,7 +14,6 @@ export type CreditNote = {
     customerCountry?: string | null
     currency: string | null
     amount: number | null
-    goodsAmount?: number | null
     introductoryText?: string | null
     closingText?: string | null
     items?: InvoiceItem[]

@@ -117,13 +117,33 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
     return response
 }
 
+async function documentRequestError(response: Response) {
+    const fallback = `Document request failed (${response.status} ${response.statusText || 'Unknown error'}).`
+    const body = await response.text().catch(() => '')
+    if (!body.trim()) return fallback
+
+    try {
+        const result = JSON.parse(body) as { error?: unknown; detail?: unknown; message?: unknown }
+        const detail = [result.error, result.detail, result.message]
+            .find((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+        if (detail) return `Document request failed (${response.status}): ${detail.trim()}`
+    } catch {
+        // Some document endpoints return plain-text errors rather than JSON.
+    }
+
+    const detail = body.trim().replace(/\s+/g, ' ')
+    return detail.length <= 500
+        ? `Document request failed (${response.status}): ${detail}`
+        : fallback
+}
+
 export async function openAuthenticatedUrl(url: string) {
     const tab = window.open('', '_blank')
     if (!tab) throw new Error('Allow pop-ups to open this document.')
     tab.opener = null
     try {
         const response = await apiFetch(url)
-        if (!response.ok) throw new Error(`Document request failed (${response.status}).`)
+        if (!response.ok) throw new Error(await documentRequestError(response))
         const objectUrl = URL.createObjectURL(await response.blob())
         tab.location.replace(objectUrl)
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)

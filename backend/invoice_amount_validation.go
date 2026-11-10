@@ -98,7 +98,7 @@ func validateCalculatedInvoiceGrossTotal(invoice *Invoice, calculatedTotal float
 }
 
 func validateCalculatedInvoiceTotals(invoice *Invoice, netTotal, taxTotal, grossTotal float64, calculated calculatedInvoiceTotals) error {
-	inputNetTotal := lib.CurrencyCents(float64OrZero(invoice.GoodsAmount))
+	inputNetTotal := lib.CurrencyCents(float64OrZero(invoice.NetTotal))
 	printNetTotal := lib.CurrencyCents(netTotal)
 	if inputNetTotal != printNetTotal {
 		return fmt.Errorf("invoice %s input net total %.2f does not match print net total %.2f",

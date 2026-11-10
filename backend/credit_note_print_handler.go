@@ -82,7 +82,7 @@ func creditNoteAsInvoice(note *CreditNote) *Invoice {
 		IssuePlace:          note.IssuePlace,
 		Currency:            note.Currency,
 		Amount:              note.Amount,
-		GoodsAmount:         note.GoodsAmount,
+		NetTotal:            note.NetTotal,
 		IntroductoryText:    note.IntroductoryText,
 		ClosingText:         note.ClosingText,
 		Items:               note.Items,

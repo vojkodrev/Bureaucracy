@@ -262,7 +262,7 @@ func validateFURSInvoiceTotal(invoice *Invoice, request *furs.InvoiceRequest) er
 		return fmt.Errorf("invoice %s has no calculated FURS total", invoiceNumber)
 	}
 
-	inputNetTotal := lib.CurrencyCents(float64OrZero(invoice.GoodsAmount))
+	inputNetTotal := lib.CurrencyCents(float64OrZero(invoice.NetTotal))
 	inputTotal := lib.CurrencyCents(float64OrZero(invoice.Amount))
 	inputTaxTotal := inputTotal - inputNetTotal
 	inputLineTotal := int64(0)
@@ -336,7 +336,7 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 	digest := lib.SHA256Digest([]byte(fmt.Sprintf("%d:%s", invoice.ID, invoice.InvoiceNumber)))
 	invoiceNumber := binary.BigEndian.Uint64(digest[:8])%9_000_000_000_000_000_000 + 1_000_000_000_000_000_000
 	items := make([]*InvoiceItem, 0, len(invoice.Items))
-	goodsAmount, amount := 0.0, 0.0
+	netTotal, amount := 0.0, 0.0
 	for index, item := range invoice.Items {
 		if item == nil {
 			continue
@@ -345,7 +345,7 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 		factor := 0.95 + float64(binary.BigEndian.Uint16(itemDigest[:2]))/65535*0.10
 		netAmount := lib.RoundCurrency(float64OrZero(item.NetAmount) * factor)
 		grossAmount := lib.RoundCurrency(float64OrZero(item.GrossAmount) * factor)
-		goodsAmount += netAmount
+		netTotal += netAmount
 		amount += grossAmount
 		items = append(items, &InvoiceItem{
 			TaxRate:     item.TaxRate,
@@ -353,12 +353,12 @@ func anonymizedFURSInvoice(invoice *Invoice) *Invoice {
 			GrossAmount: &grossAmount,
 		})
 	}
-	goodsAmount = lib.RoundCurrency(goodsAmount)
+	netTotal = lib.RoundCurrency(netTotal)
 	amount = lib.RoundCurrency(amount)
 	return &Invoice{
 		ID:            invoice.ID,
 		InvoiceNumber: fmt.Sprintf("%d", invoiceNumber),
-		GoodsAmount:   &goodsAmount,
+		NetTotal:      &netTotal,
 		Amount:        &amount,
 		Items:         items,
 	}

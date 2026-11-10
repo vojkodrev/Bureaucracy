@@ -25,7 +25,7 @@ type Invoice struct {
 	Currency                   *string        `json:"currency"`
 	Amount                     *float64       `json:"amount"`
 	CreditedAmount             float64        `json:"creditedAmount"`
-	GoodsAmount                *float64       `json:"goodsAmount"`
+	NetTotal                   *float64       `json:"netTotal"`
 	PaidAmount                 *float64       `json:"paidAmount"`
 	PurchaseOrderNumber        *string        `json:"purchaseOrderNumber"`
 	DeliveryNoteNumber         *string        `json:"deliveryNoteNumber"`
@@ -70,7 +70,7 @@ type CreditNote struct {
 	IssuePlace          *string        `json:"issuePlace"`
 	Currency            *string        `json:"currency"`
 	Amount              *float64       `json:"amount"`
-	GoodsAmount         *float64       `json:"goodsAmount"`
+	NetTotal            *float64       `json:"netTotal"`
 	IntroductoryText    *string        `json:"introductoryText"`
 	ClosingText         *string        `json:"closingText"`
 	Cancelled           *bool          `json:"cancelled"`

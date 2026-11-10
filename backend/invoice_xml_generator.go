@@ -200,8 +200,8 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	}
 
 	number := fmt.Sprintf("%s-%d", strings.TrimSpace(invoice.InvoiceNumber), businessYear)
-	net, gross := float64OrZero(invoice.GoodsAmount), float64OrZero(invoice.Amount)
-	if invoice.GoodsAmount == nil {
+	net, gross := float64OrZero(invoice.NetTotal), float64OrZero(invoice.Amount)
+	if invoice.NetTotal == nil {
 		net = sumInvoiceNet(invoice.Items)
 	}
 	if invoice.Amount == nil {

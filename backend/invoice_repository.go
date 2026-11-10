@@ -339,7 +339,7 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 				SifraPartnerja=@customerCode, ImePartnerja=@customerName,
 				NaslovPartnerja=@customerAddress, KrajPartnerja=@customerCity, PlacanoSIT=@paidAmount,
 				Narocilnica=@purchaseOrderNumber, StevilkaDobavnice=@deliveryNoteNumber,
-				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=@goodsAmount
+				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=NULL
 			WHERE RecNo=@id`, databaseName), invoiceArguments(input, invoiceID)...)
 		if updateErr != nil {
 			return nil, fmt.Errorf("update invoice: %w", updateErr)
@@ -353,11 +353,11 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 			INSERT INTO [%s].[dbo].[Racuni] (
 				Stevilka, DatumIzstavitve, DatumDUR, DatumZapadlosti, DatumPlacila, SifraPartnerja,
 				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT, Narocilnica, StevilkaDobavnice,
-				SpremniText, Klavzula, Znesek, ZnesekBlaga, Storno
+				SpremniText, Klavzula, Znesek, Storno
 			) OUTPUT INSERTED.RecNo VALUES (
 				@invoiceNumber, @issueDate, @serviceDate, @dueDate, @paymentDate, @customerCode,
 				@customerName, @customerAddress, @customerCity, @paidAmount, @purchaseOrderNumber, @deliveryNoteNumber,
-				@introductoryText, @closingText, @amount, @goodsAmount, 0
+				@introductoryText, @closingText, @amount, 0
 			)`, databaseName), invoiceArguments(input, 0)...).Scan(&invoiceID)
 		if err != nil {
 			return nil, fmt.Errorf("insert invoice: %w", err)
@@ -420,15 +420,8 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 }
 
 func invoiceArguments(input model.InvoiceInput, id int) []any {
-	goodsAmount, amount := 0.0, 0.0
+	amount := 0.0
 	for _, item := range input.Items {
-		if item.NetAmount != nil {
-			discount := 0.0
-			if item.Discount != nil {
-				discount = *item.Discount
-			}
-			goodsAmount += lib.RoundCurrency(*item.NetAmount * (1 - discount/100))
-		}
 		if item.GrossAmount != nil {
 			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
@@ -443,7 +436,7 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 		sql.Named("purchaseOrderNumber", input.PurchaseOrderNumber),
 		sql.Named("deliveryNoteNumber", input.DeliveryNoteNumber),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
-		sql.Named("amount", lib.RoundCurrency(amount)), sql.Named("goodsAmount", lib.RoundCurrency(goodsAmount)),
+		sql.Named("amount", lib.RoundCurrency(amount)),
 	}
 }
 
@@ -510,7 +503,6 @@ func (repository *InvoiceRepository) GetByNumber(
 				  AND ISNULL(d.Storno, 0) = 0
 				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(r.Stevilka)))
 			), 0),
-			r.ZnesekBlaga,
 			r.PlacanoSIT,
 			r.Narocilnica,
 			r.StevilkaDobavnice,
@@ -550,7 +542,6 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.Currency,
 		&invoice.Amount,
 		&invoice.CreditedAmount,
-		&invoice.GoodsAmount,
 		&invoice.PaidAmount,
 		&invoice.PurchaseOrderNumber,
 		&invoice.DeliveryNoteNumber,
@@ -574,6 +565,8 @@ func (repository *InvoiceRepository) GetByNumber(
 		return nil, err
 	}
 	invoice.Items = items
+	netTotal := lib.RoundCurrency(sumInvoiceNet(items))
+	invoice.NetTotal = &netTotal
 	return invoice, nil
 }
 
@@ -754,7 +747,13 @@ func (repository *InvoiceRepository) Search(
 				  AND ISNULL(d.Storno, 0) = 0
 				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(Racuni.Stevilka)))
 			), 0),
-			ZnesekBlaga,
+			COALESCE((
+				SELECT SUM(ROUND(rs.ZnesekBrezDavka *
+					(1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100), 2))
+				FROM [%s].[dbo].[RacuniSpecifikacija] rs
+				WHERE rs.Stevilka = Racuni.Stevilka
+				  AND ISNULL(rs.Deleted, 0) = 0
+			), 0),
 			PlacanoSIT,
 			Sklic,
 			Storno
@@ -778,7 +777,7 @@ func (repository *InvoiceRepository) Search(
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -805,7 +804,7 @@ func (repository *InvoiceRepository) Search(
 			&invoice.Currency,
 			&invoice.Amount,
 			&invoice.CreditedAmount,
-			&invoice.GoodsAmount,
+			&invoice.NetTotal,
 			&invoice.PaidAmount,
 			&invoice.PaymentReference,
 			&cancelled,

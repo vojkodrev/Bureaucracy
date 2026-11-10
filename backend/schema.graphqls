@@ -170,7 +170,7 @@ type Invoice {
   currency: String
   amount: Float
   creditedAmount: Float!
-  goodsAmount: Float
+  netTotal: Float
   paidAmount: Float
   purchaseOrderNumber: String
   deliveryNoteNumber: String
@@ -212,7 +212,7 @@ type CreditNote {
   customerCountry: String
   currency: String
   amount: Float
-  goodsAmount: Float
+  netTotal: Float
   introductoryText: String
   closingText: String
   cancelled: Boolean

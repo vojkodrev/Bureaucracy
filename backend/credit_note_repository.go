@@ -37,7 +37,7 @@ func (repository *CreditNoteRepository) GetByNumber(
 		COALESCE(NULLIF(LTRIM(RTRIM(d.ImePartnerja)),''), p.Partner,''),
 		COALESCE(NULLIF(LTRIM(RTRIM(d.NaslovPartnerja)),''), p.Ulica,''), p.Posta,
 		d.KrajPartnerja, p.Drzava, COALESCE(NULLIF(LTRIM(RTRIM(dr.Drzava)),''),p.Drzava,''),
-		p.IDStevilka, d.KrajIzdaje, d.Valuta, d.Znesek, d.ZnesekBlaga,
+		p.IDStevilka, d.KrajIzdaje, d.Valuta, d.Znesek,
 		d.SpremniText, d.Klavzula, d.Storno
 		FROM [%s].[dbo].[Dobropis] d
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra=d.SifraPartnerja
@@ -46,7 +46,7 @@ func (repository *CreditNoteRepository) GetByNumber(
 		&note.ID, &note.CreditNoteNumber, &note.IssueDate, &note.ServiceDate, &note.DueDate,
 		&note.CustomerCode, &note.CustomerName, &note.CustomerAddress, &note.CustomerPostalCode,
 		&note.CustomerCity, &note.CustomerCountry, &note.CustomerCountryName, &note.CustomerTaxID,
-		&note.IssuePlace, &note.Currency, &note.Amount, &note.GoodsAmount,
+		&note.IssuePlace, &note.Currency, &note.Amount,
 		&note.IntroductoryText, &note.ClosingText, &cancelled)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -59,7 +59,12 @@ func (repository *CreditNoteRepository) GetByNumber(
 		note.Cancelled = &value
 	}
 	note.Items, err = repository.getItems(ctx, documentDatabase, masterDatabase, number)
-	return note, err
+	if err != nil {
+		return nil, err
+	}
+	netTotal := lib.RoundCurrency(sumInvoiceNet(note.Items))
+	note.NetTotal = &netTotal
+	return note, nil
 }
 
 func (repository *CreditNoteRepository) getItems(
@@ -152,13 +157,13 @@ func (repository *CreditNoteRepository) Save(
 			DatumIzstavitve=@issueDate, DatumDUR=@serviceDate, DatumZapadlosti=@dueDate,
 			SifraPartnerja=@customerCode, ImePartnerja=@customerName, NaslovPartnerja=@customerAddress,
 			KrajPartnerja=@customerCity, SpremniText=@introductoryText, Klavzula=@closingText,
-			Znesek=@amount, ZnesekBlaga=@goodsAmount WHERE RecNo=@id`, databaseName), creditNoteArguments(input, id)...)
+			Znesek=@amount, ZnesekBlaga=NULL WHERE RecNo=@id`, databaseName), creditNoteArguments(input, id)...)
 	} else {
 		err = tx.QueryRowContext(ctx, fmt.Sprintf(`INSERT INTO [%s].[dbo].[Dobropis]
 			(Stevilka,DatumIzstavitve,DatumDUR,DatumZapadlosti,SifraPartnerja,ImePartnerja,NaslovPartnerja,
-			KrajPartnerja,SpremniText,Klavzula,Znesek,ZnesekBlaga,Storno,VrstaDobropisa)
+			KrajPartnerja,SpremniText,Klavzula,Znesek,Storno,VrstaDobropisa)
 			OUTPUT INSERTED.RecNo VALUES (@number,@issueDate,@serviceDate,@dueDate,@customerCode,@customerName,
-			@customerAddress,@customerCity,@introductoryText,@closingText,@amount,@goodsAmount,0,0)`,
+			@customerAddress,@customerCity,@introductoryText,@closingText,@amount,0,0)`,
 			databaseName,
 		), creditNoteArguments(input, 0)...).Scan(&id)
 	}
@@ -223,15 +228,8 @@ func (repository *CreditNoteRepository) Save(
 }
 
 func creditNoteArguments(input model.CreditNoteInput, id int) []any {
-	goodsAmount, amount := 0.0, 0.0
+	amount := 0.0
 	for _, item := range input.Items {
-		if item.NetAmount != nil {
-			discount := 0.0
-			if item.Discount != nil {
-				discount = *item.Discount
-			}
-			goodsAmount += lib.RoundCurrency(*item.NetAmount * (1 - discount/100))
-		}
 		if item.GrossAmount != nil {
 			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
@@ -249,7 +247,6 @@ func creditNoteArguments(input model.CreditNoteInput, id int) []any {
 		sql.Named("introductoryText", input.IntroductoryText),
 		sql.Named("closingText", input.ClosingText),
 		sql.Named("amount", lib.RoundCurrency(amount)),
-		sql.Named("goodsAmount", lib.RoundCurrency(goodsAmount)),
 	}
 }
 

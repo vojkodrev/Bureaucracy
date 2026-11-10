@@ -128,11 +128,11 @@ type ComplexityRoot struct {
 		CustomerName       func(childComplexity int) int
 		CustomerPostalCode func(childComplexity int) int
 		DueDate            func(childComplexity int) int
-		GoodsAmount        func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		IntroductoryText   func(childComplexity int) int
 		IssueDate          func(childComplexity int) int
 		Items              func(childComplexity int) int
+		NetTotal           func(childComplexity int) int
 		ServiceDate        func(childComplexity int) int
 	}
 
@@ -265,12 +265,12 @@ type ComplexityRoot struct {
 		CustomerPostalCode  func(childComplexity int) int
 		DeliveryNoteNumber  func(childComplexity int) int
 		DueDate             func(childComplexity int) int
-		GoodsAmount         func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		IntroductoryText    func(childComplexity int) int
 		InvoiceNumber       func(childComplexity int) int
 		IssueDate           func(childComplexity int) int
 		Items               func(childComplexity int) int
+		NetTotal            func(childComplexity int) int
 		PaidAmount          func(childComplexity int) int
 		PaymentDate         func(childComplexity int) int
 		PaymentReference    func(childComplexity int) int
@@ -930,12 +930,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.CreditNote.DueDate(childComplexity), true
-	case "CreditNote.goodsAmount":
-		if e.ComplexityRoot.CreditNote.GoodsAmount == nil {
-			break
-		}
-
-		return e.ComplexityRoot.CreditNote.GoodsAmount(childComplexity), true
 	case "CreditNote.id":
 		if e.ComplexityRoot.CreditNote.ID == nil {
 			break
@@ -960,6 +954,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.CreditNote.Items(childComplexity), true
+	case "CreditNote.netTotal":
+		if e.ComplexityRoot.CreditNote.NetTotal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreditNote.NetTotal(childComplexity), true
 	case "CreditNote.serviceDate":
 		if e.ComplexityRoot.CreditNote.ServiceDate == nil {
 			break
@@ -1531,12 +1531,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.DueDate(childComplexity), true
-	case "Invoice.goodsAmount":
-		if e.ComplexityRoot.Invoice.GoodsAmount == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Invoice.GoodsAmount(childComplexity), true
 	case "Invoice.id":
 		if e.ComplexityRoot.Invoice.ID == nil {
 			break
@@ -1567,6 +1561,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.Items(childComplexity), true
+	case "Invoice.netTotal":
+		if e.ComplexityRoot.Invoice.NetTotal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.NetTotal(childComplexity), true
 	case "Invoice.paidAmount":
 		if e.ComplexityRoot.Invoice.PaidAmount == nil {
 			break
@@ -3008,8 +3008,8 @@ func (ec *executionContext) childFields_CreditNote(ctx context.Context, field gr
 		return ec.fieldContext_CreditNote_currency(ctx, field)
 	case "amount":
 		return ec.fieldContext_CreditNote_amount(ctx, field)
-	case "goodsAmount":
-		return ec.fieldContext_CreditNote_goodsAmount(ctx, field)
+	case "netTotal":
+		return ec.fieldContext_CreditNote_netTotal(ctx, field)
 	case "introductoryText":
 		return ec.fieldContext_CreditNote_introductoryText(ctx, field)
 	case "closingText":
@@ -3284,8 +3284,8 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_amount(ctx, field)
 	case "creditedAmount":
 		return ec.fieldContext_Invoice_creditedAmount(ctx, field)
-	case "goodsAmount":
-		return ec.fieldContext_Invoice_goodsAmount(ctx, field)
+	case "netTotal":
+		return ec.fieldContext_Invoice_netTotal(ctx, field)
 	case "paidAmount":
 		return ec.fieldContext_Invoice_paidAmount(ctx, field)
 	case "purchaseOrderNumber":
@@ -7017,16 +7017,16 @@ func (ec *executionContext) fieldContext_CreditNote_amount(_ context.Context, fi
 	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
-func (ec *executionContext) _CreditNote_goodsAmount(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
+func (ec *executionContext) _CreditNote_netTotal(ctx context.Context, field graphql.CollectedField, obj *CreditNote) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_CreditNote_goodsAmount(ctx, field)
+			return ec.fieldContext_CreditNote_netTotal(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.GoodsAmount, nil
+			return obj.NetTotal, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
@@ -7036,7 +7036,7 @@ func (ec *executionContext) _CreditNote_goodsAmount(ctx context.Context, field g
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_CreditNote_goodsAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CreditNote_netTotal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("CreditNote", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
@@ -9375,16 +9375,16 @@ func (ec *executionContext) fieldContext_Invoice_creditedAmount(_ context.Contex
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
-func (ec *executionContext) _Invoice_goodsAmount(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+func (ec *executionContext) _Invoice_netTotal(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
 		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_Invoice_goodsAmount(ctx, field)
+			return ec.fieldContext_Invoice_netTotal(ctx, field)
 		},
 		func(ctx context.Context) (any, error) {
-			return obj.GoodsAmount, nil
+			return obj.NetTotal, nil
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v *float64) graphql.Marshaler {
@@ -9394,7 +9394,7 @@ func (ec *executionContext) _Invoice_goodsAmount(ctx context.Context, field grap
 		false,
 	)
 }
-func (ec *executionContext) fieldContext_Invoice_goodsAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Invoice_netTotal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Float does not have child fields"))
 }
 
@@ -17037,8 +17037,8 @@ func (ec *executionContext) _CreditNote(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
-		case "goodsAmount":
-			out.Values[i] = ec._CreditNote_goodsAmount(ctx, field, obj)
+		case "netTotal":
+			out.Values[i] = ec._CreditNote_netTotal(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}
@@ -17961,8 +17961,8 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "goodsAmount":
-			out.Values[i] = ec._Invoice_goodsAmount(ctx, field, obj)
+		case "netTotal":
+			out.Values[i] = ec._Invoice_netTotal(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

@@ -116,9 +116,9 @@ func (generator *InvoicePrintGenerator) Generate(
 	}
 	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
 	printItems, taxSummaries, calculatedTotals := buildPrintItems(invoice.Items)
-	netTotal := float64OrZero(invoice.GoodsAmount)
+	netTotal := float64OrZero(invoice.NetTotal)
 	grossTotal := float64OrZero(invoice.Amount)
-	if invoice.GoodsAmount == nil {
+	if invoice.NetTotal == nil {
 		netTotal = sumInvoiceNet(invoice.Items)
 	}
 	if invoice.Amount == nil {

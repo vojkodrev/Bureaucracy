@@ -7,7 +7,7 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 
 const fields = `
     id creditNoteNumber issueDate serviceDate dueDate customerCode customerName
-    customerAddress customerPostalCode customerCity customerCountry currency amount goodsAmount
+    customerAddress customerPostalCode customerCity customerCountry currency amount
     introductoryText closingText
     items {
         id sequence productCode productName unit taxCode taxRate unitPrice unitTaxAmount
