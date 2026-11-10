@@ -1,5 +1,7 @@
+import { ExternalLink } from 'lucide-react'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
+import { Button } from '@/components/ui/button'
 import {
     Table,
     TableBody,
@@ -59,20 +61,44 @@ function InvoiceSearchResults({
         ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
+    const openInvoices = () => {
+        invoices.forEach((invoice) => {
+            window.open(
+                `/invoice/${encodeURIComponent(invoice.invoiceNumber)}`,
+                '_blank',
+                'noopener,noreferrer',
+            )
+        })
+    }
 
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
             {invoicePage && (
-                <Pager
-                    firstItem={firstInvoice}
-                    lastItem={lastInvoice}
-                    page={invoicePage.page}
-                    pageSize={invoicePage.pageSize}
-                    totalItems={invoicePage.totalCount}
-                    totalPages={invoicePage.totalPages}
-                    onPageChange={onPageChange}
-                    onPageSizeChange={onPageSizeChange}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    {isPageMode && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mb-2"
+                            disabled={isLoading || invoices.length === 0}
+                            onClick={openInvoices}
+                        >
+                            <ExternalLink />
+                            Open {invoices.length} {invoices.length === 1 ? 'invoice' : 'invoices'}
+                        </Button>
+                    )}
+                    <Pager
+                        firstItem={firstInvoice}
+                        lastItem={lastInvoice}
+                        page={invoicePage.page}
+                        pageSize={invoicePage.pageSize}
+                        totalItems={invoicePage.totalCount}
+                        totalPages={invoicePage.totalPages}
+                        onPageChange={onPageChange}
+                        onPageSizeChange={onPageSizeChange}
+                    />
+                </div>
             )}
             <Table aria-busy={isLoading}>
                 <TableHeader>
