@@ -16,14 +16,14 @@ export default function GoodsReceiptSearchResultGroup({
     mode,
     onGoodsReceiptSelect,
 }: Props) {
-    const isPageMode = mode === ComponentMode.Page
+    const hasLinkedRows = mode !== ComponentMode.Dialog
     return (
         <Fragment>
             <TableRow
                 className="cursor-pointer bg-muted/60 font-semibold"
-                tabIndex={isPageMode ? undefined : 0}
-                onClick={isPageMode ? undefined : () => onGoodsReceiptSelect?.(receipt)}
-                onKeyDown={isPageMode ? undefined : (event) => {
+                tabIndex={hasLinkedRows ? undefined : 0}
+                onClick={hasLinkedRows ? undefined : () => onGoodsReceiptSelect?.(receipt)}
+                onKeyDown={hasLinkedRows ? undefined : (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
                         onGoodsReceiptSelect?.(receipt)
@@ -32,20 +32,20 @@ export default function GoodsReceiptSearchResultGroup({
             >
                 <SearchResultCell
                     primary
-                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    to={hasLinkedRows ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
                     linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
                 >
                     Goods receipt {receipt.receiptNumber || '—'}
                 </SearchResultCell>
                 <SearchResultCell
-                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    to={hasLinkedRows ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
                     linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
                 >{formatDate(receipt.receiptDate)}</SearchResultCell>
                 <SearchResultCell
-                    to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
+                    to={hasLinkedRows ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined}
                     linkLabel={`Open goods receipt ${receipt.receiptNumber}`}
                 >{receipt.receivedBy || '—'}</SearchResultCell>
-                <SearchResultCell to={isPageMode ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined} linkLabel={`Open goods receipt ${receipt.receiptNumber}`} />
+                <SearchResultCell to={hasLinkedRows ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : undefined} linkLabel={`Open goods receipt ${receipt.receiptNumber}`} />
             </TableRow>
             {receipt.items.map((item) => (
                 <TableRow key={item.id}>

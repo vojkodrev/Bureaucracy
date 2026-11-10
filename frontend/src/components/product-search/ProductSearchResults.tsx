@@ -55,7 +55,7 @@ function ProductSearchResults({
     const lastProduct = productPage
         ? Math.min(productPage.page * productPage.pageSize, productPage.totalCount)
         : 0
-    const isPageMode = mode === ComponentMode.Page
+    const hasLinkedRows = mode !== ComponentMode.Dialog
     const showPricing = !isStorageOnlyUser()
     const visibleColumns = productSortColumns.filter(({ containsPricing }) => showPricing || !containsPricing)
     const columnCount = visibleColumns.length + 1
@@ -115,9 +115,9 @@ function ProductSearchResults({
                             key={product.id}
                             data-state={selectedProductId === product.id ? 'selected' : undefined}
                             className="cursor-pointer"
-                            tabIndex={isPageMode ? undefined : 0}
-                            onClick={isPageMode ? undefined : () => onProductSelect(product)}
-                            onKeyDown={isPageMode
+                            tabIndex={hasLinkedRows ? undefined : 0}
+                            onClick={hasLinkedRows ? undefined : () => onProductSelect(product)}
+                            onKeyDown={hasLinkedRows
                                 ? undefined
                                 : (event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
@@ -128,36 +128,36 @@ function ProductSearchResults({
                         >
                             <SearchResultCell
                                 primary
-                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
                                 linkLabel={`Open product ${product.productCode}`}
                                 className="font-medium"
                             >
                                 {product.productCode ?? '—'}
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
                                 linkLabel={`Open product ${product.productCode}`}
                             >{product.name ?? '—'}</SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
                                 linkLabel={`Open product ${product.productCode}`}
                             >{product.unit ?? '—'}</SearchResultCell>
-                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
+                            {showPricing && <SearchResultCell to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.netPrice == null
                                     ? '—'
                                     : formatCurrency(product.netPrice)}
                             </SearchResultCell>}
-                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
+                            {showPricing && <SearchResultCell to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.grossPrice == null
                                     ? '—'
                                     : formatCurrency(product.grossPrice)}
                             </SearchResultCell>}
-                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`}>{product.taxCode ?? '—'}</SearchResultCell>}
-                            {showPricing && <SearchResultCell to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
+                            {showPricing && <SearchResultCell to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`}>{product.taxCode ?? '—'}</SearchResultCell>}
+                            {showPricing && <SearchResultCell to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined} linkLabel={`Open product ${product.productCode}`} className="text-right">
                                 {product.taxRate == null ? '—' : `${product.taxRate}%`}
                             </SearchResultCell>}
                             <SearchResultCell
-                                to={isPageMode && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
+                                to={hasLinkedRows && product.productCode ? `/product/${encodeURIComponent(product.productCode)}` : undefined}
                                 linkLabel={`Open product ${product.productCode}`}
                                 className="text-right"
                             >

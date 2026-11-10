@@ -61,6 +61,7 @@ function InvoiceSearchResults({
         ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
+    const hasLinkedRows = mode !== ComponentMode.Dialog
     const openInvoices = () => {
         invoices.forEach((invoice) => {
             window.open(
@@ -136,9 +137,9 @@ function InvoiceSearchResults({
                                 ? 'selected'
                                 : undefined}
                             className="cursor-pointer"
-                            tabIndex={isPageMode ? undefined : 0}
-                            onClick={isPageMode ? undefined : () => onInvoiceSelect(invoice)}
-                            onKeyDown={isPageMode
+                            tabIndex={hasLinkedRows ? undefined : 0}
+                            onClick={hasLinkedRows ? undefined : () => onInvoiceSelect(invoice)}
+                            onKeyDown={hasLinkedRows
                                 ? undefined
                                 : (event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
@@ -148,20 +149,20 @@ function InvoiceSearchResults({
                                 }}
                         >
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`} primary
                                 className="font-medium"
                             >
                                 {invoice.invoiceNumber}
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >
                                 {invoice.customerName ?? invoice.customerCode ?? '—'}
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                 className="text-right"
                             >
@@ -171,15 +172,15 @@ function InvoiceSearchResults({
                                 />
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >{formatDate(invoice.issueDate)}</SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >{formatDate(invoice.dueDate)}</SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >
                                 <InvoicePaymentDate

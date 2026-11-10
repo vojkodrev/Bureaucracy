@@ -54,7 +54,7 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Similar inventory items</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemSearch
-                        mode={ComponentMode.Dialog}
+                        mode={ComponentMode.Embedded}
                         showSearchFields={false}
                         similarName={name}
                         onInventoryItemSelect={(item) => {
@@ -69,7 +69,7 @@ export default function InventoryItemRelatedData({
                 <AccordionContent keepMounted>
                     <GoodsReceiptSearch
                         key={inventoryItemCode}
-                        mode={ComponentMode.Dialog}
+                        mode={ComponentMode.Embedded}
                         showSearchFields={false}
                         showSummary={false}
                         defaultInventoryItemCode={inventoryItemCode}
@@ -83,7 +83,7 @@ export default function InventoryItemRelatedData({
                 <AccordionTrigger>Similar products</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <ProductSearch
-                        mode={ComponentMode.Dialog}
+                        mode={ComponentMode.Embedded}
                         showSearchFields={false}
                         similarName={name}
                         onProductSelect={(product) => {

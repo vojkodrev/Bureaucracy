@@ -83,7 +83,7 @@ function ProductRelatedData({
                 <AccordionTrigger>Similar products</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <ProductSearch
-                        mode={ComponentMode.Dialog}
+                        mode={ComponentMode.Embedded}
                         showSearchFields={false}
                         similarName={productName}
                         onProductSelect={(product) => {
@@ -96,7 +96,7 @@ function ProductRelatedData({
                 <AccordionTrigger>Similar inventory items</AccordionTrigger>
                 <AccordionContent keepMounted>
                     <InventoryItemSearch
-                        mode={ComponentMode.Page}
+                        mode={ComponentMode.Embedded}
                         showSearchFields={false}
                         similarName={productName}
                     />
@@ -109,7 +109,7 @@ function ProductRelatedData({
                         ? <ProductInvoiceCount key={productCode} productCode={productCode} />
                         : <InvoiceSearch
                             key={productCode}
-                            mode={ComponentMode.Dialog}
+                            mode={ComponentMode.Embedded}
                             defaultProductCode={productCode}
                             showSearchFields={false}
                             showSummary={false}

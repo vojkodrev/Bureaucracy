@@ -97,7 +97,7 @@ function CreditNoteRow({
     mode: ComponentMode
     onSelect?: (creditNote: CreditNote) => void
 }) {
-    const path = mode === ComponentMode.Page
+    const path = mode !== ComponentMode.Dialog
         ? `/credit-note/${encodeURIComponent(note.creditNoteNumber)}`
         : undefined
     const label = `Open credit note ${note.creditNoteNumber}`
