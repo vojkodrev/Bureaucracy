@@ -1,6 +1,7 @@
 const loginButton = document.getElementById("login");
 const logoutButton = document.getElementById("logout");
 const businessYearSelect = document.getElementById("business-year");
+const invoiceFilterInput = document.getElementById("invoice-filter");
 const invoiceSelect = document.getElementById("invoice");
 const vkrSerialNumberInput = document.getElementById("vkr-serial-number");
 const businessPremisesInput = document.getElementById("business-premises");
@@ -12,6 +13,8 @@ const SELECTED_BUSINESS_YEAR_KEY = "selectedBusinessYear";
 const SELECTED_INVOICE_KEY = "selectedInvoice";
 const VKR_SERIAL_NUMBER_KEY = "vkrSerialNumber";
 const BUSINESS_PREMISES_KEY = "businessPremises";
+let invoiceOptions = [];
+const businessYearNumbers = new Map();
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -39,9 +42,27 @@ function replaceOptions(select, placeholder, items) {
   for (const item of items) select.add(new Option(item.label, item.value));
 }
 
+function filterInvoiceOptions() {
+  const selectedInvoice = invoiceSelect.value;
+  const filter = invoiceFilterInput.value.trim().toLocaleLowerCase();
+  const options = filter
+    ? invoiceOptions.filter(({ label }) => label.toLocaleLowerCase().includes(filter))
+    : invoiceOptions;
+  replaceOptions(invoiceSelect, options.length ? "Select an invoice" : "No matching invoices", options);
+  if (options.some(({ value }) => value === selectedInvoice)) invoiceSelect.value = selectedInvoice;
+  invoiceSelect.disabled = options.length === 0;
+  fillButton.disabled = !invoiceSelect.value;
+}
+
 async function loadBusinessYears() {
   setStatus("Loading business years…");
   const years = await request({ type: "GET_BUSINESS_YEARS" });
+  businessYearNumbers.clear();
+  for (const businessYear of years) {
+    if (businessYear.code && businessYear.year != null) {
+      businessYearNumbers.set(businessYear.code, businessYear.year);
+    }
+  }
   const options = years.filter(({ code }) => code).map(({ code, description, year }) => ({
     value: code,
     label: description ? `${year ?? code} — ${description}` : String(year ?? code),
@@ -67,6 +88,9 @@ async function loadBusinessYears() {
 }
 
 async function loadInvoices(businessYear) {
+  invoiceOptions = [];
+  invoiceFilterInput.value = "";
+  invoiceFilterInput.disabled = true;
   replaceOptions(invoiceSelect, "Select an invoice", []);
   invoiceSelect.disabled = true;
   fillButton.disabled = true;
@@ -78,8 +102,9 @@ async function loadInvoices(businessYear) {
       value: invoice.invoiceNumber,
       label: `${invoice.invoiceNumber}${invoice.customerName ? ` — ${invoice.customerName}` : ""}`,
     }));
-    replaceOptions(invoiceSelect, "Select an invoice", options);
-    invoiceSelect.disabled = options.length === 0;
+    invoiceOptions = options;
+    invoiceFilterInput.disabled = options.length === 0;
+    filterInvoiceOptions();
     const stored = await chrome.storage.local.get(SELECTED_INVOICE_KEY);
     const selectedInvoice = stored[SELECTED_INVOICE_KEY];
     if (selectedInvoice?.businessYear === businessYear &&
@@ -103,6 +128,9 @@ function showSignedOut() {
   logoutButton.hidden = true;
   replaceOptions(businessYearSelect, "Sign in first", []);
   replaceOptions(invoiceSelect, "Select a business year", []);
+  invoiceOptions = [];
+  invoiceFilterInput.value = "";
+  invoiceFilterInput.disabled = true;
   businessYearSelect.disabled = true;
   invoiceSelect.disabled = true;
   fillButton.disabled = true;
@@ -141,6 +169,9 @@ businessYearSelect.addEventListener("change", async () => {
   if (!businessYear) {
     await chrome.storage.local.remove(SELECTED_BUSINESS_YEAR_KEY);
     replaceOptions(invoiceSelect, "Select a business year", []);
+    invoiceOptions = [];
+    invoiceFilterInput.value = "";
+    invoiceFilterInput.disabled = true;
     invoiceSelect.disabled = true;
     fillButton.disabled = true;
     setStatus("Choose a business year.");
@@ -166,6 +197,8 @@ invoiceSelect.addEventListener("change", async () => {
   });
 });
 
+invoiceFilterInput.addEventListener("input", filterInvoiceOptions);
+
 vkrSerialNumberInput.addEventListener("input", () => {
   void chrome.storage.local.set({ [VKR_SERIAL_NUMBER_KEY]: vkrSerialNumberInput.value.trim() });
 });
@@ -189,6 +222,7 @@ fillButton.addEventListener("click", async () => {
     const response = await chrome.tabs.sendMessage(tab.id, {
       type: "FILL_VKR_FORM",
       invoice,
+      businessYearNumber: businessYearNumbers.get(businessYear),
       vkrSerialNumber: vkrSerialNumberInput.value.trim(),
       businessPremises: businessPremisesInput.value.trim(),
     });

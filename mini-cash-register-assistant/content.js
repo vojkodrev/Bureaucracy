@@ -209,7 +209,7 @@
     return totals;
   }
 
-  async function fillVkrForm(invoice, vkrSerialNumber, businessPremises) {
+  async function fillVkrForm(invoice, businessYearNumber, vkrSerialNumber, businessPremises) {
     if (!location.hash.startsWith("#/porocanje-vkr-racunov")) {
       throw new Error("Open a VKR invoice form in Mini Blagajna before filling it.");
     }
@@ -225,9 +225,13 @@
       }
       filled += 1;
     }
-    fill("Številka računa iz VKR", invoice.invoiceNumber);
+    const baseInvoiceNumber = String(invoice.invoiceNumber).replace(/^0+(?=\d)/, "");
+    const invoiceNumber = businessYearNumber
+      ? `${baseInvoiceNumber}/${String(businessYearNumber).slice(-2)}`
+      : baseInvoiceNumber;
+    fill("Številka računa iz VKR", invoiceNumber);
     fill("Serijska številka VKR (oblika: 1234-1234567)", vkrSerialNumber);
-    fill("Datum izdaje računa iz VKR", formatDate(invoice.issueDate));
+    fill("Datum izdaje računa iz VKR", formatDate(invoice.serviceDate));
     fill("Datum dobave oz. oprav. stor.", formatDate(invoice.serviceDate));
     fill("Naziv", invoice.customerName);
     fill("Naslov", customerAddress(invoice));
@@ -282,7 +286,12 @@
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "FILL_VKR_FORM") return false;
-    fillVkrForm(message.invoice, message.vkrSerialNumber, message.businessPremises)
+    fillVkrForm(
+      message.invoice,
+      message.businessYearNumber,
+      message.vkrSerialNumber,
+      message.businessPremises,
+    )
       .then((filled) => sendResponse({ ok: true, filled }))
       .catch((error) => sendResponse({
         ok: false,
