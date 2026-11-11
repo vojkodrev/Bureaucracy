@@ -590,9 +590,6 @@ func (repository *InvoiceRepository) getItems(
 				(CAST(COALESCE(pd.Procent, a.Davek) AS float) / 100),
 			rs.Kolicina,
 			CAST(rs.Rabat AS float),
-			-- ZnesekBrezDavka is the persisted, rounded pre-discount amount. Keep
-			-- the derived taxable amount at currency precision for every consumer,
-			-- including the invoice editor and FURS reporting.
 			ROUND(rs.ZnesekBrezDavka *
 				(1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100), 2),
 			rs.Znesek
@@ -747,13 +744,6 @@ func (repository *InvoiceRepository) Search(
 				  AND ISNULL(d.Storno, 0) = 0
 				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(Racuni.Stevilka)))
 			), 0),
-			COALESCE((
-				SELECT SUM(ROUND(rs.ZnesekBrezDavka *
-					(1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100), 2))
-				FROM [%s].[dbo].[RacuniSpecifikacija] rs
-				WHERE rs.Stevilka = Racuni.Stevilka
-				  AND ISNULL(rs.Deleted, 0) = 0
-			), 0),
 			PlacanoSIT,
 			Sklic,
 			Storno
@@ -777,7 +767,7 @@ func (repository *InvoiceRepository) Search(
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -804,7 +794,6 @@ func (repository *InvoiceRepository) Search(
 			&invoice.Currency,
 			&invoice.Amount,
 			&invoice.CreditedAmount,
-			&invoice.NetTotal,
 			&invoice.PaidAmount,
 			&invoice.PaymentReference,
 			&cancelled,
