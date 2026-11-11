@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"bureaucracy/backend/lib"
 	"github.com/gin-gonic/gin"
 )
 
@@ -53,6 +55,10 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		c.JSON(http.StatusOK, existing)
 		return
 	}
+	if err := validateTaxConfirmationInvoice(invoice); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
 	issuedAt := time.Now().Truncate(time.Second)
 	zoi, eor, err := handler.furs.ConfirmInvoice(c.Request.Context(), businessYearID, invoice, issuedAt)
 	if err != nil {
@@ -66,4 +72,20 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, confirmation)
+}
+
+func validateTaxConfirmationInvoice(invoice *Invoice) error {
+	lineCount := 0
+	for _, item := range invoice.Items {
+		if item != nil {
+			lineCount++
+		}
+	}
+	if lineCount == 0 {
+		return fmt.Errorf("invoice %s must contain at least one line for FURS confirmation", invoice.InvoiceNumber)
+	}
+	if lib.CurrencyCents(float64OrZero(invoice.Amount)) == 0 {
+		return fmt.Errorf("invoice %s total must not be zero for FURS confirmation", invoice.InvoiceNumber)
+	}
+	return nil
 }

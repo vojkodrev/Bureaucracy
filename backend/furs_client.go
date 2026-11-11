@@ -13,7 +13,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +31,11 @@ import (
 
 const fursNamespace = "http://www.fu.gov.si/"
 
+var (
+	fursTaxNumberPattern = regexp.MustCompile(`^[0-9]{8}$`)
+	fursDeviceIDPattern  = regexp.MustCompile(`^[0-9A-Za-z]{1,20}$`)
+)
+
 type FURSClient struct {
 	config   *AppConfig
 	requests *FURSSOAPRequestRepository
@@ -42,11 +49,11 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	if err := validateInvoiceGrossTotal(invoice); err != nil {
 		return "", "", err
 	}
-	privateKey, certificate, err := client.credentials()
-	if err != nil {
+	if err := client.validateConfig(); err != nil {
 		return "", "", err
 	}
-	if err := client.validateConfig(); err != nil {
+	privateKey, certificate, err := client.credentials()
+	if err != nil {
 		return "", "", err
 	}
 	fursInvoice := invoice
@@ -195,6 +202,22 @@ func (client *FURSClient) validateConfig() error {
 		if strings.TrimSpace(value) == "" {
 			return fmt.Errorf("%s is required", key)
 		}
+	}
+	endpoint, err := url.Parse(client.config.FURSURL)
+	if err != nil || endpoint.Scheme != "https" || endpoint.Host == "" || endpoint.User != nil {
+		return fmt.Errorf("FURS_URL must be an absolute HTTPS URL")
+	}
+	if !fursTaxNumberPattern.MatchString(client.config.FURSTaxNumber) {
+		return fmt.Errorf("FURS_TAX_NUMBER must contain exactly 8 digits")
+	}
+	if !fursTaxNumberPattern.MatchString(client.config.FURSOperatorTaxNumber) {
+		return fmt.Errorf("FURS_OPERATOR_TAX_NUMBER must contain exactly 8 digits")
+	}
+	if !fursDeviceIDPattern.MatchString(client.config.FURSBusinessPremiseID) {
+		return fmt.Errorf("FURS_BUSINESS_PREMISE_ID must contain 1 to 20 ASCII letters or digits")
+	}
+	if !fursDeviceIDPattern.MatchString(client.config.FURSElectronicDeviceID) {
+		return fmt.Errorf("FURS_ELECTRONIC_DEVICE_ID must contain 1 to 20 ASCII letters or digits")
 	}
 	return nil
 }
