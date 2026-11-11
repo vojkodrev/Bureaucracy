@@ -31,6 +31,7 @@ main {
 .invoice-details {
     display: grid;
     grid-template-columns: max-content max-content;
+    align-content: start;
     justify-content: end;
     column-gap: 2mm;
     width: 92mm;

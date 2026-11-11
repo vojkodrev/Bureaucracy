@@ -34,6 +34,7 @@ type invoicePrintDocument struct {
 	ClosingText         string               `xml:"closingText"`
 	PaymentQRCode       string               `xml:"paymentQRCode"`
 	DocumentLabel       string               `xml:"documentLabel"`
+	ShowDueDate         bool                 `xml:"showDueDate"`
 	ShowOriginalInvoice bool                 `xml:"showOriginalInvoice"`
 }
 
@@ -169,6 +170,7 @@ func (generator *InvoicePrintGenerator) Generate(
 		ClosingText:         strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber),
 		PaymentQRCode:       paymentQRCode,
 		DocumentLabel:       string(documentType),
+		ShowDueDate:         documentType != CreditNotePrintDocument || invoice.DueDate != nil,
 		ShowOriginalInvoice: documentType == CreditNotePrintDocument,
 	})
 	if err != nil {

@@ -19,10 +19,10 @@
                     <strong>Datum :</strong>
                     <span>{{.Document.IssueDate}}</span>
                 </div>
-                <div class="invoice-detail">
+                {{if .Document.ShowDueDate}}<div class="invoice-detail">
                     <strong>Valuta :</strong>
                     <span>{{.Document.DueDate}}</span>
-                </div>
+                </div>{{end}}
                 <div class="invoice-detail">
                     <strong>Kraj izdaje :</strong>
                     <span>{{.Document.IssuePlace}}</span>

@@ -75,7 +75,9 @@ function InvoiceSearchResults({
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
             {invoicePage && (
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className={`flex flex-wrap items-center gap-2 ${
+                    isPageMode ? 'justify-between' : 'justify-end'
+                }`}>
                     {isPageMode && (
                         <Button
                             type="button"
