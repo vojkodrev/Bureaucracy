@@ -29,7 +29,7 @@ func (value RawXML) MarshalXML(encoder *xml.Encoder, _ xml.StartElement) error {
 				attributes = append(attributes, attribute)
 			}
 			value.Attr = attributes
-			if value.Name.Local == "fu:InvoiceRequest" {
+			if value.Name.Local == "fu:InvoiceRequest" || value.Name.Local == "fu:BusinessPremiseRequest" {
 				value.Attr = append(value.Attr,
 					xml.Attr{Name: xml.Name{Local: "xmlns:fu"}, Value: fursNamespace},
 					xml.Attr{Name: xml.Name{Local: "xmlns:ds"}, Value: xmlSignatureNamespace},

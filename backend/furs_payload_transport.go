@@ -24,8 +24,11 @@ func (transport *FURSPayloadTransport) RoundTrip(request *http.Request) (*http.R
 		return nil, fmt.Errorf("read FURS SOAP payload: %w", err)
 	}
 	_ = request.Body.Close()
-	if err := furs.ValidateSOAPInvoice(payload); err != nil {
-		return nil, err
+	action := strings.Trim(request.Header.Get("SOAPAction"), `"`)
+	if action == "/invoices" {
+		if err := furs.ValidateSOAPInvoice(payload); err != nil {
+			return nil, err
+		}
 	}
 	request.Body = io.NopCloser(bytes.NewReader(payload))
 	request.ContentLength = int64(len(payload))
@@ -34,7 +37,7 @@ func (transport *FURSPayloadTransport) RoundTrip(request *http.Request) (*http.R
 		InvoiceID:      transport.invoiceID,
 		InvoiceNumber:  transport.invoiceNumber,
 		RequestURL:     request.URL.String(),
-		SOAPAction:     strings.Trim(request.Header.Get("SOAPAction"), `"`),
+		SOAPAction:     action,
 		Payload:        string(payload),
 	})
 	if err != nil {

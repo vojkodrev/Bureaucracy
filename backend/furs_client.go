@@ -76,39 +76,60 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	if err := validateFURSInvoiceTotal(fursInvoice, typedRequest); err != nil {
 		return "", "", err
 	}
-	typedXML, err := xml.Marshal(typedRequest)
-	if err != nil {
-		return "", "", fmt.Errorf("marshal WSDL invoice request: %w", err)
+	response := &furs.InvoiceResponse{}
+	if err := client.sendFURSRequest(ctx, businessYearID, invoice, privateKey, certificate, "/invoices", typedRequest, response); err != nil {
+		return "", "", fmt.Errorf("send invoice to FURS: %w", err)
 	}
-	requestDocument := etree.NewDocument()
-	if err := requestDocument.ReadFromBytes(typedXML); err != nil {
-		return "", "", fmt.Errorf("parse WSDL invoice request: %w", err)
+	if isFURSTestURL(client.config.FURSURL) && fursErrorCode(response.Error) == "S006" {
+		if err := client.registerTestBusinessPremise(ctx, businessYearID, invoice, privateKey, certificate, issuedAt); err != nil {
+			return "", "", err
+		}
+		typedRequest = buildFURSInvoiceRequest(client.config, fursInvoice, issuedAt, zoi)
+		response = &furs.InvoiceResponse{}
+		if err := client.sendFURSRequest(ctx, businessYearID, invoice, privateKey, certificate, "/invoices", typedRequest, response); err != nil {
+			return "", "", fmt.Errorf("retry invoice with FURS: %w", err)
+		}
 	}
-	requestElement := requestDocument.Root()
-	prefixFURSRequest(requestElement)
-	removeEmptyFURSInvoiceReferences(requestElement)
-	signingContext, err := dsig.NewSigningContext(privateKey, [][]byte{certificate.Raw})
-	if err != nil {
-		return "", "", fmt.Errorf("create XML signing context: %w", err)
+	if response.Error != nil {
+		return "", "", fmt.Errorf("FURS rejected invoice: %s: %s", lib.StringOrEmpty(response.Error.ErrorCode), lib.StringOrEmpty(response.Error.ErrorMessage))
 	}
-	signingContext.IdAttribute = "Id"
-	signingContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
-	signingContext.Prefix = "ds"
-	signedRequest, err := signingContext.SignEnveloped(requestElement)
-	if err != nil {
-		return "", "", fmt.Errorf("sign FURS XML: %w", err)
+	if response.UniqueInvoiceID == nil || strings.TrimSpace(string(*response.UniqueInvoiceID)) == "" {
+		return "", "", fmt.Errorf("FURS response did not contain EOR")
 	}
-	if err := identifyFURSSigningCertificate(signedRequest, certificate); err != nil {
-		return "", "", err
-	}
+	return zoi, strings.TrimSpace(string(*response.UniqueInvoiceID)), nil
+}
 
-	signedDocument := etree.NewDocument()
-	signedDocument.SetRoot(signedRequest)
-	payload, err := signedDocument.WriteToBytes()
-	if err != nil {
-		return "", "", fmt.Errorf("serialize FURS XML: %w", err)
+func (client *FURSClient) registerTestBusinessPremise(ctx context.Context, businessYearID int, invoice *Invoice, privateKey *rsa.PrivateKey, certificate *x509.Certificate, issuedAt time.Time) error {
+	taxNumber := furs.PositiveInteger(client.config.FURSTaxNumber)
+	taxNumberType := furs.TaxNumberType(&taxNumber)
+	premiseID := furs.BusinessPremiseIDType(client.config.FURSBusinessPremiseID)
+	premiseType := furs.OtherPremiseTypeC
+	messageID := furs.UUIDType(uuid.NewString())
+	request := &furs.BusinessPremiseRequest{
+		Id:     "test",
+		Header: &furs.HeaderType{MessageID: &messageID, DateTime: soap.CreateXsdDateTime(issuedAt, false)},
+		BusinessPremise: &furs.BusinessPremiseType{
+			TaxNumber: &taxNumberType, BusinessPremiseID: &premiseID,
+			BPIdentifier:     &furs.BPIdentifierType{PremiseType: &premiseType},
+			ValidityDate:     soap.CreateXsdDate(issuedAt, false),
+			SoftwareSupplier: &furs.SoftwareSupplierType{TaxNumber: &taxNumberType},
+		},
 	}
+	response := &furs.BusinessPremiseResponse{}
+	if err := client.sendFURSRequest(ctx, businessYearID, invoice, privateKey, certificate, "/invoices/register", request, response); err != nil {
+		return fmt.Errorf("register FURS test business premise: %w", err)
+	}
+	if response.Error != nil {
+		return fmt.Errorf("FURS rejected test business premise: %s: %s", lib.StringOrEmpty(response.Error.ErrorCode), lib.StringOrEmpty(response.Error.ErrorMessage))
+	}
+	return nil
+}
 
+func (client *FURSClient) sendFURSRequest(ctx context.Context, businessYearID int, invoice *Invoice, privateKey *rsa.PrivateKey, certificate *x509.Certificate, action string, request, response any) error {
+	payload, err := signFURSRequest(request, privateKey, certificate)
+	if err != nil {
+		return err
+	}
 	tlsCertificate := tls.Certificate{Certificate: [][]byte{certificate.Raw}, PrivateKey: privateKey, Leaf: certificate}
 	baseTransport := &http.Transport{TLSClientConfig: &tls.Config{
 		MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{tlsCertificate},
@@ -121,17 +142,49 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 		soap.WithHTTPClient(httpClient),
 		soap.WithHTTPHeaders(map[string]string{"Accept": "text/xml"}),
 	)
-	response := &furs.InvoiceResponse{}
-	if err := soapClient.CallContext(ctx, "/invoices", furs.RawXML(payload), response); err != nil {
-		return "", "", fmt.Errorf("send invoice to FURS: %w", err)
+	return soapClient.CallContext(ctx, action, furs.RawXML(payload), response)
+}
+
+func signFURSRequest(request any, privateKey *rsa.PrivateKey, certificate *x509.Certificate) ([]byte, error) {
+	typedXML, err := xml.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("marshal FURS request: %w", err)
 	}
-	if response.Error != nil {
-		return "", "", fmt.Errorf("FURS rejected invoice: %s: %s", lib.StringOrEmpty(response.Error.ErrorCode), lib.StringOrEmpty(response.Error.ErrorMessage))
+	requestDocument := etree.NewDocument()
+	if err := requestDocument.ReadFromBytes(typedXML); err != nil {
+		return nil, fmt.Errorf("parse FURS request: %w", err)
 	}
-	if response.UniqueInvoiceID == nil || strings.TrimSpace(string(*response.UniqueInvoiceID)) == "" {
-		return "", "", fmt.Errorf("FURS response did not contain EOR")
+	requestElement := requestDocument.Root()
+	prefixFURSRequest(requestElement)
+	removeEmptyFURSInvoiceReferences(requestElement)
+	signingContext, err := dsig.NewSigningContext(privateKey, [][]byte{certificate.Raw})
+	if err != nil {
+		return nil, fmt.Errorf("create XML signing context: %w", err)
 	}
-	return zoi, strings.TrimSpace(string(*response.UniqueInvoiceID)), nil
+	signingContext.IdAttribute = "Id"
+	signingContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+	signingContext.Prefix = "ds"
+	signedRequest, err := signingContext.SignEnveloped(requestElement)
+	if err != nil {
+		return nil, fmt.Errorf("sign FURS XML: %w", err)
+	}
+	if err := identifyFURSSigningCertificate(signedRequest, certificate); err != nil {
+		return nil, err
+	}
+	signedDocument := etree.NewDocument()
+	signedDocument.SetRoot(signedRequest)
+	payload, err := signedDocument.WriteToBytes()
+	if err != nil {
+		return nil, fmt.Errorf("serialize FURS XML: %w", err)
+	}
+	return payload, nil
+}
+
+func fursErrorCode(value *furs.ErrorType) string {
+	if value == nil || value.ErrorCode == nil {
+		return ""
+	}
+	return strings.TrimSpace(string(*value.ErrorCode))
 }
 
 func identifyFURSSigningCertificate(signedRequest *etree.Element, certificate *x509.Certificate) error {
