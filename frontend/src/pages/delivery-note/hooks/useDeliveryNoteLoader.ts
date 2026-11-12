@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
+import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
 import { toast } from '@/lib/toast'
 import {
     fetchTextTemplate,
@@ -81,10 +82,21 @@ export function useDeliveryNoteLoader(options: Options) {
         requestKey: '__initial__',
         error: null as string | null,
     })
+    const [warningResult, setWarningResult] = useState({
+        requestKey: '__initial__',
+        warnings: [] as string[],
+        storedTotal: null as number | null,
+    })
     const isLoading = Boolean(options.routeNumber)
         && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey
         ? loadResult.error
+        : null
+    const warnings = warningResult.requestKey === requestKey
+        ? warningResult.warnings
+        : []
+    const storedTotal = warningResult.requestKey === requestKey
+        ? warningResult.storedTotal
         : null
 
     useEffect(() => {
@@ -93,11 +105,31 @@ export function useDeliveryNoteLoader(options: Options) {
         void fetchDeliveryNote(options.routeNumber, controller.signal)
             .then((note) => {
                 const nextDraft = draftFromDeliveryNote(note)
+                const headerTotal = currencyCents(note.amount ?? 0)
+                const lineTotal = sumCurrencyCents(
+                    (note.items ?? []).map((item) => item.grossAmount),
+                )
+                const hasInconsistentLine = (note.items ?? []).some((item) => {
+                    const netTotal = currencyCents(item.netAmount ?? 0)
+                    const vatTotal = currencyCents(
+                        (item.netAmount ?? 0) * (item.taxRate ?? 0) / 100,
+                    )
+                    return currencyCents(item.grossAmount ?? 0) !==
+                        netTotal + vatTotal
+                })
                 setDeliveryNoteId(note.id ?? null)
                 replaceLoadedDraft(nextDraft)
                 markLoadedDraftClean(nextDraft)
                 finishNavigation()
                 setLoadResult({ requestKey, error: null })
+                setWarningResult({
+                    requestKey,
+                    warnings: [
+                        ...(headerTotal === lineTotal ? [] : ['delivery-note-total']),
+                        ...(hasInconsistentLine ? ['delivery-note-line-total'] : []),
+                    ],
+                    storedTotal: headerTotal === lineTotal ? null : (note.amount ?? 0),
+                })
                 if (pendingRevert.current) {
                     pendingRevert.current = false
                     toast.add({
@@ -117,6 +149,7 @@ export function useDeliveryNoteLoader(options: Options) {
                         'Loading delivery note failed',
                     ),
                 })
+                setWarningResult({ requestKey, warnings: [], storedTotal: null })
             })
         return () => controller.abort()
     }, [requestKey, options.routeNumber])
@@ -240,6 +273,8 @@ export function useDeliveryNoteLoader(options: Options) {
         setBusinessYear,
         isLoading,
         error,
+        warnings,
+        storedTotal,
         requestErrors,
         setRequestErrors,
         reload: () => {

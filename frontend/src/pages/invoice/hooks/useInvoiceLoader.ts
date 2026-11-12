@@ -77,10 +77,12 @@ export function useInvoiceLoader({
     const [warningResult, setWarningResult] = useState({
         requestKey: '__initial__',
         warnings: [] as string[],
+        storedTotal: null as number | null,
     })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
     const warnings = warningResult.requestKey === requestKey ? warningResult.warnings : []
+    const storedTotal = warningResult.requestKey === requestKey ? warningResult.storedTotal : null
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
@@ -106,6 +108,7 @@ export function useInvoiceLoader({
                     ...(headerTotal === lineTotal ? [] : ['invoice-total']),
                     ...(hasInconsistentLine ? ['invoice-line-total'] : []),
                 ],
+                storedTotal: headerTotal === lineTotal ? null : (invoice.amount ?? 0),
             })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false
@@ -119,7 +122,7 @@ export function useInvoiceLoader({
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
             setLoadResult({ requestKey, error: requestErrorMessage(requestError, 'Loading invoice failed') })
-            setWarningResult({ requestKey, warnings: [] })
+            setWarningResult({ requestKey, warnings: [], storedTotal: null })
         })
         return () => controller.abort()
     }, [requestKey, routeInvoiceNumber])
@@ -225,6 +228,7 @@ export function useInvoiceLoader({
 
     return {
         invoiceId, setInvoiceId, creditedAmount, businessYear, setBusinessYear, isLoading, error, warnings,
+        storedTotal,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),
         preserveDuplicateDraft: () => { preserveDuplicateRef.current = true },

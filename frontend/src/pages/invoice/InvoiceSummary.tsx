@@ -3,15 +3,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatCurrency } from '@/lib/formatters'
 import { roundCurrency } from '@/lib/numbers'
 import { format } from 'date-fns'
+import { TriangleAlertIcon } from 'lucide-react'
 
 type InvoiceSummaryProps = {
     total: number
+    storedTotal?: number | null
     creditedAmount: number
     paidAmount: string
     paymentDate?: Date
 }
 
-function InvoiceSummary({ total, creditedAmount, paidAmount, paymentDate }: InvoiceSummaryProps) {
+function InvoiceSummary({ total, storedTotal, creditedAmount, paidAmount, paymentDate }: InvoiceSummaryProps) {
     const credits = roundCurrency(creditedAmount)
     const balanceDue = Math.max(0, roundCurrency(total + credits - (Number(paidAmount) || 0)))
     return (
@@ -21,7 +23,21 @@ function InvoiceSummary({ total, creditedAmount, paidAmount, paymentDate }: Invo
                 <Table>
                     <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="text-right">Value</TableHead></TableRow></TableHeader>
                     <TableBody>
-                        <TableRow><TableCell>Total incl. VAT</TableCell><TableCell className="text-right font-medium">{formatCurrency(total)}</TableCell></TableRow>
+                        <TableRow>
+                            <TableCell>{storedTotal == null ? 'Total incl. VAT' : 'Calculated total incl. VAT'}</TableCell>
+                            <TableCell className="text-right font-medium">{formatCurrency(total)}</TableCell>
+                        </TableRow>
+                        {storedTotal != null && (
+                            <TableRow>
+                                <TableCell>
+                                    <span className="inline-flex items-center gap-2">
+                                        Stored total incl. VAT
+                                        <TriangleAlertIcon className="size-4 text-amber-600" aria-label="Inconsistent total" />
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">{formatCurrency(storedTotal)}</TableCell>
+                            </TableRow>
+                        )}
                         {credits !== 0 && (
                             <TableRow>
                                 <TableCell>Credit notes</TableCell>

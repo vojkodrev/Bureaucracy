@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import WarningAlert from '@/components/WarningAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -155,10 +156,15 @@ export default function DeliveryNotePage() {
             invoiceConversion.error,
         ],
     ] as const
+    const warnings = [
+        ['delivery-note-total', 'Delivery note total is inconsistent', 'The stored delivery note total does not equal the sum of its lines.', 'Review and save the delivery note to correct its total.'],
+        ['delivery-note-line-total', 'Delivery note line total is inconsistent', 'At least one line gross amount does not equal its net amount plus VAT.', 'Review and save the delivery note lines to correct their totals.'],
+    ] as const
+    const hasWarnings = warnings.some(([key]) => loader.warnings.includes(key))
 
     return (
         <div className="max-w-6xl p-4">
-            {errors.some(([, , , error]) => error) && (
+            {(errors.some(([, , , error]) => error) || hasWarnings) && (
                 <div className="mb-6 space-y-2">
                     {errors.map(([key, title, description, error]) => (
                         error && (
@@ -170,6 +176,11 @@ export default function DeliveryNotePage() {
                             />
                         )
                     ))}
+                    {warnings.map(([key, title, description, warning]) =>
+                        loader.warnings.includes(key) && (
+                            <WarningAlert key={key} title={title}
+                                description={description} warning={warning} />
+                        ))}
                 </div>
             )}
             <div className="mb-6 flex items-center gap-2">
@@ -342,6 +353,9 @@ export default function DeliveryNotePage() {
                 </Field>
                 <DeliveryNoteSummary
                     total={draftState.totalIncludingVat}
+                    storedTotal={loader.warnings.includes('delivery-note-total')
+                        ? loader.storedTotal
+                        : null}
                     withoutAmounts={draft.withoutAmounts}
                 />
             </div>

@@ -68,10 +68,12 @@ export function usePriceQuoteLoader({
     })
     const [warningResult, setWarningResult] = useState({
         requestKey: '__initial__', warnings: [] as string[],
+        storedTotal: null as number | null,
     })
     const isLoading = Boolean(routeQuoteNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
     const warnings = warningResult.requestKey === requestKey ? warningResult.warnings : []
+    const storedTotal = warningResult.requestKey === requestKey ? warningResult.storedTotal : null
 
     useEffect(() => {
         if (!routeQuoteNumber) return
@@ -100,6 +102,7 @@ export function usePriceQuoteLoader({
                     ...(headerTotal === lineTotal ? [] : ['price-quote-total']),
                     ...(hasInconsistentLine ? ['price-quote-line-total'] : []),
                 ],
+                storedTotal: headerTotal === lineTotal ? null : (priceQuote.amount ?? 0),
             })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false
@@ -113,7 +116,7 @@ export function usePriceQuoteLoader({
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
             setLoadResult({ requestKey, error: errorMessage(requestError, 'Loading price quote failed') })
-            setWarningResult({ requestKey, warnings: [] })
+            setWarningResult({ requestKey, warnings: [], storedTotal: null })
         })
         return () => controller.abort()
     }, [requestKey, routeQuoteNumber])
@@ -180,6 +183,7 @@ export function usePriceQuoteLoader({
 
     return {
         priceQuoteId, setPriceQuoteId, businessYear, setBusinessYear, isLoading, error, warnings,
+        storedTotal,
         requestErrors, setRequestErrors,
         reload: () => {
             pendingRevertRef.current = true

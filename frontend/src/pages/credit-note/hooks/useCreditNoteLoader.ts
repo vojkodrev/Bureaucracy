@@ -57,6 +57,7 @@ export function useCreditNoteLoader(options: Options) {
     const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [warnings, setWarnings] = useState<string[]>([])
+    const [storedTotal, setStoredTotal] = useState<number | null>(null)
     const [requestErrors, setRequestErrors] = useState<CreditNoteRequestErrors>({})
     const [isLoading, setIsLoading] = useState(Boolean(options.routeNumber))
     const [reloadVersion, setReloadVersion] = useState(0)
@@ -97,6 +98,7 @@ export function useCreditNoteLoader(options: Options) {
                             ? ['credit-note-line-total']
                             : []),
                     ])
+                    setStoredTotal(headerTotal === lineTotal ? null : (note.amount ?? 0))
                 })
                 .catch((reason: unknown) => {
                     if (!controller.signal.aborted) {
@@ -104,6 +106,7 @@ export function useCreditNoteLoader(options: Options) {
                             ? reason.message
                             : 'Loading credit note failed')
                         setWarnings([])
+                        setStoredTotal(null)
                     }
                 })
                 .finally(() => {
@@ -112,6 +115,7 @@ export function useCreditNoteLoader(options: Options) {
         } else {
             setCreditNoteId(null)
             setWarnings([])
+            setStoredTotal(null)
             disallowNavigation()
             const initialDraft: CreditNoteDraft = {
                 ...draftFromCreditNote({
@@ -231,6 +235,7 @@ export function useCreditNoteLoader(options: Options) {
         businessYear,
         error,
         warnings,
+        storedTotal,
         requestErrors,
         isLoading,
         reload: () => setReloadVersion((value) => value + 1),

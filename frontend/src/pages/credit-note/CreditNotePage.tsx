@@ -272,7 +272,12 @@ export default function CreditNotePage() {
                         onChange={(event) => setField('closingText', event.target.value)}
                     />
                 </Field>
-                <PriceQuoteSummary total={draftState.totalIncludingVat} />
+                <PriceQuoteSummary
+                    total={draftState.totalIncludingVat}
+                    storedTotal={loader.warnings.includes('credit-note-total')
+                        ? loader.storedTotal
+                        : null}
+                />
             </div>
         </div>
     )

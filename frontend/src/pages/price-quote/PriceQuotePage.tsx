@@ -192,7 +192,8 @@ export default function PriceQuotePage() {
             <Field><FieldLabel htmlFor="price-quote-closing-text">Closing text</FieldLabel>
                 <Textarea id="price-quote-closing-text" name="closingText" value={draft.closingText}
                     onChange={(event) => setField('closingText', event.target.value)} /></Field>
-            <PriceQuoteSummary total={draftState.totalIncludingVat} />
+            <PriceQuoteSummary total={draftState.totalIncludingVat}
+                storedTotal={loader.warnings.includes('price-quote-total') ? loader.storedTotal : null} />
         </div>
     </div>
 }
