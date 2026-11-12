@@ -16,7 +16,13 @@ export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm, canSave }
         setIsConfirming(true)
         setError(null)
         try {
-            const result = await confirmInvoiceTax(invoiceNumber.trim(), getSelectedBusinessYear())
+            const request = confirmInvoiceTax(invoiceNumber.trim(), getSelectedBusinessYear())
+            toast.add({
+                title: 'Tax confirmation requested',
+                description: 'Waiting for a response from FURS.',
+                type: 'info',
+            })
+            const result = await request
             setDialogOpen(false)
             toast.add({ title: 'Tax confirmation completed', description: `EOR: ${result.eor}`, type: 'success' })
         } catch (value) {

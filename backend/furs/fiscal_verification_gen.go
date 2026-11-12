@@ -740,7 +740,7 @@ type X509DataType struct {
 type X509IssuerSerialType struct {
 	X509IssuerName string `xml:"X509IssuerName,omitempty" json:"X509IssuerName,omitempty"`
 
-	X509SerialNumber int32 `xml:"X509SerialNumber,omitempty" json:"X509SerialNumber,omitempty"`
+	X509SerialNumber string `xml:"X509SerialNumber,omitempty" json:"X509SerialNumber,omitempty"`
 }
 
 type PGPDataType struct {

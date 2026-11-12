@@ -98,6 +98,9 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	if err != nil {
 		return "", "", fmt.Errorf("sign FURS XML: %w", err)
 	}
+	if err := identifyFURSSigningCertificate(signedRequest, certificate); err != nil {
+		return "", "", err
+	}
 
 	signedDocument := etree.NewDocument()
 	signedDocument.SetRoot(signedRequest)
@@ -110,7 +113,7 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 	baseTransport := &http.Transport{TLSClientConfig: &tls.Config{
 		MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{tlsCertificate},
 	}}
-	httpClient := &http.Client{Timeout: 30 * time.Second, Transport: &FURSPayloadTransport{
+	httpClient := &http.Client{Timeout: 2 * time.Minute, Transport: &FURSPayloadTransport{
 		base: baseTransport, requests: client.requests, businessYearID: businessYearID,
 		invoiceID: invoice.ID, invoiceNumber: invoice.InvoiceNumber,
 	}}
@@ -129,6 +132,35 @@ func (client *FURSClient) ConfirmInvoice(ctx context.Context, businessYearID int
 		return "", "", fmt.Errorf("FURS response did not contain EOR")
 	}
 	return zoi, strings.TrimSpace(string(*response.UniqueInvoiceID)), nil
+}
+
+func identifyFURSSigningCertificate(signedRequest *etree.Element, certificate *x509.Certificate) error {
+	if signedRequest == nil || certificate == nil {
+		return fmt.Errorf("identify FURS signing certificate: signed request and certificate are required")
+	}
+	keyInfo := findFURSKeyInfo(signedRequest)
+	if keyInfo == nil {
+		return fmt.Errorf("identify FURS signing certificate: XML signature has no KeyInfo")
+	}
+	keyInfo.Child = nil
+	x509Data := keyInfo.CreateElement("ds:X509Data")
+	issuerSerial := x509Data.CreateElement("ds:X509IssuerSerial")
+	issuerSerial.CreateElement("ds:X509IssuerName").SetText(certificate.Issuer.String())
+	issuerSerial.CreateElement("ds:X509SerialNumber").SetText(certificate.SerialNumber.String())
+	x509Data.CreateElement("ds:X509SubjectName").SetText(certificate.Subject.String())
+	return nil
+}
+
+func findFURSKeyInfo(element *etree.Element) *etree.Element {
+	if element.Tag == "KeyInfo" && element.NamespaceURI() == dsig.Namespace {
+		return element
+	}
+	for _, child := range element.ChildElements() {
+		if keyInfo := findFURSKeyInfo(child); keyInfo != nil {
+			return keyInfo
+		}
+	}
+	return nil
 }
 
 func removeEmptyFURSInvoiceReferences(requestElement *etree.Element) {
