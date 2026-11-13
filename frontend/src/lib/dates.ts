@@ -22,6 +22,19 @@ export function dateForApi(date?: Date): string | null {
     return `${dateForInput(date)}T00:00:00Z`
 }
 
+export function dateTimeForApi(date?: Date): string | null {
+    if (!date) return null
+
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+    const offsetMinutes = -date.getTimezoneOffset()
+    const offsetSign = offsetMinutes >= 0 ? '+' : '-'
+    const offsetHours = String(Math.floor(Math.abs(offsetMinutes) / 60)).padStart(2, '0')
+    const offsetRemainder = String(Math.abs(offsetMinutes) % 60).padStart(2, '0')
+    return `${dateForInput(date)}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetRemainder}`
+}
+
 export function dateAfterDays(date: Date | undefined, days: number | null): Date | undefined {
     if (!date || days == null) return undefined
 

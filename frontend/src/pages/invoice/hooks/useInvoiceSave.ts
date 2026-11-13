@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { getSelectedBusinessYear } from '@/lib/business-year'
-import { dateForApi } from '@/lib/dates'
+import { dateForApi, dateTimeForApi } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
 import { nextPaddedNumber, numberOrNull, roundCurrency } from '@/lib/numbers'
 import { postalCodeAndCity } from '@/lib/postal-address'
@@ -39,7 +39,7 @@ export function useInvoiceSave({
                 businessYear: getSelectedBusinessYear(),
                 invoice: {
                     id: invoiceId, invoiceNumber: draft.invoiceNumber.trim(),
-                    issueDate: dateForApi(draft.invoiceDate), serviceDate: dateForApi(draft.serviceDate),
+                    issueDate: dateTimeForApi(draft.invoiceDate), serviceDate: dateForApi(draft.serviceDate),
                     dueDate: dateForApi(draft.dueDate), paymentDate: dateForApi(draft.paymentDate),
                     customerCode: emptyToNull(draft.customerId), customerName: emptyToNull(draft.customerName),
                     customerAddress: emptyToNull(draft.customerAddress),

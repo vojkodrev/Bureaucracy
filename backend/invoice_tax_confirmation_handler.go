@@ -55,7 +55,11 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
-	issuedAt := time.Now().Truncate(time.Second)
+	if invoice.IssueDate == nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "invoice issue date and time are required for tax confirmation"})
+		return
+	}
+	issuedAt := invoice.IssueDate.Truncate(time.Second)
 	zoi, eor, err := handler.furs.ConfirmInvoice(c.Request.Context(), businessYearID, invoice, issuedAt)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})

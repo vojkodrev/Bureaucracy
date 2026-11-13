@@ -27,6 +27,13 @@ const requestErrorMessage = (error: unknown, fallback: string) =>
 const wasAborted = (error: unknown) => error instanceof DOMException && error.name === 'AbortError'
 const dateFromInvoiceValue = (value: string | null | undefined) =>
     value ? dateFromSearchValue(value.slice(0, 10)) : undefined
+const dateTimeFromInvoiceValue = (value: string | null | undefined) => {
+    if (!value) return undefined
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+    if (!match) return undefined
+    const [, year, month, day, hours, minutes, seconds] = match
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds))
+}
 
 function draftFromInvoice(invoice: Invoice): InvoiceDraft {
     return {
@@ -36,7 +43,7 @@ function draftFromInvoice(invoice: Invoice): InvoiceDraft {
         customerPostalCode: invoice.customerPostalCode ?? '',
         customerCity: cityWithoutPostalCode(invoice.customerCity, invoice.customerPostalCode),
         customerCountry: invoice.customerCountry ?? '',
-        invoiceDate: dateFromInvoiceValue(invoice.issueDate),
+        invoiceDate: dateTimeFromInvoiceValue(invoice.issueDate),
         serviceDate: dateFromInvoiceValue(invoice.serviceDate),
         dueDate: dateFromInvoiceValue(invoice.dueDate),
         paymentDate: dateFromInvoiceValue(invoice.paymentDate),
