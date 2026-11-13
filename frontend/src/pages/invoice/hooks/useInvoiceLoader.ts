@@ -14,6 +14,7 @@ import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoic
 import {
     fetchInvoice, fetchNextInvoiceNumber,
 } from '../invoice-api'
+import type { InvoiceTaxConfirmation } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
 export type InvoiceRequestErrors = Partial<Record<
@@ -62,6 +63,7 @@ export function useInvoiceLoader({
     const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
     const [creditedAmount, setCreditedAmount] = useState(0)
+    const [taxConfirmation, setTaxConfirmation] = useState<InvoiceTaxConfirmation | null>(null)
     const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [reloadVersion, setReloadVersion] = useState(0)
     const [requestErrors, setRequestErrors] = useState<InvoiceRequestErrors>({})
@@ -98,6 +100,7 @@ export function useInvoiceLoader({
             })
             setInvoiceId(invoice.id ?? null)
             setCreditedAmount(invoice.creditedAmount ?? 0)
+            setTaxConfirmation(invoice.zoi && invoice.eor ? { zoi: invoice.zoi, eor: invoice.eor } : null)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
@@ -145,6 +148,7 @@ export function useInvoiceLoader({
         }
         setInvoiceId(null)
         setCreditedAmount(0)
+        setTaxConfirmation(null)
         replaceLoadedDraft(initialDraft)
         clearLoadedDraft()
         setRequestErrors((current) => ({
@@ -227,7 +231,8 @@ export function useInvoiceLoader({
     }
 
     return {
-        invoiceId, setInvoiceId, creditedAmount, businessYear, setBusinessYear, isLoading, error, warnings,
+        invoiceId, setInvoiceId, creditedAmount, taxConfirmation, setTaxConfirmation,
+        businessYear, setBusinessYear, isLoading, error, warnings,
         storedTotal,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),

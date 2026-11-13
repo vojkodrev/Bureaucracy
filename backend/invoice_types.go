@@ -33,6 +33,8 @@ type Invoice struct {
 	IntroductoryText           *string        `json:"introductoryText"`
 	ClosingText                *string        `json:"closingText"`
 	Cancelled                  *bool          `json:"cancelled"`
+	ZOI                        *string        `json:"zoi"`
+	EOR                        *string        `json:"eor"`
 	Items                      []*InvoiceItem `json:"items"`
 }
 

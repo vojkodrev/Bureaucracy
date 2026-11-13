@@ -104,6 +104,7 @@ function InvoicePage() {
         invoiceNumber: draft.invoiceNumber,
         canConfirm: print.canPrint,
         canSave: save.canSave,
+        onConfirmed: loader.setTaxConfirmation,
     })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
     const errors = [
@@ -185,6 +186,7 @@ function InvoicePage() {
             onOpenChange={email.setConfirmingPaidInvoiceEmail}
             onConfirm={email.confirmPaidInvoiceEmail} />
         <TaxConfirmationAlert open={taxConfirmation.dialogOpen} pending={taxConfirmation.isConfirming}
+            alreadyConfirmed={loader.taxConfirmation != null}
             onOpenChange={taxConfirmation.setDialogOpen}
             onConfirm={() => { void taxConfirmation.confirm() }} />
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
@@ -261,7 +263,8 @@ function InvoicePage() {
                 storedTotal={warningKeys.includes('invoice-total') ? loader.storedTotal : null}
                 creditedAmount={loader.invoiceId == null || loader.isLoading ? 0 : loader.creditedAmount}
                 paidAmount={draft.paidAmount}
-                paymentDate={draft.paymentDate} />
+                paymentDate={draft.paymentDate}
+                zoi={loader.taxConfirmation?.zoi} eor={loader.taxConfirmation?.eor} />
         </div>
     </div>
 }

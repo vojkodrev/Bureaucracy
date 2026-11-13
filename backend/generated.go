@@ -265,6 +265,7 @@ type ComplexityRoot struct {
 		CustomerPostalCode  func(childComplexity int) int
 		DeliveryNoteNumber  func(childComplexity int) int
 		DueDate             func(childComplexity int) int
+		EOR                 func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		IntroductoryText    func(childComplexity int) int
 		InvoiceNumber       func(childComplexity int) int
@@ -276,6 +277,7 @@ type ComplexityRoot struct {
 		PaymentReference    func(childComplexity int) int
 		PurchaseOrderNumber func(childComplexity int) int
 		ServiceDate         func(childComplexity int) int
+		ZOI                 func(childComplexity int) int
 	}
 
 	InvoiceCustomerSummary struct {
@@ -1531,6 +1533,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.DueDate(childComplexity), true
+	case "Invoice.eor":
+		if e.ComplexityRoot.Invoice.EOR == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.EOR(childComplexity), true
 	case "Invoice.id":
 		if e.ComplexityRoot.Invoice.ID == nil {
 			break
@@ -1597,6 +1605,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Invoice.ServiceDate(childComplexity), true
+	case "Invoice.zoi":
+		if e.ComplexityRoot.Invoice.ZOI == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Invoice.ZOI(childComplexity), true
 
 	case "InvoiceCustomerSummary.customerCode":
 		if e.ComplexityRoot.InvoiceCustomerSummary.CustomerCode == nil {
@@ -3300,6 +3314,10 @@ func (ec *executionContext) childFields_Invoice(ctx context.Context, field graph
 		return ec.fieldContext_Invoice_closingText(ctx, field)
 	case "cancelled":
 		return ec.fieldContext_Invoice_cancelled(ctx, field)
+	case "zoi":
+		return ec.fieldContext_Invoice_zoi(ctx, field)
+	case "eor":
+		return ec.fieldContext_Invoice_eor(ctx, field)
 	case "items":
 		return ec.fieldContext_Invoice_items(ctx, field)
 	}
@@ -9557,6 +9575,52 @@ func (ec *executionContext) _Invoice_cancelled(ctx context.Context, field graphq
 }
 func (ec *executionContext) fieldContext_Invoice_cancelled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_zoi(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_zoi(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ZOI, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_zoi(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Invoice_eor(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Invoice_eor(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EOR, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Invoice_eor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Invoice", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _Invoice_items(ctx context.Context, field graphql.CollectedField, obj *Invoice) (ret graphql.Marshaler) {
@@ -17998,6 +18062,16 @@ func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "cancelled":
 			out.Values[i] = ec._Invoice_cancelled(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "zoi":
+			out.Values[i] = ec._Invoice_zoi(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "eor":
+			out.Values[i] = ec._Invoice_eor(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
 				out.Invalids++
 			}

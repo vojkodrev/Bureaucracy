@@ -11,7 +11,7 @@ const invoiceQuery = `
         invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
             id invoiceNumber amount creditedAmount issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
-            paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText
+            paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText zoi eor
             items {
                 id sequence productCode productName unit taxCode taxRate unitPrice
                 unitTaxAmount quantity discount netAmount grossAmount

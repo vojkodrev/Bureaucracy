@@ -11,9 +11,11 @@ type InvoiceSummaryProps = {
     creditedAmount: number
     paidAmount: string
     paymentDate?: Date
+    zoi?: string
+    eor?: string
 }
 
-function InvoiceSummary({ total, storedTotal, creditedAmount, paidAmount, paymentDate }: InvoiceSummaryProps) {
+function InvoiceSummary({ total, storedTotal, creditedAmount, paidAmount, paymentDate, zoi, eor }: InvoiceSummaryProps) {
     const credits = roundCurrency(creditedAmount)
     const balanceDue = Math.max(0, roundCurrency(total + credits - (Number(paidAmount) || 0)))
     return (
@@ -51,6 +53,8 @@ function InvoiceSummary({ total, storedTotal, creditedAmount, paidAmount, paymen
                             <TableCell className="text-right font-medium">{formatCurrency(Number(paidAmount) || 0)}</TableCell>
                         </TableRow>
                         <TableRow><TableCell>Balance due</TableCell><TableCell className="text-right font-semibold">{formatCurrency(balanceDue)}</TableCell></TableRow>
+                        {zoi && <TableRow><TableCell>ZOI</TableCell><TableCell className="break-all text-right font-medium">{zoi}</TableCell></TableRow>}
+                        {eor && <TableRow><TableCell>EOR</TableCell><TableCell className="break-all text-right font-medium">{eor}</TableCell></TableRow>}
                     </TableBody>
                 </Table>
             </CardContent>

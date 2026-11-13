@@ -2,10 +2,16 @@ import { useState } from 'react'
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { toast } from '@/lib/toast'
 import { confirmInvoiceTax } from '../invoice-api'
+import type { InvoiceTaxConfirmation } from '../invoice-api'
 
-type Options = { invoiceNumber: string; canConfirm: boolean; canSave: boolean }
+type Options = {
+    invoiceNumber: string
+    canConfirm: boolean
+    canSave: boolean
+    onConfirmed: (confirmation: InvoiceTaxConfirmation) => void
+}
 
-export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm, canSave }: Options) {
+export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm, canSave, onConfirmed }: Options) {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [confirmingUnsavedTaxConfirmation, setConfirmingUnsavedTaxConfirmation] = useState(false)
     const [isConfirming, setIsConfirming] = useState(false)
@@ -23,6 +29,7 @@ export function useInvoiceTaxConfirmation({ invoiceNumber, canConfirm, canSave }
                 type: 'info',
             })
             const result = await request
+            onConfirmed(result)
             setDialogOpen(false)
             toast.add({ title: 'Tax confirmation completed', description: `EOR: ${result.eor}`, type: 'success' })
         } catch (value) {

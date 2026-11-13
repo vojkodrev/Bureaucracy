@@ -18,6 +18,8 @@ export type Invoice = {
     paymentDate: string | null
     introductoryText?: string | null
     closingText?: string | null
+    zoi?: string | null
+    eor?: string | null
     items?: InvoiceItem[]
 }
 

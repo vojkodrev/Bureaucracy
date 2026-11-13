@@ -178,6 +178,8 @@ type Invoice {
   introductoryText: String
   closingText: String
   cancelled: Boolean
+  zoi: String
+  eor: String
   items: [InvoiceItem!]!
 }
 

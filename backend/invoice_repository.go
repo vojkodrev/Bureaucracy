@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -469,6 +470,10 @@ func (repository *InvoiceRepository) GetByNumber(
 	if invoiceNumber == "" {
 		return nil, fmt.Errorf("invoiceNumber is required")
 	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid businessYear: %w", err)
+	}
 
 	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	customerDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
@@ -509,12 +514,16 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.Sklic,
 			r.SpremniText,
 			r.Klavzula,
-			r.Storno
+			r.Storno,
+			details.zoi,
+			details.eor
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
 		LEFT JOIN [%s].[dbo].[Drzave] d ON d.OznakaDrzave = p.Drzava AND ISNULL(d.Deleted, 0) = 0
+		LEFT JOIN [Bureaucracy].[dbo].[invoice_details] details
+			ON details.business_year_id = @businessYearID AND details.invoice_id = r.RecNo
 		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, invoiceDatabaseName, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
-		sql.Named("invoiceNumber", invoiceNumber),
+		sql.Named("invoiceNumber", invoiceNumber), sql.Named("businessYearID", businessYearID),
 	)
 
 	invoice := &Invoice{}
@@ -549,6 +558,8 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.IntroductoryText,
 		&invoice.ClosingText,
 		&cancelled,
+		&invoice.ZOI,
+		&invoice.EOR,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

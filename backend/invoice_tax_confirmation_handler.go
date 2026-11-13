@@ -42,17 +42,13 @@ func (handler *InvoiceTaxConfirmationHandler) Handle(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invoice not found"})
 		return
 	}
+	if invoice.ZOI != nil && invoice.EOR != nil &&
+		strings.TrimSpace(*invoice.ZOI) != "" && strings.TrimSpace(*invoice.EOR) != "" {
+		c.JSON(http.StatusConflict, gin.H{"error": "invoice is already tax confirmed"})
+		return
+	}
 	if invoice.Cancelled != nil && *invoice.Cancelled {
 		c.JSON(http.StatusConflict, gin.H{"error": "cancelled invoices cannot be tax confirmed"})
-		return
-	}
-	existing, err := handler.details.Get(c.Request.Context(), businessYearID, invoice.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	if existing != nil {
-		c.JSON(http.StatusOK, existing)
 		return
 	}
 	if err := validateTaxConfirmationInvoice(invoice); err != nil {
