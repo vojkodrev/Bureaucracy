@@ -204,6 +204,11 @@ main {
     text-align: right;
 }
 
+.confirmation-area {
+    position: relative;
+    margin-top: 7mm;
+}
+
 .fiscal-confirmation {
     display: flex;
     flex-direction: column;
@@ -223,16 +228,16 @@ main {
     width: 18mm;
     height: 18mm;
     margin-top: 1mm;
+    transform: translateX(-2mm);
 }
 
 .closing-text {
-    margin-top: 7mm;
+    max-width: calc(100% - 46mm);
     white-space: pre-line;
 }
 
 .signature {
-    margin-top: 9mm;
-    margin-left: 1mm;
+    margin-top: 5mm;
 }
 
 .signature img {
@@ -243,13 +248,15 @@ main {
 }
 
 .payment-qr {
-    float: right;
+    position: absolute;
+    top: 0;
+    right: 0;
     display: block;
     width: 42mm;
     height: 42mm;
     margin: 0;
     padding: 0;
-    transform: translate(2mm, 7mm);
+    transform: translate(4.8mm, -4.8mm);
 }
 
 .document-footer {

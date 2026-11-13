@@ -141,14 +141,17 @@ func (generator *InvoicePrintGenerator) Generate(
 	if err := validateCalculatedInvoiceTotals(invoice, netTotal, taxTotal, grossTotal, calculatedTotals); err != nil {
 		return nil, err
 	}
+	closingText := strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber)
 	paymentQRCode := ""
 	fiscalQRCode := ""
 	if documentType == InvoicePrintDocument {
-		generatedQRCode, qrError := generateUPNQRCode(invoice, displayNumber, grossTotal)
-		if qrError != nil {
-			return nil, qrError
+		if !strings.Contains(strings.ToLower(closingText), "plačano z gotovino") {
+			generatedQRCode, qrError := generateUPNQRCode(invoice, displayNumber, grossTotal)
+			if qrError != nil {
+				return nil, qrError
+			}
+			paymentQRCode = generatedQRCode
 		}
-		paymentQRCode = generatedQRCode
 		if trimmedString(invoice.ZOI) != "" && trimmedString(invoice.EOR) != "" {
 			generatedFiscalQRCode, fiscalQRError := generateFURSTaxQRCode(
 				*invoice.ZOI, generator.fursTaxNumber, invoice.FURSIssueDateTime,
@@ -182,7 +185,7 @@ func (generator *InvoicePrintGenerator) Generate(
 		GrossTotal:          formatMoneyAmount(grossTotal),
 		AmountInWords:       lib.SlovenianAmountInWords(grossTotal),
 		TaxSummaries:        taxSummaries,
-		ClosingText:         strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber),
+		ClosingText:         closingText,
 		PaymentQRCode:       paymentQRCode,
 		FiscalQRCode:        fiscalQRCode,
 		ZOI:                 trimmedString(invoice.ZOI),

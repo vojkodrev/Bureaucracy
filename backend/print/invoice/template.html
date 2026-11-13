@@ -115,19 +115,21 @@
                 </table>
             </section>
 
-            {{if .Document.FiscalQRCode}}
-            <section class="fiscal-confirmation">
-                <div class="fiscal-data"><strong>ZOI:</strong> {{.Document.ZOI}}</div>
-                <img class="fiscal-qr" src="{{.FiscalQR}}" alt="QR koda za preverjanje davÄŤno potrjenega raÄŤuna">
-                <div class="fiscal-data"><strong>EOR:</strong> {{.Document.EOR}}</div>
-            </section>
-            {{end}}
-
-            {{if .Document.PaymentQRCode}}
-            <img class="payment-qr" src="{{.PaymentQR}}" alt="UPN QR koda za plačilo računa">
-            {{end}}
-
-            <p class="closing-text">{{.Document.ClosingText}}</p>
+            <div class="confirmation-area">
+                <p class="closing-text">{{.Document.ClosingText}}</p>
+                {{if .Document.PaymentQRCode}}
+                <img class="payment-qr" src="{{.PaymentQR}}" alt="UPN QR koda za plačilo računa">
+                {{end}}
+                {{if .Document.FiscalQRCode}}
+                <section class="fiscal-confirmation">
+                    <div class="fiscal-data">
+                        <div><strong>ZOI:</strong> {{.Document.ZOI}}</div>
+                        <div><strong>EOR:</strong> {{.Document.EOR}}</div>
+                    </div>
+                    <img class="fiscal-qr" src="{{.FiscalQR}}" alt="FURS QR code">
+                </section>
+                {{end}}
+            </div>
 
             <div class="signature">
                 <p>Direktor:<br>Vojko Drev,dipl.inž.rač.in inf.</p>
