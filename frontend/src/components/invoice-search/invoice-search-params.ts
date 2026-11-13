@@ -21,6 +21,8 @@ export function invoiceSearchFromParams(searchParams: URLSearchParams): InvoiceS
 
     return {
         invoiceNumber: searchParams.get('invoiceNumber') ?? '',
+        invoiceNumberFrom: searchParams.get('invoiceNumberFrom') ?? '',
+        invoiceNumberTo: searchParams.get('invoiceNumberTo') ?? '',
         customerId: searchParams.get('customerId') ?? '',
         customerName: searchParams.get('customerName') ?? '',
         productCode: searchParams.get('productCode') ?? '',
@@ -44,7 +46,8 @@ export function invoiceSearchToParams(search: InvoiceSearchCriteria): URLSearchP
     const searchParams = new URLSearchParams()
 
     for (const key of [
-        'invoiceNumber', 'customerId', 'customerName', 'productCode', 'productName', 'from', 'to',
+        'invoiceNumber', 'invoiceNumberFrom', 'invoiceNumberTo', 'customerId', 'customerName',
+        'productCode', 'productName', 'from', 'to',
     ] as const) {
         if (search[key]) searchParams.set(key, search[key])
     }

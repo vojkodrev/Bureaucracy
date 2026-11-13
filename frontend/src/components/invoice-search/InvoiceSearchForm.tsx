@@ -44,6 +44,8 @@ function InvoiceSearchForm({
 
         onSubmit({
             invoiceNumber: String(formData.get('invoiceNumber') ?? '').trim(),
+            invoiceNumberFrom: String(formData.get('invoiceNumberFrom') ?? '').trim(),
+            invoiceNumberTo: String(formData.get('invoiceNumberTo') ?? '').trim(),
             customerId: String(formData.get('customerId') ?? '').trim(),
             customerName: String(formData.get('customerName') ?? '').trim(),
             productCode: String(formData.get('productCode') ?? '').trim(),
@@ -76,6 +78,34 @@ function InvoiceSearchForm({
                                         autoComplete="off"
                                     />
                                 </Field>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <Field>
+                                        <FieldLabel htmlFor="invoice-number-from">Invoice number from</FieldLabel>
+                                        <Input
+                                            id="invoice-number-from"
+                                            name="invoiceNumberFrom"
+                                            defaultValue={search.invoiceNumberFrom}
+                                            inputMode="numeric"
+                                            pattern="[0-9]{5}"
+                                            maxLength={5}
+                                            placeholder="00850"
+                                            autoComplete="off"
+                                        />
+                                    </Field>
+                                    <Field>
+                                        <FieldLabel htmlFor="invoice-number-to">Invoice number to</FieldLabel>
+                                        <Input
+                                            id="invoice-number-to"
+                                            name="invoiceNumberTo"
+                                            defaultValue={search.invoiceNumberTo}
+                                            inputMode="numeric"
+                                            pattern="[0-9]{5}"
+                                            maxLength={5}
+                                            placeholder="00850"
+                                            autoComplete="off"
+                                        />
+                                    </Field>
+                                </div>
                                 <div className="grid gap-6 sm:grid-cols-2">
                                     <DatePickerField
                                         id="invoice-date-from"

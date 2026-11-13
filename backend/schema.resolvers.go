@@ -266,7 +266,7 @@ func (r *queryResolver) SearchCustomers(ctx context.Context, businessYear string
 }
 
 // SearchInvoices is the resolver for the searchInvoices field.
-func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error) {
+func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string, invoiceNumber *string, invoiceNumberFrom *string, invoiceNumberTo *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoicePage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -275,11 +275,11 @@ func (r *queryResolver) SearchInvoices(ctx context.Context, businessYear string,
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
+	return r.Invoices.Search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
 }
 
 // SearchInvoicesByCustomer is the resolver for the searchInvoicesByCustomer field.
-func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error) {
+func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYear string, invoiceNumber *string, invoiceNumberFrom *string, invoiceNumberTo *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, paymentStatus *string, sortBy *string, sortDirection *string, page *int, pageSize *int) (*InvoiceCustomerSummaryPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -288,7 +288,7 @@ func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYe
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	invoicePage, err := r.Invoices.Search(ctx, businessYear, invoiceNumber, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
+	invoicePage, err := r.Invoices.Search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
 	if err != nil {
 		return nil, err
 	}

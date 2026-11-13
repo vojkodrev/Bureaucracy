@@ -18,6 +18,7 @@ type InvoiceRepository struct {
 }
 
 var businessYearPattern = regexp.MustCompile(`^[0-9]+$`)
+var invoiceNumberRangePattern = regexp.MustCompile(`^[0-9]{5}$`)
 
 func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
@@ -667,6 +668,8 @@ func (repository *InvoiceRepository) Search(
 	ctx context.Context,
 	businessYear string,
 	invoiceNumber *string,
+	invoiceNumberFrom *string,
+	invoiceNumberTo *string,
 	customerID *string,
 	customerName *string,
 	productCode *string,
@@ -701,12 +704,31 @@ func (repository *InvoiceRepository) Search(
 	}
 
 	invoiceNumberPattern := lib.OptionalLikePattern(invoiceNumber)
+	invoiceNumberFromValue := ""
+	if invoiceNumberFrom != nil {
+		invoiceNumberFromValue = strings.TrimSpace(*invoiceNumberFrom)
+	}
+	invoiceNumberToValue := ""
+	if invoiceNumberTo != nil {
+		invoiceNumberToValue = strings.TrimSpace(*invoiceNumberTo)
+	}
+	if invoiceNumberFromValue != "" && !invoiceNumberRangePattern.MatchString(invoiceNumberFromValue) {
+		return nil, fmt.Errorf("invoiceNumberFrom must contain exactly 5 digits")
+	}
+	if invoiceNumberToValue != "" && !invoiceNumberRangePattern.MatchString(invoiceNumberToValue) {
+		return nil, fmt.Errorf("invoiceNumberTo must contain exactly 5 digits")
+	}
+	if invoiceNumberFromValue != "" && invoiceNumberToValue != "" && invoiceNumberFromValue > invoiceNumberToValue {
+		return nil, fmt.Errorf("invoiceNumberFrom must not be after invoiceNumberTo")
+	}
 	customerIDPattern := lib.OptionalLikePattern(customerID)
 	customerNamePattern := lib.WordsLikePattern(customerName)
 	productCodePattern := lib.OptionalLikePattern(productCode)
 	productNamePattern := lib.WordsLikePattern(productName)
 	queryArguments := []any{
 		sql.Named("invoiceNumber", invoiceNumberPattern),
+		sql.Named("invoiceNumberFrom", invoiceNumberFromValue),
+		sql.Named("invoiceNumberTo", invoiceNumberToValue),
 		sql.Named("customerID", customerIDPattern),
 		sql.Named("customerName", customerNamePattern),
 		sql.Named("productCode", productCodePattern),
@@ -723,6 +745,8 @@ func (repository *InvoiceRepository) Search(
 		SELECT COUNT(*)
 		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
+		  AND (@invoiceNumberFrom = '' OR Stevilka >= @invoiceNumberFrom)
+		  AND (@invoiceNumberTo = '' OR Stevilka <= @invoiceNumberTo)
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		  AND ((@productCode = '' AND @productName = '') OR EXISTS (
@@ -778,6 +802,8 @@ func (repository *InvoiceRepository) Search(
 			Storno
 		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
+		  AND (@invoiceNumberFrom = '' OR Stevilka >= @invoiceNumberFrom)
+		  AND (@invoiceNumberTo = '' OR Stevilka <= @invoiceNumberTo)
 		  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
 		  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
 		  AND ((@productCode = '' AND @productName = '') OR EXISTS (

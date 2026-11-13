@@ -90,7 +90,8 @@ func loadInvoiceReportPage(context *gin.Context, invoices *InvoiceRepository, bu
 
 	invoicePage, err := invoices.Search(
 		context.Request.Context(), businessYear,
-		optionalQuery(context.Query("invoiceNumber")), optionalQuery(context.Query("customerId")),
+		optionalQuery(context.Query("invoiceNumber")), optionalQuery(context.Query("invoiceNumberFrom")),
+		optionalQuery(context.Query("invoiceNumberTo")), optionalQuery(context.Query("customerId")),
 		optionalQuery(context.Query("customerName")), optionalQuery(context.Query("productCode")),
 		optionalQuery(context.Query("productName")), issuedFrom, issuedTo,
 		optionalQuery(context.Query("paymentStatus")),

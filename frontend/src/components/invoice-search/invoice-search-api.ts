@@ -28,6 +28,8 @@ const searchInvoicesQuery = `
     query SearchInvoices(
         $businessYear: String!
         $invoiceNumber: String
+        $invoiceNumberFrom: String
+        $invoiceNumberTo: String
         $customerId: String
         $customerName: String
         $productCode: String
@@ -43,6 +45,8 @@ const searchInvoicesQuery = `
         searchInvoices(
             businessYear: $businessYear
             invoiceNumber: $invoiceNumber
+            invoiceNumberFrom: $invoiceNumberFrom
+            invoiceNumberTo: $invoiceNumberTo
             customerId: $customerId
             customerName: $customerName
             productCode: $productCode
@@ -78,6 +82,8 @@ const searchInvoicesByCustomerQuery = `
     query SearchInvoicesByCustomer(
         $businessYear: String!
         $invoiceNumber: String
+        $invoiceNumberFrom: String
+        $invoiceNumberTo: String
         $customerId: String
         $customerName: String
         $productCode: String
@@ -93,6 +99,8 @@ const searchInvoicesByCustomerQuery = `
         searchInvoicesByCustomer(
             businessYear: $businessYear
             invoiceNumber: $invoiceNumber
+            invoiceNumberFrom: $invoiceNumberFrom
+            invoiceNumberTo: $invoiceNumberTo
             customerId: $customerId
             customerName: $customerName
             productCode: $productCode
@@ -142,6 +150,8 @@ export async function fetchInvoiceSearch(
     const result = await postGraphql<SearchInvoicesResponse>(searchInvoicesQuery, {
         businessYear: getSelectedBusinessYear(),
         invoiceNumber: optionalFilter(search.invoiceNumber),
+        invoiceNumberFrom: optionalFilter(search.invoiceNumberFrom),
+        invoiceNumberTo: optionalFilter(search.invoiceNumberTo),
         customerId: optionalFilter(search.customerId),
         customerName: optionalFilter(search.customerName),
         productCode: optionalFilter(search.productCode),
@@ -167,6 +177,8 @@ export async function fetchInvoiceSearchByCustomer(
     const result = await postGraphql<SearchInvoicesByCustomerResponse>(searchInvoicesByCustomerQuery, {
         businessYear: getSelectedBusinessYear(),
         invoiceNumber: optionalFilter(search.invoiceNumber),
+        invoiceNumberFrom: optionalFilter(search.invoiceNumberFrom),
+        invoiceNumberTo: optionalFilter(search.invoiceNumberTo),
         customerId: optionalFilter(search.customerId),
         customerName: optionalFilter(search.customerName),
         productCode: optionalFilter(search.productCode),

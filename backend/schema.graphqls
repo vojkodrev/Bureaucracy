@@ -714,6 +714,8 @@ type Query {
   searchInvoices(
     businessYear: String!
     invoiceNumber: String
+    invoiceNumberFrom: String
+    invoiceNumberTo: String
     customerId: String
     customerName: String
     productCode: String
@@ -730,6 +732,8 @@ type Query {
   searchInvoicesByCustomer(
     businessYear: String!
     invoiceNumber: String
+    invoiceNumberFrom: String
+    invoiceNumberTo: String
     customerId: String
     customerName: String
     productCode: String
