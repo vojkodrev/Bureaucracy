@@ -25,6 +25,9 @@ type invoiceReminderRow struct {
 	IssueDate     string
 	DueDate       string
 	Amount        string
+	InvoiceAmount string
+	CreditAmount  string
+	HasCredits    bool
 }
 
 //go:embed print/invoice-reminder/template.html
@@ -78,12 +81,15 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 		rows := make([]invoiceReminderRow, 0, len(invoices))
 		var total float64
 		for _, invoice := range invoices {
-			amount := float64OrZero(invoice.Amount)
+			amount := invoiceAmountAfterCredits(invoice)
 			total += amount
 			rows = append(rows, invoiceReminderRow{
 				InvoiceNumber: invoice.InvoiceNumber + "/" + fmt.Sprint(businessYear),
 				IssueDate:     formatDocumentDate(invoice.IssueDate), DueDate: formatDocumentDate(effectiveInvoiceDueDate(invoice)),
-				Amount: formatMoneyAmount(amount),
+				Amount:        formatMoneyAmount(amount),
+				InvoiceAmount: formatMoneyAmount(float64OrZero(invoice.Amount)),
+				CreditAmount:  formatMoneyAmount(invoice.CreditedAmount),
+				HasCredits:    invoice.CreditedAmount != 0,
 			})
 		}
 		documents = append(documents, invoiceReminderDocument{

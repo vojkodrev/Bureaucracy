@@ -63,6 +63,13 @@ func effectiveInvoiceDueDate(invoice *Invoice) *time.Time {
 	return invoice.IssueDate
 }
 
+func invoiceAmountAfterCredits(invoice *Invoice) float64 {
+	if invoice == nil {
+		return 0
+	}
+	return max(0, lib.RoundCurrency(float64OrZero(invoice.Amount)+invoice.CreditedAmount))
+}
+
 func optionalStringEqual(left *string, right *string) bool {
 	return lib.StringOrEmpty(left) == lib.StringOrEmpty(right)
 }

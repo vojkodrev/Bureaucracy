@@ -76,7 +76,10 @@ func (generator *InvoiceCustomerReportGenerator) Generate(
 			invoices = append(invoices, invoice)
 			rows = append(rows, invoiceReportRow{
 				InvoiceNumber: invoice.InvoiceNumber,
-				Amount:        formatMoneyAmount(float64OrZero(invoice.Amount)),
+				Amount:        formatMoneyAmount(invoiceAmountAfterCredits(invoice)),
+				InvoiceAmount: formatMoneyAmount(float64OrZero(invoice.Amount)),
+				CreditAmount:  formatMoneyAmount(invoice.CreditedAmount),
+				HasCredits:    invoice.CreditedAmount != 0,
 				IssueDate:     formatDocumentDate(invoice.IssueDate),
 				DueDate:       formatDocumentDate(invoice.DueDate),
 				PaymentDate:   formatDocumentDate(invoice.PaymentDate),

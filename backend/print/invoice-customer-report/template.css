@@ -61,6 +61,7 @@ header p { margin: 0; }
 .invoices th:nth-child(6) { width: 12%; }
 
 .number { text-align: right !important; }
+.amount small { display: block; margin-top: 0.5mm; font-size: 6pt; font-weight: 400; white-space: nowrap; }
 
 .subtotal td {
     font-weight: 700;

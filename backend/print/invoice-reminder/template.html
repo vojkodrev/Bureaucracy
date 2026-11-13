@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     {{range .Invoices}}
-                    <tr><td>Račun številka {{.InvoiceNumber}}</td><td>{{.IssueDate}}</td><td>{{.DueDate}}</td><td class="number">{{.Amount}}</td></tr>
+                    <tr><td>Račun številka {{.InvoiceNumber}}</td><td>{{.IssueDate}}</td><td>{{.DueDate}}</td><td class="number amount">{{.Amount}}{{if .HasCredits}}<small>{{.InvoiceAmount}} račun · {{.CreditAmount}} dobropisi</small>{{end}}</td></tr>
                     {{end}}
                 </tbody>
             </table>
