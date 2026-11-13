@@ -287,6 +287,10 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid businessYear: %w", err)
+	}
 	input.InvoiceNumber = strings.TrimSpace(input.InvoiceNumber)
 	if input.InvoiceNumber == "" {
 		return nil, fmt.Errorf("invoiceNumber is required")
@@ -332,6 +336,18 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 				return nil, fmt.Errorf("invoice RecNo %d was not found", invoiceID)
 			}
 			return nil, fmt.Errorf("find invoice for update: %w", err)
+		}
+		var taxConfirmed bool
+		if err = tx.QueryRowContext(ctx, `SELECT CASE WHEN EXISTS (
+			SELECT 1 FROM [Bureaucracy].[dbo].[invoice_details]
+			WHERE business_year_id=@businessYearID AND invoice_id=@invoiceID
+			  AND NULLIF(LTRIM(RTRIM(zoi)), '') IS NOT NULL
+			  AND NULLIF(LTRIM(RTRIM(eor)), '') IS NOT NULL
+		) THEN 1 ELSE 0 END`, sql.Named("businessYearID", businessYearID), sql.Named("invoiceID", invoiceID)).Scan(&taxConfirmed); err != nil {
+			return nil, fmt.Errorf("check invoice tax confirmation: %w", err)
+		}
+		if taxConfirmed {
+			return nil, fmt.Errorf("invoice %s is already tax confirmed and cannot be saved", oldInvoiceNumber)
 		}
 		result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`
 			UPDATE [%s].[dbo].[Racuni]
