@@ -10,6 +10,8 @@ import (
 	"html/template"
 	"sort"
 	"strings"
+
+	"bureaucracy/backend/lib"
 )
 
 type invoicePrintDocument struct {
@@ -31,6 +33,12 @@ type invoicePrintDocument struct {
 	TaxSummaries        []invoicePrintTax    `xml:"taxes>tax"`
 	ClosingText         string               `xml:"closingText"`
 	PaymentQRCode       string               `xml:"paymentQRCode"`
+	FiscalQRCode        string               `xml:"fiscalQRCode"`
+	ZOI                 string               `xml:"zoi"`
+	EOR                 string               `xml:"eor"`
+	DocumentLabel       string               `xml:"documentLabel"`
+	ShowDueDate         bool                 `xml:"showDueDate"`
+	ShowOriginalInvoice bool                 `xml:"showOriginalInvoice"`
 }
 
 type invoicePrintCustomer struct {
@@ -42,17 +50,18 @@ type invoicePrintCustomer struct {
 }
 
 type invoicePrintItem struct {
-	Sequence         string `xml:"sequence"`
-	Description      string `xml:"description"`
-	Quantity         string `xml:"quantity"`
-	Unit             string `xml:"unit"`
-	UnitPrice        string `xml:"unitPrice"`
-	Discount         string `xml:"discount"`
-	DiscountAmount   string `xml:"discountAmount"`
-	DiscountedPrice  string `xml:"discountedPrice"`
-	TaxRate          string `xml:"taxRate"`
-	UnitPriceWithTax string `xml:"unitPriceWithTax"`
-	NetAmount        string `xml:"netAmount"`
+	Sequence              string `xml:"sequence"`
+	Description           string `xml:"description"`
+	Quantity              string `xml:"quantity"`
+	Unit                  string `xml:"unit"`
+	UnitPrice             string `xml:"unitPrice"`
+	Discount              string `xml:"discount"`
+	DiscountAmount        string `xml:"discountAmount"`
+	DiscountedPrice       string `xml:"discountedPrice"`
+	TaxRate               string `xml:"taxRate"`
+	UnitPriceWithTax      string `xml:"unitPriceWithTax"`
+	NetAmount             string `xml:"netAmount"`
+	OriginalInvoiceNumber string `xml:"originalInvoiceNumber"`
 }
 
 type invoicePrintTax struct {
@@ -75,35 +84,53 @@ var logo []byte
 var signature []byte
 
 type InvoicePrintGenerator struct {
-	template    *template.Template
-	pdfRenderer *HTMLPDFRenderer
+	template      *template.Template
+	pdfRenderer   *HTMLPDFRenderer
+	fursTaxNumber string
 }
 
-func NewInvoicePrintGenerator(pdfRenderer *HTMLPDFRenderer) (*InvoicePrintGenerator, error) {
+type InvoicePrintDocumentType string
+
+const (
+	InvoicePrintDocument    InvoicePrintDocumentType = "Račun"
+	CreditNotePrintDocument InvoicePrintDocumentType = "Dobropis"
+)
+
+func NewInvoicePrintGenerator(pdfRenderer *HTMLPDFRenderer, config *AppConfig) (*InvoicePrintGenerator, error) {
 	tmpl, err := template.New("invoice").Parse(documentHeaderHTMLTemplate + htmlTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse invoice print template: %w", err)
 	}
 	return &InvoicePrintGenerator{
-		template:    tmpl,
-		pdfRenderer: pdfRenderer,
+		template:      tmpl,
+		pdfRenderer:   pdfRenderer,
+		fursTaxNumber: config.FURSTaxNumber,
 	}, nil
 }
 
-func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *Invoice, businessYear int) ([]byte, error) {
+func (generator *InvoicePrintGenerator) Generate(
+	ctx context.Context,
+	invoice *Invoice,
+	businessYear int,
+	documentType InvoicePrintDocumentType,
+) ([]byte, error) {
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
 	}
+	if err := validateInvoiceGrossTotal(invoice); err != nil {
+		return nil, err
+	}
 	displayNumber := fmt.Sprintf("%s/%d", invoice.InvoiceNumber, businessYear)
-	printItems, taxSummaries := buildPrintItems(invoice.Items)
-	netTotal := float64OrZero(invoice.GoodsAmount)
+	printItems, taxSummaries, calculatedTotals := buildPrintItems(invoice.Items)
+	netTotal := float64OrZero(invoice.NetTotal)
 	grossTotal := float64OrZero(invoice.Amount)
-	if invoice.GoodsAmount == nil {
+	if invoice.NetTotal == nil {
 		netTotal = sumInvoiceNet(invoice.Items)
 	}
 	if invoice.Amount == nil {
 		grossTotal = sumInvoiceGross(invoice.Items)
 	}
+	taxTotal := grossTotal - netTotal
 	introText := trimmedString(invoice.IntroductoryText)
 	if deliveryNoteNumber := trimmedString(invoice.DeliveryNoteNumber); deliveryNoteNumber != "" && deliveryNoteNumber != "New" {
 		if introText != "" {
@@ -111,9 +138,29 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		}
 		introText += "dob: " + deliveryNoteNumber
 	}
-	paymentQRCode, err := generateUPNQRCode(invoice, displayNumber, grossTotal)
-	if err != nil {
+	if err := validateCalculatedInvoiceTotals(invoice, netTotal, taxTotal, grossTotal, calculatedTotals); err != nil {
 		return nil, err
+	}
+	closingText := strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber)
+	paymentQRCode := ""
+	fiscalQRCode := ""
+	if documentType == InvoicePrintDocument {
+		if !strings.Contains(strings.ToLower(closingText), "plačano z gotovino") {
+			generatedQRCode, qrError := generateUPNQRCode(invoice, displayNumber, grossTotal)
+			if qrError != nil {
+				return nil, qrError
+			}
+			paymentQRCode = generatedQRCode
+		}
+		if trimmedString(invoice.ZOI) != "" && trimmedString(invoice.EOR) != "" {
+			generatedFiscalQRCode, fiscalQRError := generateFURSTaxQRCode(
+				*invoice.ZOI, generator.fursTaxNumber, invoice.FURSIssueDateTime,
+			)
+			if fiscalQRError != nil {
+				return nil, fiscalQRError
+			}
+			fiscalQRCode = generatedFiscalQRCode
+		}
 	}
 
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
@@ -131,15 +178,21 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 			Country:  foreignCustomerCountry(invoice.CustomerCountry, invoice.CustomerCountryName),
 			TaxID:    trimmedString(invoice.CustomerTaxID),
 		},
-		IntroText:     introText,
-		Items:         printItems,
-		NetTotal:      formatMoneyAmount(netTotal),
-		TaxTotal:      formatMoneyAmount(grossTotal - netTotal),
-		GrossTotal:    formatMoneyAmount(grossTotal),
-		AmountInWords: amountInWords(grossTotal),
-		TaxSummaries:  taxSummaries,
-		ClosingText:   strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber),
-		PaymentQRCode: paymentQRCode,
+		IntroText:           introText,
+		Items:               printItems,
+		NetTotal:            formatMoneyAmount(netTotal),
+		TaxTotal:            formatMoneyAmount(taxTotal),
+		GrossTotal:          formatMoneyAmount(grossTotal),
+		AmountInWords:       lib.SlovenianAmountInWords(grossTotal),
+		TaxSummaries:        taxSummaries,
+		ClosingText:         closingText,
+		PaymentQRCode:       paymentQRCode,
+		FiscalQRCode:        fiscalQRCode,
+		ZOI:                 trimmedString(invoice.ZOI),
+		EOR:                 trimmedString(invoice.EOR),
+		DocumentLabel:       string(documentType),
+		ShowDueDate:         documentType != CreditNotePrintDocument || invoice.DueDate != nil,
+		ShowOriginalInvoice: documentType == CreditNotePrintDocument,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create invoice XML: %w", err)
@@ -156,12 +209,14 @@ func (generator *InvoicePrintGenerator) Generate(ctx context.Context, invoice *I
 		Header    documentPrintHeader
 		Signature template.URL
 		PaymentQR template.URL
+		FiscalQR  template.URL
 	}{
 		CSS:       template.CSS(documentHeaderCSSTemplate + cssTemplate),
 		Document:  printDocument,
 		Header:    documentPrintHeader{Customer: printDocument.Customer, Logo: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo))},
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
 		PaymentQR: template.URL(printDocument.PaymentQRCode),
+		FiscalQR:  template.URL(printDocument.FiscalQRCode),
 	}); err != nil {
 		return nil, fmt.Errorf("render invoice HTML: %w", err)
 	}
@@ -195,14 +250,16 @@ func foreignCustomerCountry(code *string, name *string) string {
 	return valueOrDefault(name, trimmedString(code))
 }
 
-func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax) {
+func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTax, calculatedInvoiceTotals) {
 	printItems := make([]invoicePrintItem, 0, len(items))
 	taxGroups := make(map[float64][2]float64)
+	calculatedTotals := calculatedInvoiceTotals{}
 	for index, item := range items {
 		if item == nil {
 			continue
 		}
 		amounts := calculateInvoiceItemAmounts(item)
+		calculatedTotals.gross += lib.CurrencyCents(amounts.GrossAmount)
 		group := taxGroups[amounts.TaxRate]
 		taxGroups[amounts.TaxRate] = [2]float64{group[0] + amounts.NetAmount, group[1] + amounts.GrossAmount - amounts.NetAmount}
 
@@ -211,17 +268,20 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 			sequence = *item.Sequence
 		}
 		printItems = append(printItems, invoicePrintItem{
-			Sequence:         fmt.Sprintf("%d", sequence),
-			Description:      strings.TrimSpace(trimmedString(item.ProductName)),
-			Quantity:         formatQuantity(amounts.Quantity),
-			Unit:             trimmedString(item.Unit),
-			UnitPrice:        formatMoneyAmount(amounts.UnitPrice),
-			Discount:         formatPercentage(amounts.Discount),
-			DiscountAmount:   formatMoneyAmount(amounts.DiscountAmount),
-			DiscountedPrice:  formatMoneyAmount(amounts.DiscountedUnitPrice),
-			TaxRate:          formatPercentage(amounts.TaxRate),
-			UnitPriceWithTax: formatMoneyAmount(divide(amounts.GrossAmount, amounts.Quantity)),
-			NetAmount:        formatMoneyAmount(amounts.NetAmount),
+			Sequence:        fmt.Sprintf("%d", sequence),
+			Description:     strings.TrimSpace(trimmedString(item.ProductName)),
+			Quantity:        formatQuantity(amounts.Quantity),
+			Unit:            trimmedString(item.Unit),
+			UnitPrice:       formatMoneyAmount(amounts.UnitPrice),
+			Discount:        formatPercentage(amounts.Discount),
+			DiscountAmount:  formatMoneyAmount(amounts.DiscountAmount),
+			DiscountedPrice: formatMoneyAmount(amounts.DiscountedUnitPrice),
+			TaxRate:         formatPercentage(amounts.TaxRate),
+			UnitPriceWithTax: formatMoneyAmount(
+				lib.DivideOrZero(amounts.GrossAmount, amounts.Quantity),
+			),
+			NetAmount:             formatMoneyAmount(amounts.NetAmount),
+			OriginalInvoiceNumber: trimmedString(item.OriginalInvoiceNumber),
 		})
 	}
 
@@ -233,6 +293,8 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 	taxes := make([]invoicePrintTax, 0, len(rates))
 	for _, rate := range rates {
 		amounts := taxGroups[rate]
+		calculatedTotals.net += lib.CurrencyCents(amounts[0])
+		calculatedTotals.vat += lib.CurrencyCents(amounts[1])
 		taxes = append(taxes, invoicePrintTax{
 			Description: "DDV " + formatPercentage(rate),
 			Rate:        formatMoneyAmount(rate),
@@ -240,7 +302,7 @@ func buildPrintItems(items []*InvoiceItem) ([]invoicePrintItem, []invoicePrintTa
 			TaxAmount:   formatMoneyAmount(amounts[1]),
 		})
 	}
-	return printItems, taxes
+	return printItems, taxes, calculatedTotals
 }
 
 func sumInvoiceNet(items []*InvoiceItem) float64 {
@@ -261,66 +323,4 @@ func sumInvoiceGross(items []*InvoiceItem) float64 {
 		}
 	}
 	return total
-}
-
-func divide(value float64, divisor float64) float64 {
-	if divisor == 0 {
-		return 0
-	}
-	return value / divisor
-}
-
-func amountInWords(value float64) string {
-	whole := int64(value)
-	cents := int64((value-float64(whole))*100 + 0.5)
-	if cents == 100 {
-		whole++
-		cents = 0
-	}
-	return slovenianInteger(whole) + fmt.Sprintf(" %02d/100", cents)
-}
-
-func slovenianInteger(value int64) string {
-	if value == 0 {
-		return "nič"
-	}
-	if value < 0 {
-		return "minus " + slovenianInteger(-value)
-	}
-	if value >= 1000 {
-		thousands := value / 1000
-		prefix := slovenianInteger(thousands) + " tisoč"
-		if thousands == 1 {
-			prefix = "tisoč"
-		}
-		if remainder := value % 1000; remainder != 0 {
-			return prefix + " " + slovenianInteger(remainder)
-		}
-		return prefix
-	}
-	result := ""
-	if value >= 100 {
-		hundreds := []string{"", "sto", "dvesto", "tristo", "štiristo", "petsto", "šeststo", "sedemsto", "osemsto", "devetsto"}
-		result = hundreds[value/100]
-		value %= 100
-	}
-	if value > 0 {
-		if result != "" {
-			result += " "
-		}
-		units := []string{"", "ena", "dva", "tri", "štiri", "pet", "šest", "sedem", "osem", "devet"}
-		teens := []string{"deset", "enajst", "dvanajst", "trinajst", "štirinajst", "petnajst", "šestnajst", "sedemnajst", "osemnajst", "devetnajst"}
-		tens := []string{"", "", "dvajset", "trideset", "štirideset", "petdeset", "šestdeset", "sedemdeset", "osemdeset", "devetdeset"}
-		switch {
-		case value < 10:
-			result += units[value]
-		case value < 20:
-			result += teens[value-10]
-		case value%10 == 0:
-			result += tens[value/10]
-		default:
-			result += units[value%10] + "in" + tens[value/10]
-		}
-	}
-	return result
 }

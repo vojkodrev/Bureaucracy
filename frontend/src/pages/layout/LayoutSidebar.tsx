@@ -5,6 +5,7 @@ import {
     ChevronsUpDown,
     ChevronRight,
     FileDown,
+    FileMinus2,
     FileText,
     Landmark,
     LogOut,
@@ -104,12 +105,28 @@ const sections: Section[] = [
         entityLabel: "Price quote",
     },
     {
+        key: "delivery-notes",
+        label: "Delivery notes",
+        icon: PackageCheck,
+        searchPath: "/delivery-notes/search",
+        entityPath: "/delivery-note",
+        entityLabel: "Delivery note",
+    },
+    {
         key: "invoices",
         label: "Invoices",
         icon: FileText,
         searchPath: "/invoices/search",
         entityPath: "/invoice",
         entityLabel: "Invoice",
+    },
+    {
+        key: "credit-notes",
+        label: "Credit notes",
+        icon: FileMinus2,
+        searchPath: "/credit-notes/search",
+        entityPath: "/credit-note",
+        entityLabel: "Credit note",
     },
     {
         key: "bank-statements",
@@ -129,7 +146,14 @@ const sections: Section[] = [
 const sectionGroups = [
     {
         label: "Billing",
-        sectionKeys: ["customers", "products", "price-quotes", "invoices"],
+        sectionKeys: [
+            "customers",
+            "products",
+            "price-quotes",
+            "delivery-notes",
+            "invoices",
+            "credit-notes",
+        ],
     },
     {
         label: "Storage",

@@ -28,7 +28,7 @@ export default function InventoryItemListResults({
     goodsReceiptCounts, goodsReceiptCountsLoading, goodsReceiptCountsError,
     onPageChange, onPageSizeChange, onSort, onInventoryItemSelect,
 }: Props) {
-    const isPageMode = mode === ComponentMode.Page;
+    const hasLinkedRows = mode !== ComponentMode.Dialog;
     const columnCount = inventoryItemSortColumns.length + 1;
     const firstItem = itemPage && itemPage.totalCount > 0
         ? (itemPage.page - 1) * itemPage.pageSize + 1 : 0;
@@ -56,14 +56,14 @@ export default function InventoryItemListResults({
                 {isLoading && !items.length && <EmptyRow columns={columnCount}>Loading inventory items…</EmptyRow>}
                 {!isLoading && !items.length && <EmptyRow columns={columnCount}>No inventory items found.</EmptyRow>}
                 {items.map((item) => {
-                    const to = isPageMode && item.productCode
+                    const to = hasLinkedRows && item.productCode
                         ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined;
                     const label = `Open inventory item ${item.productCode}`;
                     return (
                         <TableRow key={item.id} className="cursor-pointer"
-                            tabIndex={isPageMode ? undefined : 0}
-                            onClick={isPageMode ? undefined : () => onInventoryItemSelect?.(item)}
-                            onKeyDown={isPageMode ? undefined : (event) => {
+                            tabIndex={hasLinkedRows ? undefined : 0}
+                            onClick={hasLinkedRows ? undefined : () => onInventoryItemSelect?.(item)}
+                            onKeyDown={hasLinkedRows ? undefined : (event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
                                     onInventoryItemSelect?.(item);

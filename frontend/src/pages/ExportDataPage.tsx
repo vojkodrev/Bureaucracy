@@ -27,11 +27,22 @@ const months = monthNames.map((label, index) => ({
     label,
     value: String(index + 1),
 }))
+const invoiceNumberPattern = /^\d{5}$/
 
-function exportUrl(month: string, year: string): string {
+function filterError(month: (typeof months)[number] | null, year: string, numberFrom: string, numberTo: string): string | null {
+    if (!/^\d{1,4}$/.test(year) || Number(year) < 1) return 'Year is required'
+    if (!month && !numberFrom && !numberTo) return 'Select a month or enter number from or number to'
+    if ((numberFrom && !invoiceNumberPattern.test(numberFrom)) || (numberTo && !invoiceNumberPattern.test(numberTo))) {
+        return 'Invoice numbers must contain exactly 5 digits, including leading zeros'
+    }
+    if (numberFrom && numberTo && numberFrom > numberTo) return 'Number from must not be greater than number to'
+    return null
+}
+
+function exportUrl(month: string, year: string, numberFrom: string, numberTo: string): string {
     const url = new URL(graphqlUrl)
     url.pathname = '/api/exports/accounting'
-    url.search = new URLSearchParams({ month, year }).toString()
+    url.search = new URLSearchParams({ month, year, numberFrom, numberTo }).toString()
     url.hash = ''
     return url.toString()
 }
@@ -47,6 +58,8 @@ function ExportDataPage() {
     const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1)
     const [month, setMonth] = useState<(typeof months)[number] | null>(months[previousMonth.getMonth()])
     const [year, setYear] = useState(String(previousMonth.getFullYear()))
+    const [numberFrom, setNumberFrom] = useState('')
+    const [numberTo, setNumberTo] = useState('')
     const [isExporting, setIsExporting] = useState(false)
     const [emailDialogOpen, setEmailDialogOpen] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -54,14 +67,15 @@ function ExportDataPage() {
     async function exportData(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
         const selectedMonth = month
-        if (!selectedMonth) {
-            setError('Month is required')
+        const validationError = filterError(selectedMonth, year, numberFrom.trim(), numberTo.trim())
+        if (validationError) {
+            setError(validationError)
             return
         }
         setIsExporting(true)
         setError(null)
         try {
-            const response = await apiFetch(exportUrl(selectedMonth.value, year))
+            const response = await apiFetch(exportUrl(selectedMonth?.value ?? '', year, numberFrom.trim(), numberTo.trim()))
             if (!response.ok) {
                 const body = await response.json().catch(() => null) as { error?: string } | null
                 throw new Error(body?.error ?? `Export failed (${response.status})`)
@@ -70,7 +84,7 @@ function ExportDataPage() {
             const objectUrl = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = objectUrl
-            link.download = downloadFilename(response, year, selectedMonth.value)
+            link.download = downloadFilename(response, year, selectedMonth?.value ?? '')
             document.body.appendChild(link)
             link.click()
             link.remove()
@@ -134,6 +148,14 @@ function ExportDataPage() {
                                         onChange={(event) => setYear(event.target.value)}
                                     />
                                 </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="export-number-from">Number from</FieldLabel>
+                                    <Input id="export-number-from" type="text" inputMode="numeric" pattern="[0-9]{5}" maxLength={5} placeholder="00001" value={numberFrom} onChange={(event) => setNumberFrom(event.target.value)} />
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="export-number-to">Number to</FieldLabel>
+                                    <Input id="export-number-to" type="text" inputMode="numeric" pattern="[0-9]{5}" maxLength={5} placeholder="99999" value={numberTo} onChange={(event) => setNumberTo(event.target.value)} />
+                                </Field>
                             </div>
                         </FieldGroup>
                     </CardContent>
@@ -143,7 +165,8 @@ function ExportDataPage() {
                             {isExporting ? 'Exporting…' : 'Export'}
                         </Button>
                         <Button type="button" variant="outline" onClick={() => {
-                            if (!month) { setError('Month is required'); return }
+                            const validationError = filterError(month, year, numberFrom.trim(), numberTo.trim())
+                            if (validationError) { setError(validationError); return }
                             setError(null)
                             setEmailDialogOpen(true)
                         }}>
@@ -165,8 +188,9 @@ function ExportDataPage() {
                 defaultSubject={`Drevi d.o.o. - Računovodski izvoz ${month?.label ?? ''} ${year}`}
                 defaultMessage={`Pozdravljeni,\n\nv priponki vam pošiljamo računovodski izvoz za ${month?.label ?? ''} ${year}.\n\nLep pozdrav, Drevi d.o.o.`}
                 onSend={async (fields) => {
-                    if (!month) throw new Error('Month is required')
-                    await sendAccountingExportEmail(month.value, year, fields)
+                    const validationError = filterError(month, year, numberFrom.trim(), numberTo.trim())
+                    if (validationError) throw new Error(validationError)
+                    await sendAccountingExportEmail(month?.value ?? '', year, numberFrom.trim(), numberTo.trim(), fields)
                     toast.add({
                         title: 'Accounting export emailed',
                         description: `The accounting export was sent to ${fields.recipient}.`,

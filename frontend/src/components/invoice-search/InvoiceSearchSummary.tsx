@@ -10,6 +10,7 @@ import {
 import { formatCurrency } from '@/lib/formatters'
 import type { Invoice } from '@/lib/invoice-types'
 import type { PaymentStatus } from './types'
+import { sumCurrency } from '@/lib/numbers'
 
 type InvoiceSearchSummaryProps = {
     invoices: Invoice[]
@@ -18,7 +19,7 @@ type InvoiceSearchSummaryProps = {
 
 function InvoiceSearchSummary({ invoices, paymentStatus }: InvoiceSearchSummaryProps) {
     const summary = useMemo(() => {
-        const total = invoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0)
+        const total = sumCurrency(invoices.map((invoice) => invoice.amount))
         const unpaidInvoices = invoices.filter((invoice) => !invoice.paymentDate)
         const pastDueInvoices = unpaidInvoices.filter(
             (invoice) => {
@@ -30,9 +31,9 @@ function InvoiceSearchSummary({ invoices, paymentStatus }: InvoiceSearchSummaryP
 
         return {
             total,
-            unpaid: unpaidInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
-            pastDue: pastDueInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
-            paid: paidInvoices.reduce((sum, invoice) => sum + (invoice.amount ?? 0), 0),
+            unpaid: sumCurrency(unpaidInvoices.map((invoice) => invoice.amount)),
+            pastDue: sumCurrency(pastDueInvoices.map((invoice) => invoice.amount)),
+            paid: sumCurrency(paidInvoices.map((invoice) => invoice.amount)),
         }
     }, [invoices])
 

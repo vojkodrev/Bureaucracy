@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"time"
+
+	"bureaucracy/backend/lib"
+)
 
 func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *InvoiceCustomerSummaryPage {
 	summaryPage := &InvoiceCustomerSummaryPage{
@@ -34,13 +38,14 @@ func summarizeInvoicesByCustomer(invoicePage *InvoicePage, now time.Time) *Invoi
 
 		summary.Invoices = append(summary.Invoices, invoice)
 		amount := float64OrZero(invoice.Amount)
+		amountAfterCredits := max(0, lib.RoundCurrency(amount+invoice.CreditedAmount))
 		summary.TotalInvoiced += amount
 		if invoice.PaymentDate != nil {
-			summary.TotalPaid += amount
+			summary.TotalPaid += amountAfterCredits
 		} else {
-			summary.TotalOutstanding += amount
+			summary.TotalOutstanding += amountAfterCredits
 			if dueDate := effectiveInvoiceDueDate(invoice); dueDate != nil && dueDate.Before(now) {
-				summary.TotalOverdue += amount
+				summary.TotalOverdue += amountAfterCredits
 			}
 		}
 	}
@@ -58,13 +63,13 @@ func effectiveInvoiceDueDate(invoice *Invoice) *time.Time {
 	return invoice.IssueDate
 }
 
-func optionalStringEqual(left *string, right *string) bool {
-	return stringOrEmpty(left) == stringOrEmpty(right)
+func invoiceAmountAfterCredits(invoice *Invoice) float64 {
+	if invoice == nil {
+		return 0
+	}
+	return max(0, lib.RoundCurrency(float64OrZero(invoice.Amount)+invoice.CreditedAmount))
 }
 
-func stringOrEmpty(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
+func optionalStringEqual(left *string, right *string) bool {
+	return lib.StringOrEmpty(left) == lib.StringOrEmpty(right)
 }

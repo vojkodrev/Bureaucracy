@@ -24,7 +24,8 @@ type Invoice struct {
 	CustomerContact            *string        `json:"customerContact"`
 	Currency                   *string        `json:"currency"`
 	Amount                     *float64       `json:"amount"`
-	GoodsAmount                *float64       `json:"goodsAmount"`
+	CreditedAmount             float64        `json:"creditedAmount"`
+	NetTotal                   *float64       `json:"netTotal"`
 	PaidAmount                 *float64       `json:"paidAmount"`
 	PurchaseOrderNumber        *string        `json:"purchaseOrderNumber"`
 	DeliveryNoteNumber         *string        `json:"deliveryNoteNumber"`
@@ -32,23 +33,59 @@ type Invoice struct {
 	IntroductoryText           *string        `json:"introductoryText"`
 	ClosingText                *string        `json:"closingText"`
 	Cancelled                  *bool          `json:"cancelled"`
+	ZOI                        *string        `json:"zoi"`
+	EOR                        *string        `json:"eor"`
+	FURSIssueDateTime          *time.Time     `json:"-"`
 	Items                      []*InvoiceItem `json:"items"`
 }
 
 type InvoiceItem struct {
-	ID            int      `json:"id"`
-	Sequence      *int     `json:"sequence"`
-	ProductCode   *string  `json:"productCode"`
-	ProductName   *string  `json:"productName"`
-	Unit          *string  `json:"unit"`
-	TaxCode       *string  `json:"taxCode"`
-	TaxRate       *float64 `json:"taxRate"`
-	UnitPrice     *float64 `json:"unitPrice"`
-	UnitTaxAmount *float64 `json:"unitTaxAmount"`
-	Quantity      *float64 `json:"quantity"`
-	Discount      *float64 `json:"discount"`
-	NetAmount     *float64 `json:"netAmount"`
-	GrossAmount   *float64 `json:"grossAmount"`
+	ID                    int      `json:"id"`
+	Sequence              *int     `json:"sequence"`
+	ProductCode           *string  `json:"productCode"`
+	ProductName           *string  `json:"productName"`
+	Unit                  *string  `json:"unit"`
+	TaxCode               *string  `json:"taxCode"`
+	TaxRate               *float64 `json:"taxRate"`
+	UnitPrice             *float64 `json:"unitPrice"`
+	UnitTaxAmount         *float64 `json:"unitTaxAmount"`
+	Quantity              *float64 `json:"quantity"`
+	Discount              *float64 `json:"discount"`
+	NetAmount             *float64 `json:"netAmount"`
+	GrossAmount           *float64 `json:"grossAmount"`
+	OriginalInvoiceNumber *string  `json:"originalInvoiceNumber"`
+}
+
+type CreditNote struct {
+	ID                  int            `json:"id"`
+	CreditNoteNumber    string         `json:"creditNoteNumber"`
+	IssueDate           *time.Time     `json:"issueDate"`
+	ServiceDate         *time.Time     `json:"serviceDate"`
+	DueDate             *time.Time     `json:"dueDate"`
+	CustomerCode        *string        `json:"customerCode"`
+	CustomerName        *string        `json:"customerName"`
+	CustomerAddress     *string        `json:"customerAddress"`
+	CustomerPostalCode  *string        `json:"customerPostalCode"`
+	CustomerCity        *string        `json:"customerCity"`
+	CustomerCountry     *string        `json:"customerCountry"`
+	CustomerCountryName *string        `json:"-"`
+	CustomerTaxID       *string        `json:"customerTaxId"`
+	IssuePlace          *string        `json:"issuePlace"`
+	Currency            *string        `json:"currency"`
+	Amount              *float64       `json:"amount"`
+	NetTotal            *float64       `json:"netTotal"`
+	IntroductoryText    *string        `json:"introductoryText"`
+	ClosingText         *string        `json:"closingText"`
+	Cancelled           *bool          `json:"cancelled"`
+	Items               []*InvoiceItem `json:"items"`
+}
+
+type CreditNotePage struct {
+	CreditNotes []*CreditNote `json:"creditNotes"`
+	TotalCount  int           `json:"totalCount"`
+	Page        int           `json:"page"`
+	PageSize    int           `json:"pageSize"`
+	TotalPages  int           `json:"totalPages"`
 }
 
 type InvoicePage struct {
@@ -77,14 +114,10 @@ type InvoiceCustomerSummaryPage struct {
 	TotalPages        int                       `json:"totalPages"`
 }
 
-type InvoiceTextTemplate struct {
-	IntroductoryText *string `json:"introductoryText"`
-	ClosingText      *string `json:"closingText"`
-}
-
 type BankStatementInvoicePayment struct {
-	InvoiceNumber string     `json:"invoiceNumber"`
-	PaymentDate   *time.Time `json:"paymentDate"`
-	Amount        *float64   `json:"amount"`
-	PaidAmount    *float64   `json:"paidAmount"`
+	InvoiceNumber  string     `json:"invoiceNumber"`
+	PaymentDate    *time.Time `json:"paymentDate"`
+	Amount         *float64   `json:"amount"`
+	CreditedAmount float64    `json:"creditedAmount"`
+	PaidAmount     *float64   `json:"paidAmount"`
 }

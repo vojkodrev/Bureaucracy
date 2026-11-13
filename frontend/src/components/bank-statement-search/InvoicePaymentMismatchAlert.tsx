@@ -8,6 +8,7 @@ import {
     duplicateInvoiceNumbers,
     hasPaidAmountMismatch,
     hasPaymentDateMismatch,
+    isPartialCustomerInvoicePayment,
     normalizeInvoiceNumber,
 } from './invoice-payment-mismatches'
 
@@ -24,6 +25,8 @@ function InvoicePaymentMismatchAlert({
     const [expanded, setExpanded] = useState(false)
     const duplicateDocuments = duplicateInvoiceNumbers(entries)
     const mismatches = entries.flatMap((entry) => {
+        if (isPartialCustomerInvoicePayment(entry)) return []
+
         const invoicePayment = entry.documentNumber
             ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
             : undefined
@@ -40,6 +43,7 @@ function InvoicePaymentMismatchAlert({
         )
         const paidAmountMismatch = hasPaidAmountMismatch(
             invoicePayment.amount,
+            invoicePayment.creditedAmount,
             invoicePayment.paidAmount,
             entry.inflow,
         )

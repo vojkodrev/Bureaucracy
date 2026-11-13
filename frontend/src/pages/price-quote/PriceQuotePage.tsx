@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import WarningAlert from '@/components/WarningAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -97,11 +98,19 @@ export default function PriceQuotePage() {
         ['due-date', 'Valid until date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
         ['convert', 'Price quote could not be converted', 'The invoice draft could not be prepared.', invoiceConversion.error],
     ] as const
+    const warnings = [
+        ['price-quote-total', 'Price quote total is inconsistent', 'The stored price quote total does not equal the sum of its lines.', 'Review and save the price quote to correct its total.'],
+        ['price-quote-line-total', 'Price quote line total is inconsistent', 'At least one line gross amount does not equal its net amount plus VAT.', 'Review and save the price quote lines to correct their totals.'],
+    ] as const
+    const hasWarnings = warnings.some(([key]) => loader.warnings.includes(key))
 
     return <div className="max-w-6xl p-4">
-        {errors.some(([, , , error]) => error) && <div className="mb-6 space-y-2">
+        {(errors.some(([, , , error]) => error) || hasWarnings) &&
+        <div className="mb-6 space-y-2">
             {errors.map(([key, title, description, error]) => error &&
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
+            {warnings.map(([key, title, description, warning]) => loader.warnings.includes(key) &&
+                <WarningAlert key={key} title={title} description={description} warning={warning} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <PriceQuoteMenu canSave={save.canSave} canPrint={print.canRequestPrint}
@@ -183,7 +192,8 @@ export default function PriceQuotePage() {
             <Field><FieldLabel htmlFor="price-quote-closing-text">Closing text</FieldLabel>
                 <Textarea id="price-quote-closing-text" name="closingText" value={draft.closingText}
                     onChange={(event) => setField('closingText', event.target.value)} /></Field>
-            <PriceQuoteSummary total={draftState.totalIncludingVat} />
+            <PriceQuoteSummary total={draftState.totalIncludingVat}
+                storedTotal={loader.warnings.includes('price-quote-total') ? loader.storedTotal : null} />
         </div>
     </div>
 }

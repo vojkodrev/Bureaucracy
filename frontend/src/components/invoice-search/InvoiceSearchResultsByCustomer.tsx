@@ -15,6 +15,7 @@ import { ComponentMode } from '@/lib/component-mode'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import type { Invoice, InvoiceCustomerSummary, InvoiceCustomerSummaryPage } from '@/lib/invoice-types'
 import InvoicePaymentDate from './InvoicePaymentDate'
+import InvoiceAmount from './InvoiceAmount'
 import SearchResultCell from '@/components/SearchResultCell'
 import type { PaymentStatus } from './types'
 
@@ -50,6 +51,7 @@ function InvoiceSearchResultsByCustomer({
         ? Math.min(summaryPage.page * summaryPage.pageSize, summaryPage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
+    const hasLinkedRows = mode !== ComponentMode.Dialog
     const customerSummaries = summaryPage?.customerSummaries ?? []
 
     return (
@@ -115,11 +117,11 @@ function InvoiceSearchResultsByCustomer({
                                             ? 'selected'
                                             : undefined}
                                         className="cursor-pointer"
-                                        tabIndex={isPageMode ? undefined : 0}
-                                        onClick={isPageMode
+                                        tabIndex={hasLinkedRows ? undefined : 0}
+                                        onClick={hasLinkedRows
                                             ? undefined
                                             : () => onInvoiceSelect(invoice)}
-                                        onKeyDown={isPageMode
+                                        onKeyDown={hasLinkedRows
                                             ? undefined
                                             : (event) => {
                                                 if (event.key === 'Enter' || event.key === ' ') {
@@ -129,41 +131,45 @@ function InvoiceSearchResultsByCustomer({
                                             }}
                                     >
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`} primary
                                             className="font-medium"
                                         >
                                             {invoice.invoiceNumber}
                                         </SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                         >
                                             {invoice.customerName ?? invoice.customerCode ?? '—'}
                                         </SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                             className="text-right tabular-nums"
                                         >
-                                            {formatCurrency(invoice.amount ?? 0)}
+                                            <InvoiceAmount
+                                                amount={invoice.amount}
+                                                creditedAmount={invoice.creditedAmount}
+                                            />
                                         </SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                         >{formatDate(invoice.issueDate)}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                         >{formatDate(invoice.dueDate)}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                            to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                             linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                         >
                                             <div className="flex items-center justify-between gap-2">
                                                 <InvoicePaymentDate
                                                     invoiceNumber={invoice.invoiceNumber}
                                                     amount={invoice.amount}
+                                                    creditedAmount={invoice.creditedAmount}
                                                     paidAmount={invoice.paidAmount}
                                                     paymentDate={invoice.paymentDate}
                                                 />

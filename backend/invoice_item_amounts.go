@@ -1,5 +1,7 @@
 package main
 
+import "bureaucracy/backend/lib"
+
 type invoiceItemAmounts struct {
 	Quantity            float64
 	UnitPrice           float64
@@ -25,7 +27,7 @@ func calculateInvoiceItemAmounts(item *InvoiceItem) invoiceItemAmounts {
 		GrossAmount:         float64OrZero(item.GrossAmount),
 		Discount:            float64OrZero(item.Discount),
 		DiscountAmount:      unitPrice*quantity - netAmount,
-		DiscountedUnitPrice: divide(netAmount, quantity),
+		DiscountedUnitPrice: lib.DivideOrZero(netAmount, quantity),
 		TaxRate:             float64OrZero(item.TaxRate),
 	}
 }

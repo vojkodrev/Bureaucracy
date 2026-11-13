@@ -1,10 +1,15 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { dateFromSearchValue } from '@/lib/dates'
+import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import {
-    fetchNextPriceQuoteNumber, fetchPriceQuote, fetchPriceQuoteTextTemplate,
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
+import {
+    fetchNextPriceQuoteNumber, fetchPriceQuote,
 } from '@/pages/price-quote-search/price-quote-search-api'
 import type { PriceQuote } from '@/pages/price-quote-search/types'
 import type { PriceQuoteDraft } from './usePriceQuoteDraft'
@@ -61,19 +66,44 @@ export function usePriceQuoteLoader({
     const [loadResult, setLoadResult] = useState({
         requestKey: '__initial__', error: null as string | null,
     })
+    const [warningResult, setWarningResult] = useState({
+        requestKey: '__initial__', warnings: [] as string[],
+        storedTotal: null as number | null,
+    })
     const isLoading = Boolean(routeQuoteNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
+    const warnings = warningResult.requestKey === requestKey ? warningResult.warnings : []
+    const storedTotal = warningResult.requestKey === requestKey ? warningResult.storedTotal : null
 
     useEffect(() => {
         if (!routeQuoteNumber) return
         const controller = new AbortController()
         void fetchPriceQuote(routeQuoteNumber, controller.signal).then((priceQuote) => {
             const nextDraft = draftFromPriceQuote(priceQuote)
+            const headerTotal = currencyCents(priceQuote.amount ?? 0)
+            const lineTotal = sumCurrencyCents(
+                (priceQuote.items ?? []).map((item) => item.grossAmount),
+            )
+            const hasInconsistentLine = (priceQuote.items ?? []).some((item) => {
+                const netTotal = currencyCents(item.netAmount ?? 0)
+                const vatTotal = currencyCents(
+                    (item.netAmount ?? 0) * (item.taxRate ?? 0) / 100,
+                )
+                return currencyCents(item.grossAmount ?? 0) !== netTotal + vatTotal
+            })
             setPriceQuoteId(priceQuote.id ?? null)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
             setLoadResult({ requestKey, error: null })
+            setWarningResult({
+                requestKey,
+                warnings: [
+                    ...(headerTotal === lineTotal ? [] : ['price-quote-total']),
+                    ...(hasInconsistentLine ? ['price-quote-line-total'] : []),
+                ],
+                storedTotal: headerTotal === lineTotal ? null : (priceQuote.amount ?? 0),
+            })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false
                 toast.add({
@@ -86,6 +116,7 @@ export function usePriceQuoteLoader({
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
             setLoadResult({ requestKey, error: errorMessage(requestError, 'Loading price quote failed') })
+            setWarningResult({ requestKey, warnings: [], storedTotal: null })
         })
         return () => controller.abort()
     }, [requestKey, routeQuoteNumber])
@@ -110,7 +141,10 @@ export function usePriceQuoteLoader({
             ...current, nextPriceQuoteNumber: undefined, priceQuoteTextTemplate: undefined,
         }))
         const controller = new AbortController()
-        const templatePromise = fetchPriceQuoteTextTemplate(controller.signal)
+        const templatePromise = fetchTextTemplate(
+            TextTemplateDocumentType.PriceQuote,
+            controller.signal,
+        )
             .catch((requestError: unknown) => {
                 if (!wasAborted(requestError)) setRequestErrors((current) => ({
                     ...current,
@@ -148,7 +182,8 @@ export function usePriceQuoteLoader({
     }, [])
 
     return {
-        priceQuoteId, setPriceQuoteId, businessYear, setBusinessYear, isLoading, error,
+        priceQuoteId, setPriceQuoteId, businessYear, setBusinessYear, isLoading, error, warnings,
+        storedTotal,
         requestErrors, setRequestErrors,
         reload: () => {
             pendingRevertRef.current = true

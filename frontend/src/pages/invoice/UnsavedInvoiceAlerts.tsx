@@ -8,6 +8,7 @@ type UnsavedInvoiceAlertsProps = {
     isConfirmingEmail: boolean
     isConfirmingXmlExport: boolean
     isConfirmingHalcomExport: boolean
+    isConfirmingTaxConfirmation: boolean
     onCancelNavigation: () => void
     onDiscardAndNavigate: () => void
     onConfirmingRevertChange: (open: boolean) => void
@@ -22,6 +23,8 @@ type UnsavedInvoiceAlertsProps = {
     onSaveBeforeXmlExport: () => void
     onConfirmingHalcomExportChange: (open: boolean) => void
     onSaveBeforeHalcomExport: () => void
+    onConfirmingTaxConfirmationChange: (open: boolean) => void
+    onSaveBeforeTaxConfirmation: () => void
 }
 
 function UnsavedInvoiceAlerts({
@@ -32,6 +35,7 @@ function UnsavedInvoiceAlerts({
     isConfirmingEmail,
     isConfirmingXmlExport,
     isConfirmingHalcomExport,
+    isConfirmingTaxConfirmation,
     onCancelNavigation,
     onDiscardAndNavigate,
     onConfirmingRevertChange,
@@ -46,6 +50,8 @@ function UnsavedInvoiceAlerts({
     onSaveBeforeXmlExport,
     onConfirmingHalcomExportChange,
     onSaveBeforeHalcomExport,
+    onConfirmingTaxConfirmationChange,
+    onSaveBeforeTaxConfirmation,
 }: UnsavedInvoiceAlertsProps) {
     return (
         <>
@@ -101,6 +107,15 @@ function UnsavedInvoiceAlerts({
                 onDiscard={onSaveBeforeHalcomExport}
                 title="Save before exporting for Halcom?"
                 description="This invoice has not been saved with its current values. Save it first so the exported PDF and XML match the invoice shown here."
+                actionLabel="Save invoice"
+                actionVariant="default"
+            />
+            <UnsavedInvoiceAlert
+                open={isConfirmingTaxConfirmation}
+                onOpenChange={onConfirmingTaxConfirmationChange}
+                onDiscard={onSaveBeforeTaxConfirmation}
+                title="Save before tax confirmation?"
+                description="This invoice has not been saved with its current values. Save it first before confirming it with FURS."
                 actionLabel="Save invoice"
                 actionVariant="default"
             />

@@ -1,5 +1,7 @@
+import { ExternalLink } from 'lucide-react'
 import Pager from '@/components/Pager'
 import SortableTableHead from '@/components/SortableTableHead'
+import { Button } from '@/components/ui/button'
 import {
     Table,
     TableBody,
@@ -8,12 +10,13 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { ComponentMode } from '@/lib/component-mode'
-import { formatCurrency, formatDate } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import type { Invoice, InvoicePage } from '@/lib/invoice-types'
 import type { InvoiceSearchCriteria, InvoiceSortColumn } from './types'
 import { invoiceSortColumns } from './types'
 import InvoicePaymentDate from './InvoicePaymentDate'
 import SearchResultCell from '@/components/SearchResultCell'
+import InvoiceAmount from './InvoiceAmount'
 
 type InvoiceSearchResultsProps = {
     invoicePage: InvoicePage | null
@@ -58,20 +61,47 @@ function InvoiceSearchResults({
         ? Math.min(invoicePage.page * invoicePage.pageSize, invoicePage.totalCount)
         : 0
     const isPageMode = mode === ComponentMode.Page
+    const hasLinkedRows = mode !== ComponentMode.Dialog
+    const openInvoices = () => {
+        invoices.forEach((invoice) => {
+            window.open(
+                `/invoice/${encodeURIComponent(invoice.invoiceNumber)}`,
+                '_blank',
+                'noopener,noreferrer',
+            )
+        })
+    }
 
     return (
         <div className={showSearchFields ? 'mt-8' : undefined}>
             {invoicePage && (
-                <Pager
-                    firstItem={firstInvoice}
-                    lastItem={lastInvoice}
-                    page={invoicePage.page}
-                    pageSize={invoicePage.pageSize}
-                    totalItems={invoicePage.totalCount}
-                    totalPages={invoicePage.totalPages}
-                    onPageChange={onPageChange}
-                    onPageSizeChange={onPageSizeChange}
-                />
+                <div className={`flex flex-wrap items-center gap-2 ${
+                    isPageMode ? 'justify-between' : 'justify-end'
+                }`}>
+                    {isPageMode && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mb-2"
+                            disabled={isLoading || invoices.length === 0}
+                            onClick={openInvoices}
+                        >
+                            <ExternalLink />
+                            Open {invoices.length} {invoices.length === 1 ? 'invoice' : 'invoices'}
+                        </Button>
+                    )}
+                    <Pager
+                        firstItem={firstInvoice}
+                        lastItem={lastInvoice}
+                        page={invoicePage.page}
+                        pageSize={invoicePage.pageSize}
+                        totalItems={invoicePage.totalCount}
+                        totalPages={invoicePage.totalPages}
+                        onPageChange={onPageChange}
+                        onPageSizeChange={onPageSizeChange}
+                    />
+                </div>
             )}
             <Table aria-busy={isLoading}>
                 <TableHeader>
@@ -109,9 +139,9 @@ function InvoiceSearchResults({
                                 ? 'selected'
                                 : undefined}
                             className="cursor-pointer"
-                            tabIndex={isPageMode ? undefined : 0}
-                            onClick={isPageMode ? undefined : () => onInvoiceSelect(invoice)}
-                            onKeyDown={isPageMode
+                            tabIndex={hasLinkedRows ? undefined : 0}
+                            onClick={hasLinkedRows ? undefined : () => onInvoiceSelect(invoice)}
+                            onKeyDown={hasLinkedRows
                                 ? undefined
                                 : (event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
@@ -121,40 +151,44 @@ function InvoiceSearchResults({
                                 }}
                         >
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`} primary
                                 className="font-medium"
                             >
                                 {invoice.invoiceNumber}
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >
                                 {invoice.customerName ?? invoice.customerCode ?? '—'}
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                                 className="text-right"
                             >
-                                {formatCurrency(invoice.amount ?? 0)}
+                                <InvoiceAmount
+                                    amount={invoice.amount}
+                                    creditedAmount={invoice.creditedAmount}
+                                />
                             </SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >{formatDate(invoice.issueDate)}</SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >{formatDate(invoice.dueDate)}</SearchResultCell>
                             <SearchResultCell
-                                to={isPageMode ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
+                                to={hasLinkedRows ? `/invoice/${encodeURIComponent(invoice.invoiceNumber)}` : undefined}
                                 linkLabel={`Open invoice ${invoice.invoiceNumber}`}
                             >
                                 <InvoicePaymentDate
                                     invoiceNumber={invoice.invoiceNumber}
                                     amount={invoice.amount}
+                                    creditedAmount={invoice.creditedAmount}
                                     paidAmount={invoice.paidAmount}
                                     paymentDate={invoice.paymentDate}
                                 />

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +24,9 @@ func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 }
 
 const invoiceUpdateBatchSize = 1000
+const invoicePaymentUpdateBatchSize = 500
+
+const partialCustomerInvoicePaymentType = "Plačilo računa kupca - delni"
 
 func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, businessYear string, invoiceNumbers []string) ([]*BankStatementInvoicePayment, error) {
 	if !businessYearPattern.MatchString(businessYear) {
@@ -58,15 +62,26 @@ func (repository *InvoiceRepository) BankStatementPayments(ctx context.Context, 
 			arguments = append(arguments, sql.Named(name, invoiceNumber))
 		}
 		rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
-			SELECT LTRIM(RTRIM(Stevilka)), DatumPlacila, Znesek, PlacanoSIT
-			FROM [%s].[dbo].[Racuni]
-			WHERE UPPER(LTRIM(RTRIM(Stevilka))) IN (%s)`, databaseName, strings.Join(placeholders, ", ")), arguments...)
+			SELECT LTRIM(RTRIM(invoice.Stevilka)), invoice.DatumPlacila, invoice.Znesek,
+				COALESCE((
+					SELECT SUM(item.Znesek)
+					FROM [%s].[dbo].[DobropisSpecifikacija] item
+					INNER JOIN [%s].[dbo].[Dobropis] creditNote
+						ON creditNote.Stevilka = item.Stevilka
+					WHERE ISNULL(item.Deleted, 0) = 0
+					  AND ISNULL(creditNote.Storno, 0) = 0
+					  AND UPPER(LTRIM(RTRIM(item.Racun))) =
+						UPPER(LTRIM(RTRIM(invoice.Stevilka)))
+				), 0),
+				invoice.PlacanoSIT
+			FROM [%s].[dbo].[Racuni] invoice
+			WHERE UPPER(LTRIM(RTRIM(invoice.Stevilka))) IN (%s)`, databaseName, databaseName, databaseName, strings.Join(placeholders, ", ")), arguments...)
 		if err != nil {
 			return nil, fmt.Errorf("load invoice payments for bank statements: %w", err)
 		}
 		for rows.Next() {
 			payment := &BankStatementInvoicePayment{}
-			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.Amount, &payment.PaidAmount); err != nil {
+			if err := rows.Scan(&payment.InvoiceNumber, &payment.PaymentDate, &payment.Amount, &payment.CreditedAmount, &payment.PaidAmount); err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("scan invoice payment for bank statements: %w", err)
 			}
@@ -117,57 +132,149 @@ func clearPaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, inv
 }
 
 // updatePaidInvoices synchronizes incoming bank statement entries with issued
-// invoices. The paid amount is always recorded, while the payment date is only
-// set when that amount matches the invoice total to currency precision. An
+// invoices. Partial customer payments are aggregated across bank statements and
+// use the latest transaction date. Other payments keep the existing behavior:
+// their date is set only when the paid amount matches the invoice total. An
 // unmatched document number is allowed because bank statements can also contain
 // transactions that do not belong to an invoice.
-func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput) error {
+func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, paymentDate time.Time, entries []*model.BankStatementEntryInput, oldInvoiceNumbers []string) error {
 	type invoicePayment struct {
 		invoiceNumber string
 		paidAmount    float64
+		paymentDate   time.Time
+		partial       bool
+		aggregate     bool
+		current       bool
 	}
 
-	payments := make([]invoicePayment, 0, len(entries))
-	paymentIndexes := make(map[string]int, len(entries))
+	bankDatabaseName := fmt.Sprintf("BIRO%s1", businessYear)
+	var partialPaymentCode sql.NullInt64
+	if err := tx.QueryRowContext(ctx, fmt.Sprintf(`SELECT MAX(NumSifra)
+		FROM [%s].[dbo].[BankaZRVD]
+		WHERE IME=@partialPaymentType`, bankDatabaseName),
+		sql.Named("partialPaymentType", partialCustomerInvoicePaymentType)).Scan(&partialPaymentCode); err != nil {
+		return fmt.Errorf("find partial customer invoice payment type: %w", err)
+	}
+
+	payments := make([]invoicePayment, 0, len(entries)+len(oldInvoiceNumbers))
+	paymentIndexes := make(map[string]int, len(entries)+len(oldInvoiceNumbers))
+	addPayment := func(invoiceNumber string, paidAmount float64, date time.Time, aggregate bool, current bool) {
+		invoiceNumber = strings.TrimSpace(invoiceNumber)
+		key := strings.ToUpper(invoiceNumber)
+		if key == "" {
+			return
+		}
+		payment := invoicePayment{invoiceNumber: invoiceNumber, paidAmount: paidAmount, paymentDate: date, aggregate: aggregate, current: current}
+		if index, exists := paymentIndexes[key]; exists {
+			payments[index] = payment
+			return
+		}
+		paymentIndexes[key] = len(payments)
+		payments = append(payments, payment)
+	}
 	for _, entry := range entries {
 		if entry == nil || entry.DocumentNumber == nil || entry.Inflow == nil || *entry.Inflow <= 0 {
 			continue
 		}
-		invoiceNumber := strings.TrimSpace(*entry.DocumentNumber)
-		if invoiceNumber == "" {
-			continue
+		aggregate := partialPaymentCode.Valid && entry.TransactionTypeID != nil && int64(*entry.TransactionTypeID) == partialPaymentCode.Int64
+		addPayment(*entry.DocumentNumber, *entry.Inflow, paymentDate, aggregate, true)
+	}
+	for _, invoiceNumber := range oldInvoiceNumbers {
+		key := strings.ToUpper(strings.TrimSpace(invoiceNumber))
+		if _, exists := paymentIndexes[key]; !exists {
+			addPayment(invoiceNumber, 0, paymentDate, true, false)
 		}
-		payment := invoicePayment{invoiceNumber: invoiceNumber, paidAmount: *entry.Inflow}
-		if index, exists := paymentIndexes[invoiceNumber]; exists {
-			payments[index] = payment
-			continue
-		}
-		paymentIndexes[invoiceNumber] = len(payments)
-		payments = append(payments, payment)
 	}
 
+	aggregatePayments := make([]invoicePayment, 0, len(payments))
+	for _, payment := range payments {
+		if payment.aggregate {
+			aggregatePayments = append(aggregatePayments, payment)
+		}
+	}
+	for start := 0; start < len(aggregatePayments); start += invoiceUpdateBatchSize {
+		end := min(start+invoiceUpdateBatchSize, len(aggregatePayments))
+		placeholders := make([]string, 0, end-start)
+		arguments := make([]any, 0, end-start+1)
+		arguments = append(arguments, sql.Named("partialPaymentType", partialCustomerInvoicePaymentType))
+		for index, payment := range aggregatePayments[start:end] {
+			name := fmt.Sprintf("invoiceNumber%d", index)
+			placeholders = append(placeholders, "@"+name)
+			arguments = append(arguments, sql.Named(name, strings.ToUpper(payment.invoiceNumber)))
+		}
+		rows, err := tx.QueryContext(ctx, fmt.Sprintf(`SELECT UPPER(LTRIM(RTRIM(transactionRow.Stevilka))),
+			SUM(transactionRow.VDobro), MAX(transactionRow.Datum)
+			FROM [%s].[dbo].[BankaZR] transactionRow
+			INNER JOIN [%s].[dbo].[BankaZRVD] transactionType
+				ON transactionType.NumSifra=transactionRow.VrstaDogodka
+			WHERE transactionType.IME=@partialPaymentType
+				AND transactionRow.VDobro > 0
+				AND UPPER(LTRIM(RTRIM(transactionRow.Stevilka))) IN (%s)
+			GROUP BY UPPER(LTRIM(RTRIM(transactionRow.Stevilka)))`, bankDatabaseName, bankDatabaseName, strings.Join(placeholders, ", ")), arguments...)
+		if err != nil {
+			return fmt.Errorf("aggregate partial customer invoice payments: %w", err)
+		}
+		for rows.Next() {
+			var invoiceNumber string
+			var paidAmount float64
+			var latestPaymentDate time.Time
+			if err := rows.Scan(&invoiceNumber, &paidAmount, &latestPaymentDate); err != nil {
+				rows.Close()
+				return fmt.Errorf("scan partial customer invoice payments: %w", err)
+			}
+			if index, exists := paymentIndexes[invoiceNumber]; exists {
+				payments[index].paidAmount = paidAmount
+				payments[index].paymentDate = latestPaymentDate
+				payments[index].partial = true
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return fmt.Errorf("read partial customer invoice payments: %w", err)
+		}
+		rows.Close()
+	}
+	updatedPayments := payments[:0]
+	for _, payment := range payments {
+		if payment.current || payment.partial {
+			updatedPayments = append(updatedPayments, payment)
+		}
+	}
+	payments = updatedPayments
+
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
-	for start := 0; start < len(payments); start += invoiceUpdateBatchSize {
-		end := min(start+invoiceUpdateBatchSize, len(payments))
+	for start := 0; start < len(payments); start += invoicePaymentUpdateBatchSize {
+		end := min(start+invoicePaymentUpdateBatchSize, len(payments))
 		values := make([]string, 0, end-start)
-		arguments := make([]any, 0, (end-start)*2+1)
-		arguments = append(arguments, sql.Named("paymentDate", paymentDate))
+		arguments := make([]any, 0, (end-start)*4)
 		for index, payment := range payments[start:end] {
 			numberName := fmt.Sprintf("invoiceNumber%d", index)
 			amountName := fmt.Sprintf("paidAmount%d", index)
-			values = append(values, fmt.Sprintf("(@%s, @%s)", numberName, amountName))
-			arguments = append(arguments, sql.Named(numberName, payment.invoiceNumber), sql.Named(amountName, payment.paidAmount))
+			dateName := fmt.Sprintf("paymentDate%d", index)
+			partialName := fmt.Sprintf("partial%d", index)
+			values = append(values, fmt.Sprintf("(@%s, @%s, @%s, @%s)", numberName, amountName, dateName, partialName))
+			arguments = append(arguments, sql.Named(numberName, payment.invoiceNumber), sql.Named(amountName, payment.paidAmount), sql.Named(dateName, payment.paymentDate), sql.Named(partialName, payment.partial))
 		}
 		query := fmt.Sprintf(`UPDATE invoice
 			SET invoice.PlacanoSIT=payment.PaidAmount,
 				invoice.DatumPlacila=CASE
-					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek, 2)=ROUND(payment.PaidAmount, 2)
-					THEN @paymentDate
+					WHEN payment.IsPartial=1 THEN payment.PaymentDate
+					WHEN invoice.Znesek IS NOT NULL AND ROUND(invoice.Znesek + COALESCE((
+						SELECT SUM(item.Znesek)
+						FROM [%s].[dbo].[DobropisSpecifikacija] item
+						INNER JOIN [%s].[dbo].[Dobropis] creditNote
+							ON creditNote.Stevilka = item.Stevilka
+						WHERE ISNULL(item.Deleted, 0) = 0
+						  AND ISNULL(creditNote.Storno, 0) = 0
+						  AND UPPER(LTRIM(RTRIM(item.Racun))) =
+							UPPER(LTRIM(RTRIM(invoice.Stevilka)))
+					), 0), 2)=ROUND(payment.PaidAmount, 2)
+					THEN payment.PaymentDate
 					ELSE NULL
 				END
 			FROM [%s].[dbo].[Racuni] invoice
-			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount)
-				ON LTRIM(RTRIM(invoice.Stevilka))=payment.InvoiceNumber`, databaseName, strings.Join(values, ", "))
+			INNER JOIN (VALUES %s) payment(InvoiceNumber, PaidAmount, PaymentDate, IsPartial)
+				ON UPPER(LTRIM(RTRIM(invoice.Stevilka)))=UPPER(payment.InvoiceNumber)`, databaseName, databaseName, databaseName, strings.Join(values, ", "))
 		if _, err := tx.ExecContext(ctx, query, arguments...); err != nil {
 			return fmt.Errorf("update paid invoices: %w", err)
 		}
@@ -175,41 +282,14 @@ func updatePaidInvoices(ctx context.Context, tx *sql.Tx, businessYear string, pa
 	return nil
 }
 
-func (repository *InvoiceRepository) GetTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
-	if !businessYearPattern.MatchString(businessYear) {
-		return nil, fmt.Errorf("businessYear must contain only digits")
-	}
-
-	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	template := &InvoiceTextTemplate{}
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max))
-			 FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(UvodRacun, 0) <> 0
-			 ORDER BY RecNo),
-			(SELECT TOP 1
-				CASE WHEN ISNULL(Sklic, 0) <> 0
-					THEN N'Pri plačilu se sklicujte na številko #ŠTEVILKA# !'
-						+ NCHAR(13) + NCHAR(10) + COALESCE(CAST(TextKlavzule AS nvarchar(max)), N'')
-					ELSE CAST(TextKlavzule AS nvarchar(max))
-				END
-			 FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(KonecRacun, 0) <> 0
-			 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
-		&template.IntroductoryText,
-		&template.ClosingText,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("get invoice text template: %w", err)
-	}
-	return template, nil
-}
-
 // Save atomically upserts an invoice and its complete item collection.
 func (repository *InvoiceRepository) Save(ctx context.Context, businessYear string, input model.InvoiceInput) (*Invoice, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
+	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid businessYear: %w", err)
 	}
 	input.InvoiceNumber = strings.TrimSpace(input.InvoiceNumber)
 	if input.InvoiceNumber == "" {
@@ -226,6 +306,14 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 		item.TaxCode = strings.TrimSpace(item.TaxCode)
 		if item.TaxCode == "" {
 			return nil, fmt.Errorf("taxCode is required for invoice item %d", index+1)
+		}
+		if item.NetAmount != nil {
+			value := lib.RoundCurrency(*item.NetAmount)
+			item.NetAmount = &value
+		}
+		if item.GrossAmount != nil {
+			value := lib.RoundCurrency(*item.GrossAmount)
+			item.GrossAmount = &value
 		}
 	}
 
@@ -249,6 +337,18 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 			}
 			return nil, fmt.Errorf("find invoice for update: %w", err)
 		}
+		var taxConfirmed bool
+		if err = tx.QueryRowContext(ctx, `SELECT CASE WHEN EXISTS (
+			SELECT 1 FROM [Bureaucracy].[dbo].[invoice_details]
+			WHERE business_year_id=@businessYearID AND invoice_id=@invoiceID
+			  AND NULLIF(LTRIM(RTRIM(zoi)), '') IS NOT NULL
+			  AND NULLIF(LTRIM(RTRIM(eor)), '') IS NOT NULL
+		) THEN 1 ELSE 0 END`, sql.Named("businessYearID", businessYearID), sql.Named("invoiceID", invoiceID)).Scan(&taxConfirmed); err != nil {
+			return nil, fmt.Errorf("check invoice tax confirmation: %w", err)
+		}
+		if taxConfirmed {
+			return nil, fmt.Errorf("invoice %s is already tax confirmed and cannot be saved", oldInvoiceNumber)
+		}
 		result, updateErr := tx.ExecContext(ctx, fmt.Sprintf(`
 			UPDATE [%s].[dbo].[Racuni]
 			SET Stevilka=@invoiceNumber, DatumIzstavitve=@issueDate, DatumDUR=@serviceDate,
@@ -256,7 +356,7 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 				SifraPartnerja=@customerCode, ImePartnerja=@customerName,
 				NaslovPartnerja=@customerAddress, KrajPartnerja=@customerCity, PlacanoSIT=@paidAmount,
 				Narocilnica=@purchaseOrderNumber, StevilkaDobavnice=@deliveryNoteNumber,
-				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=@goodsAmount
+				SpremniText=@introductoryText, Klavzula=@closingText, Znesek=@amount, ZnesekBlaga=NULL
 			WHERE RecNo=@id`, databaseName), invoiceArguments(input, invoiceID)...)
 		if updateErr != nil {
 			return nil, fmt.Errorf("update invoice: %w", updateErr)
@@ -270,11 +370,11 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 			INSERT INTO [%s].[dbo].[Racuni] (
 				Stevilka, DatumIzstavitve, DatumDUR, DatumZapadlosti, DatumPlacila, SifraPartnerja,
 				ImePartnerja, NaslovPartnerja, KrajPartnerja, PlacanoSIT, Narocilnica, StevilkaDobavnice,
-				SpremniText, Klavzula, Znesek, ZnesekBlaga, Storno
+				SpremniText, Klavzula, Znesek, Storno
 			) OUTPUT INSERTED.RecNo VALUES (
 				@invoiceNumber, @issueDate, @serviceDate, @dueDate, @paymentDate, @customerCode,
 				@customerName, @customerAddress, @customerCity, @paidAmount, @purchaseOrderNumber, @deliveryNoteNumber,
-				@introductoryText, @closingText, @amount, @goodsAmount, 0
+				@introductoryText, @closingText, @amount, 0
 			)`, databaseName), invoiceArguments(input, 0)...).Scan(&invoiceID)
 		if err != nil {
 			return nil, fmt.Errorf("insert invoice: %w", err)
@@ -337,17 +437,10 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 }
 
 func invoiceArguments(input model.InvoiceInput, id int) []any {
-	goodsAmount, amount := 0.0, 0.0
+	amount := 0.0
 	for _, item := range input.Items {
-		if item.NetAmount != nil {
-			discount := 0.0
-			if item.Discount != nil {
-				discount = *item.Discount
-			}
-			goodsAmount += *item.NetAmount * (1 - discount/100)
-		}
 		if item.GrossAmount != nil {
-			amount += *item.GrossAmount
+			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
 	}
 	return []any{
@@ -360,7 +453,7 @@ func invoiceArguments(input model.InvoiceInput, id int) []any {
 		sql.Named("purchaseOrderNumber", input.PurchaseOrderNumber),
 		sql.Named("deliveryNoteNumber", input.DeliveryNoteNumber),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
-		sql.Named("amount", amount), sql.Named("goodsAmount", goodsAmount),
+		sql.Named("amount", lib.RoundCurrency(amount)),
 	}
 }
 
@@ -393,6 +486,10 @@ func (repository *InvoiceRepository) GetByNumber(
 	if invoiceNumber == "" {
 		return nil, fmt.Errorf("invoiceNumber is required")
 	}
+	businessYearID, err := strconv.Atoi(businessYear)
+	if err != nil {
+		return nil, fmt.Errorf("invalid businessYear: %w", err)
+	}
 
 	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	customerDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
@@ -419,19 +516,31 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.KontaktPartnerja,
 			r.Valuta,
 			r.Znesek,
-			r.ZnesekBlaga,
+			COALESCE((
+				SELECT SUM(ds.Znesek)
+				FROM [%s].[dbo].[DobropisSpecifikacija] ds
+				INNER JOIN [%s].[dbo].[Dobropis] d ON d.Stevilka = ds.Stevilka
+				WHERE ISNULL(ds.Deleted, 0) = 0
+				  AND ISNULL(d.Storno, 0) = 0
+				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(r.Stevilka)))
+			), 0),
 			r.PlacanoSIT,
 			r.Narocilnica,
 			r.StevilkaDobavnice,
 			r.Sklic,
 			r.SpremniText,
 			r.Klavzula,
-			r.Storno
+			r.Storno,
+			details.zoi,
+			details.eor,
+			details.furs_issue_date_time
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
 		LEFT JOIN [%s].[dbo].[Drzave] d ON d.OznakaDrzave = p.Drzava AND ISNULL(d.Deleted, 0) = 0
-		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
-		sql.Named("invoiceNumber", invoiceNumber),
+		LEFT JOIN [Bureaucracy].[dbo].[invoice_details] details
+			ON details.business_year_id = @businessYearID AND details.invoice_id = r.RecNo
+		WHERE r.Stevilka = @invoiceNumber`, invoiceDatabaseName, invoiceDatabaseName, invoiceDatabaseName, customerDatabaseName, customerDatabaseName),
+		sql.Named("invoiceNumber", invoiceNumber), sql.Named("businessYearID", businessYearID),
 	)
 
 	invoice := &Invoice{}
@@ -458,7 +567,7 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.CustomerContact,
 		&invoice.Currency,
 		&invoice.Amount,
-		&invoice.GoodsAmount,
+		&invoice.CreditedAmount,
 		&invoice.PaidAmount,
 		&invoice.PurchaseOrderNumber,
 		&invoice.DeliveryNoteNumber,
@@ -466,6 +575,9 @@ func (repository *InvoiceRepository) GetByNumber(
 		&invoice.IntroductoryText,
 		&invoice.ClosingText,
 		&cancelled,
+		&invoice.ZOI,
+		&invoice.EOR,
+		&invoice.FURSIssueDateTime,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -482,6 +594,8 @@ func (repository *InvoiceRepository) GetByNumber(
 		return nil, err
 	}
 	invoice.Items = items
+	netTotal := lib.RoundCurrency(sumInvoiceNet(items))
+	invoice.NetTotal = &netTotal
 	return invoice, nil
 }
 
@@ -505,7 +619,8 @@ func (repository *InvoiceRepository) getItems(
 				(CAST(COALESCE(pd.Procent, a.Davek) AS float) / 100),
 			rs.Kolicina,
 			CAST(rs.Rabat AS float),
-			rs.ZnesekBrezDavka * (1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100),
+			ROUND(rs.ZnesekBrezDavka *
+				(1 - COALESCE(CAST(rs.Rabat AS float), 0) / 100), 2),
 			rs.Znesek
 		FROM [%s].[dbo].[RacuniSpecifikacija] rs
 		LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
@@ -650,7 +765,14 @@ func (repository *InvoiceRepository) Search(
 			KontaktPartnerja,
 			Valuta,
 			Znesek,
-			ZnesekBlaga,
+			COALESCE((
+				SELECT SUM(ds.Znesek)
+				FROM [%s].[dbo].[DobropisSpecifikacija] ds
+				INNER JOIN [%s].[dbo].[Dobropis] d ON d.Stevilka = ds.Stevilka
+				WHERE ISNULL(ds.Deleted, 0) = 0
+				  AND ISNULL(d.Storno, 0) = 0
+				  AND UPPER(LTRIM(RTRIM(ds.Racun))) = UPPER(LTRIM(RTRIM(Racuni.Stevilka)))
+			), 0),
 			PlacanoSIT,
 			Sklic,
 			Storno
@@ -674,7 +796,7 @@ func (repository *InvoiceRepository) Search(
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
 		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, productDatabaseName, orderBy),
+		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
 		queryArguments...,
 	)
 	if err != nil {
@@ -700,7 +822,7 @@ func (repository *InvoiceRepository) Search(
 			&invoice.CustomerContact,
 			&invoice.Currency,
 			&invoice.Amount,
-			&invoice.GoodsAmount,
+			&invoice.CreditedAmount,
 			&invoice.PaidAmount,
 			&invoice.PaymentReference,
 			&cancelled,

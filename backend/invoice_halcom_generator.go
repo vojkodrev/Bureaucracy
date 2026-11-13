@@ -114,7 +114,12 @@ func NewInvoiceHalcomGenerator(printGenerator *InvoicePrintGenerator, xmlGenerat
 }
 
 func (generator *InvoiceHalcomGenerator) Generate(ctx context.Context, invoice *Invoice, businessYear int) ([]byte, error) {
-	pdf, err := generator.printGenerator.Generate(ctx, invoice, businessYear)
+	pdf, err := generator.printGenerator.Generate(
+		ctx,
+		invoice,
+		businessYear,
+		InvoicePrintDocument,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("generate invoice PDF: %w", err)
 	}

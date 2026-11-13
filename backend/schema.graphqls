@@ -74,6 +74,7 @@ type BankStatementInvoicePayment {
   invoiceNumber: String!
   paymentDate: Time
   amount: Float
+  creditedAmount: Float!
   paidAmount: Float
 }
 
@@ -168,7 +169,8 @@ type Invoice {
   customerContact: String
   currency: String
   amount: Float
-  goodsAmount: Float
+  creditedAmount: Float!
+  netTotal: Float
   paidAmount: Float
   purchaseOrderNumber: String
   deliveryNoteNumber: String
@@ -176,6 +178,8 @@ type Invoice {
   introductoryText: String
   closingText: String
   cancelled: Boolean
+  zoi: String
+  eor: String
   items: [InvoiceItem!]!
 }
 
@@ -193,6 +197,75 @@ type InvoiceItem {
   discount: Float
   netAmount: Float
   grossAmount: Float
+  originalInvoiceNumber: String
+}
+
+type CreditNote {
+  id: Int!
+  creditNoteNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerPostalCode: String
+  customerCity: String
+  customerCountry: String
+  currency: String
+  amount: Float
+  netTotal: Float
+  introductoryText: String
+  closingText: String
+  cancelled: Boolean
+  items: [InvoiceItem!]!
+}
+
+type CreditNotePage {
+  creditNotes: [CreditNote!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+enum TextTemplateDocumentType {
+  INVOICE
+  PRICE_QUOTE
+  DELIVERY_NOTE
+  CREDIT_NOTE
+}
+
+type TextTemplate {
+  introductoryText: String
+  closingText: String
+}
+
+input CreditNoteItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+  originalInvoiceNumber: String
+}
+
+input CreditNoteInput {
+  id: Int
+  creditNoteNumber: String!
+  issueDate: Time
+  serviceDate: Time
+  dueDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  introductoryText: String
+  closingText: String
+  items: [CreditNoteItemInput!]!
 }
 
 type InvoicePage {
@@ -229,9 +302,57 @@ type PriceQuotePage {
   totalPages: Int!
 }
 
-type PriceQuoteTextTemplate {
+type DeliveryNote {
+  id: Int!
+  deliveryNoteNumber: String!
+  issueDate: Time
+  deliveryDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerPostalCode: String
+  customerCity: String
+  customerCountry: String
+  currency: String
+  amount: Float
   introductoryText: String
   closingText: String
+  withoutAmounts: Boolean!
+  items: [InvoiceItem!]!
+}
+
+type DeliveryNotePage {
+  deliveryNotes: [DeliveryNote!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+input DeliveryNoteItemInput {
+  id: Int
+  sequence: Int
+  productCode: String!
+  taxCode: String!
+  quantity: Float
+  discount: Float
+  netAmount: Float
+  grossAmount: Float
+}
+
+input DeliveryNoteInput {
+  id: Int
+  deliveryNoteNumber: String!
+  issueDate: Time
+  deliveryDate: Time
+  customerCode: String
+  customerName: String
+  customerAddress: String
+  customerCity: String
+  introductoryText: String
+  closingText: String
+  withoutAmounts: Boolean!
+  items: [DeliveryNoteItemInput!]!
 }
 
 input PriceQuoteItemInput {
@@ -275,11 +396,6 @@ type InvoiceCustomerSummaryPage {
   page: Int!
   pageSize: Int!
   totalPages: Int!
-}
-
-type InvoiceTextTemplate {
-  introductoryText: String
-  closingText: String
 }
 
 input InvoiceItemInput {
@@ -359,10 +475,17 @@ type PurchasePrediction {
 
 type PurchasePredictionPage {
   predictions: [PurchasePrediction!]!
+  snapshotId: ID!
+  snapshotName: String!
   totalCount: Int!
   page: Int!
   pageSize: Int!
   totalPages: Int!
+}
+
+type PurchasePredictionSnapshot {
+  id: ID!
+  name: String!
 }
 
 type InventoryItem {
@@ -463,6 +586,7 @@ type Query {
 
   searchPurchasePredictions(
     businessYear: String!
+    snapshotId: ID
     customerCode: String
     customerName: String
     productCode: String
@@ -470,6 +594,8 @@ type Query {
     page: Int = 1
     pageSize: Int = 20
   ): PurchasePredictionPage!
+
+  purchasePredictionSnapshots: [PurchasePredictionSnapshot!]!
 
   goodsReceipt(businessYear: String!, receiptNumber: String!): GoodsReceipt
   goodsReceiptStorages(businessYear: String!): [Storage!]!
@@ -538,11 +664,32 @@ type Query {
     invoiceNumber: String!
   ): Invoice
 
-  invoiceTextTemplate(businessYear: String!): InvoiceTextTemplate!
+  creditNote(businessYear: String!, creditNoteNumber: String!): CreditNote
+
+  searchCreditNotes(
+    businessYear: String!
+    creditNoteNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    originalInvoiceNumber: String
+    issuedFrom: Time
+    issuedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): CreditNotePage!
+
+  textTemplate(
+    businessYear: String!
+    documentType: TextTemplateDocumentType!
+  ): TextTemplate!
 
   priceQuote(businessYear: String!, quoteNumber: String!): PriceQuote
 
-  priceQuoteTextTemplate(businessYear: String!): PriceQuoteTextTemplate!
+  deliveryNote(businessYear: String!, deliveryNoteNumber: String!): DeliveryNote
 
   product(
     businessYear: String!
@@ -611,6 +758,21 @@ type Query {
     pageSize: Int = 20
   ): PriceQuotePage!
 
+  searchDeliveryNotes(
+    businessYear: String!
+    deliveryNoteNumber: String
+    customerId: String
+    customerName: String
+    productCode: String
+    productName: String
+    issuedFrom: Time
+    issuedTo: Time
+    sortBy: String
+    sortDirection: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): DeliveryNotePage!
+
   searchProducts(
     businessYear: String!
     productCode: String
@@ -664,7 +826,9 @@ type Mutation {
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
+  saveCreditNote(businessYear: String!, creditNote: CreditNoteInput!): CreditNote!
   savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
+  saveDeliveryNote(businessYear: String!, deliveryNote: DeliveryNoteInput!): DeliveryNote!
   saveProduct(businessYear: String!, product: ProductInput!): Product!
   saveInventoryItem(businessYear: String!, inventoryItem: InventoryItemInput!): InventoryItem!
 }

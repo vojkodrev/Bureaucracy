@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import {
+    ArrowDown,
+    ArrowUp,
+    ClipboardPaste,
+    Copy,
+    Pencil,
+    Plus,
+    Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -16,7 +24,46 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import type { GoodsReceiptItem } from "@/lib/goods-receipt-types";
+import { toast } from "@/lib/toast";
 import AddEditInventoryItemDialog from "./AddEditInventoryItemDialog";
+
+const INVENTORY_ITEM_ROW_CLIPBOARD_TYPE =
+    "bureaucracy/goods-receipt-inventory-item-row";
+
+type InventoryItemRowClipboardData = {
+    type: typeof INVENTORY_ITEM_ROW_CLIPBOARD_TYPE;
+    version: 1;
+    item: GoodsReceiptItem;
+};
+
+const isNullableString = (value: unknown): value is string | null =>
+    value === null || typeof value === "string";
+const isNullableNumber = (value: unknown): value is number | null =>
+    value === null || typeof value === "number" && Number.isFinite(value);
+
+function isInventoryItemRowClipboardData(
+    value: unknown,
+): value is InventoryItemRowClipboardData {
+    if (typeof value !== "object" || value === null) return false;
+    const payload = value as Record<string, unknown>;
+    if (
+        payload.type !== INVENTORY_ITEM_ROW_CLIPBOARD_TYPE ||
+        payload.version !== 1 ||
+        typeof payload.item !== "object" ||
+        payload.item === null
+    ) return false;
+
+    const item = payload.item as Record<string, unknown>;
+    return typeof item.id === "number" &&
+        isNullableString(item.productCode) &&
+        isNullableString(item.productName) &&
+        isNullableString(item.unit) &&
+        isNullableNumber(item.quantity) &&
+        Array.isArray(item.photos) &&
+        item.photos.every((photo) =>
+            typeof photo === "object" && photo !== null &&
+            typeof (photo as Record<string, unknown>).fileId === "string");
+}
 
 type Props = {
     items: GoodsReceiptItem[];
@@ -55,14 +102,81 @@ export default function GoodsReceiptItems({
         }
         setDialogOpen(false);
     };
+    const appendItem = (item: GoodsReceiptItem) => {
+        const nextId = Math.min(0, ...items.map(({ id }) => id)) - 1;
+        onChange([...items, { ...item, id: nextId }]);
+    };
+    const copyItem = async (item: GoodsReceiptItem) => {
+        try {
+            const payload: InventoryItemRowClipboardData = {
+                type: INVENTORY_ITEM_ROW_CLIPBOARD_TYPE,
+                version: 1,
+                item,
+            };
+            await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            toast.add({
+                title: "Inventory item row copied",
+                description: "The inventory item row was copied as JSON.",
+                type: "success",
+            });
+        } catch {
+            toast.add({
+                title: "Inventory item row could not be copied",
+                description: "Clipboard access was unavailable.",
+                type: "error",
+            });
+        }
+    };
+    const pasteItem = async () => {
+        try {
+            const payload: unknown = JSON.parse(
+                await navigator.clipboard.readText(),
+            );
+            if (!isInventoryItemRowClipboardData(payload)) {
+                throw new Error("Invalid inventory item row clipboard data");
+            }
+            appendItem(payload.item);
+            toast.add({
+                title: "Inventory item row pasted",
+                description: "The copied inventory item was added to the receipt.",
+                type: "success",
+            });
+        } catch {
+            toast.add({
+                title: "Inventory item row could not be pasted",
+                description: "Copy an inventory item row and try again.",
+                type: "error",
+            });
+        }
+    };
+    const moveItem = (index: number, direction: -1 | 1) => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+        const reorderedItems = [...items];
+        [reorderedItems[index], reorderedItems[targetIndex]] = [
+            reorderedItems[targetIndex],
+            reorderedItems[index],
+        ];
+        onChange(reorderedItems);
+    };
 
     return (
         <Card>
             <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Received stock items</CardTitle>
-                <Button type="button" size="sm" onClick={openNew}>
-                    <Plus /> Add stock item
-                </Button>
+                <CardTitle>Received inventory items</CardTitle>
+                <div className="flex items-center gap-2">
+                    <Button type="button" size="sm" onClick={openNew}>
+                        <Plus /> Add inventory item
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { void pasteItem(); }}
+                    >
+                        <ClipboardPaste /> Paste inventory item
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -74,7 +188,7 @@ export default function GoodsReceiptItems({
                             <TableHead className="text-right">
                                 Quantity
                             </TableHead>
-                            <TableHead className="w-20">
+                            <TableHead className="w-36">
                                 <span className="sr-only">Actions</span>
                             </TableHead>
                         </TableRow>
@@ -84,7 +198,7 @@ export default function GoodsReceiptItems({
                             <MessageRow>Loading receipt items…</MessageRow>
                         )}
                         {!isLoading && items.length === 0 && (
-                            <MessageRow>No stock items added.</MessageRow>
+                            <MessageRow>No inventory items added.</MessageRow>
                         )}
                         {!isLoading && items.map((item, index) => (
                             <TableRow key={`${item.id}-${index}`}>
@@ -98,6 +212,35 @@ export default function GoodsReceiptItems({
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-1">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label={`Move ${item.productCode} up`}
+                                            disabled={index === 0}
+                                            onClick={() => moveItem(index, -1)}
+                                        >
+                                            <ArrowUp />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label={`Move ${item.productCode} down`}
+                                            disabled={index === items.length - 1}
+                                            onClick={() => moveItem(index, 1)}
+                                        >
+                                            <ArrowDown />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            aria-label={`Copy ${item.productCode}`}
+                                            onClick={() => { void copyItem(item); }}
+                                        >
+                                            <Copy />
+                                        </Button>
                                         <Button
                                             type="button"
                                             variant="ghost"

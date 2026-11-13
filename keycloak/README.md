@@ -43,8 +43,8 @@ The installer downloads the pinned Keycloak ZIP, verifies its SHA-256 checksum,
 extracts it to `keycloak\server`, copies the committed configuration, and builds
 an optimized MSSQL server. It also creates `keycloak\.env` from the example.
 
-Generate the shared HTTPS certificate with `..\certs\generate.ps1` on Windows
-or `../certs/generate.sh` on macOS, then trust `bureaucracy-ca.crt` on each
+Generate the shared HTTPS certificate with `..\certs\local-https\generate.ps1` on Windows
+or `../certs/local-https/generate.sh` on macOS, then trust `bureaucracy-ca.crt` on each
 client. Edit `.env` before the first start. In particular, replace both placeholder
 passwords and set `KC_HOSTNAME` to the HTTPS URL that clients use over the VPN.
 `KC_DB_URL_PROPERTIES` enables SQL Server transport encryption; only change

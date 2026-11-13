@@ -58,8 +58,12 @@ func (handler *InvoicePrintHandler) Handle(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"error": "invoice not found"})
 		return
 	}
-
-	pdf, err := handler.generator.Generate(context.Request.Context(), invoice, *year.Year)
+	pdf, err := handler.generator.Generate(
+		context.Request.Context(),
+		invoice,
+		*year.Year,
+		InvoicePrintDocument,
+	)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

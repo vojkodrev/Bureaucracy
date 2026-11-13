@@ -29,8 +29,3 @@ type PriceQuotePage struct {
 	PageSize    int           `json:"pageSize"`
 	TotalPages  int           `json:"totalPages"`
 }
-
-type PriceQuoteTextTemplate struct {
-	IntroductoryText *string `json:"introductoryText"`
-	ClosingText      *string `json:"closingText"`
-}

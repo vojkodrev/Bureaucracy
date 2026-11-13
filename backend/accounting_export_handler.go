@@ -27,13 +27,13 @@ func NewAccountingExportHandler(
 }
 
 func (handler *AccountingExportHandler) Handle(context *gin.Context) {
-	content, month, year, ok := handler.generate(context, context.Query("month"), context.Query("year"))
+	content, month, year, ok := handler.generate(context, context.Query("month"), context.Query("year"), context.Query("numberFrom"), context.Query("numberTo"))
 	if !ok {
 		return
 	}
 
 	context.Header("Cache-Control", "no-store")
-	context.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="izvoz-%04d-%02d.txt"`, year, month))
+	context.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, accountingExportFilename(year, month)))
 	context.Data(http.StatusOK, "text/plain; charset=utf-8", content)
 }
 
@@ -42,28 +42,51 @@ func (handler *AccountingExportHandler) Send(context *gin.Context) {
 	if !ok {
 		return
 	}
-	content, month, year, ok := handler.generate(context, context.PostForm("month"), context.PostForm("year"))
+	content, month, year, ok := handler.generate(context, context.PostForm("month"), context.PostForm("year"), context.PostForm("numberFrom"), context.PostForm("numberTo"))
 	if !ok {
 		return
 	}
 	attachment := EmailAttachment{
-		Filename:    fmt.Sprintf("izvoz-%04d-%02d.txt", year, month),
+		Filename:    accountingExportFilename(year, month),
 		ContentType: "text/plain; charset=utf-8",
 		Data:        content,
 	}
 	sendDocumentEmail(context, handler.sender, request, attachment, "")
 }
 
-func (handler *AccountingExportHandler) generate(context *gin.Context, monthValue, yearValue string) ([]byte, int, int, bool) {
-	month, monthErr := strconv.Atoi(monthValue)
+func (handler *AccountingExportHandler) generate(context *gin.Context, monthValue, yearValue, numberFrom, numberTo string) ([]byte, int, int, bool) {
+	month := 0
+	var monthFilter *time.Month
+	var monthErr error
+	if monthValue != "" {
+		month, monthErr = strconv.Atoi(monthValue)
+	}
 	year, yearErr := strconv.Atoi(yearValue)
-	if monthErr != nil || month < 1 || month > 12 {
+	if monthValue != "" && (monthErr != nil || month < 1 || month > 12) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "month must be between 1 and 12"})
 		return nil, 0, 0, false
 	}
 	if yearErr != nil || year < 1 || year > 9999 {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "year must be between 1 and 9999"})
 		return nil, 0, 0, false
+	}
+	numberFrom = strings.TrimSpace(numberFrom)
+	numberTo = strings.TrimSpace(numberTo)
+	if monthValue == "" && numberFrom == "" && numberTo == "" {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "month, number from, or number to is required"})
+		return nil, 0, 0, false
+	}
+	if (numberFrom != "" && !validAccountingExportNumber(numberFrom)) || (numberTo != "" && !validAccountingExportNumber(numberTo)) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "invoice numbers must contain exactly 5 digits"})
+		return nil, 0, 0, false
+	}
+	if numberFrom != "" && numberTo != "" && numberFrom > numberTo {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "number from must not be greater than number to"})
+		return nil, 0, 0, false
+	}
+	if monthValue != "" {
+		value := time.Month(month)
+		monthFilter = &value
 	}
 
 	businessYear, err := handler.businessYears.GetByCalendarYear(context.Request.Context(), year)
@@ -81,17 +104,40 @@ func (handler *AccountingExportHandler) generate(context *gin.Context, monthValu
 		return nil, 0, 0, false
 	}
 
-	rows, err := handler.exports.List(context.Request.Context(), businessYearCode, time.Month(month), year)
+	rows, err := handler.exports.List(context.Request.Context(), businessYearCode, year, monthFilter, numberFrom, numberTo)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return nil, 0, 0, false
 	}
 	if len(rows) == 0 {
-		context.JSON(http.StatusNotFound, gin.H{"error": "no data found for the selected month"})
+		context.JSON(http.StatusNotFound, gin.H{"error": "no data found for the selected filters"})
+		return nil, 0, 0, false
+	}
+	if err := validateAccountingExportGrossTotals(rows); err != nil {
+		context.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return nil, 0, 0, false
 	}
 
 	return generateAccountingExport(rows), month, year, true
+}
+
+func validAccountingExportNumber(value string) bool {
+	if len(value) != 5 {
+		return false
+	}
+	for _, character := range value {
+		if character < '0' || character > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func accountingExportFilename(year, month int) string {
+	if month == 0 {
+		return fmt.Sprintf("izvoz-%04d.txt", year)
+	}
+	return fmt.Sprintf("izvoz-%04d-%02d.txt", year, month)
 }
 
 func generateAccountingExport(rows []AccountingExportRow) []byte {

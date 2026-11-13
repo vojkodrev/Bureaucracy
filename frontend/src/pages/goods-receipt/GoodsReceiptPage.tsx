@@ -6,6 +6,7 @@ import GoodsReceiptGeneralInformation from
 import GoodsReceiptItems from "./GoodsReceiptItems";
 import GoodsReceiptMenu from "./GoodsReceiptMenu";
 import GoodsReceiptNumberAlert from "./GoodsReceiptNumberAlert";
+import GoodsReceiptValidationAlert from "./GoodsReceiptValidationAlert";
 import UnsavedGoodsReceiptAlerts from "./UnsavedGoodsReceiptAlerts";
 import { useGoodsReceiptDraft } from "./hooks/useGoodsReceiptDraft";
 import { useGoodsReceiptDuplicate } from "./hooks/useGoodsReceiptDuplicate";
@@ -99,6 +100,12 @@ export default function GoodsReceiptPage() {
                     if (!open) save.setNumberWarning(null);
                 }}
                 onConfirm={() => { void save.confirmSave(); }}
+            />
+            <GoodsReceiptValidationAlert
+                issues={save.validationIssues}
+                onOpenChange={(open) => {
+                    if (!open) save.setValidationIssues([]);
+                }}
             />
             <GoodsReceiptGeneralInformation
                 receiptNumber={draftState.draft.receiptNumber}

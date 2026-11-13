@@ -32,10 +32,10 @@ type tokenClaims struct {
 type tokenClaimsContextKey struct{}
 
 type AuthMiddleware struct {
-	issuer   string
-	realm    string
-	clientID string
-	keys     jwk.Set
+	issuer    string
+	realm     string
+	clientIDs []string
+	keys      jwk.Set
 }
 
 func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddleware, error) {
@@ -72,10 +72,10 @@ func NewAuthMiddleware(lifecycle fx.Lifecycle, config *AppConfig) (*AuthMiddlewa
 
 	lifecycle.Append(fx.Hook{OnStop: cache.Shutdown})
 	return &AuthMiddleware{
-		issuer:   issuer,
-		realm:    config.KeycloakRealm,
-		clientID: config.KeycloakClientID,
-		keys:     keys,
+		issuer:    issuer,
+		realm:     config.KeycloakRealm,
+		clientIDs: splitCommaSeparated(config.KeycloakClientID),
+		keys:      keys,
 	}, nil
 }
 
@@ -129,7 +129,7 @@ func (middleware *AuthMiddleware) Handle(c *gin.Context) {
 		return
 	}
 
-	claims, err := validateAccessToken(c.Request.Context(), rawToken, middleware.issuer, middleware.clientID, middleware.keys)
+	claims, err := validateAccessToken(c.Request.Context(), rawToken, middleware.issuer, middleware.clientIDs, middleware.keys)
 	if err != nil {
 		c.Header("WWW-Authenticate", `Bearer realm="`+middleware.realm+`"`)
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid bearer token"})
@@ -139,7 +139,7 @@ func (middleware *AuthMiddleware) Handle(c *gin.Context) {
 	c.Next()
 }
 
-func validateAccessToken(ctx context.Context, rawToken, issuer, clientID string, keys jwk.Set) (*tokenClaims, error) {
+func validateAccessToken(ctx context.Context, rawToken, issuer string, clientIDs []string, keys jwk.Set) (*tokenClaims, error) {
 	parsed, err := jwt.Parse(
 		[]byte(rawToken),
 		jwt.WithKeySet(keys),
@@ -157,7 +157,14 @@ func validateAccessToken(ctx context.Context, rawToken, issuer, clientID string,
 
 	authorizedParty, _ := jwt.Get[string](parsed, "azp")
 	audiences, _ := parsed.Audience()
-	if authorizedParty != clientID && !slices.Contains(audiences, clientID) {
+	acceptedClient := false
+	for _, clientID := range clientIDs {
+		if authorizedParty == clientID || slices.Contains(audiences, clientID) {
+			acceptedClient = true
+			break
+		}
+	}
+	if !acceptedClient {
 		return nil, errors.New("token was issued to another client")
 	}
 
@@ -166,4 +173,15 @@ func validateAccessToken(ctx context.Context, rawToken, issuer, clientID string,
 		return nil, err
 	}
 	return &tokenClaims{RealmAccess: access}, nil
+}
+
+func splitCommaSeparated(value string) []string {
+	values := strings.Split(value, ",")
+	result := make([]string, 0, len(values))
+	for _, item := range values {
+		if item = strings.TrimSpace(item); item != "" {
+			result = append(result, item)
+		}
+	}
+	return result
 }

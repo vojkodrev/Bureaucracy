@@ -4,10 +4,17 @@ import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
 import { cityWithoutPostalCode } from '@/lib/postal-address'
+import { currencyCents, sumCurrencyCents } from '@/lib/numbers'
+import {
+    fetchTextTemplate,
+    TextTemplateDocumentType,
+} from '@/lib/text-template-api'
+import { takeDeliveryNoteForInvoice } from '@/pages/delivery-note/delivery-note-invoice-conversion'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
-    fetchInvoice, fetchInvoiceTextTemplate, fetchNextInvoiceNumber,
+    fetchInvoice, fetchNextInvoiceNumber,
 } from '../invoice-api'
+import type { InvoiceTaxConfirmation } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
 export type InvoiceRequestErrors = Partial<Record<
@@ -20,6 +27,13 @@ const requestErrorMessage = (error: unknown, fallback: string) =>
 const wasAborted = (error: unknown) => error instanceof DOMException && error.name === 'AbortError'
 const dateFromInvoiceValue = (value: string | null | undefined) =>
     value ? dateFromSearchValue(value.slice(0, 10)) : undefined
+const dateTimeFromInvoiceValue = (value: string | null | undefined) => {
+    if (!value) return undefined
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/)
+    if (!match) return undefined
+    const [, year, month, day, hours, minutes, seconds] = match
+    return new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds))
+}
 
 function draftFromInvoice(invoice: Invoice): InvoiceDraft {
     return {
@@ -29,7 +43,7 @@ function draftFromInvoice(invoice: Invoice): InvoiceDraft {
         customerPostalCode: invoice.customerPostalCode ?? '',
         customerCity: cityWithoutPostalCode(invoice.customerCity, invoice.customerPostalCode),
         customerCountry: invoice.customerCountry ?? '',
-        invoiceDate: dateFromInvoiceValue(invoice.issueDate),
+        invoiceDate: dateTimeFromInvoiceValue(invoice.issueDate),
         serviceDate: dateFromInvoiceValue(invoice.serviceDate),
         dueDate: dateFromInvoiceValue(invoice.dueDate),
         paymentDate: dateFromInvoiceValue(invoice.paymentDate),
@@ -55,6 +69,8 @@ export function useInvoiceLoader({
     const preserveDuplicateRef = useRef(false)
     const pendingRevertRef = useRef(false)
     const [invoiceId, setInvoiceId] = useState<number | null>(null)
+    const [creditedAmount, setCreditedAmount] = useState(0)
+    const [taxConfirmation, setTaxConfirmation] = useState<InvoiceTaxConfirmation | null>(null)
     const [businessYear, setBusinessYear] = useState<number | null>(null)
     const [reloadVersion, setReloadVersion] = useState(0)
     const [requestErrors, setRequestErrors] = useState<InvoiceRequestErrors>({})
@@ -63,20 +79,47 @@ export function useInvoiceLoader({
     const clearLoadedDraft = useEffectEvent(clearCleanDraft)
     const finishNavigation = useEffectEvent(disallowNavigation)
     const requestKey = `${routeInvoiceNumber ?? ''}:${reloadVersion}`
-    const [loadResult, setLoadResult] = useState({ requestKey: '__initial__', error: null as string | null })
+    const [loadResult, setLoadResult] = useState({
+        requestKey: '__initial__',
+        error: null as string | null,
+    })
+    const [warningResult, setWarningResult] = useState({
+        requestKey: '__initial__',
+        warnings: [] as string[],
+        storedTotal: null as number | null,
+    })
     const isLoading = Boolean(routeInvoiceNumber) && loadResult.requestKey !== requestKey
     const error = loadResult.requestKey === requestKey ? loadResult.error : null
+    const warnings = warningResult.requestKey === requestKey ? warningResult.warnings : []
+    const storedTotal = warningResult.requestKey === requestKey ? warningResult.storedTotal : null
 
     useEffect(() => {
         if (!routeInvoiceNumber) return
         const controller = new AbortController()
         void fetchInvoice(routeInvoiceNumber, controller.signal).then((invoice) => {
             const nextDraft = draftFromInvoice(invoice)
+            const headerTotal = currencyCents(invoice.amount ?? 0)
+            const lineTotal = sumCurrencyCents((invoice.items ?? []).map((item) => item.grossAmount))
+            const hasInconsistentLine = (invoice.items ?? []).some((item) => {
+                const netTotal = currencyCents(item.netAmount ?? 0)
+                const vatTotal = currencyCents((item.netAmount ?? 0) * (item.taxRate ?? 0) / 100)
+                return currencyCents(item.grossAmount ?? 0) !== netTotal + vatTotal
+            })
             setInvoiceId(invoice.id ?? null)
+            setCreditedAmount(invoice.creditedAmount ?? 0)
+            setTaxConfirmation(invoice.zoi && invoice.eor ? { zoi: invoice.zoi, eor: invoice.eor } : null)
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
             setLoadResult({ requestKey, error: null })
+            setWarningResult({
+                requestKey,
+                warnings: [
+                    ...(headerTotal === lineTotal ? [] : ['invoice-total']),
+                    ...(hasInconsistentLine ? ['invoice-line-total'] : []),
+                ],
+                storedTotal: headerTotal === lineTotal ? null : (invoice.amount ?? 0),
+            })
             if (pendingRevertRef.current) {
                 pendingRevertRef.current = false
                 toast.add({
@@ -89,6 +132,7 @@ export function useInvoiceLoader({
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
             setLoadResult({ requestKey, error: requestErrorMessage(requestError, 'Loading invoice failed') })
+            setWarningResult({ requestKey, warnings: [], storedTotal: null })
         })
         return () => controller.abort()
     }, [requestKey, routeInvoiceNumber])
@@ -110,13 +154,18 @@ export function useInvoiceLoader({
             introductoryText: '', closingText: '', invoiceItems: [],
         }
         setInvoiceId(null)
+        setCreditedAmount(0)
+        setTaxConfirmation(null)
         replaceLoadedDraft(initialDraft)
         clearLoadedDraft()
         setRequestErrors((current) => ({
             ...current, nextInvoiceNumber: undefined, invoiceTextTemplate: undefined,
         }))
         const controller = new AbortController()
-        const templatePromise = fetchInvoiceTextTemplate(controller.signal).catch((requestError: unknown) => {
+        const templatePromise = fetchTextTemplate(
+            TextTemplateDocumentType.Invoice,
+            controller.signal,
+        ).catch((requestError: unknown) => {
             if (!wasAborted(requestError)) setRequestErrors((current) => ({
                 ...current,
                 invoiceTextTemplate: requestErrorMessage(requestError, 'Loading invoice text template failed'),
@@ -130,20 +179,23 @@ export function useInvoiceLoader({
                     introductoryText: template.introductoryText ?? '',
                     closingText: template.closingText ?? '',
                 }
-                const priceQuote = takePriceQuoteForInvoice()
-                const convertedDraft: InvoiceDraft = priceQuote ? {
+                const deliveryNote = takeDeliveryNoteForInvoice()
+                const priceQuote = deliveryNote ? null : takePriceQuoteForInvoice()
+                const source = deliveryNote ?? priceQuote
+                const convertedDraft: InvoiceDraft = source ? {
                     ...nextDraft,
-                    customerId: priceQuote.customerId,
-                    customerName: priceQuote.customerName,
-                    customerAddress: priceQuote.customerAddress,
-                    customerPostalCode: priceQuote.customerPostalCode,
-                    customerCity: priceQuote.customerCity,
-                    customerCountry: priceQuote.customerCountry,
+                    customerId: source.customerId,
+                    customerName: source.customerName,
+                    customerAddress: source.customerAddress,
+                    customerPostalCode: source.customerPostalCode,
+                    customerCity: source.customerCity,
+                    customerCountry: source.customerCountry,
+                    deliveryNoteNumber: deliveryNote?.deliveryNoteNumber ?? '',
                     introductoryText: [
-                        nextDraft.introductoryText, priceQuote.introductoryText,
+                        nextDraft.introductoryText, source.introductoryText,
                     ].filter(Boolean).join('\n'),
-                    closingText: nextDraft.closingText || priceQuote.closingText,
-                    invoiceItems: priceQuote.items.map((item, index) => ({
+                    closingText: nextDraft.closingText || source.closingText,
+                    invoiceItems: source.items.map((item, index) => ({
                         ...item, id: -index - 1,
                     })),
                 } : nextDraft
@@ -152,6 +204,11 @@ export function useInvoiceLoader({
                 markLoadedDraftClean(nextDraft)
                 if (priceQuote) toast.add({
                     title: 'Price quote converted',
+                    description: 'The invoice draft has been populated. Review and save it when ready.',
+                    type: 'success',
+                })
+                if (deliveryNote) toast.add({
+                    title: 'Delivery note converted',
                     description: 'The invoice draft has been populated. Review and save it when ready.',
                     type: 'success',
                 })
@@ -181,7 +238,9 @@ export function useInvoiceLoader({
     }
 
     return {
-        invoiceId, setInvoiceId, businessYear, setBusinessYear, isLoading, error,
+        invoiceId, setInvoiceId, creditedAmount, taxConfirmation, setTaxConfirmation,
+        businessYear, setBusinessYear, isLoading, error, warnings,
+        storedTotal,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),
         preserveDuplicateDraft: () => { preserveDuplicateRef.current = true },

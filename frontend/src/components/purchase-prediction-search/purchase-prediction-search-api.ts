@@ -2,12 +2,13 @@ import { getSelectedBusinessYear } from '@/lib/business-year'
 import { optionalFilter } from '@/lib/filters'
 import { postGraphql } from '@/lib/graphql'
 import { defaultPage, defaultPageSize, maximumPageSize, positiveInteger } from '@/lib/pagination'
-import type { PurchasePredictionPage } from '@/lib/purchase-prediction-types'
+import type { PurchasePredictionPage, PurchasePredictionSnapshot } from '@/lib/purchase-prediction-types'
 import type { PurchasePredictionSearchCriteria } from './types'
 
 const query = `
     query SearchPurchasePredictions(
         $businessYear: String!
+        $snapshotId: ID
         $customerCode: String
         $customerName: String
         $productCode: String
@@ -17,6 +18,7 @@ const query = `
     ) {
         searchPurchasePredictions(
             businessYear: $businessYear
+            snapshotId: $snapshotId
             customerCode: $customerCode
             customerName: $customerName
             productCode: $productCode
@@ -29,7 +31,7 @@ const query = `
                 daysSinceLastOrder averageOrderFrequencyDays
                 score7Days score14Days score30Days
             }
-            totalCount page pageSize totalPages
+            snapshotId snapshotName totalCount page pageSize totalPages
         }
     }
 `
@@ -45,6 +47,7 @@ export async function fetchPurchasePredictions(
     }
     const variables = {
         businessYear: getSelectedBusinessYear(),
+        snapshotId: optionalFilter(search.snapshotId),
         customerCode: optionalFilter(search.customerCode),
         customerName: optionalFilter(search.customerName),
         productCode: optionalFilter(search.productCode),
@@ -56,12 +59,23 @@ export async function fetchPurchasePredictions(
     return result.data?.searchPurchasePredictions ?? null
 }
 
+const snapshotsQuery = `query PurchasePredictionSnapshots {
+    purchasePredictionSnapshots { id name }
+}`
+
+export async function fetchPurchasePredictionSnapshots(signal?: AbortSignal) {
+    type Response = { data?: { purchasePredictionSnapshots: PurchasePredictionSnapshot[] } }
+    const result = await postGraphql<Response>(snapshotsQuery, {}, signal)
+    return result.data?.purchasePredictionSnapshots ?? []
+}
+
 export function purchasePredictionReportPdfUrl(
     search: PurchasePredictionSearchCriteria,
 ): string {
     const url = new URL(graphqlUrl)
     url.pathname = '/api/purchase-predictions/report/pdf'
     for (const key of [
+        'snapshotId',
         'customerCode',
         'customerName',
         'productCode',

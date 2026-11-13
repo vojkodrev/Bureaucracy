@@ -22,6 +22,26 @@ type GeneralInformationInputProps = {
 }
 
 function GeneralInformationInput(props: GeneralInformationInputProps) {
+    const invoiceTime = props.invoiceDate
+        ? `${String(props.invoiceDate.getHours()).padStart(2, '0')}:${String(props.invoiceDate.getMinutes()).padStart(2, '0')}:${String(props.invoiceDate.getSeconds()).padStart(2, '0')}`
+        : ''
+    const selectInvoiceDate = (date?: Date) => {
+        if (!date) {
+            props.onInvoiceDateChange(undefined)
+            return
+        }
+        const time = props.invoiceDate ?? new Date()
+        date.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), 0)
+        props.onInvoiceDateChange(date)
+    }
+    const changeInvoiceTime = (value: string) => {
+        if (!value) return
+        const [hours, minutes, seconds = '0'] = value.split(':')
+        const date = new Date(props.invoiceDate ?? new Date())
+        date.setHours(Number(hours), Number(minutes), Number(seconds), 0)
+        props.onInvoiceDateChange(date)
+    }
+
     return (
         <Card>
             <CardHeader><CardTitle>General information</CardTitle></CardHeader>
@@ -31,7 +51,16 @@ function GeneralInformationInput(props: GeneralInformationInputProps) {
                         <Field><FieldLabel htmlFor="invoice-number">Number</FieldLabel><Input id="invoice-number" value={props.invoiceNumber} onChange={(event) => props.onInvoiceNumberChange(event.target.value)} /></Field>
                         <Field><FieldLabel htmlFor="business-year">Business year</FieldLabel><Input id="business-year" value={props.businessYear ?? ''} readOnly /></Field>
                     </div>
-                    <DatePickerField id="invoice-date" label="Invoice date" name="invoiceDate" date={props.invoiceDate} onSelect={props.onInvoiceDateChange} />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <DatePickerField id="invoice-date" label="Invoice date" name="invoiceDate"
+                            date={props.invoiceDate} onSelect={selectInvoiceDate} />
+                        <Field>
+                            <FieldLabel htmlFor="invoice-time">Invoice time</FieldLabel>
+                            <Input id="invoice-time" name="invoiceTime" type="time" step="1"
+                                value={invoiceTime} disabled={!props.invoiceDate}
+                                onChange={(event) => changeInvoiceTime(event.target.value)} />
+                        </Field>
+                    </div>
                     <DatePickerField id="due-date" label="Due date" name="dueDate" date={props.dueDate}
                         onSelect={props.onDueDateChange}
                         action={{

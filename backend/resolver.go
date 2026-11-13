@@ -8,28 +8,50 @@ type Resolver struct {
 	CountryRepository      *CountryRepository
 	Customers              *CustomerRepository
 	Invoices               *InvoiceRepository
+	CreditNotes            *CreditNoteRepository
 	InventoryItems         *InventoryItemRepository
 	GoodsReceipts          *GoodsReceiptRepository
 	PriceQuotes            *PriceQuoteRepository
+	DeliveryNotes          *DeliveryNoteRepository
 	Products               *ProductRepository
 	PurchasePredictions    *PurchasePredictionRepository
 	Storages               *StorageRepository
 	TaxCodeRepository      *TaxCodeRepository
+	TextTemplates          *TextTemplateRepository
 }
 
-func NewResolver(businessYears *BusinessYearRepository, bankStatements *BankStatementRepository, countries *CountryRepository, customers *CustomerRepository, invoices *InvoiceRepository, inventoryItems *InventoryItemRepository, goodsReceipts *GoodsReceiptRepository, priceQuotes *PriceQuoteRepository, products *ProductRepository, purchasePredictions *PurchasePredictionRepository, storages *StorageRepository, taxCodes *TaxCodeRepository) *Resolver {
+func NewResolver(
+	businessYears *BusinessYearRepository,
+	bankStatements *BankStatementRepository,
+	countries *CountryRepository,
+	customers *CustomerRepository,
+	invoices *InvoiceRepository,
+	creditNotes *CreditNoteRepository,
+	inventoryItems *InventoryItemRepository,
+	goodsReceipts *GoodsReceiptRepository,
+	priceQuotes *PriceQuoteRepository,
+	deliveryNotes *DeliveryNoteRepository,
+	products *ProductRepository,
+	purchasePredictions *PurchasePredictionRepository,
+	storages *StorageRepository,
+	taxCodes *TaxCodeRepository,
+	textTemplates *TextTemplateRepository,
+) *Resolver {
 	return &Resolver{
 		BusinessYearRepository: businessYears,
 		BankStatements:         bankStatements,
 		CountryRepository:      countries,
 		Customers:              customers,
 		Invoices:               invoices,
+		CreditNotes:            creditNotes,
 		InventoryItems:         inventoryItems,
 		GoodsReceipts:          goodsReceipts,
 		PriceQuotes:            priceQuotes,
+		DeliveryNotes:          deliveryNotes,
 		Products:               products,
 		PurchasePredictions:    purchasePredictions,
 		Storages:               storages,
 		TaxCodeRepository:      taxCodes,
+		TextTemplates:          textTemplates,
 	}
 }

@@ -66,9 +66,6 @@ models:
   InvoiceCustomerSummaryPage:
     model:
       - bureaucracy/backend.InvoiceCustomerSummaryPage
-  InvoiceTextTemplate:
-    model:
-      - bureaucracy/backend.InvoiceTextTemplate
   InventoryItem:
     model:
       - bureaucracy/backend.InventoryItem
@@ -99,12 +96,24 @@ models:
   PriceQuotePage:
     model:
       - bureaucracy/backend.PriceQuotePage
-  PriceQuoteTextTemplate:
+  DeliveryNote:
     model:
-      - bureaucracy/backend.PriceQuoteTextTemplate
+      - bureaucracy/backend.DeliveryNote
+  DeliveryNotePage:
+    model:
+      - bureaucracy/backend.DeliveryNotePage
   InvoiceItem:
     model:
       - bureaucracy/backend.InvoiceItem
+  CreditNote:
+    model:
+      - bureaucracy/backend.CreditNote
+  CreditNotePage:
+    model:
+      - bureaucracy/backend.CreditNotePage
+  TextTemplate:
+    model:
+      - bureaucracy/backend.TextTemplate
   Product:
     model:
       - bureaucracy/backend.Product
@@ -117,6 +126,9 @@ models:
   PurchasePredictionPage:
     model:
       - bureaucracy/backend.PurchasePredictionPage
+  PurchasePredictionSnapshot:
+    model:
+      - bureaucracy/backend.PurchasePredictionSnapshot
   ProductInvoiceCount:
     model:
       - bureaucracy/backend.ProductInvoiceCount

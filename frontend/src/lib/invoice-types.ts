@@ -8,6 +8,7 @@ export type Invoice = {
     customerCity?: string | null
     customerCountry?: string | null
     amount: number | null
+    creditedAmount?: number
     paidAmount?: number | null
     purchaseOrderNumber?: string | null
     deliveryNoteNumber?: string | null
@@ -17,6 +18,8 @@ export type Invoice = {
     paymentDate: string | null
     introductoryText?: string | null
     closingText?: string | null
+    zoi?: string | null
+    eor?: string | null
     items?: InvoiceItem[]
 }
 
@@ -34,6 +37,7 @@ export type InvoiceItem = {
     discount: number | null
     netAmount: number | null
     grossAmount: number | null
+    originalInvoiceNumber?: string | null
 }
 
 export type InvoicePage = {

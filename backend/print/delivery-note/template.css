@@ -1,0 +1,40 @@
+@page { size: A4; margin: 0; }
+html, body { width: 100%; min-height: 100%; margin: 0; font-family: Arial, sans-serif; }
+main { position: relative; box-sizing: border-box; width: 210mm; min-height: 297mm; padding: 8mm 22mm 16mm 18mm; }
+.overview { display: flex; justify-content: flex-end; min-height: 20mm; margin-top: 43mm; }
+.details {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    align-content: start;
+    gap: 1mm 2mm;
+    font-size: 3.2mm;
+}
+.details > :nth-child(odd) { text-align: right; }
+.details > :first-child, .details > :nth-child(2) { font-size: 4mm; }
+.body { margin-top: 18mm; font-size: 2.8mm; }
+.body p { margin: 0; }
+.intro, .closing { margin: 7mm 0 2mm !important; white-space: pre-line; }
+.items {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border-top: .25mm solid #111;
+    border-bottom: .25mm solid #111;
+    font-size: 2.4mm;
+}
+.items th { padding: 1.5mm .6mm; border-bottom: .2mm solid #333; }
+.items td { padding: 1.2mm .6mm; text-align: right; }
+.items th:nth-child(1), .items td:nth-child(1) { width: 5%; text-align: center; }
+.items th:nth-child(2), .items td:nth-child(2) { width: 37%; text-align: left; }
+.items td:nth-child(2) { font-weight: 700; }
+.items.without-amounts th:nth-child(2), .items.without-amounts td:nth-child(2) { width: 68%; }
+.totals {
+    display: grid;
+    grid-template-columns: 1fr 28mm;
+    width: 75mm;
+    margin: 3mm 0 0 auto;
+    text-align: right;
+    line-height: 1.45;
+}
+.acceptance { display: flex; justify-content: space-between; margin-top: 18mm; font-size: 3mm; }
+.document-footer { position: absolute; right: 22mm; bottom: 8mm; left: 18mm; text-align: center; font-size: 2.5mm; }

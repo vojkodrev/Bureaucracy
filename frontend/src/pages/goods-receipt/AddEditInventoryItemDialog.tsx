@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ClipboardEvent } from "react";
 import InventoryItemPickerField from
     "@/components/inventory-item-search/InventoryItemPickerField";
 import CameraCaptureDialog from "@/components/CameraCaptureDialog";
@@ -78,6 +78,20 @@ export default function AddEditInventoryItemDialog({
         setPhotos((current) => current.filter((photo) => photo.fileId !== fileId));
     };
 
+    const pastePhotos = (event: ClipboardEvent<HTMLDivElement>) => {
+        const files = Array.from(event.clipboardData.items)
+            .filter((clipboardItem) =>
+                clipboardItem.kind === "file" &&
+                clipboardItem.type.startsWith("image/"))
+            .map((clipboardItem) => clipboardItem.getAsFile())
+            .filter((file): file is File => file !== null);
+
+        if (files.length === 0) return;
+
+        event.preventDefault();
+        void uploadPhotos(files);
+    };
+
     const openCamera = () => {
         if (typeof navigator.mediaDevices?.getUserMedia === "function") {
             setCameraOpen(true);
@@ -92,10 +106,11 @@ export default function AddEditInventoryItemDialog({
             <DialogContent
                 showCloseButton={false}
                 className="max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto overscroll-contain sm:max-w-4xl"
+                onPaste={pastePhotos}
             >
                 <DialogHeader>
                     <DialogTitle>
-                        {item ? "Edit stock item" : "Add stock item"}
+                        {item ? "Edit inventory item" : "Add inventory item"}
                     </DialogTitle>
                     <DialogDescription>
                         Select an inventory item and enter the stock movement
@@ -106,7 +121,7 @@ export default function AddEditInventoryItemDialog({
                     <InventoryItemPickerField
                         id="goods-receipt-item-code"
                         label="Inventory item code"
-                        name="stockItemCode"
+                        name="inventoryItemCode"
                         inventoryItemCode={code}
                         onInventoryItemCodeChange={setCode}
                         onInventoryItemNameChange={setDescription}
@@ -147,6 +162,9 @@ export default function AddEditInventoryItemDialog({
                 </div>
                 <Field className="min-w-0">
                     <FieldLabel>Photos</FieldLabel>
+                    <p className="text-sm text-muted-foreground">
+                        Add, take, or paste photos from the clipboard.
+                    </p>
                     <input
                         ref={fileInput}
                         type="file"
@@ -193,7 +211,7 @@ export default function AddEditInventoryItemDialog({
                             photos,
                         })}
                     >
-                        {item ? "Save changes" : "Add stock item"}
+                        {item ? "Save changes" : "Add inventory item"}
                     </Button>
                 </DialogFooter>
                 {cameraOpen && (

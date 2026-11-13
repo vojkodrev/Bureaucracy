@@ -58,7 +58,7 @@ export default function PriceQuoteMenu(props: Props) {
             </MenubarMenu>
             <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-52 whitespace-nowrap">
                     <MenubarItem
                         disabled={!props.canRevert}
                         onClick={props.onRevert}

@@ -19,7 +19,7 @@ var storageGraphQLFields = map[string]struct{}{
 	"goodsReceipt": {}, "goodsReceiptStorages": {}, "latestInventoryItemPhotos": {},
 	"inventoryItem": {}, "product": {}, "productInvoiceCounts": {}, "searchGoodsReceipts": {},
 	"searchInventoryItems": {}, "inventoryItemGoodsReceiptCounts": {}, "searchProducts": {},
-	"searchPurchasePredictions": {}, "taxCodes": {},
+	"searchPurchasePredictions": {}, "purchasePredictionSnapshots": {}, "taxCodes": {},
 	"saveGoodsReceipt": {}, "saveInventoryItem": {},
 }
 

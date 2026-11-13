@@ -210,7 +210,7 @@ export default function CameraCaptureDialog({
                 <DialogHeader>
                     <DialogTitle>Take photo</DialogTitle>
                     <DialogDescription>
-                        Position the stock item in the frame and take a photo.
+                        Position the inventory item in the frame and take a photo.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="relative min-h-0 overflow-hidden rounded-md bg-black">

@@ -5,11 +5,11 @@ html, body { margin: 0; font-family: Arial, sans-serif; color: #111; }
 .content { margin-top: 90.34mm; }
 h1 { margin: 0 0 3mm; font-size: 14pt; }
 .subtitle { margin: 0 0 15mm; }
-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-th, td { padding: 2mm; border: 0.25mm solid #111; vertical-align: bottom; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 2mm; border: 0.25mm solid #111; vertical-align: middle; white-space: nowrap; }
 th { font-weight: 400; text-align: left; }
-th:first-child { width: 39%; }
 .number { text-align: right; }
+.amount small { display: block; margin-top: 0.5mm; font-size: 7pt; font-weight: 400; white-space: nowrap; }
 .total { display: flex; justify-content: space-between; width: 115mm; margin-top: 9mm; font-size: 12pt; }
 .signoff { display: flex; align-items: flex-start; justify-content: space-between; margin: 34mm 18mm 0 15mm; }
 .signoff p { margin: 0; }

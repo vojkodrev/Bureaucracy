@@ -31,6 +31,33 @@ type BankStatementInput struct {
 	Entries         []*BankStatementEntryInput `json:"entries"`
 }
 
+type CreditNoteInput struct {
+	ID               *int                   `json:"id,omitempty"`
+	CreditNoteNumber string                 `json:"creditNoteNumber"`
+	IssueDate        *time.Time             `json:"issueDate,omitempty"`
+	ServiceDate      *time.Time             `json:"serviceDate,omitempty"`
+	DueDate          *time.Time             `json:"dueDate,omitempty"`
+	CustomerCode     *string                `json:"customerCode,omitempty"`
+	CustomerName     *string                `json:"customerName,omitempty"`
+	CustomerAddress  *string                `json:"customerAddress,omitempty"`
+	CustomerCity     *string                `json:"customerCity,omitempty"`
+	IntroductoryText *string                `json:"introductoryText,omitempty"`
+	ClosingText      *string                `json:"closingText,omitempty"`
+	Items            []*CreditNoteItemInput `json:"items"`
+}
+
+type CreditNoteItemInput struct {
+	ID                    *int     `json:"id,omitempty"`
+	Sequence              *int     `json:"sequence,omitempty"`
+	ProductCode           string   `json:"productCode"`
+	TaxCode               string   `json:"taxCode"`
+	Quantity              *float64 `json:"quantity,omitempty"`
+	Discount              *float64 `json:"discount,omitempty"`
+	NetAmount             *float64 `json:"netAmount,omitempty"`
+	GrossAmount           *float64 `json:"grossAmount,omitempty"`
+	OriginalInvoiceNumber *string  `json:"originalInvoiceNumber,omitempty"`
+}
+
 type CustomerInput struct {
 	ID                 *int     `json:"id,omitempty"`
 	CustomerID         string   `json:"customerId"`
@@ -48,6 +75,32 @@ type CustomerInput struct {
 	Bic                *string  `json:"bic,omitempty"`
 	PaymentTerm        *int     `json:"paymentTerm,omitempty"`
 	Discount           *float64 `json:"discount,omitempty"`
+}
+
+type DeliveryNoteInput struct {
+	ID                 *int                     `json:"id,omitempty"`
+	DeliveryNoteNumber string                   `json:"deliveryNoteNumber"`
+	IssueDate          *time.Time               `json:"issueDate,omitempty"`
+	DeliveryDate       *time.Time               `json:"deliveryDate,omitempty"`
+	CustomerCode       *string                  `json:"customerCode,omitempty"`
+	CustomerName       *string                  `json:"customerName,omitempty"`
+	CustomerAddress    *string                  `json:"customerAddress,omitempty"`
+	CustomerCity       *string                  `json:"customerCity,omitempty"`
+	IntroductoryText   *string                  `json:"introductoryText,omitempty"`
+	ClosingText        *string                  `json:"closingText,omitempty"`
+	WithoutAmounts     bool                     `json:"withoutAmounts"`
+	Items              []*DeliveryNoteItemInput `json:"items"`
+}
+
+type DeliveryNoteItemInput struct {
+	ID          *int     `json:"id,omitempty"`
+	Sequence    *int     `json:"sequence,omitempty"`
+	ProductCode string   `json:"productCode"`
+	TaxCode     string   `json:"taxCode"`
+	Quantity    *float64 `json:"quantity,omitempty"`
+	Discount    *float64 `json:"discount,omitempty"`
+	NetAmount   *float64 `json:"netAmount,omitempty"`
+	GrossAmount *float64 `json:"grossAmount,omitempty"`
 }
 
 type GoodsReceiptInput struct {
@@ -198,6 +251,65 @@ func (e *BankStatementDateDirection) UnmarshalJSON(b []byte) error {
 }
 
 func (e BankStatementDateDirection) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TextTemplateDocumentType string
+
+const (
+	TextTemplateDocumentTypeInvoice      TextTemplateDocumentType = "INVOICE"
+	TextTemplateDocumentTypePriceQuote   TextTemplateDocumentType = "PRICE_QUOTE"
+	TextTemplateDocumentTypeDeliveryNote TextTemplateDocumentType = "DELIVERY_NOTE"
+	TextTemplateDocumentTypeCreditNote   TextTemplateDocumentType = "CREDIT_NOTE"
+)
+
+var AllTextTemplateDocumentType = []TextTemplateDocumentType{
+	TextTemplateDocumentTypeInvoice,
+	TextTemplateDocumentTypePriceQuote,
+	TextTemplateDocumentTypeDeliveryNote,
+	TextTemplateDocumentTypeCreditNote,
+}
+
+func (e TextTemplateDocumentType) IsValid() bool {
+	switch e {
+	case TextTemplateDocumentTypeInvoice, TextTemplateDocumentTypePriceQuote, TextTemplateDocumentTypeDeliveryNote, TextTemplateDocumentTypeCreditNote:
+		return true
+	}
+	return false
+}
+
+func (e TextTemplateDocumentType) String() string {
+	return string(e)
+}
+
+func (e *TextTemplateDocumentType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TextTemplateDocumentType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TextTemplateDocumentType", str)
+	}
+	return nil
+}
+
+func (e TextTemplateDocumentType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TextTemplateDocumentType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TextTemplateDocumentType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

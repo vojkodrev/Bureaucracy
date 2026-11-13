@@ -9,9 +9,9 @@ const graphqlUrl = import.meta.env.VITE_GRAPHQL_URL
 const invoiceQuery = `
     query Invoice($businessYear: String!, $invoiceNumber: String!) {
         invoice(businessYear: $businessYear, invoiceNumber: $invoiceNumber) {
-            id invoiceNumber issueDate serviceDate dueDate paymentDate customerCode
+            id invoiceNumber amount creditedAmount issueDate serviceDate dueDate paymentDate customerCode
             customerName customerAddress customerPostalCode customerCity customerCountry
-            paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText
+            paidAmount purchaseOrderNumber deliveryNoteNumber introductoryText closingText zoi eor
             items {
                 id sequence productCode productName unit taxCode taxRate unitPrice
                 unitTaxAmount quantity discount netAmount grossAmount
@@ -35,12 +35,6 @@ const latestInvoiceQuery = `
             page: 1
             pageSize: 1
         ) { invoices { invoiceNumber } }
-    }
-`
-
-const invoiceTextTemplateQuery = `
-    query InvoiceTextTemplate($businessYear: String!) {
-        invoiceTextTemplate(businessYear: $businessYear) { introductoryText closingText }
     }
 `
 
@@ -83,14 +77,6 @@ export async function fetchLatestInvoiceNumber(
 
 export async function fetchNextInvoiceNumber(signal?: AbortSignal, businessYear = getSelectedBusinessYear()) {
     return nextPaddedNumber(await fetchLatestInvoiceNumber(signal, businessYear), 5)
-}
-
-export async function fetchInvoiceTextTemplate(signal?: AbortSignal) {
-    const result = await postGraphql<{
-        data?: { invoiceTextTemplate: { introductoryText: string | null; closingText: string | null } }
-        errors?: { message: string }[]
-    }>(invoiceTextTemplateQuery, { businessYear: getSelectedBusinessYear() }, signal)
-    return result.data?.invoiceTextTemplate ?? { introductoryText: null, closingText: null }
 }
 
 export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string) {
@@ -151,6 +137,22 @@ export async function downloadInvoiceXml(invoiceNumber: string, businessYear: st
 
 export async function downloadInvoiceHalcom(invoiceNumber: string, businessYear: string) {
     await downloadInvoiceFile(invoiceHalcomUrl(invoiceNumber, businessYear), `invoice-${invoiceNumber}-halcom.zip`, 'Halcom')
+}
+
+export type InvoiceTaxConfirmation = { zoi: string; eor: string }
+
+export async function confirmInvoiceTax(invoiceNumber: string, businessYear: string): Promise<InvoiceTaxConfirmation> {
+    const url = new URL(graphqlUrl)
+    url.pathname = `/api/invoices/${encodeURIComponent(invoiceNumber)}/tax-confirmation`
+    url.search = ''
+    url.hash = ''
+    const form = new FormData()
+    form.set('businessYear', businessYear)
+    const response = await apiFetch(url, { method: 'POST', body: form })
+    const body = await response.json().catch(() => null) as (InvoiceTaxConfirmation & { error?: string }) | null
+    if (!response.ok) throw new Error(body?.error ?? `Tax confirmation failed (${response.status})`)
+    if (!body?.zoi || !body.eor) throw new Error('Tax confirmation response is incomplete')
+    return body
 }
 
 export async function postSaveInvoice(variables: Record<string, unknown>) {

@@ -2,6 +2,13 @@ package lib
 
 import "strings"
 
+func StringOrEmpty[T ~string](value *T) string {
+	if value == nil {
+		return ""
+	}
+	return string(*value)
+}
+
 func OptionalLikePattern(value *string) string {
 	if value == nil || strings.TrimSpace(*value) == "" {
 		return ""

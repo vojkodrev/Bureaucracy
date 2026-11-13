@@ -411,7 +411,7 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                         )}
                         {!error &&
                             customers.map((customer) => {
-                                const isPageMode = mode === ComponentMode.Page
+                                const hasLinkedRows = mode !== ComponentMode.Dialog
 
                                 return (
                                     <TableRow
@@ -422,11 +422,11 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                                 : undefined
                                         }
                                         className="cursor-pointer"
-                                        tabIndex={isPageMode ? undefined : 0}
-                                        onClick={isPageMode
+                                        tabIndex={hasLinkedRows ? undefined : 0}
+                                        onClick={hasLinkedRows
                                             ? undefined
                                             : () => selectCustomer(customer)}
-                                        onKeyDown={isPageMode
+                                        onKeyDown={hasLinkedRows
                                             ? undefined
                                             : (event) => {
                                                 if (event.key === 'Enter' || event.key === ' ') {
@@ -437,22 +437,22 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                     >
                                         <SearchResultCell
                                             primary
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                             className="font-medium"
                                         >
                                             {customer.customerId ?? '—'}
                                         </SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.name ?? '—'}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.address ?? '—'}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >
                                             {[customer.postalCode, customer.city]
@@ -460,19 +460,19 @@ function CustomerSearch({ mode, onCustomerSelect }: CustomerSearchProps) {
                                                 .join(' ') || '—'}
                                         </SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.contact ?? '—'}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.email ?? '—'}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.phone ?? '—'}</SearchResultCell>
                                         <SearchResultCell
-                                            to={isPageMode && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
+                                            to={hasLinkedRows && customer.customerId ? `/customer/${encodeURIComponent(customer.customerId)}` : undefined}
                                             linkLabel={`Open customer ${customer.customerId}`}
                                         >{customer.taxNumber ?? '—'}</SearchResultCell>
                                     </TableRow>

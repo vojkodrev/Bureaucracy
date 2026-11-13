@@ -8,11 +8,11 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = $PSScriptRoot
 $buildDir = Join-Path $scriptDir '.bin'
 $binary = Join-Path $buildDir 'bureaucracy-backend.exe'
-$certDir = Join-Path $scriptDir '..\certs'
+$certDir = Join-Path $scriptDir '..\certs\local-https'
 
 foreach ($name in @('bureaucracy.crt', 'bureaucracy.key', 'bureaucracy-ca.crt')) {
     if (-not (Test-Path (Join-Path $certDir $name))) {
-        throw 'HTTPS certificates are missing. Run certs\generate.ps1 first.'
+        throw 'HTTPS certificates are missing. Run certs\local-https\generate.ps1 first.'
     }
 }
 

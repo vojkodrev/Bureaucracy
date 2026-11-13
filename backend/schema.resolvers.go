@@ -37,9 +37,19 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SaveCreditNote is the resolver for the saveCreditNote field.
+func (r *mutationResolver) SaveCreditNote(ctx context.Context, businessYear string, creditNote model.CreditNoteInput) (*CreditNote, error) {
+	return r.CreditNotes.Save(ctx, businessYear, creditNote)
+}
+
 // SavePriceQuote is the resolver for the savePriceQuote field.
 func (r *mutationResolver) SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error) {
 	return r.PriceQuotes.Save(ctx, businessYear, priceQuote)
+}
+
+// SaveDeliveryNote is the resolver for the saveDeliveryNote field.
+func (r *mutationResolver) SaveDeliveryNote(ctx context.Context, businessYear string, deliveryNote model.DeliveryNoteInput) (*DeliveryNote, error) {
+	return r.DeliveryNotes.Save(ctx, businessYear, deliveryNote)
 }
 
 // SaveProduct is the resolver for the saveProduct field.
@@ -58,7 +68,7 @@ func (r *purchasePredictionResolver) ID(ctx context.Context, obj *PurchasePredic
 }
 
 // SearchPurchasePredictions is the resolver for the searchPurchasePredictions field.
-func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessYear string, customerCode *string, customerName *string, productCode *string, productName *string, page *int, pageSize *int) (*PurchasePredictionPage, error) {
+func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessYear string, snapshotID *string, customerCode *string, customerName *string, productCode *string, productName *string, page *int, pageSize *int) (*PurchasePredictionPage, error) {
 	resolvedPage, resolvedPageSize := 1, 20
 	if page != nil {
 		resolvedPage = *page
@@ -66,7 +76,12 @@ func (r *queryResolver) SearchPurchasePredictions(ctx context.Context, businessY
 	if pageSize != nil {
 		resolvedPageSize = *pageSize
 	}
-	return r.PurchasePredictions.Search(ctx, businessYear, customerCode, customerName, productCode, productName, resolvedPage, resolvedPageSize)
+	return r.PurchasePredictions.Search(ctx, businessYear, snapshotID, customerCode, customerName, productCode, productName, resolvedPage, resolvedPageSize)
+}
+
+// PurchasePredictionSnapshots is the resolver for the purchasePredictionSnapshots field.
+func (r *queryResolver) PurchasePredictionSnapshots(ctx context.Context) ([]*PurchasePredictionSnapshot, error) {
+	return r.PurchasePredictions.ListSnapshots(ctx)
 }
 
 // GoodsReceipt is the resolver for the goodsReceipt field.
@@ -179,9 +194,42 @@ func (r *queryResolver) Invoice(ctx context.Context, businessYear string, invoic
 	return r.Invoices.GetByNumber(ctx, businessYear, invoiceNumber)
 }
 
-// InvoiceTextTemplate is the resolver for the invoiceTextTemplate field.
-func (r *queryResolver) InvoiceTextTemplate(ctx context.Context, businessYear string) (*InvoiceTextTemplate, error) {
-	return r.Invoices.GetTextTemplate(ctx, businessYear)
+// CreditNote is the resolver for the creditNote field.
+func (r *queryResolver) CreditNote(ctx context.Context, businessYear string, creditNoteNumber string) (*CreditNote, error) {
+	return r.CreditNotes.GetByNumber(ctx, businessYear, creditNoteNumber)
+}
+
+// SearchCreditNotes is the resolver for the searchCreditNotes field.
+func (r *queryResolver) SearchCreditNotes(ctx context.Context, businessYear string, creditNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, originalInvoiceNumber *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*CreditNotePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.CreditNotes.Search(
+		ctx,
+		businessYear,
+		creditNoteNumber,
+		customerID,
+		customerName,
+		productCode,
+		productName,
+		originalInvoiceNumber,
+		issuedFrom,
+		issuedTo,
+		sortBy,
+		sortDirection,
+		resultPage,
+		resultPageSize,
+	)
+}
+
+// TextTemplate is the resolver for the textTemplate field.
+func (r *queryResolver) TextTemplate(ctx context.Context, businessYear string, documentType model.TextTemplateDocumentType) (*TextTemplate, error) {
+	return r.TextTemplates.Get(ctx, businessYear, string(documentType))
 }
 
 // PriceQuote is the resolver for the priceQuote field.
@@ -189,9 +237,9 @@ func (r *queryResolver) PriceQuote(ctx context.Context, businessYear string, quo
 	return r.PriceQuotes.GetByNumber(ctx, businessYear, quoteNumber)
 }
 
-// PriceQuoteTextTemplate is the resolver for the priceQuoteTextTemplate field.
-func (r *queryResolver) PriceQuoteTextTemplate(ctx context.Context, businessYear string) (*PriceQuoteTextTemplate, error) {
-	return r.PriceQuotes.GetTextTemplate(ctx, businessYear)
+// DeliveryNote is the resolver for the deliveryNote field.
+func (r *queryResolver) DeliveryNote(ctx context.Context, businessYear string, deliveryNoteNumber string) (*DeliveryNote, error) {
+	return r.DeliveryNotes.GetByNumber(ctx, businessYear, deliveryNoteNumber)
 }
 
 // Product is the resolver for the product field.
@@ -260,6 +308,33 @@ func (r *queryResolver) SearchPriceQuotes(ctx context.Context, businessYear stri
 	return r.PriceQuotes.Search(ctx, businessYear, quoteNumber, customerID, customerName,
 		productCode, productName, issuedFrom, issuedTo, sortBy, sortDirection,
 		resultPage, resultPageSize)
+}
+
+// SearchDeliveryNotes is the resolver for the searchDeliveryNotes field.
+func (r *queryResolver) SearchDeliveryNotes(ctx context.Context, businessYear string, deliveryNoteNumber *string, customerID *string, customerName *string, productCode *string, productName *string, issuedFrom *time.Time, issuedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*DeliveryNotePage, error) {
+	resultPage := 1
+	if page != nil {
+		resultPage = *page
+	}
+	resultPageSize := 20
+	if pageSize != nil {
+		resultPageSize = *pageSize
+	}
+	return r.DeliveryNotes.Search(
+		ctx,
+		businessYear,
+		deliveryNoteNumber,
+		customerID,
+		customerName,
+		productCode,
+		productName,
+		issuedFrom,
+		issuedTo,
+		sortBy,
+		sortDirection,
+		resultPage,
+		resultPageSize,
+	)
 }
 
 // SearchProducts is the resolver for the searchProducts field.

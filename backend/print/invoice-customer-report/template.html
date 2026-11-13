@@ -32,7 +32,7 @@
             <tr>
                 <td>{{.InvoiceNumber}}</td>
                 <td>{{$customer}}</td>
-                <td class="number">{{.Amount}}</td>
+                <td class="number amount">{{.Amount}}{{if .HasCredits}}<small>{{.InvoiceAmount}} račun · {{.CreditAmount}} dobropisi</small>{{end}}</td>
                 <td>{{.IssueDate}}</td>
                 <td>{{.DueDate}}</td>
                 <td>{{.PaymentDate}}</td>

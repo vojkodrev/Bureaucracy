@@ -19,6 +19,7 @@ export type BankStatementInvoicePayment = {
     invoiceNumber: string
     paymentDate: string | null
     amount: number | null
+    creditedAmount: number
     paidAmount: number | null
 }
 

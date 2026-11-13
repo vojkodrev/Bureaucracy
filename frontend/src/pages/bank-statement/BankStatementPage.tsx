@@ -57,7 +57,7 @@ function BankStatementPage() {
     useBankStatementKeyboardShortcuts(() => { void save.requestSave(); });
 
     return (
-        <div className="max-w-5xl p-4">
+        <div className="max-w-7xl p-4">
             <BankStatementErrors
                 loadError={loader.error}
                 navigationError={navigation.error}
@@ -65,28 +65,30 @@ function BankStatementPage() {
                 latestNumberError={save.latestNumberError}
                 saveError={save.saveError}
             />
-            <BankStatementMenu
-                canSave={save.canSave && !save.isSaving}
-                canRevert={revert.canRevert}
-                canNavigatePreviousDate={navigation.canNavigate}
-                canNavigateNextDate={navigation.canNavigate}
-                isSaving={save.isSaving}
-                onSave={() => { void save.requestSave(); }}
-                onRevert={revert.requestRevert}
-                onNavigatePreviousDate={navigation.navigatePreviousDate}
-                onNavigateNextDate={navigation.navigateNextDate}
-            />
-            <BankStatementGeneralInformation
-                statementNumber={draft.statementNumber}
-                statementDate={draft.statementDate}
-                bankAccount={draft.bankAccount}
-                selectDefaultAccount={routeStatementNumber === null}
-                onStatementNumberChange={(value) => setField("statementNumber", value)}
-                onStatementDateChange={(value) => setField("statementDate", value)}
-                onBankAccountChange={(value) => setField("bankAccount", value)}
-                onDefaultBankAccountChange={(value) =>
-                    draftState.setCleanField("bankAccount", value)}
-            />
+            <div className="max-w-5xl">
+                <BankStatementMenu
+                    canSave={save.canSave && !save.isSaving}
+                    canRevert={revert.canRevert}
+                    canNavigatePreviousDate={navigation.canNavigate}
+                    canNavigateNextDate={navigation.canNavigate}
+                    isSaving={save.isSaving}
+                    onSave={() => { void save.requestSave(); }}
+                    onRevert={revert.requestRevert}
+                    onNavigatePreviousDate={navigation.navigatePreviousDate}
+                    onNavigateNextDate={navigation.navigateNextDate}
+                />
+                <BankStatementGeneralInformation
+                    statementNumber={draft.statementNumber}
+                    statementDate={draft.statementDate}
+                    bankAccount={draft.bankAccount}
+                    selectDefaultAccount={routeStatementNumber === null}
+                    onStatementNumberChange={(value) => setField("statementNumber", value)}
+                    onStatementDateChange={(value) => setField("statementDate", value)}
+                    onBankAccountChange={(value) => setField("bankAccount", value)}
+                    onDefaultBankAccountChange={(value) =>
+                        draftState.setCleanField("bankAccount", value)}
+                />
+            </div>
             <StatementTransactions
                 entries={draft.entries}
                 statementDate={draft.statementDate}

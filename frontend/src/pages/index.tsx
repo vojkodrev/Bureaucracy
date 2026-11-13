@@ -23,6 +23,8 @@ export const GoodsReceiptPage = lazy(
     () => import("./goods-receipt/GoodsReceiptPage"),
 );
 export const InvoicePage = lazy(() => import("./invoice/InvoicePage"));
+export const CreditNoteSearchPage = lazy(() => import("./CreditNoteSearchPage"));
+export const CreditNotePage = lazy(() => import("./credit-note/CreditNotePage"));
 export const InventoryItemSearchPage = lazy(
     () => import("./InventoryItemSearchPage"),
 );
@@ -34,6 +36,12 @@ export const PriceQuoteSearchPage = lazy(
 );
 export const PriceQuotePage = lazy(
     () => import("./price-quote/PriceQuotePage"),
+);
+export const DeliveryNoteSearchPage = lazy(
+    () => import("./delivery-note-search/DeliveryNoteSearchPage"),
+);
+export const DeliveryNotePage = lazy(
+    () => import("./delivery-note/DeliveryNotePage"),
 );
 export const ProductSearchPage = lazy(() => import("./ProductSearchPage"));
 export const PurchasePredictionSearchPage = lazy(

@@ -1,4 +1,17 @@
-import { Copy, Download, FileCode2, Landmark, Mail, Printer, Save, Undo2 } from 'lucide-react'
+import {
+    BadgeCheck,
+    Copy,
+    Download,
+    FileCode2,
+    FileMinus2,
+    FileOutput,
+    Landmark,
+    Mail,
+    PackageCheck,
+    Printer,
+    Save,
+    Undo2,
+} from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
@@ -22,6 +35,8 @@ type InvoiceMenuProps = {
     isDuplicating: boolean
     isExportingXml: boolean
     isExportingHalcom: boolean
+    canTaxConfirm: boolean
+    isTaxConfirming: boolean
     onSave: () => void
     onPrint: () => void
     onEmail: () => void
@@ -29,14 +44,24 @@ type InvoiceMenuProps = {
     onExportHalcom: () => void
     onRevert: () => void
     onDuplicate: () => void
+    onConvertToCreditNote: () => void
+    onConvertToDeliveryNote: () => void
+    onTaxConfirm: () => void
 }
 
-function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate, isSaving, isDuplicating, isExportingXml, isExportingHalcom, onSave, onPrint, onEmail, onExportXml, onExportHalcom, onRevert, onDuplicate }: InvoiceMenuProps) {
+function InvoiceMenu(props: InvoiceMenuProps) {
+    const {
+        canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate,
+        isSaving, isDuplicating, isExportingXml, isExportingHalcom,
+        canTaxConfirm, isTaxConfirming, onSave, onPrint, onEmail,
+        onExportXml, onExportHalcom, onRevert, onDuplicate,
+        onConvertToCreditNote, onConvertToDeliveryNote, onTaxConfirm,
+    } = props
     return (
         <Menubar className="w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-44">
                     <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
                         <MenubarShortcut>Ctrl+S</MenubarShortcut>
@@ -61,11 +86,27 @@ function InvoiceMenu({ canSave, canPrint, canEmail, canExportXml, canRevert, can
                             </MenubarItem>
                         </MenubarSubContent>
                     </MenubarSub>
+                    <MenubarSub>
+                        <MenubarSubTrigger>
+                            <FileOutput />Convert
+                        </MenubarSubTrigger>
+                        <MenubarSubContent className="min-w-56 whitespace-nowrap">
+                            <MenubarItem onClick={onConvertToDeliveryNote}>
+                                <PackageCheck />Convert to delivery note
+                            </MenubarItem>
+                            <MenubarItem onClick={onConvertToCreditNote}>
+                                <FileMinus2 />Convert to credit note
+                            </MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
+                    <MenubarItem disabled={!canTaxConfirm || isTaxConfirming} onClick={onTaxConfirm}>
+                        <BadgeCheck />{isTaxConfirming ? 'Tax confirming…' : 'Tax confirmation'}
+                    </MenubarItem>
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>
                 <MenubarTrigger>Edit</MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="min-w-44">
                     <MenubarItem disabled={!canRevert} onClick={onRevert}>
                         <Undo2 />Revert
                     </MenubarItem>

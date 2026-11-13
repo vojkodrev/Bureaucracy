@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { getSelectedBusinessYear } from '@/lib/business-year'
-import { dateForApi } from '@/lib/dates'
+import { dateForApi, dateTimeForApi } from '@/lib/dates'
 import { emptyToNull } from '@/lib/form-input'
-import { nextPaddedNumber, numberOrNull } from '@/lib/numbers'
+import { nextPaddedNumber, numberOrNull, roundCurrency } from '@/lib/numbers'
 import { postalCodeAndCity } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import type { InvoiceNumberWarning } from '../InvoiceNumberAlert'
@@ -39,7 +39,7 @@ export function useInvoiceSave({
                 businessYear: getSelectedBusinessYear(),
                 invoice: {
                     id: invoiceId, invoiceNumber: draft.invoiceNumber.trim(),
-                    issueDate: dateForApi(draft.invoiceDate), serviceDate: dateForApi(draft.serviceDate),
+                    issueDate: dateTimeForApi(draft.invoiceDate), serviceDate: dateForApi(draft.serviceDate),
                     dueDate: dateForApi(draft.dueDate), paymentDate: dateForApi(draft.paymentDate),
                     customerCode: emptyToNull(draft.customerId), customerName: emptyToNull(draft.customerName),
                     customerAddress: emptyToNull(draft.customerAddress),
@@ -60,8 +60,9 @@ export function useInvoiceSave({
                         // original amount is essential for reconstructing the unit price when
                         // the discount is 100%.
                         netAmount: item.unitPrice == null || item.quantity == null
-                            ? null : item.unitPrice * item.quantity,
-                        grossAmount: item.grossAmount,
+                            ? null : roundCurrency(item.unitPrice * item.quantity),
+                        grossAmount: item.grossAmount == null
+                            ? null : roundCurrency(item.grossAmount),
                     })),
                 },
             })

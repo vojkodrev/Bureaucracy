@@ -44,6 +44,7 @@ func (handler *PurchasePredictionReportHandler) Handle(context *gin.Context) {
 	}
 	result, err := handler.predictions.Search(
 		context.Request.Context(), businessYear,
+		optionalQuery(context.Query("snapshotId")),
 		optionalQuery(context.Query("customerCode")), optionalQuery(context.Query("customerName")),
 		optionalQuery(context.Query("productCode")), optionalQuery(context.Query("productName")),
 		page, pageSize,

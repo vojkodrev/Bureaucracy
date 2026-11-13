@@ -13,8 +13,15 @@ export type PurchasePrediction = {
 
 export type PurchasePredictionPage = {
     predictions: PurchasePrediction[]
+    snapshotId: string
+    snapshotName: string
     totalCount: number
     page: number
     pageSize: number
     totalPages: number
+}
+
+export type PurchasePredictionSnapshot = {
+    id: string
+    name: string
 }

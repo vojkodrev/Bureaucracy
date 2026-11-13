@@ -26,13 +26,17 @@ func NewHTTPServer(
 	authMiddleware *AuthMiddleware,
 	resolver *Resolver,
 	invoicePrintHandler *InvoicePrintHandler,
+	creditNotePrintHandler *CreditNotePrintHandler,
 	invoiceXMLHandler *InvoiceXMLHandler,
 	invoiceHalcomHandler *InvoiceHalcomHandler,
+	invoiceTaxConfirmationHandler *InvoiceTaxConfirmationHandler,
 	priceQuotePrintHandler *PriceQuotePrintHandler,
+	deliveryNotePrintHandler *DeliveryNotePrintHandler,
 	invoiceReportHandler *InvoiceReportHandler,
 	invoiceReminderHandler *InvoiceReminderHandler,
 	invoiceReminderEmailHandler *InvoiceReminderEmailHandler,
 	invoiceEmailHandler *InvoiceEmailHandler,
+	creditNoteEmailHandler *CreditNoteEmailHandler,
 	priceQuoteEmailHandler *PriceQuoteEmailHandler,
 	accountingExportHandler *AccountingExportHandler,
 	bankStatementImportHandler *BankStatementImportHandler,
@@ -53,9 +57,10 @@ func NewHTTPServer(
 		gin.Logger(),
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
-			AllowOrigins: config.AllowedOrigins,
-			AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
-			AllowHeaders: []string{"Content-Type", "Authorization"},
+			AllowOrigins:  config.AllowedOrigins,
+			AllowMethods:  []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+			AllowHeaders:  []string{"Content-Type", "Authorization"},
+			CustomSchemas: []string{"chrome-extension://"},
 		}),
 	)
 	router.GET("/health", func(context *gin.Context) {
@@ -77,9 +82,13 @@ func NewHTTPServer(
 	admin.Use(RequireAnyRole(adminRole))
 	admin.GET("/", gin.WrapH(playgroundHandler))
 	admin.GET("/api/invoices/:invoiceNumber/pdf", invoicePrintHandler.Handle)
+	admin.GET("/api/credit-notes/:creditNoteNumber/pdf", creditNotePrintHandler.Handle)
+	admin.POST("/api/credit-notes/:creditNoteNumber/email", creditNoteEmailHandler.Send)
 	admin.GET("/api/invoices/:invoiceNumber/xml", invoiceXMLHandler.Handle)
 	admin.GET("/api/invoices/:invoiceNumber/halcom", invoiceHalcomHandler.Handle)
+	admin.POST("/api/invoices/:invoiceNumber/tax-confirmation", invoiceTaxConfirmationHandler.Handle)
 	admin.GET("/api/price-quotes/:quoteNumber/pdf", priceQuotePrintHandler.Handle)
+	admin.GET("/api/delivery-notes/:deliveryNoteNumber/pdf", deliveryNotePrintHandler.Handle)
 	admin.GET("/api/invoices/report/pdf", invoiceReportHandler.Handle)
 	admin.GET("/api/invoices/reminders/pdf", invoiceReminderHandler.Handle)
 	admin.POST("/api/invoices/reminders/email", invoiceReminderEmailHandler.Send)

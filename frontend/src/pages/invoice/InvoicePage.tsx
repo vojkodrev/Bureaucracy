@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import WarningAlert from '@/components/WarningAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -17,6 +18,9 @@ import InvoiceSummary from './InvoiceSummary'
 import PaidInvoiceEmailAlert from './PaidInvoiceEmailAlert'
 import Products from './Products'
 import UnsavedInvoiceAlerts from './UnsavedInvoiceAlerts'
+import TaxConfirmationAlert from './TaxConfirmationAlert'
+import { useInvoiceCreditNoteConversion } from './hooks/useInvoiceCreditNoteConversion'
+import { useInvoiceDeliveryNoteConversion } from './hooks/useInvoiceDeliveryNoteConversion'
 import { useInvoiceDraft } from './hooks/useInvoiceDraft'
 import { useInvoiceDuplicate } from './hooks/useInvoiceDuplicate'
 import { useInvoiceDueDate } from './hooks/useInvoiceDueDate'
@@ -29,6 +33,7 @@ import { useInvoicePrint } from './hooks/useInvoicePrint'
 import { useInvoiceRevert } from './hooks/useInvoiceRevert'
 import { useInvoiceSave } from './hooks/useInvoiceSave'
 import { useInvoiceXmlExport } from './hooks/useInvoiceXmlExport'
+import { useInvoiceTaxConfirmation } from './hooks/useInvoiceTaxConfirmation'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
 function InvoicePage() {
@@ -46,6 +51,12 @@ function InvoicePage() {
         customerId: draft.customerId,
         invoiceDate: draft.invoiceDate,
         setDueDate: (value) => setField('dueDate', value),
+    })
+    const deliveryNoteConversion = useInvoiceDeliveryNoteConversion({
+        draft, navigate, allowNavigation: guard.allowNavigation,
+    })
+    const creditNoteConversion = useInvoiceCreditNoteConversion({
+        draft, navigate, allowNavigation: guard.allowNavigation,
     })
 
     const save = useInvoiceSave({
@@ -89,6 +100,12 @@ function InvoicePage() {
         clearSaveError: () => save.setSaveError(null),
         clearPrintError: () => print.setPrintError(null), reload: loader.reload,
     })
+    const taxConfirmation = useInvoiceTaxConfirmation({
+        invoiceNumber: draft.invoiceNumber,
+        canConfirm: print.canPrint,
+        canSave: save.canSave,
+        onConfirmed: loader.setTaxConfirmation,
+    })
     useInvoiceKeyboardShortcuts(() => { void save.requestSave() }, print.printInvoice)
     const errors = [
         ['invoice', 'Invoice could not be loaded', 'The invoice data could not be retrieved.', loader.error],
@@ -104,17 +121,37 @@ function InvoicePage() {
         ['duplicate-number', 'Duplicate invoice number could not be loaded', 'A number could not be assigned to the duplicate.', loader.requestErrors.duplicateInvoiceNumber],
         ['payment-term', 'Customer payment term could not be loaded', 'The duplicate invoice due date could not be calculated.', loader.requestErrors.customerPaymentTerm],
         ['due-date', 'Due date could not be recalculated', 'The customer payment term could not be loaded.', dueDate.error],
+        ['tax-confirmation', 'Invoice could not be tax confirmed', 'The invoice was not confirmed by FURS.', taxConfirmation.error],
+        ['convert', 'Invoice could not be converted', 'The delivery note draft could not be prepared.', deliveryNoteConversion.error],
+        [
+            'convert-credit-note',
+            'Invoice could not be converted',
+            'The credit note draft could not be prepared.',
+            creditNoteConversion.error,
+        ],
     ] as const
+    const warnings = [
+        ['invoice-total', 'Invoice total is inconsistent', 'The stored invoice total does not equal the sum of its lines.', 'Review and save the invoice to correct its total.'],
+        ['invoice-line-total', 'Invoice line total is inconsistent', 'At least one line gross amount does not equal its net amount plus VAT.', 'Review and save the invoice lines to correct their totals.'],
+    ] as const
+    const warningKeys = [
+        ...loader.warnings,
+    ]
+    const hasWarnings = warnings.some(([key]) => warningKeys.includes(key))
 
     return <div className="max-w-6xl p-4">
-        {errors.some(([, , , error]) => error) && <div className="mb-6 space-y-2">
+        {(errors.some(([, , , error]) => error) || hasWarnings) &&
+        <div className="mb-6 space-y-2">
             {errors.map(([key, title, description, error]) => error &&
                 <ErrorAlert key={key} title={title} description={description} error={error} />)}
+            {warnings.map(([key, title, description, warning]) => warningKeys.includes(key) &&
+                <WarningAlert key={key} title={title} description={description} warning={warning} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
             <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 isExportingHalcom={halcomExport.isExporting}
+                canTaxConfirm={print.canRequestPrint} isTaxConfirming={taxConfirmation.isConfirming}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
@@ -122,6 +159,9 @@ function InvoicePage() {
                 onEmail={email.requestEmail} onRevert={revert.requestRevert}
                 onExportXml={() => { void xmlExport.exportXml() }}
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}
+                onTaxConfirm={taxConfirmation.request}
+                onConvertToDeliveryNote={deliveryNoteConversion.convertToDeliveryNote}
+                onConvertToCreditNote={creditNoteConversion.convertToCreditNote}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
@@ -145,6 +185,10 @@ function InvoicePage() {
         <PaidInvoiceEmailAlert open={email.confirmingPaidInvoiceEmail}
             onOpenChange={email.setConfirmingPaidInvoiceEmail}
             onConfirm={email.confirmPaidInvoiceEmail} />
+        <TaxConfirmationAlert open={taxConfirmation.dialogOpen} pending={taxConfirmation.isConfirming}
+            alreadyConfirmed={loader.taxConfirmation != null}
+            onOpenChange={taxConfirmation.setDialogOpen}
+            onConfirm={() => { void taxConfirmation.confirm() }} />
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />
@@ -154,6 +198,7 @@ function InvoicePage() {
             isConfirmingEmail={email.confirmingUnsavedEmail}
             isConfirmingXmlExport={xmlExport.confirmingExport}
             isConfirmingHalcomExport={halcomExport.confirmingExport}
+            isConfirmingTaxConfirmation={taxConfirmation.confirmingUnsavedTaxConfirmation}
             onCancelNavigation={() => { if (guard.blocker.state === 'blocked') guard.blocker.reset() }}
             onDiscardAndNavigate={guard.discardAndNavigate}
             onConfirmingRevertChange={revert.setConfirmingRevert} onDiscardAndRevert={revert.performRevert}
@@ -172,6 +217,10 @@ function InvoicePage() {
             onConfirmingHalcomExportChange={halcomExport.setConfirmingExport}
             onSaveBeforeHalcomExport={() => {
                 halcomExport.setConfirmingExport(false); void save.requestSave()
+            }}
+            onConfirmingTaxConfirmationChange={taxConfirmation.setConfirmingUnsavedTaxConfirmation}
+            onSaveBeforeTaxConfirmation={() => {
+                taxConfirmation.setConfirmingUnsavedTaxConfirmation(false); void save.requestSave()
             }} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
             <CustomerInputFields customerId={draft.customerId} customerName={draft.customerName}
@@ -210,8 +259,12 @@ function InvoicePage() {
             <Field><FieldLabel htmlFor="closing-text">Closing text</FieldLabel>
                 <Textarea id="closing-text" name="closingText" value={draft.closingText}
                     onChange={(e) => setField('closingText', e.target.value)} /></Field>
-            <InvoiceSummary total={draftState.totalIncludingVat} paidAmount={draft.paidAmount}
-                paymentDate={draft.paymentDate} />
+            <InvoiceSummary total={draftState.totalIncludingVat}
+                storedTotal={warningKeys.includes('invoice-total') ? loader.storedTotal : null}
+                creditedAmount={loader.invoiceId == null || loader.isLoading ? 0 : loader.creditedAmount}
+                paidAmount={draft.paidAmount}
+                paymentDate={draft.paymentDate}
+                zoi={loader.taxConfirmation?.zoi} eor={loader.taxConfirmation?.eor} />
         </div>
     </div>
 }

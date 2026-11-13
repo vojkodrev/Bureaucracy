@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Mini Cash Register Assistant</title>
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <main>
+            <h1>Import VKR</h1>
+            <button id="login" type="button">Sign in to Bureaucracy</button>
+            <button id="logout" class="secondary" type="button" hidden>
+                Sign out
+            </button>
+            <label for="business-year">Business year</label>
+            <select id="business-year" disabled>
+                <option value="">Sign in first</option>
+            </select>
+            <label for="invoice">Invoice</label>
+            <input
+                id="invoice-filter"
+                type="search"
+                placeholder="Filter invoices"
+                autocomplete="off"
+                disabled
+            />
+            <select id="invoice" disabled>
+                <option value="">Select a business year</option>
+            </select>
+            <label for="vkr-serial-number">VKR serial number</label>
+            <input
+                id="vkr-serial-number"
+                type="text"
+                placeholder="1234-1234567"
+                autocomplete="off"
+            />
+            <label for="business-premises">Business premises</label>
+            <input
+                id="business-premises"
+                type="text"
+                placeholder="drevi"
+                autocomplete="off"
+            />
+            <button id="fill" type="button" disabled>Fill VKR form</button>
+            <p id="status" role="status" aria-live="polite"></p>
+            <details id="debug-container" hidden>
+                <summary>Debug details</summary>
+                <textarea id="debug" readonly></textarea>
+            </details>
+        </main>
+        <script src="popup.js"></script>
+    </body>
+</html>

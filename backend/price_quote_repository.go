@@ -17,33 +17,6 @@ func NewPriceQuoteRepository(database *sql.DB) *PriceQuoteRepository {
 	return &PriceQuoteRepository{database: database}
 }
 
-func (repository *PriceQuoteRepository) GetTextTemplate(
-	ctx context.Context,
-	businessYear string,
-) (*PriceQuoteTextTemplate, error) {
-	if !businessYearPattern.MatchString(businessYear) {
-		return nil, fmt.Errorf("businessYear must contain only digits")
-	}
-	databaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	template := &PriceQuoteTextTemplate{}
-	err := repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT
-			(SELECT TOP 1 CAST(TextKlavzule AS nvarchar(max)) FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(UvodPredracun, 0) <> 0 ORDER BY RecNo),
-			(SELECT TOP 1 CASE WHEN ISNULL(Sklic, 0) <> 0
-				THEN N'Pri plačilu se sklicujte na številko #ŠTEVILKA# !' + NCHAR(13) + NCHAR(10)
-					+ COALESCE(CAST(TextKlavzule AS nvarchar(max)), N'')
-				ELSE CAST(TextKlavzule AS nvarchar(max)) END
-			 FROM [%s].[dbo].[Klavzule]
-			 WHERE ISNULL(KonecPredracun, 0) <> 0 ORDER BY RecNo)`, databaseName, databaseName)).Scan(
-		&template.IntroductoryText, &template.ClosingText,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("get price quote text template: %w", err)
-	}
-	return template, nil
-}
-
 func (repository *PriceQuoteRepository) GetByNumber(
 	ctx context.Context,
 	businessYear string,
@@ -149,6 +122,14 @@ func (repository *PriceQuoteRepository) Save(
 		if strings.TrimSpace(item.TaxCode) == "" {
 			return nil, fmt.Errorf("taxCode is required for price quote item %d", index+1)
 		}
+		if item.NetAmount != nil {
+			value := lib.RoundCurrency(*item.NetAmount)
+			item.NetAmount = &value
+		}
+		if item.GrossAmount != nil {
+			value := lib.RoundCurrency(*item.GrossAmount)
+			item.GrossAmount = &value
+		}
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	tx, err := repository.database.BeginTx(ctx, nil)
@@ -252,7 +233,7 @@ func priceQuoteArguments(input model.PriceQuoteInput, id int) []any {
 	amount := 0.0
 	for _, item := range input.Items {
 		if item.GrossAmount != nil {
-			amount += *item.GrossAmount
+			amount += lib.RoundCurrency(*item.GrossAmount)
 		}
 	}
 	return []any{sql.Named("id", id), sql.Named("quoteNumber", input.QuoteNumber),
@@ -260,7 +241,7 @@ func priceQuoteArguments(input model.PriceQuoteInput, id int) []any {
 		sql.Named("customerCode", input.CustomerCode), sql.Named("customerName", input.CustomerName),
 		sql.Named("customerAddress", input.CustomerAddress), sql.Named("customerCity", input.CustomerCity),
 		sql.Named("introductoryText", input.IntroductoryText), sql.Named("closingText", input.ClosingText),
-		sql.Named("amount", amount)}
+		sql.Named("amount", lib.RoundCurrency(amount))}
 }
 
 func priceQuoteItemArguments(

@@ -27,6 +27,9 @@ type invoiceReportRow struct {
 	InvoiceNumber string
 	Customer      string
 	Amount        string
+	InvoiceAmount string
+	CreditAmount  string
+	HasCredits    bool
 	IssueDate     string
 	DueDate       string
 	PaymentDate   string
@@ -74,6 +77,7 @@ func (generator *InvoiceReportGenerator) Generate(
 			continue
 		}
 		amount := float64OrZero(invoice.Amount)
+		amountAfterCredits := invoiceAmountAfterCredits(invoice)
 		customer := trimmedString(invoice.CustomerName)
 		if customer == "" {
 			customer = trimmedString(invoice.CustomerCode)
@@ -81,7 +85,10 @@ func (generator *InvoiceReportGenerator) Generate(
 		rows = append(rows, invoiceReportRow{
 			InvoiceNumber: invoice.InvoiceNumber,
 			Customer:      customer,
-			Amount:        formatMoneyAmount(amount),
+			Amount:        formatMoneyAmount(amountAfterCredits),
+			InvoiceAmount: formatMoneyAmount(amount),
+			CreditAmount:  formatMoneyAmount(invoice.CreditedAmount),
+			HasCredits:    invoice.CreditedAmount != 0,
 			IssueDate:     formatDocumentDate(invoice.IssueDate),
 			DueDate:       formatDocumentDate(invoice.DueDate),
 			PaymentDate:   formatDocumentDate(invoice.PaymentDate),
@@ -117,7 +124,7 @@ func calculateInvoiceReportTotals(invoices []*Invoice, now time.Time) invoiceRep
 		if invoice == nil {
 			continue
 		}
-		amount := float64OrZero(invoice.Amount)
+		amount := invoiceAmountAfterCredits(invoice)
 		totals.Total += amount
 		if invoice.PaymentDate != nil {
 			totals.Paid += amount

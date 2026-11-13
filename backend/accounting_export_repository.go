@@ -19,6 +19,8 @@ type AccountingExportRow struct {
 	ItemGross       sql.NullFloat64
 	ItemTax         sql.NullFloat64
 	ItemNet         sql.NullFloat64
+	ItemTaxRate     sql.NullFloat64
+	ItemSequence    sql.NullInt64
 	ItemDescription sql.NullString
 	CustomerTaxID   sql.NullString
 	CustomerName    sql.NullString
@@ -36,13 +38,15 @@ func NewAccountingExportRepository(database *sql.DB) *AccountingExportRepository
 func (repository *AccountingExportRepository) List(
 	ctx context.Context,
 	businessYear string,
-	month time.Month,
 	year int,
+	month *time.Month,
+	numberFrom string,
+	numberTo string,
 ) ([]AccountingExportRow, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
-	if month < time.January || month > time.December {
+	if month != nil && (*month < time.January || *month > time.December) {
 		return nil, fmt.Errorf("month must be between 1 and 12")
 	}
 	if year < 1 || year > 9999 {
@@ -51,8 +55,12 @@ func (repository *AccountingExportRepository) List(
 
 	invoiceDatabaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	masterDataDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
-	from := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
-	to := from.AddDate(0, 1, 0)
+	var from, to any
+	if month != nil {
+		monthStart := time.Date(year, *month, 1, 0, 0, 0, 0, time.Local)
+		from = monthStart
+		to = monthStart.AddDate(0, 1, 0)
+	}
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			rac.DatumIzstavitve,
@@ -65,6 +73,8 @@ func (repository *AccountingExportRepository) List(
 			racspec.Znesek,
 			racspec.Znesek - amounts.ItemNet,
 			amounts.ItemNet,
+			CAST(COALESCE(pd.Procent, art.Davek) AS float),
+			racspec.Zaporedje,
 			art.Opis,
 			par.IDStevilka,
 			rac.ImePartnerja,
@@ -73,15 +83,20 @@ func (repository *AccountingExportRepository) List(
 		LEFT JOIN [%s].[dbo].[RacuniSpecifikacija] racspec
 			ON racspec.Stevilka = rac.Stevilka AND ISNULL(racspec.Deleted, 0) = 0
 		OUTER APPLY (
-			SELECT racspec.ZnesekBrezDavka *
-				(1 - COALESCE(CAST(racspec.Rabat AS float), 0) / 100) AS ItemNet
+			SELECT ROUND(racspec.ZnesekBrezDavka *
+				(1 - COALESCE(CAST(racspec.Rabat AS float), 0) / 100), 2) AS ItemNet
 		) amounts
 		LEFT JOIN [%s].[dbo].[Partner] par ON rac.SifraPartnerja = par.Sifra
 		LEFT JOIN [%s].[dbo].[Artikel] art ON art.Artikel = racspec.Artikel
-		WHERE rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to
-		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
+		LEFT JOIN [%s].[dbo].[PrometniDavek] pd ON pd.Sifra = racspec.SifraDavka
+		WHERE (@from IS NULL OR (rac.DatumIzstavitve >= @from AND rac.DatumIzstavitve < @to))
+			AND (@numberFrom = '' OR rac.Stevilka >= @numberFrom)
+			AND (@numberTo = '' OR rac.Stevilka <= @numberTo)
+		ORDER BY rac.Stevilka, racspec.Zaporedje, racspec.RecNo`, invoiceDatabaseName, invoiceDatabaseName, masterDataDatabaseName, masterDataDatabaseName, masterDataDatabaseName),
 		sql.Named("from", from),
 		sql.Named("to", to),
+		sql.Named("numberFrom", numberFrom),
+		sql.Named("numberTo", numberTo),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("query accounting export: %w", err)
@@ -94,7 +109,7 @@ func (repository *AccountingExportRepository) List(
 		if err := rows.Scan(
 			&row.IssueDate, &row.ServiceDate, &row.DueDate, &row.InvoiceNumber,
 			&row.InvoiceGross, &row.InvoiceTax, &row.InvoiceNet,
-			&row.ItemGross, &row.ItemTax, &row.ItemNet, &row.ItemDescription,
+			&row.ItemGross, &row.ItemTax, &row.ItemNet, &row.ItemTaxRate, &row.ItemSequence, &row.ItemDescription,
 			&row.CustomerTaxID, &row.CustomerName, &row.ProductCode,
 		); err != nil {
 			return nil, fmt.Errorf("scan accounting export: %w", err)

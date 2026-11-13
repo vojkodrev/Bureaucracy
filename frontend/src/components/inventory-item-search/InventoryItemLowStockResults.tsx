@@ -26,7 +26,7 @@ export default function InventoryItemLowStockResults({
     search, itemPage, items, isLoading, mode, showSearchFields,
     onPageChange, onPageSizeChange, onSort, onInventoryItemSelect,
 }: Props) {
-    const isPageMode = mode === ComponentMode.Page;
+    const hasLinkedRows = mode !== ComponentMode.Dialog;
     const firstItem = itemPage && itemPage.totalCount > 0
         ? (itemPage.page - 1) * itemPage.pageSize + 1 : 0;
     const lastItem = itemPage
@@ -53,7 +53,7 @@ export default function InventoryItemLowStockResults({
                 {isLoading && !items.length && <EmptyRow>Loading low-stock items…</EmptyRow>}
                 {!isLoading && !items.length && <EmptyRow>No low-stock items found.</EmptyRow>}
                 {items.map((item) => {
-                    const to = isPageMode && item.productCode
+                    const to = hasLinkedRows && item.productCode
                         ? `/inventory-item/${encodeURIComponent(item.productCode)}` : undefined;
                     const label = `Open inventory item ${item.productCode}`;
                     const currentStock = item.currentStock ?? 0;
@@ -62,9 +62,9 @@ export default function InventoryItemLowStockResults({
                         : currentStock === minimumStock ? "At minimum" : "Near minimum";
                     return (
                         <TableRow key={item.id} className="cursor-pointer"
-                            tabIndex={isPageMode ? undefined : 0}
-                            onClick={isPageMode ? undefined : () => onInventoryItemSelect?.(item)}
-                            onKeyDown={isPageMode ? undefined : (event) => {
+                            tabIndex={hasLinkedRows ? undefined : 0}
+                            onClick={hasLinkedRows ? undefined : () => onInventoryItemSelect?.(item)}
+                            onKeyDown={hasLinkedRows ? undefined : (event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                     event.preventDefault();
                                     onInventoryItemSelect?.(item);

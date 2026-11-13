@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+
+	"bureaucracy/backend/lib"
 )
 
 //go:embed print/price-quote/template.html
@@ -38,12 +40,19 @@ func (generator *PriceQuotePrintGenerator) Generate(
 	if quote == nil {
 		return nil, fmt.Errorf("price quote is required")
 	}
+	if err := validatePriceQuoteGrossTotal(quote); err != nil {
+		return nil, err
+	}
 	displayNumber := fmt.Sprintf("%s-%d", quote.QuoteNumber, businessYear)
-	items, taxes := buildPrintItems(quote.Items)
+	items, taxes, calculatedTotals := buildPrintItems(quote.Items)
 	netTotal := sumInvoiceNet(quote.Items)
 	grossTotal := float64OrZero(quote.Amount)
 	if quote.Amount == nil {
 		grossTotal = sumInvoiceGross(quote.Items)
+	}
+	taxTotal := grossTotal - netTotal
+	if err := validateCalculatedPriceQuoteTotals(quote, netTotal, taxTotal, grossTotal, calculatedTotals); err != nil {
+		return nil, err
 	}
 	paymentQRCode, err := generatePriceQuoteUPNQRCode(quote, displayNumber, grossTotal)
 	if err != nil {
@@ -60,8 +69,9 @@ func (generator *PriceQuotePrintGenerator) Generate(
 			Location: customerLocation(quote.CustomerPostalCode, quote.CustomerCity), TaxID: trimmedString(quote.CustomerTaxID),
 		},
 		IntroText: trimmedString(quote.IntroductoryText), Items: items,
-		NetTotal: formatMoneyAmount(netTotal), TaxTotal: formatMoneyAmount(grossTotal - netTotal),
-		GrossTotal: formatMoneyAmount(grossTotal), AmountInWords: amountInWords(grossTotal),
+		NetTotal: formatMoneyAmount(netTotal), TaxTotal: formatMoneyAmount(taxTotal),
+		GrossTotal:    formatMoneyAmount(grossTotal),
+		AmountInWords: lib.SlovenianAmountInWords(grossTotal),
 		TaxSummaries:  taxes,
 		ClosingText:   strings.ReplaceAll(trimmedString(quote.ClosingText), "#ŠTEVILKA#", displayNumber),
 		PaymentQRCode: paymentQRCode,

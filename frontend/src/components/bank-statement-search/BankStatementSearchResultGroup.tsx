@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from '@/lib/formatters'
 import {
     hasPaidAmountMismatch,
     hasPaymentDateMismatch,
+    isPartialCustomerInvoicePayment,
     normalizeInvoiceNumber,
 } from './invoice-payment-mismatches'
 
@@ -39,6 +40,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                 </SearchResultCell>
             </TableRow>
             {entries.map((entry) => {
+                const suppressInvoiceWarnings = isPartialCustomerInvoicePayment(entry)
                 const invoicePayment = entry.documentNumber
                     ? invoicePayments[normalizeInvoiceNumber(entry.documentNumber)]
                     : undefined
@@ -48,6 +50,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                 const paidAmountMismatch = invoicePayment
                     ? hasPaidAmountMismatch(
                         invoicePayment.amount,
+                        invoicePayment.creditedAmount,
                         invoicePayment.paidAmount,
                         entry.inflow,
                     )
@@ -71,6 +74,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                             {entry.documentNumber ? (
                                 <Button
                                     variant="link"
+                                    className="h-auto p-0"
                                     render={
                                         <Link
                                             to={`/invoice/${encodeURIComponent(entry.documentNumber)}`}
@@ -80,7 +84,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                                     {entry.documentNumber}
                                 </Button>
                             ) : '—'}
-                            {entry.documentNumber
+                            {!suppressInvoiceWarnings && entry.documentNumber
                                 && (duplicate || (invoicePayment && (paymentDateMismatch || paidAmountMismatch))) && (
                                 <InvoicePaymentWarnings
                                     paidAmount={invoicePayment?.paidAmount ?? null}
@@ -91,7 +95,7 @@ function BankStatementSearchResultGroup({ entries, invoicePayments, duplicateDoc
                                     )}
                                     amountMismatch={paidAmountMismatch}
                                     amountTooltip={(
-                                        <>Invoice amount {invoicePayment?.amount == null ? '—' : formatCurrency(invoicePayment.amount)}, paid amount {invoicePayment?.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
+                                        <>Invoice amount after credits {invoicePayment?.amount == null ? '—' : formatCurrency(Math.max(0, invoicePayment.amount + invoicePayment.creditedAmount))}, paid amount {invoicePayment?.paidAmount == null ? '—' : formatCurrency(invoicePayment.paidAmount)}, and transaction inflow {entry.inflow == null ? '—' : formatCurrency(entry.inflow)} do not match. Click to open invoice {entry.documentNumber}.</>
                                     )}
                                     duplicate={duplicate}
                                     duplicateTooltip={(
