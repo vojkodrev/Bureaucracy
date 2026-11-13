@@ -115,6 +115,14 @@
                 </table>
             </section>
 
+            {{if .Document.FiscalQRCode}}
+            <section class="fiscal-confirmation">
+                <div class="fiscal-data"><strong>ZOI:</strong> {{.Document.ZOI}}</div>
+                <img class="fiscal-qr" src="{{.FiscalQR}}" alt="QR koda za preverjanje davÄŤno potrjenega raÄŤuna">
+                <div class="fiscal-data"><strong>EOR:</strong> {{.Document.EOR}}</div>
+            </section>
+            {{end}}
+
             {{if .Document.PaymentQRCode}}
             <img class="payment-qr" src="{{.PaymentQR}}" alt="UPN QR koda za plačilo računa">
             {{end}}

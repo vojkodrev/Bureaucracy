@@ -204,6 +204,27 @@ main {
     text-align: right;
 }
 
+.fiscal-confirmation {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 5mm;
+    font-size: 2.4mm;
+    line-height: 1.35;
+}
+
+.fiscal-data {
+    max-width: 110mm;
+    overflow-wrap: anywhere;
+}
+
+.fiscal-qr {
+    display: block;
+    width: 18mm;
+    height: 18mm;
+    margin-top: 1mm;
+}
+
 .closing-text {
     margin-top: 7mm;
     white-space: pre-line;

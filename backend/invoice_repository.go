@@ -516,7 +516,8 @@ func (repository *InvoiceRepository) GetByNumber(
 			r.Klavzula,
 			r.Storno,
 			details.zoi,
-			details.eor
+			details.eor,
+			details.furs_issue_date_time
 		FROM [%s].[dbo].[Racuni] r
 		LEFT JOIN [%s].[dbo].[Partner] p ON p.Sifra = r.SifraPartnerja
 		LEFT JOIN [%s].[dbo].[Drzave] d ON d.OznakaDrzave = p.Drzava AND ISNULL(d.Deleted, 0) = 0
@@ -560,6 +561,7 @@ func (repository *InvoiceRepository) GetByNumber(
 		&cancelled,
 		&invoice.ZOI,
 		&invoice.EOR,
+		&invoice.FURSIssueDateTime,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

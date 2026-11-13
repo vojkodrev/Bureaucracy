@@ -33,6 +33,9 @@ type invoicePrintDocument struct {
 	TaxSummaries        []invoicePrintTax    `xml:"taxes>tax"`
 	ClosingText         string               `xml:"closingText"`
 	PaymentQRCode       string               `xml:"paymentQRCode"`
+	FiscalQRCode        string               `xml:"fiscalQRCode"`
+	ZOI                 string               `xml:"zoi"`
+	EOR                 string               `xml:"eor"`
 	DocumentLabel       string               `xml:"documentLabel"`
 	ShowDueDate         bool                 `xml:"showDueDate"`
 	ShowOriginalInvoice bool                 `xml:"showOriginalInvoice"`
@@ -81,8 +84,9 @@ var logo []byte
 var signature []byte
 
 type InvoicePrintGenerator struct {
-	template    *template.Template
-	pdfRenderer *HTMLPDFRenderer
+	template      *template.Template
+	pdfRenderer   *HTMLPDFRenderer
+	fursTaxNumber string
 }
 
 type InvoicePrintDocumentType string
@@ -92,14 +96,15 @@ const (
 	CreditNotePrintDocument InvoicePrintDocumentType = "Dobropis"
 )
 
-func NewInvoicePrintGenerator(pdfRenderer *HTMLPDFRenderer) (*InvoicePrintGenerator, error) {
+func NewInvoicePrintGenerator(pdfRenderer *HTMLPDFRenderer, config *AppConfig) (*InvoicePrintGenerator, error) {
 	tmpl, err := template.New("invoice").Parse(documentHeaderHTMLTemplate + htmlTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse invoice print template: %w", err)
 	}
 	return &InvoicePrintGenerator{
-		template:    tmpl,
-		pdfRenderer: pdfRenderer,
+		template:      tmpl,
+		pdfRenderer:   pdfRenderer,
+		fursTaxNumber: config.FURSTaxNumber,
 	}, nil
 }
 
@@ -137,12 +142,22 @@ func (generator *InvoicePrintGenerator) Generate(
 		return nil, err
 	}
 	paymentQRCode := ""
+	fiscalQRCode := ""
 	if documentType == InvoicePrintDocument {
 		generatedQRCode, qrError := generateUPNQRCode(invoice, displayNumber, grossTotal)
 		if qrError != nil {
 			return nil, qrError
 		}
 		paymentQRCode = generatedQRCode
+		if trimmedString(invoice.ZOI) != "" && trimmedString(invoice.EOR) != "" {
+			generatedFiscalQRCode, fiscalQRError := generateFURSTaxQRCode(
+				*invoice.ZOI, generator.fursTaxNumber, invoice.FURSIssueDateTime,
+			)
+			if fiscalQRError != nil {
+				return nil, fiscalQRError
+			}
+			fiscalQRCode = generatedFiscalQRCode
+		}
 	}
 
 	xmlDocument, err := xml.Marshal(invoicePrintDocument{
@@ -169,6 +184,9 @@ func (generator *InvoicePrintGenerator) Generate(
 		TaxSummaries:        taxSummaries,
 		ClosingText:         strings.ReplaceAll(trimmedString(invoice.ClosingText), "#ŠTEVILKA#", displayNumber),
 		PaymentQRCode:       paymentQRCode,
+		FiscalQRCode:        fiscalQRCode,
+		ZOI:                 trimmedString(invoice.ZOI),
+		EOR:                 trimmedString(invoice.EOR),
 		DocumentLabel:       string(documentType),
 		ShowDueDate:         documentType != CreditNotePrintDocument || invoice.DueDate != nil,
 		ShowOriginalInvoice: documentType == CreditNotePrintDocument,
@@ -188,12 +206,14 @@ func (generator *InvoicePrintGenerator) Generate(
 		Header    documentPrintHeader
 		Signature template.URL
 		PaymentQR template.URL
+		FiscalQR  template.URL
 	}{
 		CSS:       template.CSS(documentHeaderCSSTemplate + cssTemplate),
 		Document:  printDocument,
 		Header:    documentPrintHeader{Customer: printDocument.Customer, Logo: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(logo))},
 		Signature: template.URL("data:image/webp;base64," + base64.StdEncoding.EncodeToString(signature)),
 		PaymentQR: template.URL(printDocument.PaymentQRCode),
+		FiscalQR:  template.URL(printDocument.FiscalQRCode),
 	}); err != nil {
 		return nil, fmt.Errorf("render invoice HTML: %w", err)
 	}
