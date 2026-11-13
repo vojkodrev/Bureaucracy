@@ -19,7 +19,7 @@ function InvoiceSummary({ total, storedTotal, creditedAmount, paidAmount, paymen
     const credits = roundCurrency(creditedAmount)
     const balanceDue = Math.max(0, roundCurrency(total + credits - (Number(paidAmount) || 0)))
     return (
-        <Card className="ml-auto w-full lg:w-[calc(50%-0.75rem)]">
+        <Card className="ml-auto w-full lg:w-[55%]">
             <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
             <CardContent>
                 <Table>
