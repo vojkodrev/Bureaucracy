@@ -288,7 +288,7 @@ func (r *queryResolver) SearchInvoicesByCustomer(ctx context.Context, businessYe
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	invoicePage, err := r.Invoices.Search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
+	invoicePage, err := r.Invoices.SearchByCustomer(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo, customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus, sortBy, sortDirection, resultPage, resultPageSize)
 	if err != nil {
 		return nil, err
 	}

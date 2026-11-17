@@ -682,6 +682,53 @@ func (repository *InvoiceRepository) Search(
 	page int,
 	pageSize int,
 ) (*InvoicePage, error) {
+	return repository.search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo,
+		customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus,
+		sortBy, sortDirection, page, pageSize, false)
+}
+
+func (repository *InvoiceRepository) SearchByCustomer(
+	ctx context.Context,
+	businessYear string,
+	invoiceNumber *string,
+	invoiceNumberFrom *string,
+	invoiceNumberTo *string,
+	customerID *string,
+	customerName *string,
+	productCode *string,
+	productName *string,
+	issuedFrom *time.Time,
+	issuedTo *time.Time,
+	paymentStatus *string,
+	sortBy *string,
+	sortDirection *string,
+	page int,
+	pageSize int,
+) (*InvoicePage, error) {
+	return repository.search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo,
+		customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus,
+		sortBy, sortDirection, page, pageSize, true)
+}
+
+func (repository *InvoiceRepository) search(
+	ctx context.Context,
+	businessYear string,
+	invoiceNumber *string,
+	invoiceNumberFrom *string,
+	invoiceNumberTo *string,
+	customerID *string,
+	customerName *string,
+	productCode *string,
+	productName *string,
+	issuedFrom *time.Time,
+	issuedTo *time.Time,
+	paymentStatus *string,
+	sortBy *string,
+	sortDirection *string,
+	page int,
+	pageSize int,
+	groupByCustomer bool,
+) (*InvoicePage, error) {
 	if !businessYearPattern.MatchString(businessYear) {
 		return nil, fmt.Errorf("businessYear must contain only digits")
 	}
@@ -740,9 +787,13 @@ func (repository *InvoiceRepository) Search(
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
 	productDatabaseName := fmt.Sprintf("BIRO%s3", businessYear)
 
+	countExpression := "COUNT(*)"
+	if groupByCustomer {
+		countExpression = `COUNT(DISTINCT CONCAT(COALESCE(SifraPartnerja, ''), CHAR(31), COALESCE(ImePartnerja, '')))`
+	}
 	var totalCount int
 	err = repository.database.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT COUNT(*)
+		SELECT %s
 		FROM [%s].[dbo].[Racuni]
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@invoiceNumberFrom = '' OR Stevilka >= @invoiceNumberFrom)
@@ -763,7 +814,7 @@ func (repository *InvoiceRepository) Search(
 		  AND (@paymentStatus = 'all'
 		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
-		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))`, databaseName, databaseName, productDatabaseName),
+		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))`, countExpression, databaseName, databaseName, productDatabaseName),
 		queryArguments...,
 	).Scan(&totalCount)
 	if err != nil {
@@ -774,6 +825,38 @@ func (repository *InvoiceRepository) Search(
 		sql.Named("offset", (page-1)*pageSize),
 		sql.Named("pageSize", pageSize),
 	)
+	pageJoin := ""
+	pagination := fmt.Sprintf("ORDER BY %s\n\t\tOFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY", orderBy)
+	if groupByCustomer {
+		pageJoin = fmt.Sprintf(`JOIN (
+			SELECT SifraPartnerja AS CustomerCode, ImePartnerja AS CustomerName
+			FROM [%s].[dbo].[Racuni] customerRows
+			WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
+			  AND (@invoiceNumberFrom = '' OR Stevilka >= @invoiceNumberFrom)
+			  AND (@invoiceNumberTo = '' OR Stevilka <= @invoiceNumberTo)
+			  AND (@customerID = '' OR SifraPartnerja LIKE @customerID ESCAPE '\')
+			  AND (@customerName = '' OR ImePartnerja LIKE @customerName ESCAPE '\')
+			  AND ((@productCode = '' AND @productName = '') OR EXISTS (
+			      SELECT 1 FROM [%s].[dbo].[RacuniSpecifikacija] rs
+			      LEFT JOIN [%s].[dbo].[Artikel] a ON a.Artikel = rs.Artikel
+			      WHERE rs.Stevilka = customerRows.Stevilka AND ISNULL(rs.Deleted, 0) = 0
+			        AND (@productCode = '' OR rs.Artikel LIKE @productCode ESCAPE '\')
+			        AND (@productName = '' OR a.Opis LIKE @productName ESCAPE '\')
+			  ))
+			  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
+			  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+			  AND (@paymentStatus = 'all'
+			    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
+			    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
+			    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
+			GROUP BY SifraPartnerja, ImePartnerja
+			ORDER BY ImePartnerja ASC, SifraPartnerja ASC
+			OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+		) pagedCustomers
+		  ON COALESCE(pagedCustomers.CustomerCode, '') = COALESCE(Racuni.SifraPartnerja, '')
+		 AND COALESCE(pagedCustomers.CustomerName, '') = COALESCE(Racuni.ImePartnerja, '')`, databaseName, databaseName, productDatabaseName)
+		pagination = "ORDER BY ImePartnerja ASC, SifraPartnerja ASC, RecNo ASC"
+	}
 	rows, err := repository.database.QueryContext(ctx, fmt.Sprintf(`
 		SELECT
 			RecNo,
@@ -801,6 +884,7 @@ func (repository *InvoiceRepository) Search(
 			Sklic,
 			Storno
 		FROM [%s].[dbo].[Racuni]
+		%s
 		WHERE (@invoiceNumber = '' OR Stevilka LIKE @invoiceNumber ESCAPE '\')
 		  AND (@invoiceNumberFrom = '' OR Stevilka >= @invoiceNumberFrom)
 		  AND (@invoiceNumberTo = '' OR Stevilka <= @invoiceNumberTo)
@@ -821,8 +905,7 @@ func (repository *InvoiceRepository) Search(
 		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
 		    OR (@paymentStatus = 'unpaid' AND DatumPlacila IS NULL))
-		ORDER BY %s
-		OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`, databaseName, databaseName, databaseName, databaseName, productDatabaseName, orderBy),
+		%s`, databaseName, databaseName, databaseName, pageJoin, databaseName, productDatabaseName, pagination),
 		queryArguments...,
 	)
 	if err != nil {
