@@ -114,6 +114,9 @@ func NewInvoiceHalcomGenerator(printGenerator *InvoicePrintGenerator, xmlGenerat
 }
 
 func (generator *InvoiceHalcomGenerator) Generate(ctx context.Context, invoice *Invoice, businessYear int) ([]byte, error) {
+	if err := validateInvoiceCustomerBankDetails(invoice); err != nil {
+		return nil, err
+	}
 	pdf, err := generator.printGenerator.Generate(
 		ctx,
 		invoice,
@@ -176,6 +179,9 @@ func generateHalcomEnvelope(invoice *Invoice, year int, documentID, xmlFilename,
 			Payment:     halcomPayment{Method: "0", Creditor: halcomPaymentParty{Name: halcomSenderName, Country: halcomSenderCountry, Address: []string{halcomSenderAddress, halcomSenderLocation}, Agent: sellerBIC, Account: sellerIBAN}, Debtor: halcomPaymentParty{Name: trimmedString(invoice.CustomerName), Country: country, Address: []string{trimmedString(invoice.CustomerAddress), location}, DAgent: compactBankValue(trimmedString(invoice.CustomerBIC)), DAccount: compactBankValue(trimmedString(invoice.CustomerIBAN))}, ExecutionDate: invoice.DueDate.Format("2006-01-02"), Amount: fmt.Sprintf("%.2f", amount), Currency: valueOrDefault(invoice.Currency, "EUR"), Remittance: halcomRemittance{Reference: "NRC", Information: "PLAČILO RAČUNA " + documentNumber}, Purpose: "CMDT"},
 			Attachments: halcomAttachments{Count: 2, Items: []halcomAttachment{{Filename: xmlFilename, Type: "xml", Description: "E-dokument v XML e-SLOG formatu"}, {Filename: pdfFilename, Type: "pdf", Description: "E-dokument v PDF obliki"}}},
 		},
+	}
+	if err := validateCalculatedInvoiceGrossTotal(invoice, amount, "Halcom export"); err != nil {
+		return nil, err
 	}
 	contents, err := xml.MarshalIndent(document, "", "    ")
 	if err != nil {

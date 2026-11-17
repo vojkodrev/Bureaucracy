@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"bureaucracy/backend/lib"
 )
 
 const (
@@ -192,6 +194,12 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	if invoice == nil {
 		return nil, fmt.Errorf("invoice is required")
 	}
+	if err := validateInvoiceCustomerBankDetails(invoice); err != nil {
+		return nil, err
+	}
+	if err := validateInvoiceGrossTotal(invoice); err != nil {
+		return nil, err
+	}
 	if invoice.IssueDate == nil {
 		return nil, fmt.Errorf("invoice issue date is required")
 	}
@@ -248,11 +256,13 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	}
 
 	taxGroups := make(map[float64][2]float64)
+	calculatedTotals := calculatedInvoiceTotals{}
 	for index, item := range invoice.Items {
 		if item == nil {
 			continue
 		}
 		amounts := calculateInvoiceItemAmounts(item)
+		calculatedTotals.gross += lib.CurrencyCents(amounts.GrossAmount)
 		group := taxGroups[amounts.TaxRate]
 		taxGroups[amounts.TaxRate] = [2]float64{group[0] + amounts.NetAmount, group[1] + amounts.GrossAmount - amounts.NetAmount}
 		line := eslogLine{
@@ -290,7 +300,12 @@ func (generator *InvoiceXMLGenerator) Generate(invoice *Invoice, businessYear in
 	sort.Float64s(rates)
 	for _, rate := range rates {
 		amounts := taxGroups[rate]
+		calculatedTotals.net += lib.CurrencyCents(amounts[0])
+		calculatedTotals.vat += lib.CurrencyCents(amounts[1])
 		document.Invoice.TaxSummaries = append(document.Invoice.TaxSummaries, newEslogTaxGroup(rate, amounts[0], amounts[1]))
+	}
+	if err := validateCalculatedInvoiceTotals(invoice, net, gross-net, gross, calculatedTotals); err != nil {
+		return nil, err
 	}
 
 	contents, err := xml.MarshalIndent(document, "", "    ")
