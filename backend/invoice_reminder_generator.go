@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -122,6 +123,10 @@ func (generator *InvoiceReminderGenerator) Generate(ctx context.Context, invoice
 	return generator.pdfRenderer.Render(ctx, renderedHTML.Bytes())
 }
 
-func invoiceReminderFilename() string {
-	return "opomini-" + time.Now().Format("2006-01-02") + ".pdf"
+func invoiceReminderFilename(customerName string) string {
+	filename := "opomini-" + time.Now().Format("2006-01-02")
+	if customerName = strings.TrimSpace(customerName); customerName != "" {
+		filename = safeFilenamePart(customerName, "customer") + "-" + filename
+	}
+	return filename + ".pdf"
 }

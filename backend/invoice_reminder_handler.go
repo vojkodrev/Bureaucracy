@@ -27,7 +27,7 @@ func (handler *InvoiceReminderHandler) Handle(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	writeInvoiceReportPDF(context, pdf, invoiceReminderFilename())
+	writeInvoiceReportPDF(context, pdf, invoiceReminderFilename(reminderCustomerName(invoicePage.Invoices)))
 }
 
 func loadInvoiceReminderPage(context *gin.Context, invoices *InvoiceRepository, businessYears *BusinessYearRepository) (*InvoicePage, int, bool) {
