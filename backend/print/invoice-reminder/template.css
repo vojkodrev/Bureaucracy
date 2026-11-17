@@ -11,7 +11,7 @@ th { font-weight: 400; text-align: left; }
 .number { text-align: right; }
 .amount small { display: block; margin-top: 0.5mm; font-size: 7pt; font-weight: 400; white-space: nowrap; }
 .total { display: flex; justify-content: space-between; width: 115mm; margin-top: 9mm; font-size: 12pt; }
-.signoff { display: flex; align-items: flex-start; justify-content: space-between; margin: 34mm 18mm 0 15mm; }
+.signoff { display: flex; align-items: flex-start; justify-content: space-between; margin: 10mm 18mm 0 15mm; }
 .signoff p { margin: 0; }
 .signoff img { width: 50mm; height: auto; order: -1; }
 footer { position: absolute; right: 21.78mm; bottom: 7.92mm; left: 17.82mm; display: flex; flex-direction: column; align-items: center; font-size: 2.6mm; line-height: 1.05; text-align: center; }
