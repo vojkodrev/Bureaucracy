@@ -4,6 +4,7 @@ import type { InvoiceDraft } from './hooks/useInvoiceDraft'
 const storageKey = 'invoiceToDeliveryNote'
 
 type StoredInvoice = {
+    deliveryNoteNumber: string | null
     customerId: string
     customerName: string
     customerAddress: string
@@ -15,8 +16,16 @@ type StoredInvoice = {
     items: InvoiceItem[]
 }
 
+function deliveryNoteNumberFromInvoice(value: string): string | null {
+    const match = value.trim().match(/^(\d+)\s*\/\s*\d{4}$/)
+    return match ? match[1].padStart(5, '0') : null
+}
+
 export function storeInvoiceForDeliveryNote(draft: InvoiceDraft) {
     const storedInvoice: StoredInvoice = {
+        deliveryNoteNumber: deliveryNoteNumberFromInvoice(
+            draft.deliveryNoteNumber,
+        ),
         customerId: draft.customerId,
         customerName: draft.customerName,
         customerAddress: draft.customerAddress,

@@ -213,6 +213,8 @@ export function useDeliveryNoteLoader(options: Options) {
             const invoice = takeInvoiceForDeliveryNote()
             const convertedDraft: DeliveryNoteDraft = invoice ? {
                 ...nextDraft,
+                deliveryNoteNumber: invoice.deliveryNoteNumber
+                    ?? nextDraft.deliveryNoteNumber,
                 customerId: invoice.customerId,
                 customerName: invoice.customerName,
                 customerAddress: invoice.customerAddress,
