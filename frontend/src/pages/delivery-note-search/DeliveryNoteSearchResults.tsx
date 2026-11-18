@@ -118,9 +118,7 @@ export default function DeliveryNoteSearchResults(props: Props) {
                                     linkLabel={label}
                                     className="text-right"
                                 >
-                                    {note.withoutAmounts
-                                        ? 'Hidden'
-                                        : formatCurrency(note.amount ?? 0)}
+                                    {formatCurrency(note.amount ?? 0)}
                                 </SearchResultCell>
                                 <SearchResultCell to={path} linkLabel={label}>
                                     {formatDate(note.issueDate)}

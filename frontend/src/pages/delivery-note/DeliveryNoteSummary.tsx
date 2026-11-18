@@ -6,7 +6,6 @@ import { TriangleAlertIcon } from 'lucide-react'
 type Props = {
     total: number
     storedTotal?: number | null
-    withoutAmounts: boolean
 }
 
 export default function DeliveryNoteSummary(props: Props) {
@@ -25,9 +24,7 @@ export default function DeliveryNoteSummary(props: Props) {
                                     : 'Calculated total incl. VAT'}
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                                {props.withoutAmounts
-                                    ? 'Hidden on print'
-                                    : formatCurrency(props.total)}
+                                {formatCurrency(props.total)}
                             </TableCell>
                         </TableRow>
                         {props.storedTotal != null && (

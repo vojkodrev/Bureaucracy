@@ -356,7 +356,6 @@ export default function DeliveryNotePage() {
                     storedTotal={loader.warnings.includes('delivery-note-total')
                         ? loader.storedTotal
                         : null}
-                    withoutAmounts={draft.withoutAmounts}
                 />
             </div>
         </div>
