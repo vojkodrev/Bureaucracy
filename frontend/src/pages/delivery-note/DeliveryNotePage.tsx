@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import WarningAlert from '@/components/WarningAlert'
@@ -9,6 +10,7 @@ import CustomerInputFields from '../invoice/CustomerInputFields'
 import Products from '../invoice/Products'
 import DeliveryNoteAlert from './DeliveryNoteAlert'
 import DeliveryNoteGeneralInformation from './DeliveryNoteGeneralInformation'
+import DeliveryNoteGoodsReceiptDialog from './DeliveryNoteGoodsReceiptDialog'
 import DeliveryNoteMenu from './DeliveryNoteMenu'
 import DeliveryNoteNumberAlert from './DeliveryNoteNumberAlert'
 import DeliveryNoteSummary from './DeliveryNoteSummary'
@@ -26,6 +28,7 @@ import { useUnsavedDeliveryNoteGuard } from './hooks/useUnsavedDeliveryNoteGuard
 export default function DeliveryNotePage() {
     const { deliveryNoteNumber: routeNumber } = useParams()
     const navigate = useNavigate()
+    const [goodsReceiptDialogOpen, setGoodsReceiptDialogOpen] = useState(false)
     const draftState = useDeliveryNoteDraft()
     const { draft, setDraft, setField } = draftState
     const guard = useUnsavedDeliveryNoteGuard(
@@ -188,6 +191,7 @@ export default function DeliveryNotePage() {
                     canSave={save.canSave}
                     canPrint={print.canRequestPrint}
                     canRevert={revert.canRevert}
+                    canConvertToGoodsReceipt={!loader.isLoading && !loader.error && draft.items.length > 0}
                     canDuplicate={
                         loader.deliveryNoteId != null
                         && !loader.isLoading
@@ -200,7 +204,15 @@ export default function DeliveryNotePage() {
                     onRevert={revert.requestRevert}
                     onDuplicate={() => { void duplicate.duplicate() }}
                     onConvertToInvoice={invoiceConversion.convertToInvoice}
+                    onConvertToGoodsReceipt={() => setGoodsReceiptDialogOpen(true)}
                 />
+                {goodsReceiptDialogOpen && (
+                    <DeliveryNoteGoodsReceiptDialog
+                        draft={draft}
+                        onClose={() => setGoodsReceiptDialogOpen(false)}
+                        allowNavigation={guard.allowNavigation}
+                    />
+                )}
                 <Button
                     type="button"
                     variant="outline"

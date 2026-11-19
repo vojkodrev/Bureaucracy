@@ -6,6 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
+const frontendPort = 4173
 const https = {
     cert: fs.readFileSync(path.resolve(dirname, '../certs/local-https/bureaucracy.crt')),
     key: fs.readFileSync(path.resolve(dirname, '../certs/local-https/bureaucracy.key')),
@@ -17,14 +18,14 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         https,
-        port: 5173,
+        port: frontendPort,
         strictPort: true,
     },
     preview: {
         allowedHosts: ['drevi-pc'],
         host: '0.0.0.0',
         https,
-        port: 4173,
+        port: frontendPort,
         strictPort: true,
     },
     resolve: {

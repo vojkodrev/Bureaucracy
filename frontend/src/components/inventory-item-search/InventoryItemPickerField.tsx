@@ -1,4 +1,4 @@
-import { SearchIcon } from 'lucide-react'
+import { MinusIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,9 +25,11 @@ type Props = {
     inventoryItemCode: string
     id: string
     label: string
+    hideLabel?: boolean
+    minimizable?: boolean
     name: string
     onInventoryItemCodeChange: (code: string) => void
-    onInventoryItemNameChange: (name: string) => void
+    onInventoryItemNameChange?: (name: string) => void
     onInventoryItemUnitChange?: (unit: string) => void
 }
 
@@ -35,26 +37,35 @@ export default function InventoryItemPickerField({
     inventoryItemCode,
     id,
     label,
+    hideLabel,
+    minimizable = false,
     name,
     onInventoryItemCodeChange,
     onInventoryItemNameChange,
     onInventoryItemUnitChange,
 }: Props) {
     const [open, setOpen] = useState(false)
+    const [hasOpened, setHasOpened] = useState(false)
+
+    function openSearch() {
+        setHasOpened(true)
+        setOpen(true)
+    }
 
     function selectInventoryItem(item: InventoryItem) {
         setOpen(false)
         onInventoryItemCodeChange(item.productCode ?? '')
-        onInventoryItemNameChange(item.name ?? '')
+        onInventoryItemNameChange?.(item.name ?? '')
         onInventoryItemUnitChange?.(item.unit ?? '')
     }
 
     return (
         <Field>
-            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            {!hideLabel && <FieldLabel htmlFor={id}>{label}</FieldLabel>}
             <InputGroup>
                 <InputGroupInput
                     id={id}
+                    aria-label={hideLabel ? label : undefined}
                     type="search"
                     name={name}
                     value={inventoryItemCode}
@@ -65,7 +76,7 @@ export default function InventoryItemPickerField({
                     <InputGroupButton
                         size="icon-xs"
                         aria-label="Search inventory items"
-                        onClick={() => setOpen(true)}
+                        onClick={openSearch}
                     >
                         <SearchIcon />
                     </InputGroupButton>
@@ -73,7 +84,23 @@ export default function InventoryItemPickerField({
             </InputGroup>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]">
+                <DialogContent
+                    keepMounted={minimizable && hasOpened}
+                    className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-[calc(100%-2rem)]"
+                >
+                    {minimizable && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="absolute top-2 right-10"
+                            aria-label="Minimize inventory item search"
+                            title="Minimize inventory item search"
+                            onClick={() => setOpen(false)}
+                        >
+                            <MinusIcon />
+                        </Button>
+                    )}
                     <DialogHeader>
                         <DialogTitle>Select inventory item</DialogTitle>
                         <DialogDescription>

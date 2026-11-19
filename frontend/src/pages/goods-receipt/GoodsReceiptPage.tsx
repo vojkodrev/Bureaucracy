@@ -32,6 +32,7 @@ export default function GoodsReceiptPage() {
         draftState.setDraft,
         draftState.markClean,
         guard.disallowNavigation,
+        draftState.markUnsaved,
     );
     const duplicate = useGoodsReceiptDuplicate({
         receiptId: loader.receiptId,

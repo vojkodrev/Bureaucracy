@@ -13,5 +13,6 @@ and preview URLs.
 Both the Vite development server and production preview server use the shared
 certificate under `../certs/local-https`. Generate it with `../certs/local-https/generate.sh` (or
 `..\certs\local-https\generate.ps1` on Windows) and trust `bureaucracy-ca.crt` before opening
-the application. Development uses <https://localhost:5173>; production preview
-uses <https://drevi-pc:4173> by default.
+the application. Both servers use port 4173 by default. Open
+<https://localhost:4173> for development or <https://drevi-pc:4173> for
+production preview.

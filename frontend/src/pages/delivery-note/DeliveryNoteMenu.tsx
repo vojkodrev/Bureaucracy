@@ -1,10 +1,13 @@
-import { Copy, FileOutput, Printer, Save, Undo2 } from 'lucide-react'
+import { Copy, FileOutput, PackageCheck, Printer, Receipt, Save, Undo2 } from 'lucide-react'
 import {
     Menubar,
     MenubarContent,
     MenubarItem,
     MenubarMenu,
     MenubarShortcut,
+    MenubarSub,
+    MenubarSubContent,
+    MenubarSubTrigger,
     MenubarTrigger,
 } from '@/components/ui/menubar'
 
@@ -13,6 +16,7 @@ type Props = {
     canPrint: boolean
     canRevert: boolean
     canDuplicate: boolean
+    canConvertToGoodsReceipt: boolean
     isSaving: boolean
     isDuplicating: boolean
     onSave: () => void
@@ -20,6 +24,7 @@ type Props = {
     onRevert: () => void
     onDuplicate: () => void
     onConvertToInvoice: () => void
+    onConvertToGoodsReceipt: () => void
 }
 
 export default function DeliveryNoteMenu(props: Props) {
@@ -44,10 +49,25 @@ export default function DeliveryNoteMenu(props: Props) {
                         Print
                         <MenubarShortcut>Ctrl+P</MenubarShortcut>
                     </MenubarItem>
-                    <MenubarItem onClick={props.onConvertToInvoice}>
-                        <FileOutput />
-                        Convert to invoice
-                    </MenubarItem>
+                    <MenubarSub>
+                        <MenubarSubTrigger>
+                            <FileOutput />
+                            Convert
+                        </MenubarSubTrigger>
+                        <MenubarSubContent className="min-w-56 whitespace-nowrap">
+                            <MenubarItem onClick={props.onConvertToInvoice}>
+                                <Receipt />
+                                Convert to invoice
+                            </MenubarItem>
+                            <MenubarItem
+                                disabled={!props.canConvertToGoodsReceipt}
+                                onClick={props.onConvertToGoodsReceipt}
+                            >
+                                <PackageCheck />
+                                Convert to goods receipt
+                            </MenubarItem>
+                        </MenubarSubContent>
+                    </MenubarSub>
                 </MenubarContent>
             </MenubarMenu>
             <MenubarMenu>

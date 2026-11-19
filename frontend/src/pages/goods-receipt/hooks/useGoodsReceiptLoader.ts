@@ -1,4 +1,9 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { dateFromSearchValue } from "@/lib/dates";
+import {
+    clearGoodsReceiptHandoff,
+    readGoodsReceiptHandoff,
+} from "../goods-receipt-handoff";
 import {
     fetchGoodsReceipt,
     fetchNextGoodsReceiptNumber,
@@ -14,6 +19,7 @@ export function useGoodsReceiptLoader(
     replaceDraft: (draft: GoodsReceiptDraft) => void,
     markClean: (draft: GoodsReceiptDraft) => void,
     disallowNavigation: () => void,
+    markUnsaved: () => void,
 ) {
     const preserveDuplicateRef = useRef(false);
     const [receiptId, setReceiptId] = useState<number | null>(null);
@@ -27,9 +33,27 @@ export function useGoodsReceiptLoader(
     const replace = useEffectEvent(replaceDraft);
     const clean = useEffectEvent(markClean);
     const finish = useEffectEvent(disallowNavigation);
+    const markConverted = useEffectEvent(markUnsaved);
 
     useEffect(() => {
         const controller = new AbortController();
+        const handoff = readGoodsReceiptHandoff(routeReceiptNumber);
+        const applyHandoff = (draft: GoodsReceiptDraft) => {
+            if (!handoff) {
+                replace(draft);
+                clean(draft);
+                return;
+            }
+            clearGoodsReceiptHandoff();
+            replace({
+                ...draft,
+                receiptDate: !routeReceiptNumber && handoff.receiptDate
+                    ? dateFromSearchValue(handoff.receiptDate)
+                    : draft.receiptDate,
+                items: [...draft.items, ...handoff.items],
+            });
+            markConverted();
+        };
         if (!routeReceiptNumber) {
             if (preserveDuplicateRef.current) {
                 preserveDuplicateRef.current = false;
@@ -46,16 +70,18 @@ export function useGoodsReceiptLoader(
             setNextNumberError(null);
             void fetchNextGoodsReceiptNumber(controller.signal)
                 .then((receiptNumber) => {
+                    if (controller.signal.aborted) return;
                     const numberedDraft = {
                         ...next,
                         receiptNumber,
                     };
-                    replace(numberedDraft);
-                    clean(numberedDraft);
+                    applyHandoff(numberedDraft);
                 })
                 .catch((error: unknown) => {
+                    if (controller.signal.aborted) return;
                     if (error instanceof DOMException &&
                         error.name === "AbortError") return;
+                    if (handoff) applyHandoff(next);
                     setNextNumberError(error instanceof Error
                         ? error.message
                         : "Loading next goods receipt number failed");
@@ -64,14 +90,15 @@ export function useGoodsReceiptLoader(
         }
         void fetchGoodsReceipt(routeReceiptNumber, controller.signal)
             .then((receipt) => {
+                if (controller.signal.aborted) return;
                 const next = goodsReceiptDraft(receipt);
                 setReceiptId(receipt.id);
-                replace(next);
-                clean(next);
+                applyHandoff(next);
                 finish();
                 setResult({ key, error: null });
             })
             .catch((error: unknown) => {
+                if (controller.signal.aborted) return;
                 if (error instanceof DOMException &&
                     error.name === "AbortError") return;
                 setResult({
