@@ -211,8 +211,12 @@ export function useDeliveryNoteLoader(options: Options) {
                 closingText: template.closingText ?? '',
             }
             const invoice = takeInvoiceForDeliveryNote()
+            const serviceDate = dateFromValue(invoice?.serviceDate)
             const convertedDraft: DeliveryNoteDraft = invoice ? {
                 ...nextDraft,
+                deliveryNoteNumber: invoice.deliveryNoteNumber || nextDraft.deliveryNoteNumber,
+                issueDate: serviceDate ?? nextDraft.issueDate,
+                deliveryDate: serviceDate ?? nextDraft.deliveryDate,
                 customerId: invoice.customerId,
                 customerName: invoice.customerName,
                 customerAddress: invoice.customerAddress,

@@ -3,6 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import WarningAlert from '@/components/WarningAlert'
 import EmailDocumentDialog from '@/components/EmailDocumentDialog'
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -189,6 +193,24 @@ function InvoicePage() {
             alreadyConfirmed={loader.taxConfirmation != null}
             onOpenChange={taxConfirmation.setDialogOpen}
             onConfirm={() => { void taxConfirmation.confirm() }} />
+        <AlertDialog open={deliveryNoteConversion.existingNumber !== null}
+            onOpenChange={(open) => { if (!open) deliveryNoteConversion.dismissConfirmation() }}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delivery note already exists</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Delivery note {deliveryNoteConversion.existingNumber} already exists.
+                        Do you want to convert the invoice anyway?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={deliveryNoteConversion.convertAnyway}>
+                        Convert anyway
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         <InvoiceNumberAlert invoiceNumber={draft.invoiceNumber.trim()} warning={save.invoiceNumberWarning}
             onOpenChange={(open) => { if (!open) save.setInvoiceNumberWarning(null) }}
             onConfirm={() => { void save.confirmSave() }} />

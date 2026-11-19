@@ -151,14 +151,18 @@ export async function fetchDeliveryNote(
 
 export async function fetchDeliveryNoteExists(
     deliveryNoteNumber: string,
+    businessYear = getSelectedBusinessYear(),
 ): Promise<boolean> {
     const result = await postGraphql<{
         data?: { deliveryNote: Pick<DeliveryNote, 'id'> | null }
     }>(noteQuery, {
-        businessYear: getSelectedBusinessYear(),
+        businessYear,
         deliveryNoteNumber,
     })
-    return result.data?.deliveryNote != null
+    if (!result.data || result.data.deliveryNote === undefined) {
+        throw new Error('Checking for an existing delivery note returned no result')
+    }
+    return result.data.deliveryNote !== null
 }
 
 export async function fetchLatestDeliveryNoteNumber(
