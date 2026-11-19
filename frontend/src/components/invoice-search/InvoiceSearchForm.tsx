@@ -67,8 +67,8 @@ function InvoiceSearchForm({
                 <CardContent>
                     <FieldGroup>
                         <div className="grid gap-6 sm:grid-cols-2">
-                            <FieldGroup>
-                                <Field>
+                            <FieldGroup className="sm:contents">
+                                <Field className="sm:col-start-1 sm:row-start-1">
                                     <FieldLabel htmlFor="invoice-number">Invoice number</FieldLabel>
                                     <Input
                                         id="invoice-number"
@@ -78,7 +78,7 @@ function InvoiceSearchForm({
                                         autoComplete="off"
                                     />
                                 </Field>
-                                <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="grid gap-6 sm:col-start-1 sm:row-start-2 sm:grid-cols-2">
                                     <Field>
                                         <FieldLabel htmlFor="invoice-number-from">Invoice number from</FieldLabel>
                                         <Input
@@ -106,7 +106,7 @@ function InvoiceSearchForm({
                                         />
                                     </Field>
                                 </div>
-                                <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="grid gap-6 sm:col-start-1 sm:row-start-3 sm:grid-cols-2">
                                     <DatePickerField
                                         id="invoice-date-from"
                                         label="Invoice date from"
@@ -124,8 +124,8 @@ function InvoiceSearchForm({
                                 </div>
                             </FieldGroup>
 
-                            <FieldGroup>
-                                <div className="grid gap-6 sm:grid-cols-2">
+                            <FieldGroup className="sm:contents">
+                                <div className="grid gap-6 sm:col-start-2 sm:row-start-2 sm:grid-cols-2">
                                     <CustomerPickerField
                                         id="customer-id"
                                         label="Customer ID"
@@ -146,7 +146,7 @@ function InvoiceSearchForm({
                                         />
                                     </Field>
                                 </div>
-                                <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="grid gap-6 sm:col-start-2 sm:row-start-3 sm:grid-cols-2">
                                     <ProductPickerField
                                         id="product-code"
                                         label="Product code"
