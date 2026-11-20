@@ -76,6 +76,11 @@ export default function DeliveryNoteGeneralInformation(props: Props) {
                         name="issueDate"
                         date={props.issueDate}
                         onSelect={props.onIssueDateChange}
+                        action={{
+                            icon: <RefreshCwIcon />,
+                            label: 'Set issue date to today',
+                            onClick: () => props.onIssueDateChange(new Date()),
+                        }}
                     />
                     <DatePickerField
                         id="delivery-note-delivery-date"
@@ -83,6 +88,11 @@ export default function DeliveryNoteGeneralInformation(props: Props) {
                         name="deliveryDate"
                         date={props.deliveryDate}
                         onSelect={props.onDeliveryDateChange}
+                        action={{
+                            icon: <RefreshCwIcon />,
+                            label: 'Set delivery date to today',
+                            onClick: () => props.onDeliveryDateChange(new Date()),
+                        }}
                     />
                     <Field orientation="horizontal">
                         <input
