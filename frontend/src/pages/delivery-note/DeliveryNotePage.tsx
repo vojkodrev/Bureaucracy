@@ -20,6 +20,7 @@ import { useDeliveryNoteInvoiceConversion } from './hooks/useDeliveryNoteInvoice
 import { useDeliveryNoteKeyboardShortcuts } from './hooks/useDeliveryNoteKeyboardShortcuts'
 import { useDeliveryNoteLoader } from './hooks/useDeliveryNoteLoader'
 import { useDeliveryNoteNumberNavigation } from './hooks/useDeliveryNoteNumberNavigation'
+import { useDeliveryNoteNumberRefresh } from './hooks/useDeliveryNoteNumberRefresh'
 import { useDeliveryNotePrint } from './hooks/useDeliveryNotePrint'
 import { useDeliveryNoteRevert } from './hooks/useDeliveryNoteRevert'
 import { useDeliveryNoteSave } from './hooks/useDeliveryNoteSave'
@@ -102,6 +103,13 @@ export default function DeliveryNotePage() {
         () => { void save.requestSave() },
         print.printDeliveryNote,
     )
+
+    const numberRefresh = useDeliveryNoteNumberRefresh({
+        deliveryNoteNumber: draft.deliveryNoteNumber,
+        disabled: loader.isLoading || save.isSaving || duplicate.isDuplicating,
+        setDraft,
+        setRequestErrors: loader.setRequestErrors,
+    })
 
     const errors = [
         [
@@ -321,6 +329,9 @@ export default function DeliveryNotePage() {
                     onNumberChange={(value) => {
                         setField('deliveryNoteNumber', value)
                     }}
+                    onRefreshNumber={() => { void numberRefresh.refresh() }}
+                    canRefreshNumber={numberRefresh.canRefresh}
+                    isRefreshingNumber={numberRefresh.isRefreshing}
                     onIssueDateChange={(value) => {
                         setField('issueDate', value)
                     }}
