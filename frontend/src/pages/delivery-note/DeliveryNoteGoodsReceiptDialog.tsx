@@ -57,7 +57,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
                         productCode: item.productCode,
                         productName: item.name,
                         unit: item.unit,
-                        quantity: product.quantity,
+                        quantity: product.quantity == null ? null : -Math.abs(product.quantity),
                         photos: [],
                     }
                 })),
