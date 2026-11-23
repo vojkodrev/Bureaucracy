@@ -11,6 +11,7 @@ function stripReferenceYear(reference: string): string {
 
 export function deliveryNoteNumberFromInvoiceReference(reference: string): string {
     const number = stripReferenceYear(reference)
+    if (number.toLowerCase() === 'new') return ''
     return /^\d+$/.test(number) ? number.padStart(5, '0') : number
 }
 
@@ -18,9 +19,9 @@ export async function findExistingDeliveryNote(
     reference: string,
     businessYearCode: string,
 ): Promise<string | null> {
-    const number = stripReferenceYear(reference)
-    if (!number) return null
     const paddedNumber = deliveryNoteNumberFromInvoiceReference(reference)
+    if (!paddedNumber) return null
+    const number = stripReferenceYear(reference)
     const candidates = new Set([paddedNumber, number])
 
     for (const candidate of candidates) {
