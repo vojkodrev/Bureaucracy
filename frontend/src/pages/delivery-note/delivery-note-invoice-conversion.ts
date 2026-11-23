@@ -1,3 +1,4 @@
+import { dateForInput } from '@/lib/dates'
 import type { InvoiceItem } from '@/lib/invoice-types'
 import type { DeliveryNoteDraft } from './hooks/useDeliveryNoteDraft'
 
@@ -5,6 +6,7 @@ const storageKey = 'deliveryNoteToInvoice'
 
 export type StoredDeliveryNote = {
     deliveryNoteNumber: string
+    deliveryDate?: string
     customerId: string
     customerName: string
     customerAddress: string
@@ -29,6 +31,7 @@ export function storeDeliveryNoteForInvoice(
         : number
     const storedNote: StoredDeliveryNote = {
         deliveryNoteNumber: `${normalizedNumber}/${businessYear}`,
+        deliveryDate: draft.deliveryDate && dateForInput(draft.deliveryDate),
         customerId: draft.customerId,
         customerName: draft.customerName,
         customerAddress: draft.customerAddress,

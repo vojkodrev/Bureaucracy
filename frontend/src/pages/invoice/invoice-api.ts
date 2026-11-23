@@ -1,5 +1,6 @@
 import { getSelectedBusinessYear } from '@/lib/business-year'
 import { apiFetch } from '@/lib/auth'
+import { dateAfterDays } from '@/lib/dates'
 import { postGraphql } from '@/lib/graphql'
 import type { InvoiceResponse, LatestInvoiceResponse } from '@/lib/invoice-types'
 import { nextPaddedNumber } from '@/lib/numbers'
@@ -79,13 +80,22 @@ export async function fetchNextInvoiceNumber(signal?: AbortSignal, businessYear 
     return nextPaddedNumber(await fetchLatestInvoiceNumber(signal, businessYear), 5)
 }
 
-export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string) {
+export async function fetchCustomerPaymentTerm(customerId: string, businessYear: string, signal?: AbortSignal) {
     if (!customerId) return null
     const result = await postGraphql<{
         data?: { customer: { paymentTerm: number | null } | null }
         errors?: { message: string }[]
-    }>(customerPaymentTermQuery, { businessYear, customerId })
+    }>(customerPaymentTermQuery, { businessYear, customerId }, signal)
     return result.data?.customer?.paymentTerm ?? null
+}
+
+export async function calculateInvoiceDueDate(
+    customerId: string,
+    invoiceDate?: Date,
+    signal?: AbortSignal,
+) {
+    const paymentTerm = await fetchCustomerPaymentTerm(customerId, getSelectedBusinessYear(), signal)
+    return dateAfterDays(invoiceDate, paymentTerm)
 }
 
 export function invoicePdfUrl(invoiceNumber: string, businessYear: string): string {

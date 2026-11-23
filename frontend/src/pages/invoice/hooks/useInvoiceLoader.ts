@@ -13,7 +13,7 @@ import {
 import { takeDeliveryNoteForInvoice } from '@/pages/delivery-note/delivery-note-invoice-conversion'
 import { takePriceQuoteForInvoice } from '@/pages/price-quote/price-quote-invoice-conversion'
 import {
-    fetchInvoice, fetchNextInvoiceNumber,
+    calculateInvoiceDueDate, fetchInvoice, fetchNextInvoiceNumber,
 } from '../invoice-api'
 import type { InvoiceTaxConfirmation } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
@@ -164,7 +164,7 @@ export function useInvoiceLoader({
         replaceLoadedDraft(initialDraft)
         clearLoadedDraft()
         setRequestErrors((current) => ({
-            ...current, nextInvoiceNumber: undefined, invoiceTextTemplate: undefined,
+            ...current, nextInvoiceNumber: undefined, invoiceTextTemplate: undefined, customerPaymentTerm: undefined,
         }))
         const controller = new AbortController()
         const templatePromise = fetchTextTemplate(
@@ -178,7 +178,8 @@ export function useInvoiceLoader({
             return { introductoryText: null, closingText: null }
         })
         void Promise.all([fetchNextInvoiceNumber(controller.signal), templatePromise])
-            .then(([invoiceNumber, template]) => {
+            .then(async ([invoiceNumber, template]) => {
+                if (controller.signal.aborted) return
                 const nextDraft = {
                     ...initialDraft, invoiceNumber,
                     introductoryText: template.introductoryText ?? '',
@@ -186,6 +187,17 @@ export function useInvoiceLoader({
                 }
                 const deliveryNote = takeDeliveryNoteForInvoice()
                 const priceQuote = deliveryNote ? null : takePriceQuoteForInvoice()
+                const dueDate = deliveryNote
+                    ? await calculateInvoiceDueDate(deliveryNote.customerId, today, controller.signal)
+                        .catch((requestError: unknown) => {
+                            if (!controller.signal.aborted) setRequestErrors((current) => ({
+                                ...current,
+                                customerPaymentTerm: requestErrorMessage(requestError, 'Loading customer payment term failed'),
+                            }))
+                            return undefined
+                        })
+                    : undefined
+                if (controller.signal.aborted) return
                 const source = deliveryNote ?? priceQuote
                 const convertedDraft: InvoiceDraft = source ? {
                     ...nextDraft,
@@ -195,6 +207,8 @@ export function useInvoiceLoader({
                     customerPostalCode: source.customerPostalCode,
                     customerCity: source.customerCity,
                     customerCountry: source.customerCountry,
+                    serviceDate: dateFromInvoiceValue(deliveryNote?.deliveryDate),
+                    dueDate,
                     deliveryNoteNumber: deliveryNote?.deliveryNoteNumber ?? '',
                     introductoryText: [
                         nextDraft.introductoryText, source.introductoryText,

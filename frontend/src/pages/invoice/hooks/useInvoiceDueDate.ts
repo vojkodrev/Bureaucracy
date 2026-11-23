@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { getSelectedBusinessYear } from '@/lib/business-year'
-import { dateAfterDays } from '@/lib/dates'
-import { fetchCustomerPaymentTerm } from '../invoice-api'
+import { calculateInvoiceDueDate } from '../invoice-api'
 
 type Options = {
     customerId: string
@@ -19,10 +17,7 @@ export function useInvoiceDueDate({ customerId, invoiceDate, setDueDate }: Optio
         setIsRecalculating(true)
         setError(null)
         try {
-            const paymentTerm = await fetchCustomerPaymentTerm(
-                customerId, getSelectedBusinessYear(),
-            )
-            setDueDate(dateAfterDays(invoiceDate, paymentTerm))
+            setDueDate(await calculateInvoiceDueDate(customerId, invoiceDate))
         } catch (requestError: unknown) {
             setError(requestError instanceof Error
                 ? requestError.message : 'Loading customer payment term failed')
