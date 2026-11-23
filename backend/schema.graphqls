@@ -830,6 +830,7 @@ type Mutation {
   saveCustomer(businessYear: String!, customer: CustomerInput!): Customer!
   updateCustomerEmail(businessYear: String!, customerId: String!, email: String!): Customer!
   saveInvoice(businessYear: String!, invoice: InvoiceInput!): Invoice!
+  saveInvoiceClosingText(businessYear: String!, invoiceId: Int!, closingText: String): Boolean!
   saveCreditNote(businessYear: String!, creditNote: CreditNoteInput!): CreditNote!
   savePriceQuote(businessYear: String!, priceQuote: PriceQuoteInput!): PriceQuote!
   saveDeliveryNote(businessYear: String!, deliveryNote: DeliveryNoteInput!): DeliveryNote!

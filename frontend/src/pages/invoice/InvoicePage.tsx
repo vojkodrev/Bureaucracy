@@ -64,9 +64,10 @@ function InvoicePage() {
     })
 
     const save = useInvoiceSave({
-        invoiceId: loader.invoiceId, draft, routeInvoiceNumber,
+        invoiceId: loader.invoiceId, invoiceBusinessYear: loader.invoiceBusinessYear, draft, routeInvoiceNumber,
         isLoading: loader.isLoading, loadError: loader.error, navigate,
         markClean: draftState.markClean, allowNavigation: guard.allowNavigation,
+        markClosingTextClean: draftState.markClosingTextClean,
         reloadAfterSave: loader.reloadAfterSave,
     })
     const duplicate = useInvoiceDuplicate({
@@ -152,7 +153,8 @@ function InvoicePage() {
                 <WarningAlert key={key} title={title} description={description} warning={warning} />)}
         </div>}
         <div className="mb-6 flex items-center gap-2">
-            <InvoiceMenu canSave={save.canSave} canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
+            <InvoiceMenu canSave={save.canSave} canSaveClosingText={save.canSaveClosingText}
+                canPrint={print.canRequestPrint} canEmail={print.canRequestPrint}
                 canExportXml={print.canRequestPrint} isExportingXml={xmlExport.isExporting}
                 isExportingHalcom={halcomExport.isExporting}
                 canTaxConfirm={print.canRequestPrint} isTaxConfirming={taxConfirmation.isConfirming}
@@ -160,6 +162,7 @@ function InvoicePage() {
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
+                onSaveClosingText={() => { void save.requestSaveClosingText() }}
                 onEmail={email.requestEmail} onRevert={revert.requestRevert}
                 onExportXml={() => { void xmlExport.exportXml() }}
                 onExportHalcom={() => { void halcomExport.exportHalcom() }}

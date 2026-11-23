@@ -50,9 +50,9 @@ export const saveInvoiceMutation = `
     }
 `
 
-export async function fetchInvoice(invoiceNumber: string, signal?: AbortSignal) {
+export async function fetchInvoice(invoiceNumber: string, signal?: AbortSignal, businessYear = getSelectedBusinessYear()) {
     const result = await postGraphql<InvoiceResponse>(invoiceQuery, {
-        businessYear: getSelectedBusinessYear(), invoiceNumber,
+        businessYear, invoiceNumber,
     }, signal)
     if (!result.data?.invoice) throw new Error(`Invoice ${invoiceNumber} was not found`)
     return result.data.invoice
@@ -160,4 +160,13 @@ export async function postSaveInvoice(variables: Record<string, unknown>) {
         data?: { saveInvoice: { id: number; invoiceNumber: string } }
         errors?: { message: string }[]
     }>(saveInvoiceMutation, variables)
+}
+
+export async function postSaveInvoiceClosingText(businessYear: string, invoiceId: number, closingText: string | null) {
+    const result = await postGraphql<{ data?: { saveInvoiceClosingText: boolean } }>(`
+        mutation SaveInvoiceClosingText($businessYear: String!, $invoiceId: Int!, $closingText: String) {
+            saveInvoiceClosingText(businessYear: $businessYear, invoiceId: $invoiceId, closingText: $closingText)
+        }
+    `, { businessYear, invoiceId, closingText })
+    if (!result.data?.saveInvoiceClosingText) throw new Error('Saving invoice closing text failed')
 }

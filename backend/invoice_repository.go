@@ -437,6 +437,33 @@ func (repository *InvoiceRepository) Save(ctx context.Context, businessYear stri
 	return repository.GetByNumber(ctx, businessYear, input.InvoiceNumber)
 }
 
+func (repository *InvoiceRepository) SaveClosingText(ctx context.Context, businessYear string, invoiceID int, closingText *string) error {
+	if !businessYearPattern.MatchString(businessYear) {
+		return fmt.Errorf("businessYear must contain only digits")
+	}
+	if invoiceID <= 0 {
+		return fmt.Errorf("invoiceId must be positive")
+	}
+
+	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
+	result, err := repository.database.ExecContext(ctx, fmt.Sprintf(`
+		UPDATE [%s].[dbo].[Racuni]
+		SET Klavzula = @closingText
+		WHERE RecNo = @invoiceID`, databaseName),
+		sql.Named("closingText", closingText), sql.Named("invoiceID", invoiceID))
+	if err != nil {
+		return fmt.Errorf("update invoice closing text: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check updated invoice closing text: %w", err)
+	}
+	if affected != 1 {
+		return fmt.Errorf("update invoice closing text for RecNo %d affected %d rows", invoiceID, affected)
+	}
+	return nil
+}
+
 func invoiceArguments(input model.InvoiceInput, id int) []any {
 	amount := 0.0
 	for _, item := range input.Items {

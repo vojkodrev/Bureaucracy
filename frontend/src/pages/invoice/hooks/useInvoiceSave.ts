@@ -7,30 +7,48 @@ import { nextPaddedNumber, numberOrNull, roundCurrency } from '@/lib/numbers'
 import { postalCodeAndCity } from '@/lib/postal-address'
 import { toast } from '@/lib/toast'
 import type { InvoiceNumberWarning } from '../InvoiceNumberAlert'
-import { fetchInvoiceExists, fetchLatestInvoiceNumber, postSaveInvoice } from '../invoice-api'
+import { fetchInvoiceExists, fetchLatestInvoiceNumber, postSaveInvoice, postSaveInvoiceClosingText } from '../invoice-api'
 import type { InvoiceDraft } from './useInvoiceDraft'
 
 type Options = {
     invoiceId: number | null
+    invoiceBusinessYear: string | null
     draft: InvoiceDraft
     routeInvoiceNumber?: string
     isLoading: boolean
     loadError: string | null
     navigate: NavigateFunction
     markClean: (draft: InvoiceDraft) => void
+    markClosingTextClean: (closingText: string) => void
     allowNavigation: () => void
     reloadAfterSave: () => void
 }
 
 export function useInvoiceSave({
-    invoiceId, draft, routeInvoiceNumber, isLoading, loadError, navigate, markClean,
-    allowNavigation, reloadAfterSave,
+    invoiceId, invoiceBusinessYear, draft, routeInvoiceNumber, isLoading, loadError, navigate, markClean,
+    markClosingTextClean, allowNavigation, reloadAfterSave,
 }: Options) {
     const [isSaving, setIsSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [invoiceNumberWarning, setInvoiceNumberWarning] = useState<InvoiceNumberWarning | null>(null)
     const canSave = Boolean(draft.invoiceNumber.trim()) && !isLoading && !loadError &&
         (!routeInvoiceNumber || invoiceId != null || draft.invoiceNumber !== routeInvoiceNumber)
+    const canSaveClosingText = invoiceId != null && invoiceBusinessYear != null && !isLoading && !loadError
+
+    const requestSaveClosingText = async () => {
+        if (!canSaveClosingText || isSaving) return
+        setIsSaving(true)
+        setSaveError(null)
+        try {
+            await postSaveInvoiceClosingText(invoiceBusinessYear, invoiceId, emptyToNull(draft.closingText))
+            markClosingTextClean(draft.closingText)
+            toast.add({ title: 'Invoice closing text saved', type: 'success' })
+        } catch (error: unknown) {
+            setSaveError(error instanceof Error ? error.message : 'Saving invoice closing text failed')
+        } finally {
+            setIsSaving(false)
+        }
+    }
 
     const performSave = async () => {
         const isCreating = invoiceId == null
@@ -125,7 +143,8 @@ export function useInvoiceSave({
     }
 
     return {
-        canSave, requestSave, confirmSave, isSaving, saveError, setSaveError,
+        canSave, requestSave, confirmSave, canSaveClosingText, requestSaveClosingText,
+        isSaving, saveError, setSaveError,
         invoiceNumberWarning, setInvoiceNumberWarning,
     }
 }

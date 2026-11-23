@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { toast } from '@/lib/toast'
+import { getSelectedBusinessYear } from '@/lib/business-year'
 import { dateFromSearchValue } from '@/lib/dates'
 import type { Invoice } from '@/lib/invoice-types'
 import { fetchBusinessYear } from '@/lib/business-year-api'
@@ -82,6 +83,7 @@ export function useInvoiceLoader({
     const [loadResult, setLoadResult] = useState({
         requestKey: '__initial__',
         error: null as string | null,
+        businessYear: null as string | null,
     })
     const [warningResult, setWarningResult] = useState({
         requestKey: '__initial__',
@@ -96,7 +98,8 @@ export function useInvoiceLoader({
     useEffect(() => {
         if (!routeInvoiceNumber) return
         const controller = new AbortController()
-        void fetchInvoice(routeInvoiceNumber, controller.signal).then((invoice) => {
+        const invoiceBusinessYear = getSelectedBusinessYear()
+        void fetchInvoice(routeInvoiceNumber, controller.signal, invoiceBusinessYear).then((invoice) => {
             const nextDraft = draftFromInvoice(invoice)
             const headerTotal = currencyCents(invoice.amount ?? 0)
             const lineTotal = sumCurrencyCents((invoice.items ?? []).map((item) => item.grossAmount))
@@ -111,7 +114,7 @@ export function useInvoiceLoader({
             replaceLoadedDraft(nextDraft)
             markLoadedDraftClean(nextDraft)
             finishNavigation()
-            setLoadResult({ requestKey, error: null })
+            setLoadResult({ requestKey, error: null, businessYear: invoiceBusinessYear })
             setWarningResult({
                 requestKey,
                 warnings: [
@@ -131,7 +134,9 @@ export function useInvoiceLoader({
         }).catch((requestError: unknown) => {
             if (wasAborted(requestError)) return
             pendingRevertRef.current = false
-            setLoadResult({ requestKey, error: requestErrorMessage(requestError, 'Loading invoice failed') })
+            setLoadResult({
+                requestKey, error: requestErrorMessage(requestError, 'Loading invoice failed'), businessYear: null,
+            })
             setWarningResult({ requestKey, warnings: [], storedTotal: null })
         })
         return () => controller.abort()
@@ -240,6 +245,7 @@ export function useInvoiceLoader({
     return {
         invoiceId, setInvoiceId, creditedAmount, taxConfirmation, setTaxConfirmation,
         businessYear, setBusinessYear, isLoading, error, warnings,
+        invoiceBusinessYear: loadResult.requestKey === requestKey ? loadResult.businessYear : null,
         storedTotal,
         requestErrors, setRequestErrors, reload,
         reloadAfterSave: () => setReloadVersion((version) => version + 1),

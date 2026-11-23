@@ -329,16 +329,17 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		SaveBankStatement   func(childComplexity int, businessYear string, statement model.BankStatementInput) int
-		SaveCreditNote      func(childComplexity int, businessYear string, creditNote model.CreditNoteInput) int
-		SaveCustomer        func(childComplexity int, businessYear string, customer model.CustomerInput) int
-		SaveDeliveryNote    func(childComplexity int, businessYear string, deliveryNote model.DeliveryNoteInput) int
-		SaveGoodsReceipt    func(childComplexity int, businessYear string, goodsReceipt model.GoodsReceiptInput) int
-		SaveInventoryItem   func(childComplexity int, businessYear string, inventoryItem model.InventoryItemInput) int
-		SaveInvoice         func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
-		SavePriceQuote      func(childComplexity int, businessYear string, priceQuote model.PriceQuoteInput) int
-		SaveProduct         func(childComplexity int, businessYear string, product model.ProductInput) int
-		UpdateCustomerEmail func(childComplexity int, businessYear string, customerID string, email string) int
+		SaveBankStatement      func(childComplexity int, businessYear string, statement model.BankStatementInput) int
+		SaveCreditNote         func(childComplexity int, businessYear string, creditNote model.CreditNoteInput) int
+		SaveCustomer           func(childComplexity int, businessYear string, customer model.CustomerInput) int
+		SaveDeliveryNote       func(childComplexity int, businessYear string, deliveryNote model.DeliveryNoteInput) int
+		SaveGoodsReceipt       func(childComplexity int, businessYear string, goodsReceipt model.GoodsReceiptInput) int
+		SaveInventoryItem      func(childComplexity int, businessYear string, inventoryItem model.InventoryItemInput) int
+		SaveInvoice            func(childComplexity int, businessYear string, invoice model.InvoiceInput) int
+		SaveInvoiceClosingText func(childComplexity int, businessYear string, invoiceID int, closingText *string) int
+		SavePriceQuote         func(childComplexity int, businessYear string, priceQuote model.PriceQuoteInput) int
+		SaveProduct            func(childComplexity int, businessYear string, product model.ProductInput) int
+		UpdateCustomerEmail    func(childComplexity int, businessYear string, customerID string, email string) int
 	}
 
 	PriceQuote struct {
@@ -489,6 +490,7 @@ type MutationResolver interface {
 	SaveCustomer(ctx context.Context, businessYear string, customer model.CustomerInput) (*Customer, error)
 	UpdateCustomerEmail(ctx context.Context, businessYear string, customerID string, email string) (*Customer, error)
 	SaveInvoice(ctx context.Context, businessYear string, invoice model.InvoiceInput) (*Invoice, error)
+	SaveInvoiceClosingText(ctx context.Context, businessYear string, invoiceID int, closingText *string) (bool, error)
 	SaveCreditNote(ctx context.Context, businessYear string, creditNote model.CreditNoteInput) (*CreditNote, error)
 	SavePriceQuote(ctx context.Context, businessYear string, priceQuote model.PriceQuoteInput) (*PriceQuote, error)
 	SaveDeliveryNote(ctx context.Context, businessYear string, deliveryNote model.DeliveryNoteInput) (*DeliveryNote, error)
@@ -1892,6 +1894,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SaveInvoice(childComplexity, args["businessYear"].(string), args["invoice"].(model.InvoiceInput)), true
+	case "Mutation.saveInvoiceClosingText":
+		if e.ComplexityRoot.Mutation.SaveInvoiceClosingText == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveInvoiceClosingText_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SaveInvoiceClosingText(childComplexity, args["businessYear"].(string), args["invoiceId"].(int), args["closingText"].(*string)), true
 	case "Mutation.savePriceQuote":
 		if e.ComplexityRoot.Mutation.SavePriceQuote == nil {
 			break
@@ -3860,6 +3873,36 @@ func (ec *executionContext) field_Mutation_saveInventoryItem_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveInvoiceClosingText_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "businessYear",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["businessYear"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceId",
+		func(ctx context.Context, v any) (int, error) {
+			return ec.unmarshalNInt2int(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["invoiceId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "closingText",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["closingText"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveInvoice_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4962,14 +5005,6 @@ func (ec *executionContext) field_Query_searchInventoryItems_args(ctx context.Co
 	return args, nil
 }
 
-func unmarshalInvoiceSearchString(ctx context.Context, v any) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	value, err := graphql.UnmarshalString(v)
-	return &value, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) field_Query_searchInvoicesByCustomer_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4989,104 +5024,110 @@ func (ec *executionContext) field_Query_searchInvoicesByCustomer_args(ctx contex
 		return nil, err
 	}
 	args["invoiceNumber"] = arg1
-	argInvoiceNumberFrom, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberFrom", unmarshalInvoiceSearchString)
-	if err != nil {
-		return nil, err
-	}
-	args["invoiceNumberFrom"] = argInvoiceNumberFrom
-	argInvoiceNumberTo, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberTo", unmarshalInvoiceSearchString)
-	if err != nil {
-		return nil, err
-	}
-	args["invoiceNumberTo"] = argInvoiceNumberTo
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberFrom",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerId"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+	args["invoiceNumberFrom"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberTo",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerName"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+	args["invoiceNumberTo"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["productCode"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+	args["customerId"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["productName"] = arg5
-	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+	args["customerName"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedFrom"] = arg6
-	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+	args["issuedFrom"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedTo"] = arg7
-	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
+	args["issuedTo"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["paymentStatus"] = arg8
-	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+	args["paymentStatus"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortBy"] = arg9
-	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+	args["sortBy"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortDirection"] = arg10
-	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["sortDirection"] = arg12
+	arg13, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg11
-	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg13
+	arg14, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg12
+	args["pageSize"] = arg14
 	return args, nil
 }
 
@@ -5109,104 +5150,110 @@ func (ec *executionContext) field_Query_searchInvoices_args(ctx context.Context,
 		return nil, err
 	}
 	args["invoiceNumber"] = arg1
-	argInvoiceNumberFrom, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberFrom", unmarshalInvoiceSearchString)
-	if err != nil {
-		return nil, err
-	}
-	args["invoiceNumberFrom"] = argInvoiceNumberFrom
-	argInvoiceNumberTo, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberTo", unmarshalInvoiceSearchString)
-	if err != nil {
-		return nil, err
-	}
-	args["invoiceNumberTo"] = argInvoiceNumberTo
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberFrom",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerId"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
+	args["invoiceNumberFrom"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "invoiceNumberTo",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["customerName"] = arg3
-	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+	args["invoiceNumberTo"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "customerId",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["productCode"] = arg4
-	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+	args["customerId"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "customerName",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["productName"] = arg5
-	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
+	args["customerName"] = arg5
+	arg6, err := graphql.ProcessArgField(ctx, rawArgs, "productCode",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productCode"] = arg6
+	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "productName",
+		func(ctx context.Context, v any) (*string, error) {
+			return ec.unmarshalOString2ᚖstring(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["productName"] = arg7
+	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "issuedFrom",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedFrom"] = arg6
-	arg7, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
+	args["issuedFrom"] = arg8
+	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "issuedTo",
 		func(ctx context.Context, v any) (*time.Time, error) {
 			return ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["issuedTo"] = arg7
-	arg8, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
+	args["issuedTo"] = arg9
+	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "paymentStatus",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["paymentStatus"] = arg8
-	arg9, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
+	args["paymentStatus"] = arg10
+	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "sortBy",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortBy"] = arg9
-	arg10, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
+	args["sortBy"] = arg11
+	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "sortDirection",
 		func(ctx context.Context, v any) (*string, error) {
 			return ec.unmarshalOString2ᚖstring(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["sortDirection"] = arg10
-	arg11, err := graphql.ProcessArgField(ctx, rawArgs, "page",
+	args["sortDirection"] = arg12
+	arg13, err := graphql.ProcessArgField(ctx, rawArgs, "page",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["page"] = arg11
-	arg12, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
+	args["page"] = arg13
+	arg14, err := graphql.ProcessArgField(ctx, rawArgs, "pageSize",
 		func(ctx context.Context, v any) (*int, error) {
 			return ec.unmarshalOInt2ᚖint(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["pageSize"] = arg12
+	args["pageSize"] = arg14
 	return args, nil
 }
 
@@ -10683,6 +10730,50 @@ func (ec *executionContext) fieldContext_Mutation_saveInvoice(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_saveInvoice_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveInvoiceClosingText(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_saveInvoiceClosingText(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SaveInvoiceClosingText(ctx, fc.Args["businessYear"].(string), fc.Args["invoiceId"].(int), fc.Args["closingText"].(*string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_saveInvoiceClosingText(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveInvoiceClosingText_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -18510,6 +18601,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveInvoice":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveInvoice(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveInvoiceClosingText":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveInvoiceClosingText(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

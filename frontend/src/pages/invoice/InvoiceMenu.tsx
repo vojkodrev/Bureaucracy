@@ -26,6 +26,7 @@ import {
 
 type InvoiceMenuProps = {
     canSave: boolean
+    canSaveClosingText: boolean
     canPrint: boolean
     canEmail: boolean
     canExportXml: boolean
@@ -38,6 +39,7 @@ type InvoiceMenuProps = {
     canTaxConfirm: boolean
     isTaxConfirming: boolean
     onSave: () => void
+    onSaveClosingText: () => void
     onPrint: () => void
     onEmail: () => void
     onExportXml: () => void
@@ -51,9 +53,9 @@ type InvoiceMenuProps = {
 
 function InvoiceMenu(props: InvoiceMenuProps) {
     const {
-        canSave, canPrint, canEmail, canExportXml, canRevert, canDuplicate,
+        canSave, canSaveClosingText, canPrint, canEmail, canExportXml, canRevert, canDuplicate,
         isSaving, isDuplicating, isExportingXml, isExportingHalcom,
-        canTaxConfirm, isTaxConfirming, onSave, onPrint, onEmail,
+        canTaxConfirm, isTaxConfirming, onSave, onSaveClosingText, onPrint, onEmail,
         onExportXml, onExportHalcom, onRevert, onDuplicate,
         onConvertToCreditNote, onConvertToDeliveryNote, onTaxConfirm,
     } = props
@@ -61,10 +63,14 @@ function InvoiceMenu(props: InvoiceMenuProps) {
         <Menubar className="w-fit">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
-                <MenubarContent className="min-w-44">
+                <MenubarContent className="min-w-56">
                     <MenubarItem disabled={!canSave || isSaving} onClick={onSave}>
                         <Save />{isSaving ? 'Saving…' : 'Save'}
                         <MenubarShortcut>Ctrl+S</MenubarShortcut>
+                    </MenubarItem>
+                    <MenubarItem className="whitespace-nowrap"
+                        disabled={!canSaveClosingText || isSaving} onClick={onSaveClosingText}>
+                        <Save />Save closing text only
                     </MenubarItem>
                     <MenubarItem disabled={!canPrint} onClick={onPrint}>
                         <Printer />Print

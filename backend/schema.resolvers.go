@@ -37,6 +37,12 @@ func (r *mutationResolver) SaveInvoice(ctx context.Context, businessYear string,
 	return r.Invoices.Save(ctx, businessYear, invoice)
 }
 
+// SaveInvoiceClosingText is the resolver for the saveInvoiceClosingText field.
+func (r *mutationResolver) SaveInvoiceClosingText(ctx context.Context, businessYear string, invoiceID int, closingText *string) (bool, error) {
+	err := r.Invoices.SaveClosingText(ctx, businessYear, invoiceID, closingText)
+	return err == nil, err
+}
+
 // SaveCreditNote is the resolver for the saveCreditNote field.
 func (r *mutationResolver) SaveCreditNote(ctx context.Context, businessYear string, creditNote model.CreditNoteInput) (*CreditNote, error) {
 	return r.CreditNotes.Save(ctx, businessYear, creditNote)

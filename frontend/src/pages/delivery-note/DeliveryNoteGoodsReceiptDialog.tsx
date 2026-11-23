@@ -1,6 +1,7 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
+import { fetchGoodsReceiptSearch } from '@/components/goods-receipt-search/goods-receipt-search-api'
 import GoodsReceiptPickerField from '@/components/goods-receipt-search/GoodsReceiptPickerField'
 import InventoryItemPickerField from '@/components/inventory-item-search/InventoryItemPickerField'
 import { Button } from '@/components/ui/button'
@@ -26,18 +27,50 @@ type Props = {
 
 export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNavigation }: Props) {
     const navigate = useNavigate()
+    const conversionDate = draft.issueDate ?? draft.deliveryDate
+    const receiptDate = conversionDate ? dateForInput(conversionDate) : ''
     const [destination, setDestination] = useState('new')
     const [receiptNumber, setReceiptNumber] = useState('')
+    const [receiptLookup, setReceiptLookup] = useState<{ date: string; message?: string } | null>(null)
     const [mappings, setMappings] = useState<Record<number, { code: string; name: string }>>({})
     const [error, setError] = useState<string | null>(null)
     const [isPreparing, setIsPreparing] = useState(false)
     const request = useRef<AbortController | null>(null)
     useEffect(() => () => request.current?.abort(), [])
 
+    const isLookingUpReceipt = Boolean(receiptDate && receiptLookup?.date !== receiptDate)
+    useEffect(() => {
+        if (!receiptDate) return
+        const controller = new AbortController()
+        void fetchGoodsReceiptSearch({
+            from: receiptDate,
+            to: receiptDate,
+            inventoryItemCode: '',
+            inventoryItemName: '',
+            page: '1',
+            pageSize: '1',
+            sortBy: '',
+            sortDirection: '',
+        }, controller.signal).then((page) => {
+            if (controller.signal.aborted) return
+            const number = page?.goodsReceipts[0]?.receiptNumber.trim() ?? ''
+            setReceiptNumber(number)
+            setDestination(number ? 'existing' : 'new')
+            setReceiptLookup({ date: receiptDate })
+        }).catch(() => {
+            if (!controller.signal.aborted) {
+                setReceiptLookup({
+                    date: receiptDate,
+                    message: 'Could not check for a matching goods receipt. Choose a destination.',
+                })
+            }
+        })
+        return () => controller.abort()
+    }, [receiptDate])
+
     async function convert() {
         if (!canConvert || request.current) return
         const existing = destination === 'existing'
-        const receiptDate = draft.issueDate ?? draft.deliveryDate
         if (!existing && !receiptDate) {
             setError('Enter a date on the delivery note before converting it.')
             return
@@ -66,7 +99,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
 
             storeGoodsReceiptHandoff({
                 receiptNumber: receipt?.receiptNumber ?? null,
-                receiptDate: receiptDate ? dateForInput(receiptDate) : null,
+                receiptDate: receiptDate || null,
                 items,
             })
             allowNavigation()
@@ -82,7 +115,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         }
     }
 
-    const canConvert = draft.items.length > 0 &&
+    const canConvert = !isLookingUpReceipt && draft.items.length > 0 &&
         draft.items.every((_, index) => mappings[index]?.code.trim()) &&
         (destination === 'new' || Boolean(receiptNumber.trim()))
 
@@ -98,7 +131,17 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
                     disabled={isPreparing}
                     className="min-w-0 space-y-4 [&>[data-slot=table-container]]:overflow-visible"
                 >
-                    <RadioGroup aria-label="Goods receipt destination" value={destination} onValueChange={setDestination}>
+                    {(isLookingUpReceipt || (receiptLookup?.date === receiptDate && receiptLookup.message)) && (
+                        <p role="status" className="text-sm text-muted-foreground">
+                            {isLookingUpReceipt ? 'Checking for a goods receipt on this date…' : receiptLookup?.message}
+                        </p>
+                    )}
+                    <RadioGroup
+                        aria-label="Goods receipt destination"
+                        disabled={isLookingUpReceipt}
+                        value={destination}
+                        onValueChange={setDestination}
+                    >
                         <Field orientation="horizontal">
                             <RadioGroupItem id="goods-receipt-create" value="new" />
                             <FieldLabel htmlFor="goods-receipt-create">Create new goods receipt</FieldLabel>

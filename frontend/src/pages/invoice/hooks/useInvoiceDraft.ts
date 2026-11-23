@@ -43,7 +43,7 @@ export function serializeInvoiceDraft(draft: InvoiceDraft): string {
 
 export function useInvoiceDraft() {
     const [draft, setDraft] = useState<InvoiceDraft>(emptyInvoiceDraft)
-    const [cleanDraft, setCleanDraft] = useState<string | null>(null)
+    const [cleanDraft, setCleanDraft] = useState<InvoiceDraft | 'unsaved' | null>(null)
     const serializedDraft = useMemo(() => serializeInvoiceDraft(draft), [draft])
 
     const setField = <K extends keyof InvoiceDraft>(field: K, value: InvoiceDraft[K]) => {
@@ -55,13 +55,19 @@ export function useInvoiceDraft() {
             invoiceItems: typeof value === 'function' ? value(current.invoiceItems) : value,
         }))
     }
-    const markClean = (value: InvoiceDraft = draft) => setCleanDraft(serializeInvoiceDraft(value))
-    const markUnsaved = () => setCleanDraft('__unsaved__')
+    const markClean = (value: InvoiceDraft = draft) => setCleanDraft(value)
+    const markClosingTextClean = (closingText: string) => {
+        setCleanDraft((current) => current && current !== 'unsaved' && current === cleanDraft
+            ? { ...current, closingText }
+            : current)
+    }
+    const markUnsaved = () => setCleanDraft('unsaved')
 
     return {
         draft, setDraft, setField, setItems, serializedDraft,
-        markClean, markUnsaved, clearCleanDraft: () => setCleanDraft(null),
-        hasUnsavedChanges: cleanDraft !== null && serializedDraft !== cleanDraft,
+        markClean, markClosingTextClean, markUnsaved, clearCleanDraft: () => setCleanDraft(null),
+        hasUnsavedChanges: cleanDraft === 'unsaved' ||
+            (cleanDraft !== null && serializedDraft !== serializeInvoiceDraft(cleanDraft)),
         totalIncludingVat: sumCurrency(draft.invoiceItems.map((item) => item.grossAmount)),
     }
 }
