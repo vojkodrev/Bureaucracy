@@ -1,9 +1,14 @@
 ﻿import { useEffect, useRef, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
 import { fetchGoodsReceiptSearch } from '@/components/goods-receipt-search/goods-receipt-search-api'
 import GoodsReceiptPickerField from '@/components/goods-receipt-search/GoodsReceiptPickerField'
 import InventoryItemPickerField from '@/components/inventory-item-search/InventoryItemPickerField'
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -33,6 +38,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
     const [receiptNumber, setReceiptNumber] = useState('')
     const [receiptLookup, setReceiptLookup] = useState<{ date: string; message?: string } | null>(null)
     const [mappings, setMappings] = useState<Record<number, { code: string; name: string }>>({})
+    const [removedIndexes, setRemovedIndexes] = useState<ReadonlySet<number>>(() => new Set())
     const [error, setError] = useState<string | null>(null)
     const [isPreparing, setIsPreparing] = useState(false)
     const request = useRef<AbortController | null>(null)
@@ -68,6 +74,10 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         return () => controller.abort()
     }, [receiptDate])
 
+    const conversionRows = draft.items
+        .map((product, index) => ({ product, index }))
+        .filter(({ index }) => !removedIndexes.has(index))
+
     async function convert() {
         if (!canConvert || request.current) return
         const existing = destination === 'existing'
@@ -83,7 +93,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         try {
             const [receipt, items] = await Promise.all([
                 existing ? fetchGoodsReceipt(receiptNumber.trim(), controller.signal) : null,
-                Promise.all(draft.items.map(async (product, index) => {
+                Promise.all(conversionRows.map(async ({ product, index }) => {
                     const item = await fetchInventoryItem(mappings[index].code.trim(), controller.signal)
                     return {
                         id: -index - 1,
@@ -115,8 +125,8 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         }
     }
 
-    const canConvert = !isLookingUpReceipt && draft.items.length > 0 &&
-        draft.items.every((_, index) => mappings[index]?.code.trim()) &&
+    const canConvert = !isLookingUpReceipt && conversionRows.length > 0 &&
+        conversionRows.every(({ index }) => mappings[index]?.code.trim()) &&
         (destination === 'new' || Boolean(receiptNumber.trim()))
 
     return (
@@ -169,10 +179,20 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
                                 <TableHead>Product</TableHead>
                                 <TableHead className="w-1/4 whitespace-normal sm:w-48">Inventory item</TableHead>
                                 <TableHead className="whitespace-normal">Inventory item name</TableHead>
+                                <TableHead className="w-10">
+                                    <span className="sr-only">Actions</span>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {draft.items.map((product, index) => (
+                            {conversionRows.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                        No products to convert.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {conversionRows.map(({ product, index }) => (
                                 <TableRow key={`${product.id}-${index}`}>
                                     <TableCell className="whitespace-normal [overflow-wrap:anywhere]">
                                         {product.productCode}
@@ -200,6 +220,37 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
                                     </TableCell>
                                     <TableCell className="whitespace-normal [overflow-wrap:anywhere]">
                                         {mappings[index]?.name}
+                                    </TableCell>
+                                    <TableCell>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger render={
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-xs"
+                                                    aria-label={`Remove ${product.productName || product.productCode || `product ${index + 1}`}`}
+                                                />
+                                            }>
+                                                <Trash2 />
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Remove product?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to remove {product.productName || product.productCode || 'this product'} from this conversion?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        variant="destructive"
+                                                        onClick={() => setRemovedIndexes((current) => new Set([...current, index]))}
+                                                    >
+                                                        Remove
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
