@@ -8,6 +8,17 @@ import {
     Plus,
     Trash2,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -250,18 +261,37 @@ export default function GoodsReceiptItems({
                                         >
                                             <Pencil />
                                         </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon-xs"
-                                            aria-label={`Remove ${item.productCode}`}
-                                            onClick={() => onChange(
-                                                items.filter((_, itemIndex) =>
-                                                    itemIndex !== index),
-                                            )}
-                                        >
-                                            <Trash2 />
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger render={
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-xs"
+                                                    aria-label={`Remove ${item.productName || item.productCode || "inventory item"}`}
+                                                />
+                                            }>
+                                                <Trash2 />
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Remove inventory item?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to remove {item.productName || item.productCode || "this inventory item"} from the goods receipt?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        variant="destructive"
+                                                        onClick={() => onChange(
+                                                            items.filter((_, itemIndex) => itemIndex !== index),
+                                                        )}
+                                                    >
+                                                        Remove
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </TableCell>
                             </TableRow>
