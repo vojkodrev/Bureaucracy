@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { getSelectedBusinessYear, setSelectedBusinessYear } from '@/lib/business-year'
-import { fetchBusinessYearCode } from '@/lib/business-year-api'
+import { fetchBusinessYearCode, fetchCurrentBusinessYear } from '@/lib/business-year-api'
 import {
     deliveryNoteNumberFromInvoiceReference,
     findExistingDeliveryNote,
@@ -50,17 +50,25 @@ export function useInvoiceDeliveryNoteConversion({ draft, navigate, allowNavigat
         try {
             const selectedCode = getSelectedBusinessYear()
             const serviceYear = draft.serviceDate?.getFullYear()
-            const businessYearCode = serviceYear === undefined
+            const currentYear = await fetchCurrentBusinessYear()
+            if (pendingLookup.current !== lookup) return
+            const referenceYearCode = serviceYear === undefined
                 ? selectedCode
-                : await fetchBusinessYearCode(serviceYear, selectedCode)
+                : serviceYear === currentYear.year
+                    ? currentYear.code
+                    : await fetchBusinessYearCode(serviceYear, selectedCode)
             if (pendingLookup.current !== lookup) return
-            const number = await findExistingDeliveryNote(draft.deliveryNoteNumber, businessYearCode)
+            const number = await findExistingDeliveryNote(draft.deliveryNoteNumber, referenceYearCode)
             if (pendingLookup.current !== lookup) return
-            if (number) {
-                setMatch({ draft, number, businessYearCode })
+            const existingNumber = number ?? (referenceYearCode === currentYear.code
+                ? null
+                : await findExistingDeliveryNote(draft.deliveryNoteNumber, currentYear.code))
+            if (pendingLookup.current !== lookup) return
+            if (existingNumber) {
+                setMatch({ draft, number: existingNumber, businessYearCode: currentYear.code })
                 return
             }
-            convert(businessYearCode, deliveryNoteNumberFromInvoiceReference(draft.deliveryNoteNumber))
+            convert(currentYear.code, deliveryNoteNumberFromInvoiceReference(draft.deliveryNoteNumber))
         } catch (lookupError: unknown) {
             if (pendingLookup.current !== lookup) return
             setError(lookupError instanceof Error
