@@ -54,9 +54,7 @@ export function useGoodsReceiptSave(options: Options) {
         if (!options.draft.receivedBy.trim()) {
             issues.push("Received by is required.");
         }
-        if (options.draft.items.length === 0) {
-            issues.push("At least one inventory item is required.");
-        } else if (options.draft.items.some((item) =>
+        if (options.draft.items.some((item) =>
             !item.productCode?.trim() ||
             item.quantity == null ||
             item.quantity === 0

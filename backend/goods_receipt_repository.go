@@ -384,9 +384,6 @@ func (repository *GoodsReceiptRepository) Save(ctx context.Context, businessYear
 	if input.ReceivedBy == "" || len([]rune(input.ReceivedBy)) > 30 {
 		return nil, fmt.Errorf("receivedBy is required and must be at most 30 characters")
 	}
-	if len(input.Items) == 0 {
-		return nil, fmt.Errorf("at least one goods receipt item is required")
-	}
 	for _, item := range input.Items {
 		item.ProductCode = strings.TrimSpace(item.ProductCode)
 		if item.ProductCode == "" || len([]rune(item.ProductCode)) > 25 {
