@@ -23,6 +23,8 @@ export type InvoiceSearchCriteria = {
     productName: string
     from: string
     to: string
+    serviceFrom: string
+    serviceTo: string
     paymentStatus: PaymentStatus
     resultsView: InvoiceResultsView
     page: string

@@ -36,6 +36,8 @@ const searchInvoicesQuery = `
         $productName: String
         $issuedFrom: Time
         $issuedTo: Time
+        $serviceFrom: Time
+        $serviceTo: Time
         $paymentStatus: String
         $sortBy: String
         $sortDirection: String
@@ -53,6 +55,8 @@ const searchInvoicesQuery = `
             productName: $productName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
+            serviceFrom: $serviceFrom
+            serviceTo: $serviceTo
             paymentStatus: $paymentStatus
             sortBy: $sortBy
             sortDirection: $sortDirection
@@ -90,6 +94,8 @@ const searchInvoicesByCustomerQuery = `
         $productName: String
         $issuedFrom: Time
         $issuedTo: Time
+        $serviceFrom: Time
+        $serviceTo: Time
         $paymentStatus: String
         $sortBy: String
         $sortDirection: String
@@ -107,6 +113,8 @@ const searchInvoicesByCustomerQuery = `
             productName: $productName
             issuedFrom: $issuedFrom
             issuedTo: $issuedTo
+            serviceFrom: $serviceFrom
+            serviceTo: $serviceTo
             paymentStatus: $paymentStatus
             sortBy: $sortBy
             sortDirection: $sortDirection
@@ -158,6 +166,8 @@ export async function fetchInvoiceSearch(
         productName: optionalFilter(search.productName),
         issuedFrom: optionalDate(search.from),
         issuedTo: optionalDate(search.to),
+        serviceFrom: optionalDate(search.serviceFrom),
+        serviceTo: optionalDate(search.serviceTo),
         paymentStatus: search.paymentStatus,
         sortBy: groupByCustomer ? 'customer' : search.sortBy || null,
         sortDirection: groupByCustomer ? 'asc' : search.sortDirection || null,
@@ -185,6 +195,8 @@ export async function fetchInvoiceSearchByCustomer(
         productName: optionalFilter(search.productName),
         issuedFrom: optionalDate(search.from),
         issuedTo: optionalDate(search.to),
+        serviceFrom: optionalDate(search.serviceFrom),
+        serviceTo: optionalDate(search.serviceTo),
         paymentStatus: search.paymentStatus,
         sortBy: 'customer',
         sortDirection: 'asc',

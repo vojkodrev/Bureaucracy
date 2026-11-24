@@ -64,6 +64,16 @@ func loadInvoiceReportPage(context *gin.Context, invoices *InvoiceRepository, bu
 		context.JSON(http.StatusBadRequest, gin.H{"error": "from must not be after to"})
 		return nil, 0, nil, nil, false
 	}
+	serviceFrom, err := optionalReportDate(context.Query("serviceFrom"))
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "serviceFrom must be a date in YYYY-MM-DD format"})
+		return nil, 0, nil, nil, false
+	}
+	serviceTo, err := optionalReportDate(context.Query("serviceTo"))
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "serviceTo must be a date in YYYY-MM-DD format"})
+		return nil, 0, nil, nil, false
+	}
 	page, err := reportPositiveInteger(context.Query("page"), 1)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
@@ -93,7 +103,7 @@ func loadInvoiceReportPage(context *gin.Context, invoices *InvoiceRepository, bu
 		optionalQuery(context.Query("invoiceNumber")), optionalQuery(context.Query("invoiceNumberFrom")),
 		optionalQuery(context.Query("invoiceNumberTo")), optionalQuery(context.Query("customerId")),
 		optionalQuery(context.Query("customerName")), optionalQuery(context.Query("productCode")),
-		optionalQuery(context.Query("productName")), issuedFrom, issuedTo,
+		optionalQuery(context.Query("productName")), issuedFrom, issuedTo, serviceFrom, serviceTo,
 		optionalQuery(context.Query("paymentStatus")),
 		optionalQuery(context.Query("sortBy")), optionalQuery(context.Query("sortDirection")),
 		page, pageSize,

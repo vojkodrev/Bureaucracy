@@ -717,6 +717,8 @@ func (repository *InvoiceRepository) Search(
 	productName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	serviceFrom *time.Time,
+	serviceTo *time.Time,
 	paymentStatus *string,
 	sortBy *string,
 	sortDirection *string,
@@ -724,7 +726,7 @@ func (repository *InvoiceRepository) Search(
 	pageSize int,
 ) (*InvoicePage, error) {
 	return repository.search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo,
-		customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus,
+		customerID, customerName, productCode, productName, issuedFrom, issuedTo, serviceFrom, serviceTo, paymentStatus,
 		sortBy, sortDirection, page, pageSize, false)
 }
 
@@ -740,6 +742,8 @@ func (repository *InvoiceRepository) SearchByCustomer(
 	productName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	serviceFrom *time.Time,
+	serviceTo *time.Time,
 	paymentStatus *string,
 	sortBy *string,
 	sortDirection *string,
@@ -747,7 +751,7 @@ func (repository *InvoiceRepository) SearchByCustomer(
 	pageSize int,
 ) (*InvoicePage, error) {
 	return repository.search(ctx, businessYear, invoiceNumber, invoiceNumberFrom, invoiceNumberTo,
-		customerID, customerName, productCode, productName, issuedFrom, issuedTo, paymentStatus,
+		customerID, customerName, productCode, productName, issuedFrom, issuedTo, serviceFrom, serviceTo, paymentStatus,
 		sortBy, sortDirection, page, pageSize, true)
 }
 
@@ -763,6 +767,8 @@ func (repository *InvoiceRepository) search(
 	productName *string,
 	issuedFrom *time.Time,
 	issuedTo *time.Time,
+	serviceFrom *time.Time,
+	serviceTo *time.Time,
 	paymentStatus *string,
 	sortBy *string,
 	sortDirection *string,
@@ -781,6 +787,9 @@ func (repository *InvoiceRepository) search(
 	}
 	if issuedFrom != nil && issuedTo != nil && issuedFrom.After(*issuedTo) {
 		return nil, fmt.Errorf("issuedFrom must not be after issuedTo")
+	}
+	if serviceFrom != nil && serviceTo != nil && serviceFrom.After(*serviceTo) {
+		return nil, fmt.Errorf("serviceFrom must not be after serviceTo")
 	}
 	status, err := invoicePaymentStatus(paymentStatus)
 	if err != nil {
@@ -817,6 +826,8 @@ func (repository *InvoiceRepository) search(
 		sql.Named("productName", productNamePattern),
 		sql.Named("issuedFrom", nullableTime(issuedFrom)),
 		sql.Named("issuedTo", nullableTime(issuedTo)),
+		sql.Named("serviceFrom", nullableTime(serviceFrom)),
+		sql.Named("serviceTo", nullableTime(serviceTo)),
 		sql.Named("paymentStatus", status),
 	}
 	databaseName := fmt.Sprintf("BIRO%s5", businessYear)
@@ -846,6 +857,8 @@ func (repository *InvoiceRepository) search(
 		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+		  AND (@serviceFrom IS NULL OR DatumDUR >= @serviceFrom)
+		  AND (@serviceTo IS NULL OR DatumDUR < DATEADD(day, 1, @serviceTo))
 		  AND (@paymentStatus = 'all'
 		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
@@ -880,6 +893,8 @@ func (repository *InvoiceRepository) search(
 			  ))
 			  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 			  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+			  AND (@serviceFrom IS NULL OR DatumDUR >= @serviceFrom)
+			  AND (@serviceTo IS NULL OR DatumDUR < DATEADD(day, 1, @serviceTo))
 			  AND (@paymentStatus = 'all'
 			    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 			    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)
@@ -936,6 +951,8 @@ func (repository *InvoiceRepository) search(
 		  ))
 		  AND (@issuedFrom IS NULL OR DatumIzstavitve >= @issuedFrom)
 		  AND (@issuedTo IS NULL OR DatumIzstavitve < DATEADD(day, 1, @issuedTo))
+		  AND (@serviceFrom IS NULL OR DatumDUR >= @serviceFrom)
+		  AND (@serviceTo IS NULL OR DatumDUR < DATEADD(day, 1, @serviceTo))
 		  AND (@paymentStatus = 'all'
 		    OR (@paymentStatus = 'overdue' AND DatumPlacila IS NULL AND COALESCE(DatumZapadlosti, DatumIzstavitve) < CAST(GETDATE() AS date))
 		    OR (@paymentStatus = 'paid' AND DatumPlacila IS NOT NULL)

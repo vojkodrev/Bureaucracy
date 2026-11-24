@@ -35,6 +35,20 @@ function InvoiceSearchForm({
     const [invoiceDateTo, setInvoiceDateTo] = useState(() =>
         dateFromSearchValue(search.to),
     )
+    const [serviceDateFrom, setServiceDateFrom] = useState(() =>
+        dateFromSearchValue(search.serviceFrom),
+    )
+    const [serviceDateTo, setServiceDateTo] = useState(() =>
+        dateFromSearchValue(search.serviceTo),
+    )
+
+    function resetSearch() {
+        setInvoiceDateFrom(undefined)
+        setInvoiceDateTo(undefined)
+        setServiceDateFrom(undefined)
+        setServiceDateTo(undefined)
+        onReset()
+    }
 
     function submitSearch(event: SubmitEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -52,6 +66,8 @@ function InvoiceSearchForm({
             productName: String(formData.get('productName') ?? '').trim(),
             from: String(formData.get('from') ?? ''),
             to: String(formData.get('to') ?? ''),
+            serviceFrom: String(formData.get('serviceFrom') ?? ''),
+            serviceTo: String(formData.get('serviceTo') ?? ''),
             paymentStatus: paymentStatuses.includes(paymentStatus) ? paymentStatus : 'all',
             resultsView: invoiceResultsViews.includes(resultsView) ? resultsView : 'invoiceList',
             page: '1',
@@ -62,7 +78,7 @@ function InvoiceSearchForm({
     }
 
     return (
-        <form className="max-w-6xl" onSubmit={submitSearch} onReset={onReset}>
+        <form className="max-w-6xl" onSubmit={submitSearch} onReset={resetSearch}>
             <Card>
                 <CardContent>
                     <FieldGroup>
@@ -78,7 +94,7 @@ function InvoiceSearchForm({
                                         autoComplete="off"
                                     />
                                 </Field>
-                                <div className="grid gap-6 sm:col-start-1 sm:row-start-2 sm:grid-cols-2">
+                                <div className="grid gap-6 sm:col-start-2 sm:row-start-1 sm:grid-cols-2">
                                     <Field>
                                         <FieldLabel htmlFor="invoice-number-from">Invoice number from</FieldLabel>
                                         <Input
@@ -106,7 +122,7 @@ function InvoiceSearchForm({
                                         />
                                     </Field>
                                 </div>
-                                <div className="grid gap-6 sm:col-start-1 sm:row-start-3 sm:grid-cols-2">
+                                <div className="grid gap-6 sm:col-start-1 sm:row-start-2 sm:grid-cols-2">
                                     <DatePickerField
                                         id="invoice-date-from"
                                         label="Invoice date from"
@@ -120,6 +136,22 @@ function InvoiceSearchForm({
                                         name="to"
                                         date={invoiceDateTo}
                                         onSelect={setInvoiceDateTo}
+                                    />
+                                </div>
+                                <div className="grid gap-6 sm:col-start-1 sm:row-start-3 sm:grid-cols-2">
+                                    <DatePickerField
+                                        id="service-date-from"
+                                        label="Service date from"
+                                        name="serviceFrom"
+                                        date={serviceDateFrom}
+                                        onSelect={setServiceDateFrom}
+                                    />
+                                    <DatePickerField
+                                        id="service-date-to"
+                                        label="Service date to"
+                                        name="serviceTo"
+                                        date={serviceDateTo}
+                                        onSelect={setServiceDateTo}
                                     />
                                 </div>
                             </FieldGroup>
