@@ -6,7 +6,11 @@ import (
 )
 
 func formatMoneyAmount(value float64) string {
-	return strings.Replace(fmt.Sprintf("%.2f", value), ".", ",", 1)
+	formatted := fmt.Sprintf("%.2f", value)
+	if formatted == "-0.00" || formatted == "-0,00" {
+		return "0,00"
+	}
+	return strings.Replace(formatted, ".", ",", 1)
 }
 
 func formatQuantity(value float64) string {

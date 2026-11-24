@@ -84,7 +84,7 @@ main {
 }
 
 .items-table {
-    table-layout: fixed;
+    table-layout: auto;
     border-top: 0.25mm solid #111;
     border-bottom: 0.25mm solid #111;
     font-size: 2.25mm;
@@ -115,6 +115,7 @@ main {
 }
 
 .items-table td.item-description {
+    max-width: 0;
     font-weight: 700;
     font-size: 2.25mm;
     text-overflow: ellipsis;
@@ -130,8 +131,9 @@ main {
 }
 
 .items-table .item-unit {
-    width: 6%;
+    width: 1px;
     text-align: left;
+    white-space: nowrap;
 }
 
 .items-table .item-unit-price,
