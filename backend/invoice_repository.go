@@ -18,7 +18,21 @@ type InvoiceRepository struct {
 }
 
 var businessYearPattern = regexp.MustCompile(`^[0-9]+$`)
-var invoiceNumberRangePattern = regexp.MustCompile(`^[0-9]{5}$`)
+var invoiceNumberRangePattern = regexp.MustCompile(`^[0-9]{1,5}$`)
+
+func normalizeInvoiceNumberBound(value *string, field string) (string, error) {
+	if value == nil {
+		return "", nil
+	}
+	number := strings.TrimSpace(*value)
+	if number == "" {
+		return "", nil
+	}
+	if !invoiceNumberRangePattern.MatchString(number) {
+		return "", fmt.Errorf("%s must contain 1 to 5 digits", field)
+	}
+	return strings.Repeat("0", 5-len(number)) + number, nil
+}
 
 func NewInvoiceRepository(database *sql.DB) *InvoiceRepository {
 	return &InvoiceRepository{database: database}
@@ -778,19 +792,13 @@ func (repository *InvoiceRepository) search(
 	}
 
 	invoiceNumberPattern := lib.OptionalLikePattern(invoiceNumber)
-	invoiceNumberFromValue := ""
-	if invoiceNumberFrom != nil {
-		invoiceNumberFromValue = strings.TrimSpace(*invoiceNumberFrom)
+	invoiceNumberFromValue, err := normalizeInvoiceNumberBound(invoiceNumberFrom, "invoiceNumberFrom")
+	if err != nil {
+		return nil, err
 	}
-	invoiceNumberToValue := ""
-	if invoiceNumberTo != nil {
-		invoiceNumberToValue = strings.TrimSpace(*invoiceNumberTo)
-	}
-	if invoiceNumberFromValue != "" && !invoiceNumberRangePattern.MatchString(invoiceNumberFromValue) {
-		return nil, fmt.Errorf("invoiceNumberFrom must contain exactly 5 digits")
-	}
-	if invoiceNumberToValue != "" && !invoiceNumberRangePattern.MatchString(invoiceNumberToValue) {
-		return nil, fmt.Errorf("invoiceNumberTo must contain exactly 5 digits")
+	invoiceNumberToValue, err := normalizeInvoiceNumberBound(invoiceNumberTo, "invoiceNumberTo")
+	if err != nil {
+		return nil, err
 	}
 	if invoiceNumberFromValue != "" && invoiceNumberToValue != "" && invoiceNumberFromValue > invoiceNumberToValue {
 		return nil, fmt.Errorf("invoiceNumberFrom must not be after invoiceNumberTo")

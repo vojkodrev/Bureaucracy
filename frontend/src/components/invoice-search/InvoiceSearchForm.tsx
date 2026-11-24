@@ -86,7 +86,7 @@ function InvoiceSearchForm({
                                             name="invoiceNumberFrom"
                                             defaultValue={search.invoiceNumberFrom}
                                             inputMode="numeric"
-                                            pattern="[0-9]{5}"
+                                            pattern="[0-9]{1,5}"
                                             maxLength={5}
                                             placeholder="00850"
                                             autoComplete="off"
@@ -99,7 +99,7 @@ function InvoiceSearchForm({
                                             name="invoiceNumberTo"
                                             defaultValue={search.invoiceNumberTo}
                                             inputMode="numeric"
-                                            pattern="[0-9]{5}"
+                                            pattern="[0-9]{1,5}"
                                             maxLength={5}
                                             placeholder="00850"
                                             autoComplete="off"
