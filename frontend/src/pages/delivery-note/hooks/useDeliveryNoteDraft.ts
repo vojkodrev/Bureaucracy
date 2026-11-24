@@ -31,7 +31,7 @@ export const emptyDeliveryNoteDraft = (): DeliveryNoteDraft => ({
     deliveryDate: undefined,
     introductoryText: '',
     closingText: '',
-    withoutAmounts: false,
+    withoutAmounts: true,
     items: [],
 })
 

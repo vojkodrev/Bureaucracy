@@ -14,7 +14,7 @@ import {
     fetchNextDeliveryNoteNumber,
 } from '@/pages/delivery-note-search/delivery-note-search-api'
 import type { DeliveryNote } from '@/pages/delivery-note-search/types'
-import type { DeliveryNoteDraft } from './useDeliveryNoteDraft'
+import { emptyDeliveryNoteDraft, type DeliveryNoteDraft } from './useDeliveryNoteDraft'
 
 export type DeliveryNoteRequestErrors = Partial<Record<
     | 'nextNumber'
@@ -163,19 +163,9 @@ export function useDeliveryNoteLoader(options: Options) {
         }
         finishNavigation()
         const initialDraft: DeliveryNoteDraft = {
-            deliveryNoteNumber: '',
-            customerId: '',
-            customerName: '',
-            customerAddress: '',
-            customerPostalCode: '',
-            customerCity: '',
-            customerCountry: '',
+            ...emptyDeliveryNoteDraft(),
             issueDate: new Date(),
             deliveryDate: new Date(),
-            introductoryText: '',
-            closingText: '',
-            withoutAmounts: false,
-            items: [],
         }
         setDeliveryNoteId(null)
         replaceLoadedDraft(initialDraft)
