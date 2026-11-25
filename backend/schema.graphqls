@@ -606,6 +606,7 @@ type Query {
 
   searchGoodsReceipts(
     businessYear: String!
+    receiptNumber: String
     inventoryItemCode: String
     inventoryItemName: String
     receivedFrom: Time

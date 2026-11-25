@@ -73,6 +73,7 @@ export default function GoodsReceiptConversionDialog({ source, conversionDate, i
         if (!receiptDate) return
         const controller = new AbortController()
         void fetchGoodsReceiptSearch({
+            receiptNumber: '',
             from: receiptDate,
             to: receiptDate,
             inventoryItemCode: '',

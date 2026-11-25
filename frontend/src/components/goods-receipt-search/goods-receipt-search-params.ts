@@ -12,6 +12,7 @@ export function goodsReceiptSearchFromParams(params: URLSearchParams): GoodsRece
         ? sortDirectionValue
         : ''
     return {
+        receiptNumber: params.get('receiptNumber') ?? '',
         from: params.get('from') ?? '',
         to: params.get('to') ?? '',
         inventoryItemCode: params.get('inventoryItemCode') ?? '',
@@ -25,7 +26,7 @@ export function goodsReceiptSearchFromParams(params: URLSearchParams): GoodsRece
 
 export function goodsReceiptSearchToParams(search: GoodsReceiptSearchCriteria): URLSearchParams {
     const params = new URLSearchParams()
-    for (const key of ['from', 'to', 'inventoryItemCode', 'inventoryItemName'] as const) {
+    for (const key of ['receiptNumber', 'from', 'to', 'inventoryItemCode', 'inventoryItemName'] as const) {
         if (search[key]) params.set(key, search[key])
     }
     params.set('page', search.page)

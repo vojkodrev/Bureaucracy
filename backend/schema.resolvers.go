@@ -106,7 +106,7 @@ func (r *queryResolver) LatestInventoryItemPhotos(ctx context.Context, businessY
 }
 
 // SearchGoodsReceipts is the resolver for the searchGoodsReceipts field.
-func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, inventoryItemCode *string, inventoryItemName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
+func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear string, receiptNumber *string, inventoryItemCode *string, inventoryItemName *string, receivedFrom *time.Time, receivedTo *time.Time, sortBy *string, sortDirection *string, page *int, pageSize *int) (*GoodsReceiptPage, error) {
 	resultPage := 1
 	if page != nil {
 		resultPage = *page
@@ -115,7 +115,7 @@ func (r *queryResolver) SearchGoodsReceipts(ctx context.Context, businessYear st
 	if pageSize != nil {
 		resultPageSize = *pageSize
 	}
-	return r.GoodsReceipts.Search(ctx, businessYear, inventoryItemCode, inventoryItemName,
+	return r.GoodsReceipts.Search(ctx, businessYear, receiptNumber, inventoryItemCode, inventoryItemName,
 		receivedFrom, receivedTo, sortBy, sortDirection, resultPage, resultPageSize)
 }
 

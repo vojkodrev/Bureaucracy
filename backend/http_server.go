@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	ginCors "github.com/gin-contrib/cors"
@@ -49,12 +52,13 @@ func NewHTTPServer(
 	}
 
 	graphqlHandler := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolver}))
+	graphqlHandler.AroundOperations(recordGraphQLFields)
 	graphqlHandler.AroundFields(AuthorizeGraphQLField)
 	playgroundHandler := playground.Handler("BIRO225 GraphQL", "/graphql")
 
 	router := gin.New()
 	router.Use(
-		gin.Logger(),
+		gin.LoggerWithFormatter(formatRequestLog),
 		gin.Recovery(),
 		ginCors.New(ginCors.Config{
 			AllowOrigins:  config.AllowedOrigins,
@@ -69,8 +73,8 @@ func NewHTTPServer(
 
 	protected := router.Group("/")
 	protected.Use(authMiddleware.Handle)
-	protected.GET("/graphql", gin.WrapH(graphqlHandler))
-	protected.POST("/graphql", gin.WrapH(graphqlHandler))
+	protected.GET("/graphql", serveGraphQL(graphqlHandler))
+	protected.POST("/graphql", serveGraphQL(graphqlHandler))
 
 	storage := protected.Group("/")
 	storage.Use(RequireAnyRole(adminRole, storageRole))
@@ -108,6 +112,59 @@ func NewHTTPServer(
 			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
+}
+
+type graphqlLogKey struct{}
+
+func serveGraphQL(handler http.Handler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), graphqlLogKey{}, c)
+		handler.ServeHTTP(c.Writer, c.Request.WithContext(ctx))
+	}
+}
+
+func recordGraphQLFields(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+	if c, ok := ctx.Value(graphqlLogKey{}).(*gin.Context); ok {
+		operation := graphql.GetOperationContext(ctx)
+		fields := graphql.CollectFields(operation, operation.Operation.SelectionSet, nil)
+		names := make([]string, 0, len(fields))
+		for _, field := range fields {
+			names = append(names, field.Name)
+		}
+		c.Set(graphqlLogKey{}, strings.Join(names, ","))
+	}
+	return next(ctx)
+}
+
+func formatRequestLog(param gin.LogFormatterParams) string {
+	var statusColor, methodColor, latencyColor, resetColor string
+	if param.IsOutputColor() {
+		statusColor = param.StatusCodeColor()
+		methodColor = param.MethodColor()
+		latencyColor = param.LatencyColor()
+		resetColor = param.ResetColor()
+	}
+	latency := param.Latency
+	switch {
+	case latency > time.Minute:
+		latency = latency.Truncate(10 * time.Second)
+	case latency > time.Second:
+		latency = latency.Truncate(10 * time.Millisecond)
+	case latency > time.Millisecond:
+		latency = latency.Truncate(10 * time.Microsecond)
+	}
+	var suffix string
+	if fields, _ := param.Keys[graphqlLogKey{}].(string); fields != "" {
+		suffix = " graphql=" + fields
+	}
+	return fmt.Sprintf("[GIN] %s |%s %3d %s|%s %8v %s| %15s |%s %-7s %s %#v%s\n%s",
+		param.TimeStamp.Format("2006/01/02 - 15:04:05"),
+		statusColor, param.StatusCode, resetColor,
+		latencyColor, latency, resetColor,
+		param.ClientIP,
+		methodColor, param.Method, resetColor,
+		param.Path, suffix, param.ErrorMessage,
+	)
 }
 
 func RegisterHTTPServerLifecycle(lifecycle fx.Lifecycle, server *HTTPServer) {

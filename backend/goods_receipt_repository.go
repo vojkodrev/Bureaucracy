@@ -89,6 +89,7 @@ func (repository *GoodsReceiptRepository) ItemCounts(
 func (repository *GoodsReceiptRepository) Search(
 	ctx context.Context,
 	businessYear string,
+	receiptNumber *string,
 	inventoryItemCode *string,
 	inventoryItemName *string,
 	receivedFrom *time.Time,
@@ -118,13 +119,15 @@ func (repository *GoodsReceiptRepository) Search(
 	receiptDatabase := fmt.Sprintf("BIRO%s5", businessYear)
 	inventoryDatabase := fmt.Sprintf("BIRO%s3", businessYear)
 	arguments := []any{
+		sql.Named("receiptNumber", lib.OptionalLikePattern(receiptNumber)),
 		sql.Named("inventoryItemCode", lib.OptionalLikePattern(inventoryItemCode)),
 		sql.Named("inventoryItemName", lib.WordsLikePattern(inventoryItemName)),
 		sql.Named("receivedFrom", nullableTime(receivedFrom)),
 		sql.Named("receivedTo", nullableTime(receivedTo)),
 	}
 	filters := fmt.Sprintf(`
-		WHERE (@receivedFrom IS NULL OR d.Datum >= @receivedFrom)
+		WHERE (@receiptNumber = '' OR d.Stevilka LIKE @receiptNumber ESCAPE '\')
+		  AND (@receivedFrom IS NULL OR d.Datum >= @receivedFrom)
 		  AND (@receivedTo IS NULL OR d.Datum < DATEADD(day, 1, @receivedTo))
 		  AND ((@inventoryItemCode = '' AND @inventoryItemName = '') OR EXISTS (
 		      SELECT 1

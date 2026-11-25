@@ -26,6 +26,7 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
         const form = new FormData(event.currentTarget)
         onSubmit({
             ...search,
+            receiptNumber: String(form.get('receiptNumber') ?? '').trim(),
             from: String(form.get('from') ?? ''),
             to: String(form.get('to') ?? ''),
             inventoryItemCode: String(form.get('inventoryItemCode') ?? '').trim(),
@@ -40,6 +41,18 @@ export default function GoodsReceiptSearchForm({ search, onSubmit, onReset }: Pr
                 <CardContent>
                     <FieldGroup>
                         <div className="grid max-w-2xl gap-6">
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <Field>
+                                    <FieldLabel htmlFor="goods-receipt-search-number">Goods receipt number</FieldLabel>
+                                    <Input
+                                        id="goods-receipt-search-number"
+                                        type="search"
+                                        name="receiptNumber"
+                                        defaultValue={search.receiptNumber}
+                                        autoComplete="off"
+                                    />
+                                </Field>
+                            </div>
                             <div className="grid gap-6 sm:grid-cols-2">
                                 <DatePickerField
                                     id="goods-receipt-date-from"

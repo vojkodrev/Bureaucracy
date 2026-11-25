@@ -2,6 +2,7 @@ export type GoodsReceiptSortColumn = 'receiptNumber' | 'receiptDate' | 'received
 export type SortDirection = 'asc' | 'desc'
 
 export type GoodsReceiptSearchCriteria = {
+    receiptNumber: string
     from: string
     to: string
     inventoryItemCode: string
