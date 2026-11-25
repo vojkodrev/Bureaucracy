@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ErrorAlert from '@/components/ErrorAlert'
@@ -14,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { dateAfterDays } from '@/lib/dates'
 import { sendDocumentEmail } from '@/lib/document-email'
 import { toast } from '@/lib/toast'
+import GoodsReceiptConversionDialog from '../goods-receipt/GoodsReceiptConversionDialog'
 import CustomerInputFields from './CustomerInputFields'
 import GeneralInformationInput from './GeneralInformationInput'
 import InvoiceNumberAlert from './InvoiceNumberAlert'
@@ -41,6 +43,7 @@ import { useInvoiceTaxConfirmation } from './hooks/useInvoiceTaxConfirmation'
 import { useUnsavedInvoiceGuard } from './hooks/useUnsavedInvoiceGuard'
 
 function InvoicePage() {
+    const [goodsReceiptDialogOpen, setGoodsReceiptDialogOpen] = useState(false)
     const { invoiceNumber: routeInvoiceNumber } = useParams()
     const navigate = useNavigate()
     const draftState = useInvoiceDraft()
@@ -160,6 +163,7 @@ function InvoicePage() {
                 canTaxConfirm={print.canRequestPrint} isTaxConfirming={taxConfirmation.isConfirming}
                 canRevert={revert.canRevert}
                 canDuplicate={loader.invoiceId != null && !loader.isLoading && !save.isSaving}
+                canConvertToGoodsReceipt={!loader.isLoading && !loader.error && draft.invoiceItems.length > 0}
                 isSaving={save.isSaving} isDuplicating={duplicate.isDuplicating}
                 onSave={() => { void save.requestSave() }} onPrint={print.printInvoice}
                 onSaveClosingText={() => { void save.requestSaveClosingText() }}
@@ -169,12 +173,22 @@ function InvoicePage() {
                 onTaxConfirm={taxConfirmation.request}
                 onConvertToDeliveryNote={deliveryNoteConversion.convertToDeliveryNote}
                 onConvertToCreditNote={creditNoteConversion.convertToCreditNote}
+                onConvertToGoodsReceipt={() => setGoodsReceiptDialogOpen(true)}
                 onDuplicate={() => { void duplicate.duplicate() }} />
             <Button type="button" variant="outline" size="icon" aria-label="Previous invoice"
                 disabled={!navigation.canNavigatePrevious} onClick={navigation.navigatePrevious}><ChevronLeft /></Button>
             <Button type="button" variant="outline" size="icon" aria-label="Next invoice"
                 disabled={!navigation.canNavigateNext} onClick={navigation.navigateNext}><ChevronRight /></Button>
         </div>
+        {goodsReceiptDialogOpen && (
+            <GoodsReceiptConversionDialog
+                source="Invoice"
+                conversionDate={draft.invoiceDate ?? draft.serviceDate}
+                items={draft.invoiceItems}
+                onClose={() => setGoodsReceiptDialogOpen(false)}
+                allowNavigation={guard.allowNavigation}
+            />
+        )}
         <EmailDocumentDialog open={email.dialogOpen} documentName="invoice"
             customerId={draft.customerId} customerName={draft.customerName}
             businessYear={loader.businessYear}

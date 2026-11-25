@@ -32,6 +32,7 @@ type InvoiceMenuProps = {
     canExportXml: boolean
     canRevert: boolean
     canDuplicate: boolean
+    canConvertToGoodsReceipt: boolean
     isSaving: boolean
     isDuplicating: boolean
     isExportingXml: boolean
@@ -48,16 +49,17 @@ type InvoiceMenuProps = {
     onDuplicate: () => void
     onConvertToCreditNote: () => void
     onConvertToDeliveryNote: () => void
+    onConvertToGoodsReceipt: () => void
     onTaxConfirm: () => void
 }
 
 function InvoiceMenu(props: InvoiceMenuProps) {
     const {
-        canSave, canSaveClosingText, canPrint, canEmail, canExportXml, canRevert, canDuplicate,
+        canSave, canSaveClosingText, canPrint, canEmail, canExportXml, canRevert, canDuplicate, canConvertToGoodsReceipt,
         isSaving, isDuplicating, isExportingXml, isExportingHalcom,
         canTaxConfirm, isTaxConfirming, onSave, onSaveClosingText, onPrint, onEmail,
         onExportXml, onExportHalcom, onRevert, onDuplicate,
-        onConvertToCreditNote, onConvertToDeliveryNote, onTaxConfirm,
+        onConvertToCreditNote, onConvertToDeliveryNote, onConvertToGoodsReceipt, onTaxConfirm,
     } = props
     return (
         <Menubar className="w-fit">
@@ -102,6 +104,9 @@ function InvoiceMenu(props: InvoiceMenuProps) {
                             </MenubarItem>
                             <MenubarItem onClick={onConvertToCreditNote}>
                                 <FileMinus2 />Convert to credit note
+                            </MenubarItem>
+                            <MenubarItem disabled={!canConvertToGoodsReceipt} onClick={onConvertToGoodsReceipt}>
+                                <PackageCheck />Convert to goods receipt
                             </MenubarItem>
                         </MenubarSubContent>
                     </MenubarSub>

@@ -6,11 +6,11 @@ import WarningAlert from '@/components/WarningAlert'
 import { Button } from '@/components/ui/button'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
+import GoodsReceiptConversionDialog from '../goods-receipt/GoodsReceiptConversionDialog'
 import CustomerInputFields from '../invoice/CustomerInputFields'
 import Products from '../invoice/Products'
 import DeliveryNoteAlert from './DeliveryNoteAlert'
 import DeliveryNoteGeneralInformation from './DeliveryNoteGeneralInformation'
-import DeliveryNoteGoodsReceiptDialog from './DeliveryNoteGoodsReceiptDialog'
 import DeliveryNoteMenu from './DeliveryNoteMenu'
 import DeliveryNoteNumberAlert from './DeliveryNoteNumberAlert'
 import DeliveryNoteSummary from './DeliveryNoteSummary'
@@ -215,8 +215,10 @@ export default function DeliveryNotePage() {
                     onConvertToGoodsReceipt={() => setGoodsReceiptDialogOpen(true)}
                 />
                 {goodsReceiptDialogOpen && (
-                    <DeliveryNoteGoodsReceiptDialog
-                        draft={draft}
+                    <GoodsReceiptConversionDialog
+                        source="Delivery note"
+                        conversionDate={draft.issueDate ?? draft.deliveryDate}
+                        items={draft.items}
                         onClose={() => setGoodsReceiptDialogOpen(false)}
                         allowNavigation={guard.allowNavigation}
                     />

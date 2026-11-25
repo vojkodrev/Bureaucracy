@@ -21,34 +21,40 @@ import {
 } from '@/components/ui/table'
 import { dateForInput } from '@/lib/dates'
 import { numberOrNull } from '@/lib/numbers'
-import { fetchGoodsReceipt } from '../goods-receipt/goods-receipt-api'
-import { storeGoodsReceiptHandoff } from '../goods-receipt/goods-receipt-handoff'
+import { fetchGoodsReceipt } from './goods-receipt-api'
+import { storeGoodsReceiptHandoff } from './goods-receipt-handoff'
 import { fetchInventoryItem } from '../inventory-item/inventory-item-api'
-import type { DeliveryNoteDraft } from './hooks/useDeliveryNoteDraft'
+
+type ConversionProduct = {
+    productCode: string | null
+    productName: string | null
+    quantity: number | null
+}
 
 type Props = {
-    draft: DeliveryNoteDraft
+    source: 'Delivery note' | 'Invoice'
+    conversionDate: Date | null | undefined
+    items: readonly ConversionProduct[]
     onClose: () => void
     allowNavigation: () => void
 }
 
 type ConversionRow = {
     id: number
-    product: DeliveryNoteDraft['items'][number]
+    product: ConversionProduct
     quantity: string
     inventoryCode: string
     inventoryName: string
 }
 
-export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNavigation }: Props) {
+export default function GoodsReceiptConversionDialog({ source, conversionDate, items, onClose, allowNavigation }: Props) {
     const navigate = useNavigate()
-    const conversionDate = draft.issueDate ?? draft.deliveryDate
     const receiptDate = conversionDate ? dateForInput(conversionDate) : ''
     const [destination, setDestination] = useState('new')
     const [receiptNumber, setReceiptNumber] = useState('')
     const [receiptLookup, setReceiptLookup] = useState<{ date: string; message?: string } | null>(null)
     const [conversionRows, setConversionRows] = useState<ConversionRow[]>(() =>
-        draft.items.map((product, index) => ({
+        items.map((product, index) => ({
             id: index,
             product,
             quantity: String(product.quantity ?? ''),
@@ -56,7 +62,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
             inventoryName: '',
         })),
     )
-    const nextRowId = useRef(draft.items.length)
+    const nextRowId = useRef(items.length)
     const [error, setError] = useState<string | null>(null)
     const [isPreparing, setIsPreparing] = useState(false)
     const request = useRef<AbortController | null>(null)
@@ -107,7 +113,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         if (!canConvert || request.current) return
         const existing = destination === 'existing'
         if (!existing && !receiptDate) {
-            setError('Enter a date on the delivery note before converting it.')
+            setError(`Enter a date on the ${source.toLowerCase()} before converting it.`)
             return
         }
 
@@ -116,7 +122,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
         setIsPreparing(true)
         setError(null)
         try {
-            const [receipt, items] = await Promise.all([
+            const [receipt, receiptItems] = await Promise.all([
                 existing ? fetchGoodsReceipt(receiptNumber.trim(), controller.signal) : null,
                 Promise.all(conversionRows.map(async ({ id, quantity, inventoryCode }) => {
                     const quantityValue = numberOrNull(quantity)
@@ -136,7 +142,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
             storeGoodsReceiptHandoff({
                 receiptNumber: receipt?.receiptNumber ?? null,
                 receiptDate: receiptDate || null,
-                items,
+                items: receiptItems,
             })
             allowNavigation()
             navigate(receipt ? `/goods-receipt/${encodeURIComponent(receipt.receiptNumber)}` : '/goods-receipt')
@@ -162,7 +168,7 @@ export default function DeliveryNoteGoodsReceiptDialog({ draft, onClose, allowNa
                     <DialogTitle>Convert to goods receipt</DialogTitle>
                     <DialogDescription>Choose a receipt and map each product to an inventory item.</DialogDescription>
                 </DialogHeader>
-                {error && <ErrorAlert title="Delivery note could not be converted" description="" error={error} />}
+                {error && <ErrorAlert title={`${source} could not be converted`} description="" error={error} />}
                 <fieldset
                     disabled={isPreparing}
                     className="min-w-0 space-y-4 [&>[data-slot=table-container]]:overflow-visible"
