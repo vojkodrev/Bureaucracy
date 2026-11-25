@@ -164,7 +164,7 @@ export default function GoodsReceiptConversionDialog({ source, conversionDate, i
 
     return (
         <Dialog open onOpenChange={(open) => { if (!open && !isPreparing) onClose() }}>
-            <DialogContent className="max-h-[calc(100vh-2rem)] overflow-x-hidden overflow-y-auto sm:max-w-[min(70rem,calc(100%_-_2rem))]">
+            <DialogContent className="max-h-[calc(100vh-2rem)] overflow-x-hidden overflow-y-auto sm:max-w-[min(90rem,calc(100%_-_2rem))]">
                 <DialogHeader>
                     <DialogTitle>Convert to goods receipt</DialogTitle>
                     <DialogDescription>Choose a receipt and map each product to an inventory item.</DialogDescription>
@@ -209,7 +209,7 @@ export default function GoodsReceiptConversionDialog({ source, conversionDate, i
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-16 whitespace-normal sm:w-28">Product code</TableHead>
-                                <TableHead>Product</TableHead>
+                                <TableHead className="whitespace-normal">Product</TableHead>
                                 <TableHead className="w-20 px-1 sm:w-28 sm:px-2">Quantity</TableHead>
                                 <TableHead className="w-1/4 whitespace-normal sm:w-48">Inventory item</TableHead>
                                 <TableHead className="whitespace-normal">Inventory item name</TableHead>
